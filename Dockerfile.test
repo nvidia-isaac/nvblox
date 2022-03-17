@@ -1,0 +1,5 @@
+FROM nvblox
+
+# Build and test the standalone library, then build under catkin
+CMD cd nvblox/nvblox/build && \
+    cd tests/ && ctest && cd .. 

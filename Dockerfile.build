@@ -1,0 +1,10 @@
+FROM nvblox_deps
+
+SHELL ["/bin/bash", "-c"]
+
+# Copy over the nvblox (both as a standalone and into the catkin workspace)
+COPY . nvblox
+
+# Build and test the standalone library, then build under catkin
+RUN cd nvblox/nvblox && mkdir build && cd build && \
+    cmake .. && make -j8
