@@ -1,0 +1,14 @@
+# Main library, including compiled binaries
+graft nvblox_experiments
+
+# Misc
+include README.md
+include requirements.txt
+include setup.py
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude *__pycache__

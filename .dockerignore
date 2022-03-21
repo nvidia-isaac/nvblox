@@ -1,0 +1,2 @@
+# Don't copy build files into a docker image
+*/build*
