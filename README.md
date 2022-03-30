@@ -6,7 +6,7 @@ An SDF library which offers
 * GPU accelerated agorithms such as:
   * TSDF construction
   * ESDF construction
-* ROS2 interface (see [issac_ros_nvblox](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox))
+* ROS2 interface (see [isaac_ros_nvblox](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox))
 * ~~Python bindings~~ (coming soon)
 
 Do we need another SDF library? That depends on your use case. If your interested in:
