@@ -49,13 +49,13 @@ cmake .. && make && ctest
 ## Run an example
 In this example we fuse data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
 ```
-wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets//datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
-unzip ~/datasets/3dmatch//datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
+wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
+unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
 ```
 Navigate to and run the `fuse_3dmatch` binary. From the nvblox base folder run
 ```
 cd nvblox/build/experiments
-./fuse_3dmatch ~/datasets/3dmatch//datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
+./fuse_3dmatch ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
 ```
 Once it's done we can view the output mesh using the Open3D viewer.
 ```
