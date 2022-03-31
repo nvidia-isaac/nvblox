@@ -43,7 +43,7 @@ cd /usr/src/googletest && sudo cmake . && sudo cmake --build . --target install
 cd nvblox/nvblox
 mkdir build
 cd build
-cmake .. && make && ctest
+cmake .. && make && cd tests && ctest
 ```
 
 ## Run an example
