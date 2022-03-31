@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <gflags/gflags.h>
+#include <gflags/gflags_gflags.h>
 #include <glog/logging.h>
 
 #include "nvblox/experiments/common/fuse_3dmatch.h"

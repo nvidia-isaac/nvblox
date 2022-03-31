@@ -16,6 +16,7 @@ limitations under the License.
 #include <iostream>
 
 #include <gflags/gflags.h>
+#include <gflags/gflags_gflags.h>
 #include <glog/logging.h>
 
 #include "nvblox/core/blox.h"
