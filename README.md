@@ -149,6 +149,10 @@ sudo apt-get update
 ```
 sudo apt-get install cmake
 ```
+4. To use the python examples, it is also necessary to make numpy play nice with the Jetson. You can do that by adding the following to your `~/.bashrc`:
+```
+export OPENBLAS_CORETYPE=ARMV8
+```
 
 # License
 This code is under an [open-source license](LICENSE) (Apache 2.0). :)
