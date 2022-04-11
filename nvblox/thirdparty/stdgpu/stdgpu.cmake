@@ -1,6 +1,3 @@
-
-
-
 include(FetchContent)
 FetchContent_Declare(
   ext_stdgpu
@@ -21,18 +18,14 @@ set(STDGPU_BACKEND_DIRECTORY "cuda") # DO we need this?
 # Download the files
 FetchContent_MakeAvailable(ext_stdgpu)
 
-# Variables we need in the parent
-set(STDGPU_INCLUDE_DIRS ${STDGPU_INSTALL_DESTINATION}/include/) # "/" is critical.
-set(STDGPU_SRC_DIR ${stdgpu_SOURCE_DIR})
-
 # Grabbing the compute capability through functions defined by stdgpu
 # https://github.com/stotko/stdgpu/tree/master/cmake/cuda
 
 set(CMAKE_MODULE_PATH_OLD ${CMAKE_MODULE_PATH})
 # Temporary replace CMAKE_MODULE_PATH
-set(CMAKE_MODULE_PATH "${STDGPU_SRC_DIR}/cmake/cuda")
+set(CMAKE_MODULE_PATH "${stdgpu_SOURCE_DIR}/cmake/cuda")
 
-include("${STDGPU_SRC_DIR}/cmake/cuda/set_device_flags.cmake")
+include("${stdgpu_SOURCE_DIR}/cmake/cuda/set_device_flags.cmake")
 
 stdgpu_set_device_flags(STDGPU_DEVICE_FLAGS)
 stdgpu_cuda_set_architecture_flags(STDGPU_CUDA_ARCHITECTURE_FLAGS)
@@ -49,4 +42,3 @@ endif()
 
 # Restore CMAKE_MODULE_PATH
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH_OLD})
-

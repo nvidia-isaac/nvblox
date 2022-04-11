@@ -13,8 +13,9 @@ Do we need another SDF library? That depends on your use case. If your intereste
 * **Path planning**: We provide GPU accelerated, incremental algorithms for calculating the Euclidian Signed Distance Field (ESDF) which is useful for colision checking, which is critical robotic pathplanning. In contrast, existing GPU-accelerated libraries target reconstruction only and are general not useful in a robotics context.
 * **GPU acceleration**: Our previous works [voxblox](https://github.com/ethz-asl/voxblox) and [voxgraph](https://github.com/ethz-asl/voxgraph) are used for path planning, however are CPU only, which limits the speed of these toolboxes (and therefore the resolution of the maps they can build in real-time).
 
-Here we show slices through a distance function generated from *nvblox* using data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/).
-![slice](docs/images/nvblox_slice.gif)
+Here we show slices through a distance function generated from *nvblox* using data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/), specifically the [Sun3D](http://sun3d.cs.princeton.edu/) `mit_76_studyroom` scene:
+
+<div align="center"><img src="docs/images/nvblox_slice.gif" width=600px/></div>
 
 # Note from the authors
 This package is under active development. Feel free to make an issue for bugs or feature requests, and we always welcome pull requests!
@@ -49,7 +50,7 @@ cmake .. && make && cd tests && ctest
 ## Run an example
 In this example we fuse data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
 ```
-wget wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
+wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
 unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
 ```
 Navigate to and run the `fuse_3dmatch` binary. From the nvblox base folder run
@@ -63,7 +64,7 @@ pip3 install open3d
 python3 ../../visualization/visualize_mesh.py mesh.ply
 ```
 you should see a mesh of a room:
-![slice](docs/images/reconstruction_in_docker_trim.png)
+<div align="center"><img src="docs/images/reconstruction_in_docker_trim.png" width=600px/></div>
 
 # Docker
 
@@ -117,9 +118,9 @@ Let's download a dataset and run the example (this is largely a repeat of "Run a
 apt-get update
 apt-get install unzip
 wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
-unzip ~/datasets/3dmatch//datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
+unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
 cd nvblox/nvblox/build/experiments/
-./fuse_3dmatch ~/datasets/3dmatch//datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
+./fuse_3dmatch ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
 ```
 Now let's visualize. From the same experiments folder run:
 ```
