@@ -128,10 +128,16 @@ target_include_directories(nvblox_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
-)    
+)
+
 set_target_properties(nvblox_lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-set_target_properties(nvblox_lib PROPERTIES CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
-set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CUDA_ARCHITECTURES)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+    set_target_properties(nvblox_lib PROPERTIES CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CUDA_ARCHITECTURES)    
+else()
+    set_target_properties(nvblox_lib PROPERTIES CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS})
+    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CMAKE_CUDA_FLAGS)
+endif()
 
 ############
 # BINARIES #
