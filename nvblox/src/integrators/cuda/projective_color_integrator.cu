@@ -23,7 +23,7 @@ namespace nvblox {
 
 ProjectiveColorIntegrator::ProjectiveColorIntegrator()
     : ProjectiveIntegratorBase() {
-  sphere_tracer_.params().maximum_ray_length_m = max_integration_distance_m_;
+  sphere_tracer_.maximum_ray_length_m(max_integration_distance_m_);
   checkCudaErrors(cudaStreamCreate(&integration_stream_));
 }
 

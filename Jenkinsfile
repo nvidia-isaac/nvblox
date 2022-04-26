@@ -13,14 +13,24 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''nvidia-smi'''
         sh '''mkdir -p nvblox/build'''
-        sh '''cd nvblox/build && cmake .. && make -j8'''
+        sh '''mkdir -p nvblox/install'''
+        sh '''cd nvblox/build && cmake .. -DCMAKE_INSTALL_PREFIX=../install && make -j8 && make install'''
       }
     }
     stage('Test') {
       steps {
         sh '''cd nvblox/build/tests && ctest -T test --no-compress-output'''
+      }
+    }
+    stage('Link Into External Project') {
+      steps {
+        dir("nvblox_lib_test") {
+          git credentialsId: 'isaac-git-master', url: 'ssh://git@gitlab-master.nvidia.com:12051/nvblox/nvblox_lib_test.git', branch: 'main'
+        }
+        sh '''mkdir -p nvblox_lib_test/build'''
+        sh '''cd nvblox_lib_test/build && cmake .. -DNVBLOX_INSTALL_PATH=${WORKSPACE}/nvblox/install && make'''
+        sh '''cd nvblox_lib_test/build && ./min_example'''
       }
     }
   }

@@ -16,7 +16,7 @@ source_parsers = {
 }
 
 extensions = [
-    'breathe', 'exhale', 'sphinx.ext.autosectionlabel', 'recommonmark'
+    'sphinx.ext.autosectionlabel', 'recommonmark' #'breathe' 'exhale'
 ]
 
 project = name
@@ -25,8 +25,8 @@ master_doc = 'index'
 # html_theme_options = {'logo_only': True}
 
 # Setup the breathe extension
-breathe_projects = {"project": "./doxyoutput/xml"}
-breathe_default_project = "project"
+# breathe_projects = {"project": "./doxyoutput/xml"}
+# breathe_default_project = "project"
 
 # Setup the exhale extension
 exhale_args = {
@@ -36,8 +36,8 @@ exhale_args = {
     "rootFileTitle": "Library API",
     "doxygenStripFromPath": "..",
     "createTreeView": True,
-    "exhaleExecutesDoxygen": True,
-    "exhaleUseDoxyfile": True,
+    # "exhaleExecutesDoxygen": False, # SWITCH TO TRUE
+    # "exhaleUseDoxyfile": False, # SWITCH TO TRUE
     # "pageLevelConfigMeta": ":github_url: https://github.com/ethz-asl/" + name
 }
 

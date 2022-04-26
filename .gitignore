@@ -39,6 +39,7 @@
 
 # Build files
 *build
+*install
 
 # Python
 *.pyc

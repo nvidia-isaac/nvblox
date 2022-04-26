@@ -131,9 +131,10 @@ class SphereTracingTest : public ::testing::Test {
       T_S_C.pretranslate(cartesian_coordinates);
 
       // Generate a depth image of the scene.
-      SphereTracer::Params params;
-      scene.generateDepthImageFromScene(
-          *camera_ptr_, T_S_C, params.maximum_ray_length_m, &depth_image);
+      SphereTracer sphere_tracer;
+      scene.generateDepthImageFromScene(*camera_ptr_, T_S_C,
+                                        sphere_tracer.maximum_ray_length_m(),
+                                        &depth_image);
 
       // Integrate this depth image.
       integrator.integrateFrame(depth_image, T_S_C, *camera_ptr_, layer_ptr);
@@ -146,6 +147,17 @@ class SphereTracingInScaledDistanceFieldTest
       public ::testing::WithParamInterface<float> {
  protected:
   // Yo dawg I heard you like params
+};
+
+class SphereTracerTester : public SphereTracer {
+ public:
+  SphereTracerTester() : SphereTracer() {}
+
+  // Expose the protected method to cast a single ray.
+  bool castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
+                 const float truncation_distance_m, float* t) const {
+    return SphereTracer::castOnGPU(ray, tsdf_layer, truncation_distance_m, t);
+  }
 };
 
 TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
@@ -182,7 +194,7 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
   callFunctionOnAllVoxels<TsdfVoxel>(layer_.get(), scaling_lambda);
 
   // Sphere tracer
-  SphereTracer sphere_tracer_gpu;
+  SphereTracerTester sphere_tracer_gpu;
 
   // Test a number of random rays
   constexpr int kNumTests = 1000;
@@ -296,9 +308,9 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
     render_timer.Stop();
 
     // Generate a GT image
-    scene.generateDepthImageFromScene(
-        *camera_ptr_, T_S_C, sphere_tracer_gpu.params().maximum_ray_length_m,
-        &depth_frame_gt);
+    scene.generateDepthImageFromScene(*camera_ptr_, T_S_C,
+                                      sphere_tracer_gpu.maximum_ray_length_m(),
+                                      &depth_frame_gt);
 
     // Error image
     test_utils::getDifferenceImageOnGPU(*depth_image_sphere_traced_ptr,
@@ -471,6 +483,17 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
   io::writeToCsv("sphere_tracing_image_half.csv", depth_image_half);
   io::writeToCsv("sphere_tracing_image_quarter.csv", depth_image_quarter);
   io::writeToCsv("sphere_tracing_image_subsampling_diff.csv", diff);
+}
+
+TEST_F(SphereTracingTest, GettersAndSetters) {
+  // Sphere tracer
+  SphereTracer sphere_tracer;
+  sphere_tracer.maximum_steps(1);
+  sphere_tracer.maximum_ray_length_m(2.0f);
+  sphere_tracer.surface_distance_epsilon_vox(3.0f);
+  EXPECT_EQ(sphere_tracer.maximum_steps(), 1);
+  EXPECT_EQ(sphere_tracer.maximum_ray_length_m(), 2.0f);
+  EXPECT_EQ(sphere_tracer.surface_distance_epsilon_vox(), 3.0f);
 }
 
 int main(int argc, char** argv) {
