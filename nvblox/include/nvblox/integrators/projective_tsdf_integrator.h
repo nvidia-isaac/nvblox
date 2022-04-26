@@ -23,30 +23,49 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/core/voxels.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
-#include "nvblox/integrators/frustum.h"
 #include "nvblox/integrators/projective_integrator_base.h"
+#include "nvblox/integrators/view_calculator.h"
 
 namespace nvblox {
 
+/// A class performing TSDF intregration
+///
+/// Integrates a depth images into TSDF layers. The "projective" is a describes
+/// one type of integration. Namely that voxels in view are projected into the
+/// depth image (the alternative being casting rays out from the camera).
 class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
  public:
   ProjectiveTsdfIntegrator();
   virtual ~ProjectiveTsdfIntegrator();
 
+  /// Integrates a depth image in to the passed TSDF layer.
+  /// @param depth_frame A depth image.
+  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
+  /// points in the camera frame (C) to the layer frame (L).
+  /// @param camera A the camera (intrinsics) model.
+  /// @param layer A pointer to the layer into which this observation will be
+  /// intergrated.
+  /// @param updated_blocks Optional pointer to a vector which will contain the
+  /// 3D indices of blocks affected by the integration.
   void integrateFrame(const DepthImage& depth_frame, const Transform& T_L_C,
                       const Camera& camera, TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
 
+  /// Blocks until GPU operations are complete
+  /// Ensure outstanding operations are finished (relevant for integrators
+  /// launching asynchronous work)
   void finish() const override;
 
  protected:
+  // Given a set of blocks in view (block_indices) perform TSDF updates on all
+  // voxels within these blocks on the GPU.
   virtual void updateBlocks(const std::vector<Index3D>& block_indices,
                             const DepthImage& depth_frame,
                             const Transform& T_L_C, const Camera& camera,
                             const float truncation_distance_m,
                             TsdfLayer* layer);
 
-  // Blocks to integrate on the current call and their indices
+  // Blocks to integrate on the current call (indices and pointers)
   // NOTE(alexmillane): We have one pinned host and one device vector and
   // transfer between them.
   device_vector<Index3D> block_indices_device_;

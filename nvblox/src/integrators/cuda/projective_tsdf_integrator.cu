@@ -18,8 +18,8 @@ limitations under the License.
 #include "nvblox/core/color.h"
 #include "nvblox/core/cuda/error_check.cuh"
 #include "nvblox/core/interpolation_2d.h"
-#include "nvblox/integrators/cuda/projective_integrators_common.cuh"
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
+#include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
@@ -50,8 +50,10 @@ void ProjectiveTsdfIntegrator::integrateFrame(
 
   // Identify blocks we can (potentially) see (CPU)
   timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
-  const std::vector<Index3D> block_indices = getBlocksInViewUsingRaycasting(
-      depth_frame, T_L_C, camera, layer->block_size());
+  const std::vector<Index3D> block_indices =
+      view_calculator_.getBlocksInImageViewRaycast(
+          depth_frame, T_L_C, camera, layer->block_size(),
+          truncation_distance_m, max_integration_distance_m_);
   blocks_in_view_timer.Stop();
 
   // Allocate blocks (CPU)
@@ -169,8 +171,7 @@ void ProjectiveTsdfIntegrator::updateBlocks(
   // Expand the buffers when needed
   if (num_blocks > block_indices_device_.size()) {
     constexpr float kBufferExpansionFactor = 1.5f;
-    const int new_size =
-        static_cast<int>(kBufferExpansionFactor * num_blocks);
+    const int new_size = static_cast<int>(kBufferExpansionFactor * num_blocks);
     block_indices_device_.reserve(new_size);
     block_ptrs_device_.reserve(new_size);
     block_indices_host_.reserve(new_size);

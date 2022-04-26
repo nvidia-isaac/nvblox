@@ -24,7 +24,7 @@ limitations under the License.
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
-#include "nvblox/ray_tracing/sphere_tracer.h"
+#include "nvblox/rays/sphere_tracer.h"
 #include "nvblox/utils/timing.h"
 
 #include "nvblox/tests/gpu_image_routines.h"

@@ -32,7 +32,7 @@ limitations under the License.
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
-#include "nvblox/ray_tracing/sphere_tracer.h"
+#include "nvblox/rays/sphere_tracer.h"
 
 namespace nvblox {
 namespace experiments {

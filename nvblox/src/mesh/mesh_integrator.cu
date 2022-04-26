@@ -24,7 +24,7 @@ limitations under the License.
 
 #include "nvblox/core/accessors.h"
 #include "nvblox/core/common_names.h"
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/mesh/impl/marching_cubes_table.h"
 #include "nvblox/mesh/marching_cubes.h"
 #include "nvblox/mesh/mesh_integrator.h"

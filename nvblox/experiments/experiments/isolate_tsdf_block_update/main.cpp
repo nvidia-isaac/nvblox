@@ -24,7 +24,7 @@ limitations under the License.
 #include "nvblox/core/cuda/warmup.h"
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/parse_3dmatch.h"
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/utils/timing.h"
 
@@ -47,6 +47,14 @@ class ProjectiveTsdfIntegratorExperiment : public ProjectiveTsdfIntegrator {
                                            camera, truncation_distance_m,
                                            layer);
   }
+
+  // Expose this publically
+  //   std::vector<Index3D> getBlocksInViewUsingRaycasting(
+  //       const DepthImage& depth_frame, const Transform& T_L_C,
+  //       const Camera& camera, const float block_size) const {
+  //     return ProjectiveTsdfIntegrator::getBlocksInViewUsingRaycasting(
+  //         depth_frame, T_L_C, camera, block_size);
+  //   }
 };
 
 int main(int argc, char* argv[]) {
@@ -63,8 +71,11 @@ int main(int argc, char* argv[]) {
   ProjectiveTsdfIntegratorExperiment tsdf_integrator;
 
   const unsigned int frustum_raycast_subsampling_rate = 4;
-  tsdf_integrator.frustum_calculator().raycast_subsampling_factor(
+  tsdf_integrator.view_calculator().raycast_subsampling_factor(
       frustum_raycast_subsampling_rate);
+
+  const float truncation_distance_m =
+      tsdf_integrator.truncation_distance_vox() * kVoxelSize;
 
   // Update identified blocks (many times)
   constexpr int kNumIntegrations = 1000;
@@ -92,8 +103,10 @@ int main(int argc, char* argv[]) {
     // Identify blocks we can (potentially) see (CPU)
     timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
     const std::vector<Index3D> block_indices =
-        tsdf_integrator.getBlocksInViewUsingRaycasting(
-            depth_frame, T_L_C, camera, tsdf_layer.block_size());
+        tsdf_integrator.view_calculator().getBlocksInImageViewRaycast(
+            depth_frame, T_L_C, camera, tsdf_layer.block_size(),
+            truncation_distance_m,
+            tsdf_integrator.max_integration_distance_m());
     blocks_in_view_timer.Stop();
 
     // Allocate blocks (CPU)
@@ -102,8 +115,6 @@ int main(int argc, char* argv[]) {
     allocate_blocks_timer.Stop();
 
     timing::Timer update_blocks_timer("tsdf/integrate/update_blocks");
-    const float truncation_distance_m =
-        tsdf_integrator.truncation_distance_vox() * kVoxelSize;
     tsdf_integrator.updateBlocks(block_indices, depth_frame, T_L_C, camera,
                                  truncation_distance_m, &tsdf_layer);
     update_blocks_timer.Stop();

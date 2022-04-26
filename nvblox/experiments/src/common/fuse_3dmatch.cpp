@@ -41,9 +41,9 @@ Fuse3DMatch::Fuse3DMatch(const std::string& base_path,
   mapper_.mesh_integrator().min_weight() = 2.0f;
   mapper_.color_integrator().max_integration_distance_m(5.0f);
   mapper_.tsdf_integrator().max_integration_distance_m(5.0f);
-  mapper_.tsdf_integrator().frustum_calculator().raycast_subsampling_factor(4);
-  mapper_.esdf_integrator().max_distance_m() = 4.0f;
-  mapper_.esdf_integrator().min_weight() = 2.0f;
+  mapper_.tsdf_integrator().view_calculator().raycast_subsampling_factor(4);
+  mapper_.esdf_integrator().max_distance_m(4.0f);
+  mapper_.esdf_integrator().min_weight(2.0f);
 };
 
 int Fuse3DMatch::run() {

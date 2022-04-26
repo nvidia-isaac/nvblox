@@ -49,8 +49,4 @@ struct ColorVoxel {
   float weight = 0.0f;
 };
 
-struct FreespaceVoxel {
-  bool free = true;
-};
-
 }  // namespace nvblox

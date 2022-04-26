@@ -1,17 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
 # set the project name and version
-project(nvblox VERSION 0.0.2 LANGUAGES CXX CUDA)
+project(nvblox VERSION 0.1 LANGUAGES CXX CUDA)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-
-# This link flag replaces "runpath" with "rpath" in executables and shared objects.
-# This is important because it means the search paths are passed down the shared object tree.
-# https://stackoverflow.com/questions/58997230/cmake-project-fails-to-find-shared-library 
-SET(nvblox_link_options "-Wl,--disable-new-dtags")
 
 # Build options
 option(BUILD_EXPERIMENTS "Build performance experimentation binaries" ON)
@@ -53,6 +48,8 @@ find_package(gflags REQUIRED)
 
 # Include dirs
 include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+include_directories(${EIGEN_INCLUDE_DIRS})
+include_directories(${STDGPU_INCLUDE_DIRS})
 include_directories(include)
 
 #############
@@ -69,16 +66,12 @@ add_library(nvblox_gpu_hash SHARED
     src/utils/timing.cpp
     src/utils/nvtx_ranges.cpp
 )
-add_dependencies(nvblox_gpu_hash nvblox_eigen stdgpu)
+add_dependencies(nvblox_gpu_hash ext_eigen stdgpu)
 target_link_libraries(nvblox_gpu_hash PUBLIC
     stdgpu
     nvblox_cuda_check
-    nvblox_eigen
     ${CUDA_nvToolsExt_LIBRARY}
-    gflags
-    ${GLOG_LIBRARIES}
 )
-target_link_options(nvblox_gpu_hash PUBLIC ${nvblox_link_options})
 
 add_library(nvblox_lib SHARED
     src/core/bounding_boxes.cpp
@@ -92,14 +85,14 @@ add_library(nvblox_lib SHARED
     src/core/mapper.cpp
     src/datasets/image_loader.cpp
     src/datasets/parse_3dmatch.cpp
-    src/integrators/cuda/frustum.cu
+    src/integrators/cuda/view_calculator.cu
     src/integrators/cuda/projective_tsdf_integrator.cu
     src/integrators/cuda/projective_color_integrator.cu
     src/integrators/cuda/esdf_integrator.cu
     src/integrators/esdf_integrator.cpp
-    src/integrators/frustum.cpp
+    src/integrators/view_calculator.cpp
     src/integrators/projective_integrator_base.cpp
-    src/ray_tracing/cuda/sphere_tracer.cu
+    src/rays/cuda/sphere_tracer.cu
     src/io/csv.cpp
     src/io/mesh_io.cpp
     src/io/ply_writer.cpp
@@ -114,6 +107,7 @@ add_library(nvblox_lib SHARED
     src/utils/nvtx_ranges.cpp
     src/utils/timing.cpp
 )
+add_dependencies(nvblox_lib ext_eigen)
 target_link_libraries(nvblox_lib PUBLIC
     ${GLOG_LIBRARIES}
     gflags
@@ -121,23 +115,18 @@ target_link_libraries(nvblox_lib PUBLIC
     ${CUDA_nvToolsExt_LIBRARY}
     nvblox_gpu_hash
     nvblox_cuda_check
-    nvblox_eigen
 )
-target_link_options(nvblox_lib PUBLIC ${nvblox_link_options})
+target_link_libraries(nvblox_lib INTERFACE
+    stdgpu
+)
 target_include_directories(nvblox_lib PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${EIGEN_INCLUDE_DIRS}>
+    $<INSTALL_INTERFACE:include/eigen3>
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
-)
-
+)    
 set_target_properties(nvblox_lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
-    set_target_properties(nvblox_lib PROPERTIES CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
-    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CUDA_ARCHITECTURES)    
-else()
-    set_target_properties(nvblox_lib PROPERTIES CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS})
-    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CMAKE_CUDA_FLAGS)
-endif()
 
 ############
 # BINARIES #
@@ -175,23 +164,22 @@ target_link_libraries(nvblox_interface INTERFACE
     nvblox_cuda_check 
     ${GLOG_LIBRARIES} 
     ${CUDA_LIBRARIES} 
+    stdgpu 
     Eigen3::Eigen
-    gflags
 )
 target_include_directories(nvblox_interface INTERFACE include ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+add_dependencies(nvblox_interface ext_eigen ext_stdgpu)
 
 ##########
 # EXPORT #
 ##########
 include(GNUInstallDirs)
 
-set_target_properties(stdgpu PROPERTIES INTERFACE_LINK_LIBRARIES "")
-
 install( 
-  TARGETS nvblox_lib nvblox_gpu_hash nvblox_cuda_check stdgpu nvblox_eigen
-  EXPORT nvbloxTargets
+  TARGETS nvblox_lib nvblox_gpu_hash nvblox_cuda_check stdgpu
+  EXPORT nvblox
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
@@ -199,25 +187,21 @@ install(
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h*"
 )
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/eigen/include/eigen3
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    PATTERN "*/unsupported**" EXCLUDE
-)
+
 
 include(CMakePackageConfigHelpers)
 # generate the config file that is includes the exports
-configure_package_config_file(cmake/Config.cmake.in
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/nvbloxConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+  INSTALL_DESTINATION "lib/cmake"
   NO_SET_AND_CHECK_MACRO
   NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
-
 # generate the version file for the config file
 write_basic_package_version_file(
-  "nvbloxConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/nvbloxConfigVersion.cmake"
   VERSION "${nvblox_VERSION_MAJOR}.${nvblox_VERSION_MINOR}"
   COMPATIBILITY AnyNewerVersion
 )
@@ -226,10 +210,19 @@ write_basic_package_version_file(
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/nvbloxConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/nvbloxConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/nvbloxTargets.cmake
     DESTINATION share/nvblox/cmake)
 
-install(
-    EXPORT nvbloxTargets
+# generate the export targets for the build tree
+# needs to be after the install(TARGETS ) command
+export(EXPORT nvblox
     NAMESPACE nvblox::
-    DESTINATION share/nvblox/cmake
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/nvbloxTargets.cmake"
+)
+
+install(
+    EXPORT nvblox 
+    FILE nvbloxTargets.cmake
+    NAMESPACE nvblox::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

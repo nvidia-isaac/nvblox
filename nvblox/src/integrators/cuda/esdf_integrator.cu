@@ -129,7 +129,7 @@ __device__ void clearVoxelDevice(EsdfVoxel* voxel,
 __global__ void markAllSitesKernel(int num_blocks,
                                    const TsdfBlock** tsdf_blocks,
                                    EsdfBlock** esdf_blocks,
-                                   float min_site_distance_m, float min_weight,
+                                   float max_site_distance_m, float min_weight,
                                    float max_squared_distance_vox,
                                    bool* updated, bool* to_clear) {
   dim3 voxel_index = threadIdx;
@@ -153,7 +153,7 @@ __global__ void markAllSitesKernel(int num_blocks,
         to_clear[block_index] = true;
       }
       esdf_voxel->is_inside = is_inside;
-      if (is_inside && fabsf(tsdf_voxel->distance) <= min_site_distance_m) {
+      if (is_inside && fabsf(tsdf_voxel->distance) <= max_site_distance_m) {
         esdf_voxel->is_site = true;
         esdf_voxel->squared_distance_vox = 0.0f;
         esdf_voxel->parent_direction.setZero();
@@ -194,7 +194,7 @@ __device__ __forceinline__ float atomicMinFloat(float* addr, float value) {
 __global__ void markSitesInSliceKernel(
     int num_input_blocks, int num_output_blocks, const TsdfBlock** tsdf_blocks,
     EsdfBlock** esdf_blocks, int output_voxel_index, int input_min_voxel_index,
-    int input_max_voxel_index, float min_site_distance_m, float min_weight,
+    int input_max_voxel_index, float max_site_distance_m, float min_weight,
     float max_squared_distance_vox, bool* updated, bool* cleared) {
   dim3 voxel_index = threadIdx;
   voxel_index.z = output_voxel_index;
@@ -263,7 +263,7 @@ __global__ void markSitesInSliceKernel(
       // Determine if the new value puts us inside or in a site.
       bool is_inside = min_distance[voxel_index.x][voxel_index.y] <= 0.0f;
       bool is_site = fabsf(min_distance[voxel_index.x][voxel_index.y]) <=
-                         min_site_distance_m &&
+                         max_site_distance_m &&
                      is_inside;
 
       // First handle the case where the voxel is a site.
@@ -675,7 +675,7 @@ void EsdfIntegrator::markAllSitesOnGPU(
   const float max_distance_vox = max_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
   // Cache the minimum distance in metric size.
-  const float min_site_distance_m = min_site_distance_vox_ * voxel_size;
+  const float max_site_distance_m = max_site_distance_vox_ * voxel_size;
 
   int num_blocks = block_indices.size();
 
@@ -714,7 +714,7 @@ void EsdfIntegrator::markAllSitesOnGPU(
   dim3 dim_threads(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
   markAllSitesKernel<<<dim_block, dim_threads, 0, cuda_stream_>>>(
       num_blocks, tsdf_pointers_device_.data(), block_pointers_device_.data(),
-      min_site_distance_m, min_weight_, max_squared_distance_vox,
+      max_site_distance_m, min_weight_, max_squared_distance_vox,
       updated_blocks_device_.data(), cleared_blocks_device_.data());
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
   checkCudaErrors(cudaPeekAtLastError());
@@ -750,7 +750,7 @@ void EsdfIntegrator::markSitesInSliceOnGPU(
   const float max_distance_vox = max_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
   // Cache the minimum distance in metric size.
-  const float min_site_distance_m = min_site_distance_vox_ * voxel_size;
+  const float max_site_distance_m = max_site_distance_vox_ * voxel_size;
 
   // We are going to subsample the block_indices.
   // We need to figure out all the output blocks, which will be a subset
@@ -851,7 +851,7 @@ void EsdfIntegrator::markSitesInSliceOnGPU(
   markSitesInSliceKernel<<<dim_block, dim_threads, 0, cuda_stream_>>>(
       num_blocks, num_blocks, tsdf_pointers_device_.data(),
       block_pointers_device_.data(), output_voxel_index_z, min_voxel_index_z,
-      max_voxel_index_z, min_site_distance_m, min_weight_,
+      max_voxel_index_z, max_site_distance_m, min_weight_,
       max_squared_distance_vox, updated_blocks_device_.data(),
       cleared_blocks_device_.data());
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
