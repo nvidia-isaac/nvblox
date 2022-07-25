@@ -27,8 +27,18 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr  --generate-l
                         -Xcudafe --display_error_number -Xcudafe --diag_suppress=2977  \
                         -Xcudafe --diag_suppress=3057  -Xcudafe --diag_suppress=3059 \
                         -Xcudafe --diag_suppress=20091 -Xcudafe --diag_suppress=20012  \
-                        -Xcudafe --diag_suppress=20054   -Xcudafe --diag_suppress=20236")
+                        -Xcudafe --diag_suppress=20054")
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
+
+execute_process(
+  COMMAND uname -m
+  COMMAND tr -d '\n'
+  OUTPUT_VARIABLE ARCHITECTURE)
+message(STATUS "Architecture: ${ARCHITECTURE}")
+
+if(${ARCHITECTURE} STREQUAL "x86_64")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe --diag_suppress=20236")
+endif()
 
 # New warning numbers above CUDA 11.2.
 if (CUDA_VERSION_MAJOR EQUAL 11 AND CUDA_VERSION_MINOR GREATER_EQUAL 2)
