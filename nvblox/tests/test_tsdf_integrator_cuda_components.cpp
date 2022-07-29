@@ -145,8 +145,9 @@ TEST_F(CudaTsdfIntegratorTest, GpuDepthImageInterpolation) {
   Eigen::MatrixX2f u_px_vec(kNumTests, 2);
   for (int i = 0; i < kNumTests; i++) {
     u_px_vec.row(i) = Vector2f(
-        test_utils::randomFloatInRange(0.0f, static_cast<float>(width_ - 1)),
-        test_utils::randomFloatInRange(0.0f, static_cast<float>(height_ - 1)));
+        test_utils::randomFloatInRange(0.5f, static_cast<float>(width_ - 0.5f)),
+        test_utils::randomFloatInRange(0.5f,
+                                       static_cast<float>(height_ - 0.5f)));
   }
 
   // CPU interpolation

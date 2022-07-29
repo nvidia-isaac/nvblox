@@ -25,12 +25,15 @@ class BoundingPlane;
 /// Class that describes the parameters and FoV of a camera.
 class Camera {
  public:
+  __host__ __device__ inline Camera() = default;
   __host__ __device__ inline Camera(float fu, float fv, float cu, float cv,
                                     int width, int height);
   __host__ __device__ inline Camera(float fu, float fv, int width, int height);
 
   __host__ __device__ inline bool project(const Vector3f& p_C,
                                           Vector2f* u_C) const;
+
+  __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
   /// Get the axis aligned bounding box of the view in the LAYER coordinate
   /// frame.
@@ -49,9 +52,9 @@ class Camera {
   // the passed pixel.
   // Two functions, one for (floating point) image-plane coordinates, another
   // function for pixel indices.
-  __host__ __device__ inline Vector3f rayFromImagePlaneCoordinates(
+  __host__ __device__ inline Vector3f vectorFromImagePlaneCoordinates(
       const Vector2f& u_C) const;
-  __host__ __device__ inline Vector3f rayFromPixelIndices(
+  __host__ __device__ inline Vector3f vectorFromPixelIndices(
       const Index2D& u_C) const;
 
   // Accessors
@@ -69,14 +72,17 @@ class Camera {
                                             int width, int height);
 
  private:
-  const float fu_;
-  const float fv_;
-  const float cu_;
-  const float cv_;
+  float fu_;
+  float fv_;
+  float cu_;
+  float cv_;
 
-  const int width_;
-  const int height_;
+  int width_;
+  int height_;
 };
+
+// Stream Camera as text
+std::ostream& operator<<(std::ostream& os, const Camera& camera);
 
 /// A bounding plane which has one "inside" direction and the other direction is
 /// "outside." Quick tests for which side of the plane you are on.

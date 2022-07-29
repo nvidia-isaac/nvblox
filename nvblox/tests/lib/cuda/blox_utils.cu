@@ -39,6 +39,27 @@ void setTsdfBlockVoxelsInSequence(TsdfBlock::Ptr block) {
   const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
   setTsdfBlockVoxelsInSequenceKernel<<<kNumBlocks, kThreadsPerBlock>>>(
       block.get());
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaPeekAtLastError());
+}
+
+__global__ void setTsdfBlockVoxelsConstantKernel(TsdfBlock* block, float distance) {
+  const int lin_idx =
+      threadIdx.x + TsdfBlock::kVoxelsPerSide *
+                        (threadIdx.y + TsdfBlock::kVoxelsPerSide * threadIdx.z);
+  TsdfVoxel* voxel_ptr = &block->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
+  voxel_ptr->distance = distance;
+}
+
+void setTsdfBlockVoxelsConstant(const float distance, TsdfBlock::Ptr block) {
+  CHECK(block.memory_type() != MemoryType::kHost);
+  constexpr int kNumBlocks = 1;
+  constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
+  const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
+  setTsdfBlockVoxelsConstantKernel<<<kNumBlocks, kThreadsPerBlock>>>(
+      block.get(), distance);
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaPeekAtLastError());
 }
 
 __global__ void checkBlockAllConstant(const TsdfBlock* block,

@@ -23,6 +23,37 @@ limitations under the License.
 
 namespace nvblox {
 
+template <typename BlockType>
+BlockLayer<BlockType>::BlockLayer(const BlockLayer& other)
+    : BlockLayer(other, other.memory_type_) {}
+
+template <typename BlockType>
+BlockLayer<BlockType>::BlockLayer(const BlockLayer& other,
+                                  MemoryType memory_type)
+    : BlockLayer(other.block_size_, memory_type) {
+  LOG(INFO) << "Deep copy of BlockLayer containing "
+            << other.numAllocatedBlocks() << " blocks.";
+  // Re-create all the blocks.
+  std::vector<Index3D> all_block_indices = other.getAllBlockIndices();
+
+  // Iterate over all blocks, clonin'.
+  for (const Index3D& block_index : all_block_indices) {
+    typename BlockType::ConstPtr block = other.getBlockAtIndex(block_index);
+    if (block == nullptr) {
+      continue;
+    }
+    blocks_.emplace(block_index, block.clone(memory_type_));
+  }
+}
+
+template <typename BlockType>
+BlockLayer<BlockType>& BlockLayer<BlockType>::operator=(
+    const BlockLayer<BlockType>& other) {
+  BlockLayer<BlockType> new_layer(other, memory_type_);
+  *this = std::move(new_layer);
+  return *this;
+}
+
 // Block accessors by index.
 template <typename BlockType>
 typename BlockType::Ptr BlockLayer<BlockType>::getBlockAtIndex(
@@ -151,12 +182,48 @@ void VoxelBlockLayer<VoxelType>::getVoxels(
     const auto block_raw_ptr = block_ptr.get();
     const VoxelType* voxel_ptr =
         &block_raw_ptr->voxels[voxel_idx.x()][voxel_idx.y()][voxel_idx.z()];
-    // Copy the Voxel to the CPU
-    cudaMemcpyAsync(&(*voxels_ptr)[i], voxel_ptr, sizeof(VoxelType),
-                    cudaMemcpyDefault, transfer_stream);
+    // Copy the Voxel to the CPU (if on the GPU)
+    if (this->memory_type_ == MemoryType::kDevice) {
+      cudaMemcpyAsync(&(*voxels_ptr)[i], voxel_ptr, sizeof(VoxelType),
+                      cudaMemcpyDefault, transfer_stream);
+    }
+    // Accessible by the CPU, just do a normal copy
+    else {
+      (*voxels_ptr)[i] = *voxel_ptr;
+    }
   }
   cudaStreamSynchronize(transfer_stream);
   checkCudaErrors(cudaStreamDestroy(transfer_stream));
+}
+
+template <typename VoxelType>
+std::pair<VoxelType, bool> VoxelBlockLayer<VoxelType>::getVoxel(
+    const Vector3f& p_L) const {
+  const std::vector<Vector3f> positions_L(1, p_L);
+  std::vector<VoxelType> voxels;
+  std::vector<bool> success_flags;
+  getVoxels(positions_L, &voxels, &success_flags);
+  return {voxels[0], success_flags[0]};
+}
+
+template <typename VoxelType>
+VoxelBlockLayer<VoxelType>::VoxelBlockLayer(const VoxelBlockLayer& other)
+    : VoxelBlockLayer(other, other.memory_type_) {}
+
+template <typename VoxelType>
+VoxelBlockLayer<VoxelType>::VoxelBlockLayer(const VoxelBlockLayer& other,
+                                            MemoryType memory_type)
+    : BlockLayer<VoxelBlock<VoxelType>>(other, memory_type),
+      voxel_size_(other.voxel_size_) {
+  // Copying done in the base class.
+}
+
+template <typename VoxelType>
+VoxelBlockLayer<VoxelType>& VoxelBlockLayer<VoxelType>::operator=(
+    const VoxelBlockLayer<VoxelType>& other) {
+  VoxelBlockLayer<VoxelType> new_layer(other, this->memory_type_);
+  *this = std::move(new_layer);
+  return *this;
 }
 
 namespace internal {

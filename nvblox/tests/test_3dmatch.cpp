@@ -19,7 +19,7 @@ limitations under the License.
 
 #include "nvblox/core/image.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/datasets/parse_3dmatch.h"
+#include "nvblox/datasets/3dmatch.h"
 
 // DEBUG
 #include <chrono>
@@ -38,12 +38,12 @@ class Dataset3DMatchTest : public ::testing::Test {
 
 TEST_F(Dataset3DMatchTest, ParseTransform) {
   const std::string transform_filename =
-      datasets::threedmatch::getPathForFramePose(base_path_, 1, 0);
+      datasets::threedmatch::internal::getPathForFramePose(base_path_, 1, 0);
 
   Transform T_L_C_test;
 
-  ASSERT_TRUE(datasets::threedmatch::parsePoseFromFile(transform_filename,
-                                                       &T_L_C_test));
+  ASSERT_TRUE(datasets::threedmatch::internal::parsePoseFromFile(
+      transform_filename, &T_L_C_test));
 
   Eigen::Matrix4f T_L_C_mat;
   T_L_C_mat << 3.13181000e-01, 3.09473000e-01, -8.97856000e-01, 1.97304600e+00,
@@ -58,12 +58,12 @@ TEST_F(Dataset3DMatchTest, ParseTransform) {
 
 TEST_F(Dataset3DMatchTest, ParseCameraIntrinsics) {
   const std::string intrinsics_filename =
-      datasets::threedmatch::getPathForCameraIntrinsics(base_path_);
+      datasets::threedmatch::internal::getPathForCameraIntrinsics(base_path_);
 
   Eigen::Matrix3f intrinsics_test;
 
-  ASSERT_TRUE(datasets::threedmatch::parseCameraFromFile(intrinsics_filename,
-                                                         &intrinsics_test));
+  ASSERT_TRUE(datasets::threedmatch::internal::parseCameraFromFile(
+      intrinsics_filename, &intrinsics_test));
 
   Eigen::Matrix3f intrinsics_true;
   intrinsics_true << 5.70342205e+02, 0.00000000e+00, 3.20000000e+02,
@@ -75,7 +75,7 @@ TEST_F(Dataset3DMatchTest, ParseCameraIntrinsics) {
 
 TEST_F(Dataset3DMatchTest, LoadImage) {
   const std::string image_filename =
-      datasets::threedmatch::getPathForDepthImage(base_path_, 1, 0);
+      datasets::threedmatch::internal::getPathForDepthImage(base_path_, 1, 0);
 
   DepthImage image;
   ASSERT_TRUE(datasets::load16BitDepthImage(image_filename, &image));
@@ -97,15 +97,14 @@ class LoaderParameterizedTest
 
 TEST_P(LoaderParameterizedTest, ImageLoaderObject) {
   const LoaderType loader_type = GetParam();
+  constexpr int seq_id = 1;
   std::unique_ptr<datasets::ImageLoader<DepthImage>> depth_loader_ptr;
   if (loader_type == LoaderType::kSingleThreaded) {
-    depth_loader_ptr =
-        datasets::threedmatch::createDepthImageLoader(base_path_, 1);
+    depth_loader_ptr = datasets::threedmatch::internal::createDepthImageLoader(
+        base_path_, seq_id, false);
   } else {
-    constexpr int kNumThreads = 6;
-    depth_loader_ptr =
-        datasets::threedmatch::createMultithreadedDepthImageLoader(
-            base_path_, 1, kNumThreads);
+    depth_loader_ptr = datasets::threedmatch::internal::createDepthImageLoader(
+        base_path_, seq_id, true);
   }
 
   DepthImage depth_image_1;

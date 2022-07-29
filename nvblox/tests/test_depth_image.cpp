@@ -105,6 +105,25 @@ TEST_F(DepthImageTest, DeviceReduction) {
   EXPECT_EQ(minmax.second, kMaxValue);
 }
 
+TEST_F(DepthImageTest, GpuOperation) {
+  // Set constant on CPU
+  constexpr float kPixelValue = 1.0f;
+  setImageConstantOnCpu(kPixelValue, &depth_frame_);
+
+  // Element wise min
+  image::elementWiseMinInPlace(0.5f, &depth_frame_);
+
+  // Reduction on the GPU
+  const float max = image::max(depth_frame_);
+  EXPECT_EQ(max, 0.5f);
+
+  // Element wise max
+  image::elementWiseMaxInPlace(1.5f, &depth_frame_);
+
+  const float min = image::min(depth_frame_);
+  EXPECT_EQ(min, 1.5f);
+}
+
 TEST_F(DepthImageTest, LinearInterpolation) {
   // The images {depth_frame_col_coords, depth_frame_row_coords} are set up such
   // that if you interpolate, you should get the interpolated position back.
@@ -189,6 +208,35 @@ TEST_F(DepthImageTest, InterpolationGPU) {
     EXPECT_NEAR(values_x[i], u_px_vec[i].x(), kFloatEpsilon);
     EXPECT_NEAR(values_y[i], u_px_vec[i].y(), kFloatEpsilon);
   }
+}
+
+TEST_F(DepthImageTest, ValidityCheckers) {
+  // Tiny images
+  DepthImage image(2, 2, MemoryType::kUnified);
+  image(0, 0) = -1.0f;
+  image(0, 1) = -1.0f;
+  image(1, 0) = -1.0f;
+  image(1, 1) = -1.0f;
+
+  // Linear
+  const Vector2f u_px(1.0, 1.0);
+  float interpolated_value;
+  EXPECT_TRUE(
+      interpolation::interpolate2DLinear(image, u_px, &interpolated_value));
+  EXPECT_EQ(interpolated_value, -1.0);
+  bool res = interpolation::interpolate2DLinear<
+      float, interpolation::checkers::FloatPixelGreaterThanZero>(
+      image, u_px, &interpolated_value);
+  EXPECT_FALSE(res);
+
+  // Closest
+  EXPECT_TRUE(
+      interpolation::interpolate2DClosest(image, u_px, &interpolated_value));
+  EXPECT_EQ(interpolated_value, -1.0);
+  res = interpolation::interpolate2DClosest<
+      float, interpolation::checkers::FloatPixelGreaterThanZero>(
+      image, u_px, &interpolated_value);
+  EXPECT_FALSE(res);
 }
 
 int main(int argc, char** argv) {

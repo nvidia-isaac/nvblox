@@ -211,6 +211,24 @@ TEST(UnifiedVectorTest, HostAndDeviceVectors) {
   EXPECT_TRUE(test_utils::checkAllConstant(vec_device_3.data(), 4, kNumElems));
 }
 
+TEST(UnifiedVectorTest, BoolTest) {
+  // Setup test vector (true and false in alternating fashion)
+  unified_vector<bool> vec_unified(100);
+  for (int i = 0; i < vec_unified.size(); i++) {
+    if (i % 2 == 0) {
+      vec_unified[i] = true;
+    } else {
+      vec_unified[i] = false;
+    }
+  }
+  // Convert
+  std::vector<bool> vec_std = vec_unified.toVector();
+  // Check
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(vec_unified[i], vec_std[i]);
+  }
+}
+
 int main(int argc, char** argv) {
   warmupCuda();
   google::InitGoogleLogging(argv[0]);

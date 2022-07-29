@@ -17,7 +17,7 @@ limitations under the License.
 #include <gtest/gtest.h>
 
 #include "nvblox/core/cuda/warmup.h"
-#include "nvblox/integrators/ray_caster.h"
+#include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
 
 using namespace nvblox;

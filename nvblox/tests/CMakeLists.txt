@@ -4,26 +4,39 @@ enable_testing()
 # Copy test data into the testing space (build/tests)
 file(INSTALL "${CMAKE_CURRENT_SOURCE_DIR}/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
+# Copy some (python) visualization tools
+file(CREATE_LINK
+    "${CMAKE_CURRENT_SOURCE_DIR}/visualization/visualize_csv_depth_image.py"
+    "${CMAKE_CURRENT_BINARY_DIR}/visualize_csv_depth_image.py"
+    SYMBOLIC
+)
+file(CREATE_LINK
+    "${CMAKE_CURRENT_SOURCE_DIR}/../visualization/visualize_mesh.py"
+    "${CMAKE_CURRENT_BINARY_DIR}/visualize_mesh.py"
+    SYMBOLIC
+)
+
 # A library containing functions used by many tests.
 add_library(nvblox_test_utils SHARED
-    lib/utils.cpp
-    lib/projective_tsdf_integrator_cpu.cpp
-    lib/cuda/increment_kernel.cu
+    lib/cuda/blox_utils.cu
+    lib/cuda/blox.cu
     lib/cuda/gpu_image_routines.cu
+    lib/cuda/gpu_indexing.cu
+    lib/cuda/gpu_layer_utils.cu
+    lib/cuda/increment_kernel.cu
     lib/cuda/interpolation_2d_gpu.cu
+    lib/cuda/mesh_utils.cu
     lib/cuda/projective_tsdf_integrator_cuda_components.cu
     lib/cuda/test_utils_cuda.cu
-    lib/cuda/blox.cu
-    lib/cuda/blox_utils.cu
-    lib/cuda/gpu_layer_utils.cu
-    lib/cuda/gpu_indexing.cu
+    lib/projective_tsdf_integrator_cpu.cpp
+    lib/utils.cpp
 )
 target_include_directories(nvblox_test_utils PUBLIC
   include
   ${GTEST_INCLUDE_DIRS}
 )
 target_link_libraries(nvblox_test_utils 
-    nvblox_lib ${GTEST_LIBRARIES} ${CUDA_LIBRARIES} pthread
+    nvblox_lib nvblox_datasets ${GTEST_LIBRARIES} ${CUDA_LIBRARIES} pthread
 )
 set_target_properties(nvblox_test_utils PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
@@ -118,3 +131,19 @@ gtest_discover_tests(test_cake ${TEST_OPTIONS})
 add_executable(test_traits test_traits.cpp)
 target_link_libraries(test_traits nvblox_test_utils)
 gtest_discover_tests(test_traits ${TEST_OPTIONS})
+
+add_executable(test_serialization test_serialization.cpp)
+target_link_libraries(test_serialization nvblox_test_utils)
+gtest_discover_tests(test_serialization ${TEST_OPTIONS})
+
+add_executable(test_lidar test_lidar.cpp)
+target_link_libraries(test_lidar nvblox_test_utils)
+gtest_discover_tests(test_lidar ${TEST_OPTIONS})
+
+add_executable(test_lidar_integration test_lidar_integration.cpp)
+target_link_libraries(test_lidar_integration nvblox_test_utils)
+gtest_discover_tests(test_lidar_integration ${TEST_OPTIONS})
+
+add_executable(test_fuser test_fuser.cpp)
+target_link_libraries(test_fuser nvblox_test_utils)
+gtest_discover_tests(test_fuser ${TEST_OPTIONS})

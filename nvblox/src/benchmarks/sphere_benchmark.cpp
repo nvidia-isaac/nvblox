@@ -77,7 +77,7 @@ void SphereBenchmark::runBenchmark(const std::string& csv_output_path) {
   ProjectiveTsdfIntegrator integrator;
   MeshIntegrator mesh_integrator;
   EsdfIntegrator esdf_integrator;
-  esdf_integrator.max_distance_m() = 4.0;
+  esdf_integrator.max_distance_m(4.0f);
 
   // Scene is bounded to the dimensions above.
   primitives::Scene scene;

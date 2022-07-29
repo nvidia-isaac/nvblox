@@ -58,10 +58,10 @@ class MeshIntegrator {
                     MeshLayer* mesh_layer);
 
   float min_weight() const { return min_weight_; }
-  float& min_weight() { return min_weight_; }
+  void min_weight(float min_weight) { min_weight_ = min_weight; }
 
   bool weld_vertices() const { return weld_vertices_; }
-  bool& weld_vertices() { return weld_vertices_; }
+  void weld_vertices(bool weld_vertices) { weld_vertices_ = weld_vertices; }
 
  private:
   bool isBlockMeshable(const VoxelBlock<TsdfVoxel>::ConstPtr block,
@@ -90,15 +90,16 @@ class MeshIntegrator {
                      const std::vector<Index3D>& block_indices,
                      BlockLayer<MeshBlock>* mesh_layer);
 
-  void weldVertices(const std::vector<Index3D>& block_indices,
-                    BlockLayer<MeshBlock>* mesh_layer);
+  // Weld overlapping vertices together, updaing the normals & indices of the
+  // reduced vertex count.
+  void weldVertices(device_vector<CudaMeshBlock>* cuda_mesh_blocks);
 
   // Minimum weight to actually mesh.
   float min_weight_ = 1e-4;
 
-  /// Whether to perform vertex welding or not. It's slow but cuts down number
+  /// Whether to perform vertex welding or not. It cuts down number
   /// of vertices by 5x.
-  bool weld_vertices_ = false;
+  bool weld_vertices_ = true;
 
   // Offsets for cube indices.
   Eigen::Matrix<int, 3, 8> cube_index_offsets_;

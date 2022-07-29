@@ -20,6 +20,29 @@ limitations under the License.
 
 namespace nvblox {
 
+float EsdfIntegrator::max_distance_m() const { return max_distance_m_; }
+
+float EsdfIntegrator::max_site_distance_vox() const {
+  return max_site_distance_vox_;
+}
+
+float EsdfIntegrator::min_weight() const { return min_weight_; }
+
+void EsdfIntegrator::max_distance_m(float max_distance_m) {
+  CHECK_GT(max_distance_m, 0.0f);
+  max_distance_m_ = max_distance_m;
+}
+
+void EsdfIntegrator::max_site_distance_vox(float max_site_distance_vox) {
+  CHECK_GT(max_site_distance_vox, 0.0f);
+  max_site_distance_vox_ = max_site_distance_vox;
+}
+
+void EsdfIntegrator::min_weight(float min_weight) {
+  CHECK_GT(min_weight, 0.0f);
+  min_weight_ = min_weight;
+}
+
 // Integrate the entire layer.
 void EsdfIntegrator::integrateLayer(const TsdfLayer& tsdf_layer,
                                     EsdfLayer* esdf_layer) {
@@ -101,7 +124,7 @@ void EsdfIntegrator::markAllSitesOnCPU(
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   // Cache the minimum distance in metric size.
-  const float min_site_distance_m = min_site_distance_vox_ * voxel_size;
+  const float max_site_distance_m = max_site_distance_vox_ * voxel_size;
   int num_observed = 0;
   for (const Index3D& block_index : block_indices) {
     EsdfBlock::Ptr esdf_block = esdf_layer->getBlockAtIndex(block_index);
@@ -142,7 +165,7 @@ void EsdfIntegrator::markAllSitesOnCPU(
             }
             esdf_voxel->is_inside = now_inside;
             if (now_inside &&
-                std::abs(tsdf_voxel->distance) <= min_site_distance_m) {
+                std::abs(tsdf_voxel->distance) <= max_site_distance_m) {
               esdf_voxel->is_site = true;
               esdf_voxel->squared_distance_vox = 0.0f;
               esdf_voxel->parent_direction.setZero();

@@ -23,13 +23,15 @@ template <typename LayerType>
 LayerType* LayerCake::add(MemoryType memory_type) {
   if (layers_.count(typeid(LayerType)) == 0) {
     // Allocate
+    CHECK_GT(voxel_size_, 0.0f);
     auto layer_ptr = std::make_unique<LayerType>(
         sizeArgumentFromVoxelSize<LayerType>(voxel_size_), memory_type);
     LayerType* return_ptr = layer_ptr.get();
     // Store (as BaseLayer ptr)
     layers_.emplace(std::type_index(typeid(LayerType)), std::move(layer_ptr));
     LOG(INFO) << "Adding Layer with type: " << typeid(LayerType).name()
-              << " , and memory_type: " << toString(memory_type)
+              << ", voxel_size: " << voxel_size_
+              << ", and memory_type: " << toString(memory_type)
               << " to LayerCake.";
     return return_ptr;
   } else {
@@ -94,8 +96,7 @@ LayerCake LayerCake::create(float voxel_size, MemoryType memory_type) {
 }
 
 template <typename... LayerTypes, typename... MemoryTypes>
-LayerCake LayerCake::create(float voxel_size,
-                             MemoryTypes... memory_types) {
+LayerCake LayerCake::create(float voxel_size, MemoryTypes... memory_types) {
   static_assert(unique_types<LayerTypes...>::value,
                 "At the moment we only support LayerCakes containing unique "
                 "LayerTypes.");
@@ -104,5 +105,9 @@ LayerCake LayerCake::create(float voxel_size,
   return cake;
 }
 
+void LayerCake::insert(const std::type_index& type_index,
+                       std::unique_ptr<BaseLayer>&& layer) {
+  layers_.emplace(type_index, std::move(layer));
+}
 
 }  // namespace nvblox

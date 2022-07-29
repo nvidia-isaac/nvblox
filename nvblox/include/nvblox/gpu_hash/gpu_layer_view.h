@@ -61,8 +61,10 @@ class GPULayerView {
   // Layer params
   float block_size_;
 
-  // The load factor at which we reallocate space.
-  const float max_load_factor_ = 0.75;
+  // The load factor at which we reallocate space. Load factors of above 0.5
+  // seem to cause the hash table to overfill in some cases, so please use
+  // max loads lower than that.
+  const float max_load_factor_ = 0.5;
 
   // This is the factor by which we overallocate space 
   const float size_expansion_factor_ = 2.0f;

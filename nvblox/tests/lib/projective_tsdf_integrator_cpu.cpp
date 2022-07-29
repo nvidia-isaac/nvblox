@@ -17,9 +17,10 @@ limitations under the License.
 
 namespace nvblox {
 
+template <typename SensorType>
 void ProjectiveTsdfIntegratorCPU::updateBlocks(
     const std::vector<Index3D>& block_indices, const DepthImage& depth_frame,
-    const Transform& T_L_C, const Camera& camera,
+    const Transform& T_L_C, const SensorType& camera,
     const float truncation_distance_m, TsdfLayer* layer) {
   CHECK(layer->memory_type() == MemoryType::kUnified)
       << "For CPU-based interpolation, the layer must be CPU accessible (ie "
@@ -49,7 +50,7 @@ void ProjectiveTsdfIntegratorCPU::updateBlocks(
           }
 
           float depth = -1.0;
-          if (!interpolation::interpolate2DLinear(depth_frame, u_C, &depth)) {
+          if (!interpolation::interpolate2DClosest(depth_frame, u_C, &depth)) {
             continue;
           }
 

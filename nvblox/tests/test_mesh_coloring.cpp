@@ -20,7 +20,7 @@ limitations under the License.
 #include "nvblox/core/layer.h"
 #include "nvblox/core/voxels.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/datasets/parse_3dmatch.h"
+#include "nvblox/datasets/3dmatch.h"
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/mesh_io.h"
@@ -105,18 +105,20 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
   DepthImage depth_image_1;
   ColorImage color_image_1;
   EXPECT_TRUE(datasets::load16BitDepthImage(
-      datasets::threedmatch::getPathForDepthImage(base_path, seq_id, 0),
+      datasets::threedmatch::internal::getPathForDepthImage(base_path, seq_id,
+                                                            0),
       &depth_image_1));
   EXPECT_TRUE(datasets::load8BitColorImage(
-      datasets::threedmatch::getPathForColorImage(base_path, seq_id, 0),
+      datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
+                                                            0),
       &color_image_1));
   EXPECT_EQ(depth_image_1.width(), color_image_1.width());
   EXPECT_EQ(depth_image_1.height(), color_image_1.height());
 
   // Parse 3x3 camera intrinsics matrix from 3D Match format: space-separated.
   Eigen::Matrix3f camera_intrinsic_matrix;
-  EXPECT_TRUE(datasets::threedmatch::parseCameraFromFile(
-      datasets::threedmatch::getPathForCameraIntrinsics(base_path),
+  EXPECT_TRUE(datasets::threedmatch::internal::parseCameraFromFile(
+      datasets::threedmatch::internal::getPathForCameraIntrinsics(base_path),
       &camera_intrinsic_matrix));
   const auto camera = Camera::fromIntrinsicsMatrix(
       camera_intrinsic_matrix, depth_image_1.width(), depth_image_1.height());

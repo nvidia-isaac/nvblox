@@ -17,6 +17,16 @@ limitations under the License.
 
 namespace nvblox {
 
+std::ostream& operator<<(std::ostream& os, const Camera& camera) {
+  os << "camera with intrinsics:\n\tfu: " << camera.fu() << "\n"
+     << "\tfv: " << camera.fv() << "\n"
+     << "\tcu: " << camera.cu() << "\n"
+     << "\tcv: " << camera.cv() << "\n"
+     << "\twidith: " << camera.width() << "\n"
+     << "\theight: " << camera.height() << "\n";
+  return os;
+}
+
 AxisAlignedBoundingBox Camera::getViewAABB(const Transform& T_L_C,
                                            const float min_depth,
                                            const float max_depth) const {
@@ -50,13 +60,13 @@ Eigen::Matrix<float, 8, 3> Camera::getViewCorners(const float min_depth,
   // Rays through the corners of the image plane
   // Clockwise from the top left corner of the image.
   const Vector3f ray_0_C =
-      rayFromImagePlaneCoordinates(Vector2f(0.0f, 0.0f));  // NOLINT
+      vectorFromImagePlaneCoordinates(Vector2f(0.0f, 0.0f));  // NOLINT
   const Vector3f ray_1_C =
-      rayFromImagePlaneCoordinates(Vector2f(width_, 0.0f));  // NOLINT
+      vectorFromImagePlaneCoordinates(Vector2f(width_, 0.0f));  // NOLINT
   const Vector3f ray_2_C =
-      rayFromImagePlaneCoordinates(Vector2f(width_, height_));  // NOLINT
+      vectorFromImagePlaneCoordinates(Vector2f(width_, height_));  // NOLINT
   const Vector3f ray_3_C =
-      rayFromImagePlaneCoordinates(Vector2f(0.0f, height_));  // NOLINT
+      vectorFromImagePlaneCoordinates(Vector2f(0.0f, height_));  // NOLINT
 
   // True bounding box from the 3D points
   Eigen::Matrix<float, 8, 3> corners_C;
@@ -78,6 +88,7 @@ Frustum::Frustum(const Camera& camera, const Transform& T_L_C, float min_depth,
       camera.getViewCorners(min_depth, max_depth);
   computeBoundingPlanes(corners_C, T_L_C);
 }
+
 void Frustum::computeBoundingPlanes(const Eigen::Matrix<float, 8, 3>& corners_C,
                                     const Transform& T_L_C) {
   // Transform the corners.

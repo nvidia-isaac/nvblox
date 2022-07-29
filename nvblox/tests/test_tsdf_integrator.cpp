@@ -323,6 +323,8 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
 
   // Now do some checks...
   // Check every voxel in the map.
+  int total_num_voxels = 0;
+  int num_voxel_big_error = 0;
   auto lambda = [&](const Index3D& block_index, const Index3D& voxel_index,
                     const TsdfVoxel* voxel) {
     if (voxel->weight >= kMinWeight) {
@@ -330,13 +332,30 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
       const TsdfVoxel* gt_voxel = getVoxelAtBlockAndVoxelIndex<TsdfVoxel>(
           gt_layer, block_index, voxel_index);
       if (gt_voxel != nullptr) {
-        EXPECT_NEAR(voxel->distance, gt_voxel->distance,
-                    kDistanceErrorTolerance);
+        if (std::fabs(voxel->distance - gt_voxel->distance) >
+            kDistanceErrorTolerance) {
+          num_voxel_big_error++;
+        }
+        total_num_voxels++;
       }
     }
   };
   callFunctionOnAllVoxels<TsdfVoxel>(layer_cpu, lambda);
+  float percent_large_error = static_cast<float>(num_voxel_big_error) /
+                              static_cast<float>(total_num_voxels) * 100.0f;
+  std::cout << "CPU: num_voxel_big_error: " << num_voxel_big_error << std::endl;
+  std::cout << "CPU: total_num_voxels: " << total_num_voxels << std::endl;
+  std::cout << "CPU: percent_large_error: " << percent_large_error << std::endl;
+  EXPECT_LT(percent_large_error, kAcceptablePercentageOverThreshold);
+  num_voxel_big_error = 0;
+  total_num_voxels = 0;
   callFunctionOnAllVoxels<TsdfVoxel>(layer_gpu, lambda);
+  percent_large_error = static_cast<float>(num_voxel_big_error) /
+                        static_cast<float>(total_num_voxels) * 100.0f;
+  EXPECT_LT(percent_large_error, kAcceptablePercentageOverThreshold);
+  std::cout << "GPU: num_voxel_big_error: " << num_voxel_big_error << std::endl;
+  std::cout << "GPU: total_num_voxels: " << total_num_voxels << std::endl;
+  std::cout << "GPU: percent_large_error: " << percent_large_error << std::endl;
 
   io::outputVoxelLayerToPly(layer_gpu, "test_tsdf_projective_gpu.ply");
   io::outputVoxelLayerToPly(layer_cpu, "test_tsdf_projective_cpu.ply");
