@@ -95,20 +95,20 @@ def evaluate_esdf(reconstructed_esdf_path: Path,
     abs_errors = sdf_abs_diff.get_valid_voxel_values()
 
     # Statistics
-    statistics_dict = {'mean': np.mean(abs_errors),
-                       'median': np.median(abs_errors),
-                       'max': np.max(abs_errors),
-                       'min': np.min(abs_errors),
-                       'percentile_1': np.percentile(abs_errors, 1),
-                       'percentile_10': np.percentile(abs_errors, 10),
-                       'percentile_90': np.percentile(abs_errors, 90),
-                       'percentile_99': np.percentile(abs_errors, 99),
-                       'rms': np.sqrt(np.mean(np.square(abs_errors)))
+    statistics_dict = {'esdf_error_mean': np.mean(abs_errors),
+                       'esdf_error_median': np.median(abs_errors),
+                       'esdf_error_max': np.max(abs_errors),
+                       'esdf_error_min': np.min(abs_errors),
+                       'esdf_error_percentile_1': np.percentile(abs_errors, 1),
+                       'esdf_error_percentile_10': np.percentile(abs_errors, 10),
+                       'esdf_error_percentile_90': np.percentile(abs_errors, 90),
+                       'esdf_error_percentile_99': np.percentile(abs_errors, 99),
+                       'esdf_error_rms': np.sqrt(np.mean(np.square(abs_errors)))
                        }
     print("\ESDF error statistics")
     print("-------------------------------------------------------")
     for name, value in statistics_dict.items():
-        print(f"{name:<20}{value:0.4f}")
+        print(f"{name:<30}{value:0.4f}")
 
     # Write the results to a JSON
     output_statistics_path = output_dir / 'esdf_error_statistics.json'

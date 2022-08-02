@@ -21,8 +21,10 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import Tuple
+import json
 
 import replica
+import timing
 
 
 def replica_reconstruction(dataset_path: Path,
@@ -58,6 +60,7 @@ def replica_reconstruction(dataset_path: Path,
     output_dir = replica.get_output_dir(dataset_name, output_root_path)
     reconstructed_mesh_path = output_dir / 'reconstructed_mesh.ply'
     reconstructed_esdf_path = output_dir / 'reconstructed_esdf.ply'
+    timing_path = output_dir / 'timing.txt'
 
     # Reconstruct the mesh + esdf
     print(f"Running executable at:\t{fuse_replica_binary_path}")
@@ -66,9 +69,37 @@ def replica_reconstruction(dataset_path: Path,
     print(f"Outputting esdf at:\t{reconstructed_esdf_path}")
     mesh_output_path_flag = "--mesh_output_path"
     esdf_output_path_flag = "--esdf_output_path"
+    timing_output_path_flag = "--timing_output_path"
+    esdf_frame_subsampling_flag = "--esdf_frame_subsampling"
     subprocess.run([f"{fuse_replica_binary_path}", f"{dataset_path}",
                    mesh_output_path_flag, f"{reconstructed_mesh_path}",
-                   esdf_output_path_flag, f"{reconstructed_esdf_path}"])
+                   esdf_output_path_flag, f"{reconstructed_esdf_path}",
+                   timing_output_path_flag, f"{timing_path}",
+                   esdf_frame_subsampling_flag, f"{1}"])
+
+    # Extract the means of a few timers
+    timings_df = timing.get_timings_as_dataframe(timing_path)
+    means_df = timings_df['mean']
+    kpi_timer_names = [
+        'fuser/time_per_frame',
+        'fuser/integrate_tsdf',
+        'fuser/integrate_color',
+        'tsdf/integrate',
+        'color/integrate',
+        'gpu_hash/transfer',
+    ]
+    means_dict = {}
+    for timer_name in kpi_timer_names:
+        try:
+            means_dict[timer_name] = means_df[timer_name]
+        except KeyError:
+            print(f"timer not found: {timer_name}")
+
+    # Write the results to a JSON
+    output_timings_path = output_dir / 'timing.json'
+    print(f"Writing the timings to: {output_timings_path}")
+    with open(output_timings_path, "w") as timings_file:
+        json.dump(means_dict, timings_file, indent=4)
 
     return reconstructed_mesh_path, reconstructed_esdf_path
 

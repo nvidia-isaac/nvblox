@@ -94,15 +94,15 @@ def evaluate_mesh(reconstructed_mesh_path: Path,
     o3d.io.write_triangle_mesh(str(error_mesh_output_path), error_mesh)
 
     # Statistics of the per_vertex_errors
-    statistics_dict = {'mean': np.mean(per_vertex_errors),
-                       'median': np.median(per_vertex_errors),
-                       'max': np.max(per_vertex_errors),
-                       'min': np.min(per_vertex_errors),
-                       'percentile_1': np.percentile(per_vertex_errors, 1),
-                       'percentile_10': np.percentile(per_vertex_errors, 10),
-                       'percentile_90': np.percentile(per_vertex_errors, 90),
-                       'percentile_99': np.percentile(per_vertex_errors, 99),
-                       'coverage': coverage
+    statistics_dict = {'surface_error_mean': np.mean(per_vertex_errors),
+                       'surface_error_median': np.median(per_vertex_errors),
+                       'surface_error_max': np.max(per_vertex_errors),
+                       'surface_error_min': np.min(per_vertex_errors),
+                       'surface_error_percentile_1': np.percentile(per_vertex_errors, 1),
+                       'surface_error_percentile_10': np.percentile(per_vertex_errors, 10),
+                       'surface_error_percentile_90': np.percentile(per_vertex_errors, 90),
+                       'surface_error_percentile_99': np.percentile(per_vertex_errors, 99),
+                       'surface_coverage': coverage
                        }
     print("\nReconstructed vertices to GT vertices: error statistics")
     print("-------------------------------------------------------")

@@ -40,6 +40,7 @@ void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
     const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
     std::vector<Index3D>* updated_blocks) {
+  timing::Timer color_timer("color/integrate");
   CHECK_NOTNULL(color_layer);
   CHECK_EQ(tsdf_layer.block_size(), color_layer->block_size());
 
