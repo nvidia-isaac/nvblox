@@ -291,6 +291,36 @@ TEST(VoxelLayerTest, CopyLayerTest) {
   }
 }
 
+TEST(VoxelLayerTest, ClearBlocks) {
+  constexpr float voxel_size_m = 0.1f;
+
+  TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kDevice);
+
+  // Create some blocks.
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 0));
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 1));
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 2));
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 3));
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 4);
+
+  // Fail to clear non-allocated block
+  tsdf_layer.clearBlocks({Index3D(0, 0, 4)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 4);
+
+  // Clear 1 block
+  tsdf_layer.clearBlocks({Index3D(0, 0, 0)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 3);
+
+  // Clear 1 more block + 1 non-existant block
+  tsdf_layer.clearBlocks({Index3D(0, 0, 1), Index3D(0, 0, 4)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 2);
+
+  // Clear the rest
+  tsdf_layer.clearBlocks(
+      {Index3D(0, 0, 2), Index3D(0, 0, 3), Index3D(0, 0, 4)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 0);
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

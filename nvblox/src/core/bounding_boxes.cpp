@@ -17,6 +17,15 @@ limitations under the License.
 
 namespace nvblox {
 
+AxisAlignedBoundingBox getAABBOfBlocks(const float block_size,
+                                       const std::vector<Index3D>& blocks) {
+  AxisAlignedBoundingBox aabb;
+  for (const Index3D& idx : blocks) {
+    aabb = aabb.merged(getAABBOfBlock(block_size, idx));
+  }
+  return aabb;
+}
+
 AxisAlignedBoundingBox getAABBOfObservedVoxels(const EsdfLayer& layer) {
   AxisAlignedBoundingBox aabb;
   auto lambda = [&aabb, &layer](const Index3D& block_index,

@@ -309,50 +309,14 @@ unified_ptr<typename std::remove_cv<T>::type> unified_ptr<T>::clone(
   return Cloner<T>::clone(*this, memory_type, size_);
 }
 
-// Hint to move to GPU or CPU.
 template <typename T>
-void unified_ptr<T>::toGPU() {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  if (ptr_ == nullptr) {
-    return;
-  }
-  int device;
-  cudaGetDevice(&device);
-  checkCudaErrors(cudaMemPrefetchAsync(ptr_, sizeof(T), device));
-}
-
-template <typename T>
-void unified_ptr<T>::toGPU(cudaStream_t cuda_stream) {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  if (ptr_ == nullptr) {
-    return;
-  }
-  int device;
-  cudaGetDevice(&device);
-  checkCudaErrors(cudaMemPrefetchAsync(ptr_, sizeof(T), device, cuda_stream));
-}
-
-template <typename T>
-void unified_ptr<T>::toCPU() {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  if (ptr_ == nullptr) {
-    return;
-  }
-  checkCudaErrors(cudaMemPrefetchAsync(ptr_, sizeof(T), cudaCpuDeviceId));
-}
-
-template <typename T>
-void unified_ptr<T>::preferGPU() {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  int device;
-  cudaGetDevice(&device);
-  checkCudaErrors(cudaMemAdvise(ptr_, sizeof(T),
-                                cudaMemAdviseSetPreferredLocation, device));
+void unified_ptr<T>::copyTo(unified_ptr<T_nonconst>& ptr) const {
+  cudaMemcpy(ptr.get(), this->get(), sizeof(T_noextent) * size_,
+             cudaMemcpyDefault);
 }
 
 template <typename T>
 void unified_ptr<T>::setZero() {
-  checkCudaErrors(
-      cudaMemset(ptr_, 0, sizeof(T_noextent) * size_));
+  checkCudaErrors(cudaMemset(ptr_, 0, sizeof(T_noextent) * size_));
 }
 }  // namespace nvblox

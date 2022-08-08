@@ -136,6 +136,15 @@ bool BlockLayer<BlockType>::isBlockAllocated(const Index3D& index) const {
 }
 
 template <typename BlockType>
+void BlockLayer<BlockType>::clearBlocks(const std::vector<Index3D>& indices) {
+  for (const auto& idx : indices) {
+    if(blocks_.erase(idx)) {
+      gpu_layer_view_up_to_date_ = false;
+    }
+  }
+}
+
+template <typename BlockType>
 typename BlockLayer<BlockType>::GPULayerViewType
 BlockLayer<BlockType>::getGpuLayerView() const {
   if (!gpu_layer_view_) {

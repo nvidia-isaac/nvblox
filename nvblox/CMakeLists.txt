@@ -10,7 +10,7 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 # This link flag replaces "runpath" with "rpath" in executables and shared objects.
 # This is important because it means the search paths are passed down the shared object tree.
-# https://stackoverflow.com/questions/58997230/cmake-project-fails-to-find-shared-library 
+# https://stackoverflow.com/questions/58997230/cmake-project-fails-to-find-shared-library
 SET(nvblox_link_options "-Wl,--disable-new-dtags")
 
 # Build options
@@ -23,6 +23,7 @@ option(BUILD_TESTS "Build the C++ tests of the nvblox library" ON)
 # machine, and running on machines with a different GPU achitecture. In this case, set the flag.
 # The penalty for doing this is increased build times.
 option(BUILD_FOR_ALL_ARCHS "Build for all GPU architectures" OFF)
+
 # Only used if the flag above is true.
 set(CUDA_ARCHITECTURE_FLAGS " -gencode=arch=compute_86,code=sm_86 \
                               -gencode=arch=compute_80,code=sm_80 \
@@ -31,7 +32,6 @@ set(CUDA_ARCHITECTURE_FLAGS " -gencode=arch=compute_86,code=sm_86 \
                               -gencode=arch=compute_70,code=sm_70 \
                               -gencode=arch=compute_61,code=sm_61 \
                               -gencode=arch=compute_60,code=sm_60")
-
 
 # Suppress spammy Eigen CUDA warnings.
 # "expt-relaxed-constexpr" allows sharing constexpr between host and device code.
@@ -53,11 +53,13 @@ include(thirdparty/stdgpu/stdgpu.cmake)
 # Include dem deps
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 find_package(CUDA REQUIRED)
+
 # In the case of ROS builds, glog will likely be found at a higher level.
 # We want to link against that version in that case.
 if(NOT Glog_FOUND)
     find_package(Glog REQUIRED)
 endif()
+
 find_package(gflags REQUIRED)
 
 find_package(SQLite3 REQUIRED)
@@ -69,7 +71,6 @@ include_directories(include)
 #############
 # LIBRARIES #
 #############
-
 add_library(nvblox_cuda_check SHARED
     src/core/cuda/error_check.cu
 )
@@ -93,6 +94,7 @@ target_link_options(nvblox_gpu_hash PUBLIC ${nvblox_link_options})
 
 add_library(nvblox_lib SHARED
     src/core/bounding_boxes.cpp
+    src/core/bounding_spheres.cpp
     src/core/camera.cpp
     src/core/color.cpp
     src/core/cuda/blox.cu
@@ -138,7 +140,7 @@ target_link_libraries(nvblox_lib PUBLIC
     ${SQLite3_LIBRARIES}
 )
 target_link_options(nvblox_lib PUBLIC ${nvblox_link_options})
-target_include_directories(nvblox_lib PUBLIC 
+target_include_directories(nvblox_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
@@ -146,9 +148,10 @@ target_include_directories(nvblox_lib PUBLIC
 )
 
 set_target_properties(nvblox_lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
     set_target_properties(nvblox_lib PROPERTIES CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
-    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CUDA_ARCHITECTURES)    
+    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CUDA_ARCHITECTURES)
 else()
     set_target_properties(nvblox_lib PROPERTIES CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS})
     set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CMAKE_CUDA_FLAGS)
@@ -172,16 +175,14 @@ add_subdirectory(examples)
 #########
 # TESTS #
 #########
-
-if (BUILD_TESTS)
+if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
 ###############
 # EXPERIMENTS #
 ###############
-
-if (BUILD_EXPERIMENTS)
+if(BUILD_EXPERIMENTS)
     add_subdirectory(experiments)
 endif()
 
@@ -190,12 +191,12 @@ endif()
 #############################
 # TODO: delete
 add_library(nvblox_interface INTERFACE)
-target_link_libraries(nvblox_interface INTERFACE 
-    nvblox_lib 
-    nvblox_gpu_hash 
-    nvblox_cuda_check 
-    ${GLOG_LIBRARIES} 
-    ${CUDA_LIBRARIES} 
+target_link_libraries(nvblox_interface INTERFACE
+    nvblox_lib
+    nvblox_gpu_hash
+    nvblox_cuda_check
+    ${GLOG_LIBRARIES}
+    ${CUDA_LIBRARIES}
     Eigen3::Eigen
     gflags
     SQLite::SQLite3
@@ -209,14 +210,14 @@ include(GNUInstallDirs)
 
 set_target_properties(stdgpu PROPERTIES INTERFACE_LINK_LIBRARIES "")
 
-install( 
-  TARGETS nvblox_lib nvblox_gpu_hash nvblox_cuda_check nvblox_datasets stdgpu nvblox_eigen fuse_3dmatch fuse_replica
-  EXPORT nvbloxTargets
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+install(
+    TARGETS nvblox_lib nvblox_gpu_hash nvblox_cuda_check nvblox_datasets stdgpu nvblox_eigen fuse_3dmatch fuse_replica
+    EXPORT nvbloxTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
@@ -229,19 +230,20 @@ install(
 )
 
 include(CMakePackageConfigHelpers)
+
 # generate the config file that is includes the exports
 configure_package_config_file(cmake/Config.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/nvbloxConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
-  NO_SET_AND_CHECK_MACRO
-  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+    "${CMAKE_CURRENT_BINARY_DIR}/nvbloxConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+    NO_SET_AND_CHECK_MACRO
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 
 # generate the version file for the config file
 write_basic_package_version_file(
-  "nvbloxConfigVersion.cmake"
-  VERSION "${nvblox_VERSION_MAJOR}.${nvblox_VERSION_MINOR}"
-  COMPATIBILITY AnyNewerVersion
+    "nvbloxConfigVersion.cmake"
+    VERSION "${nvblox_VERSION_MAJOR}.${nvblox_VERSION_MINOR}"
+    COMPATIBILITY AnyNewerVersion
 )
 
 # install the configuration file

@@ -111,6 +111,13 @@ class RgbdMapper : public MapperBase {
                                        float slice_input_z_max,
                                        float slice_output_z);
 
+  /// Clears the reconstruction outside a radius around a center point,
+  /// deallocating the memory.
+  ///@param center The center of the keep-sphere.
+  ///@param radius The radius of the keep-sphere.
+  ///@return std::vector<Index3D> The block indices removed.
+  std::vector<Index3D> clearOutsideRadius(const Vector3f& center, float radius);
+
   /// Returns the contained LayerCake
   const LayerCake& layers() const { return layers_; }
   /// Returns the TsdfLayer

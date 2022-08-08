@@ -77,29 +77,15 @@ def replica_reconstruction(dataset_path: Path,
                    timing_output_path_flag, f"{timing_path}",
                    esdf_frame_subsampling_flag, f"{1}"])
 
-    # Extract the means of a few timers
+    # Extract the means of the timers
     timings_df = timing.get_timings_as_dataframe(timing_path)
-    means_df = timings_df['mean']
-    kpi_timer_names = [
-        'fuser/time_per_frame',
-        'fuser/integrate_tsdf',
-        'fuser/integrate_color',
-        'tsdf/integrate',
-        'color/integrate',
-        'gpu_hash/transfer',
-    ]
-    means_dict = {}
-    for timer_name in kpi_timer_names:
-        try:
-            means_dict[timer_name] = means_df[timer_name]
-        except KeyError:
-            print(f"timer not found: {timer_name}")
+    means_series = timings_df['mean']
 
     # Write the results to a JSON
     output_timings_path = output_dir / 'timing.json'
     print(f"Writing the timings to: {output_timings_path}")
     with open(output_timings_path, "w") as timings_file:
-        json.dump(means_dict, timings_file, indent=4)
+        json.dump(means_series.to_dict(), timings_file, indent=4)
 
     return reconstructed_mesh_path, reconstructed_esdf_path
 

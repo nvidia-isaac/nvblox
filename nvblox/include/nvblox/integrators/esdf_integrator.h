@@ -24,6 +24,9 @@ limitations under the License.
 
 namespace nvblox {
 
+// Forward declaration.
+struct Index3DDeviceSet;
+
 /// A class performing (incremental) ESDF integration
 ///
 /// The Euclidian Signed Distance Function (ESDF) is a distance function where
@@ -154,49 +157,44 @@ class EsdfIntegrator {
   void clearAllInvalidOnCPU(EsdfLayer* esdf_layer,
                             std::vector<Index3D>* updated_blocks);
 
-  // GPU computation functions.
-  void markAllSitesOnGPU(const TsdfLayer& tsdf_layer,
-                         const std::vector<Index3D>& block_indices,
-                         EsdfLayer* esdf_layer,
-                         std::vector<Index3D>* blocks_with_sites,
-                         std::vector<Index3D>* cleared_blocks);
+  void markAllSitesCombined(const TsdfLayer& tsdf_layer,
+                            const std::vector<Index3D>& block_indices,
+                            EsdfLayer* esdf_layer,
+                            device_vector<Index3D>* blocks_with_sites,
+                            device_vector<Index3D>* cleared_blocks);
 
   // Same as the other function but basically makes the whole operation 2D.
   // Considers a min and max z in a bounding box which is compressed down into a
   // single layer.
-  void markSitesInSliceOnGPU(const TsdfLayer& tsdf_layer,
-                             const std::vector<Index3D>& block_indices,
-                             float min_z, float max_z, float output_z,
-                             EsdfLayer* esdf_layer,
-                             std::vector<Index3D>* output_blocks,
-                             std::vector<Index3D>* cleared_blocks);
-
-  void clearInvalidOnGPU(const std::vector<Index3D>& blocks_to_clear,
-                         EsdfLayer* esdf_layer,
-                         std::vector<Index3D>* updated_blocks);
-
-  void computeEsdfOnGPU(const std::vector<Index3D>& blocks_with_sites,
-                        EsdfLayer* esdf_layer);
+  void markSitesInSliceCombined(const TsdfLayer& tsdf_layer,
+                                const std::vector<Index3D>& block_indices,
+                                float min_z, float max_z, float output_z,
+                                EsdfLayer* esdf_layer,
+                                device_vector<Index3D>* updated_blocks,
+                                device_vector<Index3D>* cleared_blocks);
 
   // Internal helpers for GPU computation.
-  void sweepBlockBandOnGPU(device_vector<EsdfBlock*>& block_pointers,
-                           float max_squared_distance_vox);
-  void updateLocalNeighborBandsOnGPU(
-      const std::vector<Index3D>& block_indices,
-      device_vector<EsdfBlock*>& block_pointers, float max_squared_distance_vox,
-      EsdfLayer* esdf_layer, std::vector<Index3D>* updated_blocks,
-      device_vector<EsdfBlock*>* updated_block_pointers);
-  void createNeighborTable(const std::vector<Index3D>& block_indices,
-                           EsdfLayer* esdf_layer,
-                           std::vector<Index3D>* neighbor_indices,
-                           host_vector<EsdfBlock*>* neighbor_pointers,
-                           host_vector<int>* neighbor_table);
-  void clearBlockNeighbors(std::vector<Index3D>& clear_list,
-                           EsdfLayer* esdf_layer,
-                           std::vector<Index3D>* new_clear_list);
 
   // Helper function to figure out which axes to sweep first and second.
   void getSweepAxes(int axis_to_sweep, int* first_axis, int* second_axis) const;
+
+  /// Combined methods using the GPU hash to simplify the ESDF update logic.
+  void updateNeighborBandsCombined(
+      device_vector<Index3D>* block_indices, EsdfLayer* esdf_layer,
+      float max_squared_distance_vox,
+      device_vector<Index3D>* updated_block_indices);
+
+  void sweepBlockBandCombined(device_vector<Index3D>* block_indices,
+                              EsdfLayer* esdf_layer,
+                              float max_squared_distance_vox);
+  void computeEsdfCombined(const device_vector<Index3D>& blocks_with_sites,
+                           EsdfLayer* esdf_layer);
+  void clearAllInvalid(const std::vector<Index3D>& blocks_to_clear,
+                       EsdfLayer* esdf_layer,
+                       device_vector<Index3D>* updated_blocks);
+
+  // Helper method to de-dupe block indices.
+  void sortAndTakeUniqueIndices(device_vector<Index3D>* block_indices);
 
   /// Maximum distance to compute the ESDF.
   float max_distance_m_ = 10.0;
@@ -209,18 +207,20 @@ class EsdfIntegrator {
   cudaStream_t cuda_stream_ = nullptr;
 
   // Temporary storage variables so we don't have to reallocate as much.
-  host_vector<bool> updated_blocks_host_;
-  device_vector<bool> updated_blocks_device_;
-  host_vector<bool> cleared_blocks_host_;
-  device_vector<bool> cleared_blocks_device_;
-  host_vector<const TsdfBlock*> tsdf_pointers_host_;
-  device_vector<const TsdfBlock*> tsdf_pointers_device_;
-  host_vector<EsdfBlock*> block_pointers_host_;
-  device_vector<EsdfBlock*> block_pointers_device_;
-  host_vector<int> neighbor_table_host_;
-  device_vector<int> neighbor_table_device_;
-  host_vector<EsdfBlock*> neighbor_pointers_host_;
-  device_vector<EsdfBlock*> neighbor_pointers_device_;
+  device_vector<Index3D> block_indices_device_;
+  host_vector<Index3D> block_indices_host_;
+  device_vector<Index3D> updated_indices_device_;
+  host_vector<Index3D> updated_indices_host_;
+  device_vector<Index3D> to_clear_indices_device_;
+  host_vector<Index3D> to_clear_indices_host_;
+  device_vector<Index3D> temp_indices_device_;
+  host_vector<Index3D> temp_indices_host_;
+  device_vector<Index3D> cleared_block_indices_device_;
+
+  unified_ptr<int> updated_counter_device_;
+  unified_ptr<int> updated_counter_host_;
+  unified_ptr<int> cleared_counter_device_;
+  unified_ptr<int> cleared_counter_host_;
 };
 
 }  // namespace nvblox

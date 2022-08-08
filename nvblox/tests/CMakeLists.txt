@@ -147,3 +147,11 @@ gtest_discover_tests(test_lidar_integration ${TEST_OPTIONS})
 add_executable(test_fuser test_fuser.cpp)
 target_link_libraries(test_fuser nvblox_test_utils)
 gtest_discover_tests(test_fuser ${TEST_OPTIONS})
+
+add_executable(test_bounding_spheres test_bounding_spheres.cpp)
+target_link_libraries(test_bounding_spheres nvblox_test_utils)
+gtest_discover_tests(test_bounding_spheres ${TEST_OPTIONS})
+
+add_executable(test_mapper test_mapper.cpp)
+target_link_libraries(test_mapper nvblox_test_utils)
+gtest_discover_tests(test_mapper ${TEST_OPTIONS})

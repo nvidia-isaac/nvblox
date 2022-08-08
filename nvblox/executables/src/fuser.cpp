@@ -253,7 +253,7 @@ int Fuser::run() {
 
   if (!esdf_output_path_.empty()) {
     LOG(INFO) << "Generating the ESDF.";
-    mapper_->updateEsdf();
+    updateEsdf();
     LOG(INFO) << "Outputting ESDF pointcloud ply file to " << esdf_output_path_;
     outputPointcloudPly();
   }

@@ -15,6 +15,7 @@ limitations under the License.
 */
 #include "nvblox/io/layer_cake_io.h"
 
+#include "nvblox/core/bounding_spheres.h"
 #include "nvblox/core/mapper.h"
 
 namespace nvblox {
@@ -136,6 +137,23 @@ std::vector<Index3D> RgbdMapper::updateEsdfSlice(float slice_input_z_min,
   esdf_blocks_to_update_.clear();
 
   return esdf_blocks_to_update_vector;
+}
+
+std::vector<Index3D> RgbdMapper::clearOutsideRadius(const Vector3f& center,
+                                                    float radius) {
+  const std::vector<Index3D> block_indices_for_deletion =
+      getBlocksOutsideRadius(layers_.get<TsdfLayer>().getAllBlockIndices(),
+                             layers_.get<TsdfLayer>().block_size(), center,
+                             radius);
+  for (const Index3D& idx : block_indices_for_deletion) {
+    mesh_blocks_to_update_.erase(idx);
+    esdf_blocks_to_update_.erase(idx);
+  }
+  layers_.getPtr<TsdfLayer>()->clearBlocks(block_indices_for_deletion);
+  layers_.getPtr<ColorLayer>()->clearBlocks(block_indices_for_deletion);
+  layers_.getPtr<EsdfLayer>()->clearBlocks(block_indices_for_deletion);
+  layers_.getPtr<MeshLayer>()->clearBlocks(block_indices_for_deletion);
+  return block_indices_for_deletion;
 }
 
 bool RgbdMapper::saveMap(const std::string& filename) {

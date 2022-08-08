@@ -93,6 +93,11 @@ class BlockLayer : public BaseLayer {
   // Clear the layer of all data
   void clear() { blocks_.clear(); }
 
+  // Clear (deallocate) blocks passed in
+  // Note if a block does not exist, this function just (silently)
+  // continues trying the rest of the list.
+  void clearBlocks(const std::vector<Index3D>& indices);
+
   MemoryType memory_type() const { return memory_type_; }
 
   // GPU Hash
