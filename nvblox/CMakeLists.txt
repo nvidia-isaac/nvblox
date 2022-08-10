@@ -15,8 +15,7 @@ SET(nvblox_link_options "-Wl,--disable-new-dtags")
 
 # Build options
 option(BUILD_EXPERIMENTS "Build performance experimentation binaries" ON)
-option(BUILD_TESTS "Build the C++ tests of the nvblox library" ON)
-
+ 
 # GPU architectures
 # By default this flag is NOT set. Cmake then detects the architecture of the build computer
 # and compiles for that architecture only. This can be an issue if you're building on one
@@ -175,7 +174,10 @@ add_subdirectory(examples)
 #########
 # TESTS #
 #########
-if(BUILD_TESTS)
+include(CTest)
+if(BUILD_TESTING)
+    find_package(GTest REQUIRED)
+    enable_testing()
     add_subdirectory(tests)
 endif()
 

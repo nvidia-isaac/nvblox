@@ -1,6 +1,3 @@
-find_package(GTest REQUIRED)
-enable_testing()
-
 # Copy test data into the testing space (build/tests)
 file(INSTALL "${CMAKE_CURRENT_SOURCE_DIR}/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
