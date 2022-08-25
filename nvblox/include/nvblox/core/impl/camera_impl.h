@@ -47,11 +47,9 @@ float Camera::getDepth(const Vector3f& p_C) const {
 
 Vector3f Camera::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
   // NOTE(alexmillane): We allow u_C values up to the outer edges of pixels,
-  // hence the GE and LE checks.
-  DCHECK_GE(u_C[0], 0.0f);
-  DCHECK_LE(u_C[0], width_);
-  DCHECK_GE(u_C[1], 0.0f);
-  DCHECK_LE(u_C[1], height_);
+  // such that:
+  // 0.0f < u_C[0] <= width
+  // 0.0f < u_C[1] <= height
   return Vector3f((u_C[0] - cu_) / fu_,  // NOLINT
                   (u_C[1] - cv_) / fv_,  // NOLINT
                   1.0f);
