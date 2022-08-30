@@ -1,6 +1,5 @@
 # Common experiments library
 add_library(nvblox_experiments_common SHARED
-    src/common/fuse_3dmatch.cpp
     src/integrators/cuda/depth_frame_texture.cu
     src/integrators/cuda/experimental_integrator_input_frames.cu
     src/integrators/cuda/experimental_projective_tsdf_integrators.cu
@@ -8,7 +7,8 @@ add_library(nvblox_experiments_common SHARED
 target_include_directories(nvblox_experiments_common PUBLIC
     include
 )
-target_link_libraries(nvblox_experiments_common nvblox_lib)
+add_dependencies(nvblox_experiments_common nvblox_datasets)
+target_link_libraries(nvblox_experiments_common nvblox_lib nvblox_datasets)
 set_target_properties(nvblox_experiments_common PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Macro for installing python script SYMBOLICALLY to the buildspace
@@ -16,13 +16,6 @@ macro(makeLink src dest target)
   add_custom_command(TARGET ${target} PRE_BUILD
     COMMAND ln -sf ${src} ${dest} DEPENDS ${dest} COMMENT "mklink ${src} -> ${dest}")
 endmacro()
-
-# 3Dmatch executable
-add_executable(fuse_3dmatch src/fuse_3dmatch.cpp)
-target_link_libraries(fuse_3dmatch
-nvblox_experiments_common
-)
-set_target_properties(fuse_3dmatch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Python module for experiments
 set(PYTHON_EXPERIMENTS_MODULE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/python")
@@ -45,3 +38,4 @@ add_subdirectory(experiments/vector_copies)
 add_subdirectory(experiments/isolate_tsdf_block_update)
 add_subdirectory(experiments/stream_compaction)
 add_subdirectory(experiments/layer_cake_interface)
+add_subdirectory(experiments/ratio_of_freespace)

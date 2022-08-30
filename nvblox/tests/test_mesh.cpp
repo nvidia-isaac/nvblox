@@ -21,15 +21,15 @@ limitations under the License.
 #include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/voxels.h"
+#include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/datasets/parse_3dmatch.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/mesh_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/scene.h"
-
+#include "nvblox/tests/mesh_utils.h"
 #include "nvblox/utils/timing.h"
 
 using namespace nvblox;
@@ -51,7 +51,11 @@ class MeshTest : public ::testing::Test {
     // Make the scene 6x6x3 meters big.
     scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-3.0f, -3.0f, 0.0f),
                                            Vector3f(3.0f, 3.0f, 3.0f));
+
+    mesh_integrator_.weld_vertices(false);
   }
+
+  bool output_files_ = false;
 
   float block_size_;
   float voxel_size_ = 0.10;
@@ -141,8 +145,9 @@ TEST_F(MeshTest, PlaneMesh) {
     }
   }
 
-  io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_cpu.ply");
-
+  if (output_files_) {
+    io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_cpu.ply");
+  }
   std::cout << timing::Timing::Print();
 }
 
@@ -227,8 +232,9 @@ TEST_F(MeshTest, GPUPlaneTest) {
       EXPECT_NEAR(normal.z(), 0.0, kFloatEpsilon);
     }
   }
-  io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_gpu.ply");
-
+  if (output_files_) {
+    io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_gpu.ply");
+  }
   std::cout << timing::Timing::Print();
 }
 
@@ -242,7 +248,7 @@ TEST_F(MeshTest, IncrementalMesh) {
   constexpr float kMaxDist = 10.0;
   constexpr float kMinWeight = 2.0;
 
-  mesh_integrator_.min_weight() = kMinWeight;
+  mesh_integrator_.min_weight(kMinWeight);
 
   // Create a camera.
   Camera camera(300, 300, 320, 240, 640, 480);
@@ -308,8 +314,10 @@ TEST_F(MeshTest, IncrementalMesh) {
   mesh_integrator_.integrateMeshFromDistanceField(*sdf_layer_,
                                                   batch_mesh_layer.get());
 
-  io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_inc.ply");
-  io::outputMeshLayerToPly(*batch_mesh_layer, "test_mesh_batch.ply");
+  if (output_files_) {
+    io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_inc.ply");
+    io::outputMeshLayerToPly(*batch_mesh_layer, "test_mesh_batch.ply");
+  }
 
   // For each block in the batch mesh, make sure we have roughly the same
   // number of points in the incremental mesh.
@@ -332,18 +340,20 @@ TEST_F(MeshTest, RepeatabilityTest) {
   DepthImage depth_image;
   ColorImage color_image;
   EXPECT_TRUE(datasets::load16BitDepthImage(
-      datasets::threedmatch::getPathForDepthImage(base_path, seq_id, 0),
+      datasets::threedmatch::internal::getPathForDepthImage(base_path, seq_id,
+                                                            0),
       &depth_image));
   EXPECT_TRUE(datasets::load8BitColorImage(
-      datasets::threedmatch::getPathForColorImage(base_path, seq_id, 0),
+      datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
+                                                            0),
       &color_image));
   EXPECT_EQ(depth_image.width(), color_image.width());
   EXPECT_EQ(depth_image.height(), color_image.height());
 
   // Parse 3x3 camera intrinsics matrix from 3D Match format: space-separated.
   Eigen::Matrix3f camera_intrinsic_matrix;
-  EXPECT_TRUE(datasets::threedmatch::parseCameraFromFile(
-      datasets::threedmatch::getPathForCameraIntrinsics(base_path),
+  EXPECT_TRUE(datasets::threedmatch::internal::parseCameraFromFile(
+      datasets::threedmatch::internal::getPathForCameraIntrinsics(base_path),
       &camera_intrinsic_matrix));
   const auto camera = Camera::fromIntrinsicsMatrix(
       camera_intrinsic_matrix, depth_image.width(), depth_image.height());
@@ -392,6 +402,205 @@ TEST_F(MeshTest, RepeatabilityTest) {
           (vertex_vector_1[i].array() == vertex_vector_2[i].array()).all());
     }
   }
+}
+
+TEST_F(MeshTest, WeldingTest) {
+  // Create some scene.
+  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(0.0, 0.0, 0.0), Vector3f(-1, 0, 0)));
+
+  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(2.1, 0.1, 0.1), Vector3f(0, -1, 0)));
+
+  scene_.addPrimitive(
+      std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
+
+  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+
+  mesh_integrator_.weld_vertices(false);
+  EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
+      *sdf_layer_, mesh_layer_.get(), DeviceType::kGPU));
+
+  std::vector<Index3D> block_indices_mesh = mesh_layer_->getAllBlockIndices();
+  EXPECT_GT(block_indices_mesh.size(), 0);
+
+  // Ok now we have the original mesh. We're going to do the stupidest possible
+  // thing: weld vertices one block at a time and make sure it's good.
+  for (const Index3D& index : block_indices_mesh) {
+    std::vector<Index3D> one_single_index(1, index);
+
+    // Get the size of the vertices before.
+    MeshBlock::Ptr mesh_block = mesh_layer_->getBlockAtIndex(index);
+    size_t num_vertices_preweld = mesh_block->size();
+
+    weldVerticesThrust(one_single_index, mesh_layer_.get());
+
+    size_t num_vertices_postweld = mesh_block->size();
+
+    EXPECT_LT(num_vertices_postweld, num_vertices_preweld);
+  }
+
+  std::cout << timing::Timing::Print();
+}
+
+TEST_F(MeshTest, InPlaceWeldingTest) {
+  mesh_integrator_.weld_vertices(false);
+  MeshIntegrator welding_integrator = mesh_integrator_;
+  welding_integrator.weld_vertices(true);
+
+  MeshLayer::Ptr welded_mesh_layer(
+      new MeshLayer(sdf_layer_->block_size(), MemoryType::kUnified));
+
+  // Create some scene.
+  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(0.0, 0.0, 0.0), Vector3f(-1, 0, 0)));
+
+  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(2.1, 0.1, 0.1), Vector3f(0, -1, 0)));
+
+  scene_.addPrimitive(
+      std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
+
+  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+
+  EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
+      *sdf_layer_, mesh_layer_.get(), DeviceType::kGPU));
+  EXPECT_TRUE(welding_integrator.integrateMeshFromDistanceField(
+      *sdf_layer_, welded_mesh_layer.get(), DeviceType::kGPU));
+
+  std::vector<Index3D> block_indices_mesh = mesh_layer_->getAllBlockIndices();
+
+  for (const Index3D& index : block_indices_mesh) {
+    MeshBlock::Ptr mesh_block = mesh_layer_->getBlockAtIndex(index);
+    MeshBlock::Ptr welded_mesh_block =
+        welded_mesh_layer->getBlockAtIndex(index);
+
+    EXPECT_LT(welded_mesh_block->vertices.size(), mesh_block->vertices.size());
+  }
+
+  if (output_files_) {
+    io::outputMeshLayerToPly(*welded_mesh_layer, "test_mesh_welded.ply");
+    io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_unwelded.ply");
+  }
+
+  std::cout << timing::Timing::Print();
+}
+
+TEST_F(MeshTest, WeldingPartsTest) {
+  // Create some scene.
+  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(0.0, 0.0, 0.0), Vector3f(-1, 0, 0)));
+
+  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(2.1, 0.1, 0.1), Vector3f(0, -1, 0)));
+
+  scene_.addPrimitive(
+      std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
+
+  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+
+  mesh_integrator_.weld_vertices(false);
+  EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
+      *sdf_layer_, mesh_layer_.get(), DeviceType::kGPU));
+
+  std::vector<Index3D> block_indices_mesh = mesh_layer_->getAllBlockIndices();
+  EXPECT_GT(block_indices_mesh.size(), 0);
+
+  // Ok now we have the original mesh. We're going to do the stupidest
+  // possible thing: weld vertices one block at a time and make sure it's
+  // good.
+  for (const Index3D& index : block_indices_mesh) {
+    std::vector<Index3D> one_single_index(1, index);
+
+    // Get the size of the vertices before.
+    MeshBlock::Ptr mesh_block = mesh_layer_->getBlockAtIndex(index);
+    size_t num_vertices_preweld = mesh_block->size();
+
+    // Create a copy of the vertices.
+    device_vector<Vector3f> input_vertices = mesh_block->vertices;
+    device_vector<Vector3f> thrust_vertices = mesh_block->vertices;
+    device_vector<Vector3f> kernel_vertices = mesh_block->vertices;
+    device_vector<Vector3f> unique_vertices = mesh_block->vertices;
+    device_vector<int> input_indices = mesh_block->triangles;
+    device_vector<int> combined_indices = mesh_block->triangles;
+    device_vector<Vector3f> combined_vertices = mesh_block->vertices;
+    device_vector<int> thrust_combined_indices = mesh_block->triangles;
+    device_vector<Vector3f> thrust_combined_vertices = mesh_block->vertices;
+
+    // First sort them with thrust.
+    sortSingleBlockThrust(&thrust_vertices);
+    sortSingleBlockCub(&input_vertices, &kernel_vertices);
+
+    // Sort order is unfortunately different for the vectors. :( Since CUB
+    // vectors are sorted by hash value.
+    host_vector<Vector3f> kernel_vertices_host = kernel_vertices;
+    host_vector<Vector3f> input_vertices_host = input_vertices;
+    host_vector<int> input_indices_host = input_indices;
+
+    if (kernel_vertices.size() <= 3) {
+      continue;
+    }
+
+    // Check what's in there and make sure it's genuinely sorted.
+    Index3DHash index_hash;
+    constexpr int kValueScale = 1000;
+    for (size_t i = 1; i < kernel_vertices_host.size(); i++) {
+      EXPECT_GE(
+          index_hash((kernel_vertices_host[i] * kValueScale).cast<int>()),
+          index_hash((kernel_vertices_host[i - 1] * kValueScale).cast<int>()));
+    }
+
+    // Next up run unique on this whole thing.
+    uniqueSingleBlockCub(&kernel_vertices, &unique_vertices);
+
+    host_vector<Vector3f> unique_vertices_host = unique_vertices;
+
+    // Check that they're all unique!
+    for (size_t i = 1; i < unique_vertices_host.size(); i++) {
+      EXPECT_NE(unique_vertices_host[i], unique_vertices_host[i - 1])
+          << "i: " << i;
+    }
+
+    // Try the combined version. All at once.
+    combinedSingleBlockCub(&input_vertices, &input_indices, &combined_vertices,
+                           &combined_indices);
+
+    host_vector<Vector3f> combined_vertices_host = combined_vertices;
+    host_vector<int> combined_indices_host = combined_indices;
+
+    // Check the indices.
+    for (size_t i = 0; i < combined_indices_host.size(); i++) {
+      EXPECT_LT(combined_indices_host[i], combined_vertices_host.size());
+      EXPECT_GE(combined_indices_host[i], 0);
+
+      // Check that the indices match.
+      EXPECT_NEAR((combined_vertices_host[combined_indices_host[i]] -
+                   input_vertices_host[i])
+                      .norm(),
+                  0, 1e-2);
+    }
+    // Check that they're all unique!
+    for (size_t i = 1; i < combined_vertices_host.size(); i++) {
+      EXPECT_NE(combined_vertices_host[i], combined_vertices_host[i - 1])
+          << " i: " << i;
+    }
+
+    // Thrust it up.
+    weldSingleBlockThrust(&input_vertices, &input_indices,
+                          &thrust_combined_vertices, &thrust_combined_indices);
+
+    host_vector<int> thrust_combined_indices_host = thrust_combined_indices;
+    host_vector<Vector3f> thrust_combined_vertices_host =
+        thrust_combined_vertices;
+
+    // Check that they're all unique!
+    for (size_t i = 1; i < thrust_combined_vertices_host.size(); i++) {
+      EXPECT_NE(thrust_combined_vertices_host[i],
+                thrust_combined_vertices_host[i - 1]);
+    }
+  }
+
+  std::cout << timing::Timing::Print();
 }
 
 int main(int argc, char** argv) {

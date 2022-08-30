@@ -57,6 +57,7 @@ namespace test_utils {
 // Fills a TsdfBlock such that the voxels distance and weight values are their
 // linear index (as a float)
 void setTsdfBlockVoxelsInSequence(TsdfBlock::Ptr block);
+void setTsdfBlockVoxelsConstant(const float distance, TsdfBlock::Ptr block);
 
 bool checkBlockAllConstant(const TsdfBlock::Ptr block, TsdfVoxel voxel_cpu);
 bool checkBlockAllConstant(const TestBlock::Ptr block, TestVoxel voxel_cpu);

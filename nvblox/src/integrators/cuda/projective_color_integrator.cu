@@ -15,15 +15,15 @@ limitations under the License.
 */
 #include "nvblox/integrators/projective_color_integrator.h"
 
-#include "nvblox/integrators/cuda/projective_integrators_common.cuh"
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
+#include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
 
 ProjectiveColorIntegrator::ProjectiveColorIntegrator()
     : ProjectiveIntegratorBase() {
-  sphere_tracer_.params().maximum_ray_length_m = max_integration_distance_m_;
+  sphere_tracer_.maximum_ray_length_m(max_integration_distance_m_);
   checkCudaErrors(cudaStreamCreate(&integration_stream_));
 }
 
@@ -40,6 +40,7 @@ void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
     const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
     std::vector<Index3D>* updated_blocks) {
+  timing::Timer color_timer("color/integrate");
   CHECK_NOTNULL(color_layer);
   CHECK_EQ(tsdf_layer.block_size(), color_layer->block_size());
 
@@ -49,8 +50,9 @@ void ProjectiveColorIntegrator::integrateFrame(
   const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
 
   timing::Timer blocks_in_view_timer("color/integrate/get_blocks_in_view");
-  std::vector<Index3D> block_indices =
-      getBlocksInView(T_L_C, camera, color_layer->block_size());
+  std::vector<Index3D> block_indices = view_calculator_.getBlocksInViewPlanes(
+      T_L_C, camera, color_layer->block_size(),
+      max_integration_distance_m_ + truncation_distance_m);
   blocks_in_view_timer.Stop();
 
   // Check which of these blocks are:
@@ -78,7 +80,7 @@ void ProjectiveColorIntegrator::integrateFrame(
   std::shared_ptr<const DepthImage> synthetic_depth_image_ptr =
       sphere_tracer_.renderImageOnGPU(
           camera, T_L_C, tsdf_layer, truncation_distance_m, MemoryType::kDevice,
-          depth_render_ray_subsampling_factor_);
+          sphere_tracing_ray_subsampling_factor_);
   sphere_trace_timer.Stop();
 
   // Update identified blocks
@@ -91,6 +93,17 @@ void ProjectiveColorIntegrator::integrateFrame(
   if (updated_blocks != nullptr) {
     *updated_blocks = block_indices;
   }
+}
+
+void ProjectiveColorIntegrator::sphere_tracing_ray_subsampling_factor(
+    int sphere_tracing_ray_subsampling_factor) {
+  CHECK_GT(sphere_tracing_ray_subsampling_factor, 0);
+  sphere_tracing_ray_subsampling_factor_ =
+      sphere_tracing_ray_subsampling_factor;
+}
+
+int ProjectiveColorIntegrator::sphere_tracing_ray_subsampling_factor() const {
+  return sphere_tracing_ray_subsampling_factor_;
 }
 
 __device__ inline Color blendTwoColors(const Color& first_color,
@@ -151,8 +164,10 @@ __global__ void integrateBlocks(
   //     - the depth associated with the projection.
   Eigen::Vector2f u_px;
   float voxel_depth_m;
-  if (!projectThreadVoxel(block_indices_device_ptr, camera, T_C_L, block_size,
-                          &u_px, &voxel_depth_m)) {
+  Vector3f p_voxel_center_C;
+  if (!projectThreadVoxel<Camera>(block_indices_device_ptr, camera, T_C_L,
+                                  block_size, &u_px, &voxel_depth_m,
+                                  &p_voxel_center_C)) {
     return;
   }
 

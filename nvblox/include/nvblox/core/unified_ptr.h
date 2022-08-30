@@ -102,12 +102,8 @@ class unified_ptr {
   unified_ptr<T_nonconst> clone() const;
   unified_ptr<T_nonconst> clone(MemoryType memory_type) const;
 
-  // Hint to move the memory to the GPU or CPU.
-  void toGPU();
-  void toGPU(cudaStream_t cuda_stream);
-  void toCPU();
-  // Advise CUDA to prefer the GPU for this memory. Should reduce paging fails.
-  void preferGPU();
+  // Copy memory between two unified ptrs, potentially of different memory locations.
+  void copyTo(unified_ptr<T_nonconst>& ptr) const;
 
   MemoryType memory_type() const { return memory_type_; }
 

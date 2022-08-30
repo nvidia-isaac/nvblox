@@ -18,16 +18,36 @@ limitations under the License.
 namespace nvblox {
 
 Index3DDeviceSet::Index3DDeviceSet(size_t size) {
-  set = Index3DDeviceSet_t::createDeviceObject(static_cast<int64_t>(size));
+  set = Index3DDeviceSetType::createDeviceObject(static_cast<int64_t>(size));
 }
 Index3DDeviceSet::~Index3DDeviceSet() {
-  Index3DDeviceSet_t::destroyDeviceObject(set);
+  Index3DDeviceSetType::destroyDeviceObject(set);
 }
 
-void copySetToVector(const Index3DDeviceSet_t& set, std::vector<Index3D>* vec) {
+void Index3DDeviceSet::resize(size_t size) {
+  if (set.size() >= size) {
+    clear();
+  } else {
+    Index3DDeviceSetType::destroyDeviceObject(set);
+    set = Index3DDeviceSetType::createDeviceObject(static_cast<int64_t>(size));
+  }
+}
+
+void Index3DDeviceSet::clear() { set.clear(); }
+
+void copySetToVector(const Index3DDeviceSetType& set,
+                     std::vector<Index3D>* vec) {
   vec->resize(set.size());
   auto set_iter = set.device_range();
   thrust::copy_n(set_iter.begin(), set_iter.size(), vec->begin());
+}
+
+void copySetToDeviceVector(const Index3DDeviceSetType& set,
+                           device_vector<Index3D>* vec) {
+  vec->resize(set.size());
+  auto set_iter = set.device_range();
+  thrust::copy_n(thrust::device, set_iter.begin(), set_iter.size(),
+                 vec->begin());
 }
 
 }  // namespace nvblox

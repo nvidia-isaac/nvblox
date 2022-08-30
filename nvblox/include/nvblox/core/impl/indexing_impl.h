@@ -21,14 +21,21 @@ limitations under the License.
 
 namespace nvblox {
 
+__host__ __device__ inline float voxelSizeToBlockSize(const float voxel_size) {
+  return voxel_size * VoxelBlock<bool>::kVoxelsPerSide;
+}
+
+__host__ __device__ inline float blockSizeToVoxelSize(const float block_size) {
+  constexpr float kVoxelsPerSideInv = 1.0f / VoxelBlock<bool>::kVoxelsPerSide;
+  return block_size * kVoxelsPerSideInv;
+}
+
 // TODO: this is badly done now for non-Eigen types.
 /// Input position: metric (world) units with respect to the layer origin.
 /// Output index: voxel index relative to the block origin.
 Index3D getVoxelIndexFromPositionInLayer(const float block_size,
                                          const Vector3f& position) {
-  constexpr float kVoxelsPerSideInv = 1.0f / VoxelBlock<bool>::kVoxelsPerSide;
-  const float voxel_size = block_size * kVoxelsPerSideInv;
-
+  const float voxel_size = blockSizeToVoxelSize(block_size);
   Index3D global_voxel_index =
       (position / voxel_size).array().floor().cast<int>();
   Index3D voxel_index = global_voxel_index.unaryExpr([&](int x) {
@@ -53,8 +60,7 @@ void getBlockAndVoxelIndexFromPositionInLayer(const float block_size,
                                               Index3D* block_idx,
                                               Index3D* voxel_idx) {
   constexpr int kVoxelsPerSideMinusOne = VoxelBlock<bool>::kVoxelsPerSide - 1;
-  constexpr float kVoxelsPerSideInv = 1.0f / VoxelBlock<bool>::kVoxelsPerSide;
-  const float voxel_size_inv = 1.0 / (block_size * kVoxelsPerSideInv);
+  const float voxel_size_inv = 1.0 / blockSizeToVoxelSize(block_size);
   *block_idx = (position / block_size).array().floor().cast<int>();
   *voxel_idx =
       ((position - block_size * block_idx->cast<float>()) * voxel_size_inv)
@@ -66,9 +72,7 @@ void getBlockAndVoxelIndexFromPositionInLayer(const float block_size,
 Vector3f getPositionFromBlockIndexAndVoxelIndex(const float block_size,
                                                 const Index3D& block_index,
                                                 const Index3D& voxel_index) {
-  constexpr float kVoxelsPerSideInv = 1.0f / VoxelBlock<bool>::kVoxelsPerSide;
-  const float voxel_size = block_size * kVoxelsPerSideInv;
-
+  const float voxel_size = blockSizeToVoxelSize(block_size);
   return Vector3f(block_size * block_index.cast<float>() +
                   voxel_size * voxel_index.cast<float>());
 }

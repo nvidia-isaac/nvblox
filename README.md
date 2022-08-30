@@ -9,9 +9,9 @@ An SDF library which offers
 * ROS2 interface (see [isaac_ros_nvblox](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox))
 * ~~Python bindings~~ (coming soon)
 
-Do we need another SDF library? That depends on your use case. If your interested in:
-* **Path planning**: We provide GPU accelerated, incremental algorithms for calculating the Euclidian Signed Distance Field (ESDF) which is useful for colision checking, which is critical robotic pathplanning. In contrast, existing GPU-accelerated libraries target reconstruction only and are general not useful in a robotics context.
-* **GPU acceleration**: Our previous works [voxblox](https://github.com/ethz-asl/voxblox) and [voxgraph](https://github.com/ethz-asl/voxgraph) are used for path planning, however are CPU only, which limits the speed of these toolboxes (and therefore the resolution of the maps they can build in real-time).
+Do we need another SDF library? That depends on your use case. If you're interested in:
+* **Path planning**: We provide GPU accelerated, incremental algorithms for calculating the Euclidian Signed Distance Field (ESDF) which is useful for colision checking and therefore robotic pathplanning. In contrast, existing GPU-accelerated libraries target reconstruction only, and are therefore generally not useful in a robotics context.
+* **GPU acceleration**: Our previous works [voxblox](https://github.com/ethz-asl/voxblox) and [voxgraph](https://github.com/ethz-asl/voxgraph) are used for path planning, however utilize CPU compute only, which limits the speed of these toolboxes (and therefore the resolution of the maps they can build in real-time).
 
 Here we show slices through a distance function generated from *nvblox* using data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/), specifically the [Sun3D](http://sun3d.cs.princeton.edu/) `mit_76_studyroom` scene:
 

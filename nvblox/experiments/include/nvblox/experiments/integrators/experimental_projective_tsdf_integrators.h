@@ -42,7 +42,7 @@ class ProjectiveTsdfIntegratorExperimentsTexture
   void updateBlocks(const std::vector<Index3D>& block_indices,
                     const DepthImage& depth_frame, const Transform& T_L_C,
                     const Camera& camera, const float truncation_distance_m,
-                    TsdfLayer* layer) override;
+                    TsdfLayer* layer);
 };
 
 class ProjectiveTsdfIntegratorExperimentsGlobal
@@ -56,7 +56,7 @@ class ProjectiveTsdfIntegratorExperimentsGlobal
   void updateBlocks(const std::vector<Index3D>& block_indices,
                     const DepthImage& depth_frame, const Transform& T_L_C,
                     const Camera& camera, const float truncation_distance_m,
-                    TsdfLayer* layer) override;
+                    TsdfLayer* layer);
 };
 
 }  //  namespace experiments

@@ -63,9 +63,9 @@ inline void Scene::setVoxel(float dist, TsdfVoxel* voxel) const {
 template <typename VoxelType>
 void Scene::generateSdfFromScene(float max_dist,
                                  VoxelBlockLayer<VoxelType>* layer) const {
-  CHECK(layer->memory_type() == MemoryType::kUnified)
+  CHECK(layer->memory_type() != MemoryType::kDevice)
       << "For scene generation the layer must be CPU accessible "
-         "(MemoryType::kUnified).";
+         "(MemoryType::kUnified or MemoryType::kHost).";
   timing::Timer sim_timer("primitives/generate_sdf");
 
   CHECK_NOTNULL(layer);

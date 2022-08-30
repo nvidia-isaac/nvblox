@@ -28,10 +28,11 @@ class ProjectiveTsdfIntegratorCPU : public ProjectiveTsdfIntegrator {
 
  protected:
   // We override the GPU version of this function and run it on the CPU.
+  template <typename SensorType>
   void updateBlocks(const std::vector<Index3D>& block_indices,
                     const DepthImage& depth_frame, const Transform& T_L_C,
-                    const Camera& camera, const float truncation_distance_m,
-                    TsdfLayer* layer) override;
+                    const SensorType& camera, const float truncation_distance_m,
+                    TsdfLayer* layer);
 };
 
 }  // namespace nvblox

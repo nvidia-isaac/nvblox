@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#include <numeric>
+
 #include <gtest/gtest.h>
 
 #include "nvblox/core/blox.h"
@@ -24,7 +26,7 @@ limitations under the License.
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
-#include "nvblox/ray_tracing/sphere_tracer.h"
+#include "nvblox/rays/sphere_tracer.h"
 #include "nvblox/utils/timing.h"
 
 #include "nvblox/tests/gpu_image_routines.h"
@@ -131,9 +133,10 @@ class SphereTracingTest : public ::testing::Test {
       T_S_C.pretranslate(cartesian_coordinates);
 
       // Generate a depth image of the scene.
-      SphereTracer::Params params;
-      scene.generateDepthImageFromScene(
-          *camera_ptr_, T_S_C, params.maximum_ray_length_m, &depth_image);
+      SphereTracer sphere_tracer;
+      scene.generateDepthImageFromScene(*camera_ptr_, T_S_C,
+                                        sphere_tracer.maximum_ray_length_m(),
+                                        &depth_image);
 
       // Integrate this depth image.
       integrator.integrateFrame(depth_image, T_S_C, *camera_ptr_, layer_ptr);
@@ -146,6 +149,17 @@ class SphereTracingInScaledDistanceFieldTest
       public ::testing::WithParamInterface<float> {
  protected:
   // Yo dawg I heard you like params
+};
+
+class SphereTracerTester : public SphereTracer {
+ public:
+  SphereTracerTester() : SphereTracer() {}
+
+  // Expose the protected method to cast a single ray.
+  bool castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
+                 const float truncation_distance_m, float* t) const {
+    return SphereTracer::castOnGPU(ray, tsdf_layer, truncation_distance_m, t);
+  }
 };
 
 TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
@@ -182,7 +196,7 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
   callFunctionOnAllVoxels<TsdfVoxel>(layer_.get(), scaling_lambda);
 
   // Sphere tracer
-  SphereTracer sphere_tracer_gpu;
+  SphereTracerTester sphere_tracer_gpu;
 
   // Test a number of random rays
   constexpr int kNumTests = 1000;
@@ -210,7 +224,7 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
                             (kVolumeHalfSize - kMinDistanceFromVolumeEdges)));
 
     // Ray between these points
-    const Ray ray{(p_plane_L - p_volume_L).normalized(), p_volume_L};
+    const Ray ray(p_volume_L, (p_plane_L - p_volume_L).normalized());
 
     // March
     float t;
@@ -225,8 +239,9 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
     float distance_gt;
     Vector3f ray_intersection_gt;
     constexpr float kMaxDist = 20.0f;
-    EXPECT_TRUE(scene.getRayIntersection(ray.origin, ray.direction, kMaxDist,
-                                         &ray_intersection_gt, &distance_gt));
+    EXPECT_TRUE(scene.getRayIntersection(ray.origin(), ray.direction(),
+                                         kMaxDist, &ray_intersection_gt,
+                                         &distance_gt));
 
     // Check
     const float error = std::abs(t - distance_gt);
@@ -296,13 +311,13 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
     render_timer.Stop();
 
     // Generate a GT image
-    scene.generateDepthImageFromScene(
-        *camera_ptr_, T_S_C, sphere_tracer_gpu.params().maximum_ray_length_m,
-        &depth_frame_gt);
+    scene.generateDepthImageFromScene(*camera_ptr_, T_S_C,
+                                      sphere_tracer_gpu.maximum_ray_length_m(),
+                                      &depth_frame_gt);
 
     // Error image
-    test_utils::getDifferenceImageOnGPU(*depth_image_sphere_traced_ptr,
-                                        depth_frame_gt, &diff);
+    image::getDifferenceImageGPU(*depth_image_sphere_traced_ptr, depth_frame_gt,
+                                 &diff);
 
     // Count the number of error pixels.
     // NOTE(alexmillane): We ignore rays that do not converge (this occurs in
@@ -471,6 +486,158 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
   io::writeToCsv("sphere_tracing_image_half.csv", depth_image_half);
   io::writeToCsv("sphere_tracing_image_quarter.csv", depth_image_quarter);
   io::writeToCsv("sphere_tracing_image_subsampling_diff.csv", diff);
+}
+
+TEST_F(SphereTracingTest, GettersAndSetters) {
+  // Sphere tracer
+  SphereTracer sphere_tracer;
+  sphere_tracer.maximum_steps(1);
+  sphere_tracer.maximum_ray_length_m(2.0f);
+  sphere_tracer.surface_distance_epsilon_vox(3.0f);
+  EXPECT_EQ(sphere_tracer.maximum_steps(), 1);
+  EXPECT_EQ(sphere_tracer.maximum_ray_length_m(), 2.0f);
+  EXPECT_EQ(sphere_tracer.surface_distance_epsilon_vox(), 3.0f);
+}
+
+// Generates a grid of voxels centers falling with a 2D bounding box at a
+// constant height.
+std::vector<Vector3f> generatePlanarGrid(
+    const Eigen::AlignedBox2f& bound_box_2d, const float points_height,
+    const TsdfLayer& tsdf_layer) {
+  // Get the position of the closest voxel center
+  auto to_voxel_center_2d = [&tsdf_layer](const Vector2f& p_L) -> Vector2f {
+    const Eigen::Vector2f half_voxel_width =
+        0.5f * tsdf_layer.voxel_size() * Eigen::Vector2f::Ones();
+    const Eigen::Vector2i global_voxel_idx =
+        (p_L / tsdf_layer.voxel_size()).array().floor().cast<int>();
+    const Eigen::Vector2f voxel_center =
+        global_voxel_idx.cast<float>() * tsdf_layer.voxel_size() +
+        half_voxel_width;
+    return voxel_center;
+  };
+
+  // Get the extremities of the grid inside the bounding box
+  // This is implemented as finding the closest center from 0.5 voxels back from
+  // box corners.
+  const Eigen::Vector2f half_voxel_width =
+      0.5f * tsdf_layer.voxel_size() * Eigen::Vector2f::Ones();
+  const Eigen::Vector2f max_voxel_center =
+      to_voxel_center_2d(bound_box_2d.max() - half_voxel_width);
+  const Eigen::Vector2f min_voxel_center =
+      to_voxel_center_2d(bound_box_2d.min() + half_voxel_width);
+
+  // Actually generate the grid
+  std::vector<Vector3f> grid_points;
+  for (float x = min_voxel_center.x(); x <= max_voxel_center.x();
+       x += tsdf_layer.voxel_size()) {
+    for (float y = min_voxel_center.y(); y <= max_voxel_center.y();
+         y += tsdf_layer.voxel_size()) {
+      grid_points.emplace_back(x, y, points_height);
+    }
+  }
+  return grid_points;
+}
+
+TEST_F(SphereTracingTest, CastingFromPositiveAndNegative) {
+  //
+  // Plane
+  using Plane = Eigen::Hyperplane<float, 3>;
+
+  // Tilted plane
+  const float angle_x_deg = 10;
+  const float angle_y_deg = 10;
+  const float kRadsPerDegree = M_PI / 180.0f;
+  const Eigen::Quaternionf q =
+      Eigen::AngleAxisf(angle_x_deg * kRadsPerDegree,
+                        Eigen::Vector3f::UnitX()) *
+      Eigen::AngleAxisf(angle_y_deg * kRadsPerDegree, Eigen::Vector3f::UnitY());
+  const Vector3f normal = q * Vector3f(0.0f, 0.0f, 1.0f).normalized();
+  const Vector3f center = Vector3f(0.0f, 0.0f, 0.0f);
+  const Plane ground_plane(normal, center);
+
+  // The 2D bounding box we'll cast rays up and down in.
+  Eigen::AlignedBox2f bound_box_2d(Vector2f(-5, -5), Vector2f(5, 5));
+
+  // Calculate the GT SDF
+  primitives::Scene scene;
+  auto plane = std::make_unique<primitives::Plane>(center, normal);
+  scene.addPrimitive(std::move(plane));
+  scene.aabb() = AxisAlignedBoundingBox(
+      Vector3f(bound_box_2d.min().x(), bound_box_2d.min().y(), -5.0),
+      Vector3f(bound_box_2d.max().x(), bound_box_2d.max().y(), 5.0));
+  scene.generateSdfFromScene(truncation_distance_m_, layer_.get());
+
+  // Do some ray casting
+  SphereTracer sphere_tracer;
+
+  // Generate some points on a 2D grid BELOW THE PLANE FOR NOW
+  const std::vector<Vector3f> grid_points =
+      generatePlanarGrid(bound_box_2d, 0.0f, *layer_);
+
+  // Get distances at ray origins
+  std::vector<TsdfVoxel> start_voxels;
+  std::vector<bool> get_voxels_success_flags;
+  layer_->getVoxels(grid_points, &start_voxels, &get_voxels_success_flags);
+
+  // Making dem rays
+  std::vector<Ray> rays_L;
+  for (int i = 0; i < grid_points.size(); i++) {
+    const auto& p_L = grid_points[i];
+    CHECK(get_voxels_success_flags[i]);
+    // Fire ray down if start distance positive, up if negative
+    if (start_voxels[i].distance >= 0.0f) {
+      rays_L.emplace_back(p_L, Vector3f(0.0f, 0.0f, -1.0f));
+    } else {
+      rays_L.emplace_back(p_L, Vector3f(0.0f, 0.0f, 1.0f));
+    }
+  }
+
+  // Actually do the ray cast.
+  std::pair<device_vector<Vector3f>, device_vector<bool>> casting_results =
+      sphere_tracer.castOnGPU(rays_L, *layer_, truncation_distance_m_);
+  const device_vector<Vector3f> intersections_points_L_device =
+      std::move(casting_results.first);
+  const device_vector<bool> success_flags_device =
+      std::move(casting_results.second);
+
+  // Bring the results back to the CPU
+  std::vector<bool> success_flags = success_flags_device.toVector();
+  std::vector<Vector3f> intersections_points_L =
+      intersections_points_L_device.toVector();
+
+  // Check the percentage of successful ray casts
+  const int num_hits = std::accumulate(
+      success_flags.begin(), success_flags.end(), 0,
+      [](int sum, bool next) -> int { return sum + static_cast<int>(next); });
+  const float percentage_hits = static_cast<float>(num_hits) /
+                                static_cast<float>(success_flags.size()) *
+                                100.0f;
+  std::cout << "percentage_hits: " << percentage_hits << std::endl;
+  // There's no reason that any of the rays should not hit the plane.
+  EXPECT_GT(percentage_hits, 98.0f);
+
+  // True intersections
+  std::vector<Vector3f> gt_intersections;
+  for (const auto& ray : rays_L) {
+    const float param_intersection = ray.intersection(ground_plane);
+    gt_intersections.push_back(ray.pointAt(param_intersection));
+  }
+
+  // Get the errors
+  std::vector<float> errors_z;
+  std::transform(
+      intersections_points_L.begin(), intersections_points_L.end(),
+      gt_intersections.begin(), std::back_inserter(errors_z),
+      [](const Vector3f& p1, const Vector3f& p2) { return (p1 - p2).norm(); });
+
+  const float mean_error =
+      std::accumulate(errors_z.begin(), errors_z.end(), 0.0f) /
+      static_cast<float>(errors_z.size());
+  std::cout << "mean abs error: " << mean_error << std::endl;
+
+  // Some bizarre linking error requires this copy of voxel size.
+  const float voxel_size = voxel_size_m_;
+  EXPECT_LT(mean_error, voxel_size);
 }
 
 int main(int argc, char** argv) {

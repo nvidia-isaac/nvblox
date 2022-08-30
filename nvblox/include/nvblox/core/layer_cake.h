@@ -40,6 +40,10 @@ class LayerCake {
   template <typename LayerType>
   LayerType* add(MemoryType memory_type);
 
+  // Moves the ownership of the layer to the LayerCake.
+  inline void insert(const std::type_index& type_index,
+                     std::unique_ptr<BaseLayer>&& layer);
+
   // Retrieve layers (as pointers)
   template <typename LayerType>
   LayerType* getPtr();
@@ -63,9 +67,16 @@ class LayerCake {
   template <typename... LayerTypes, typename... MemoryTypes>
   static LayerCake create(float voxel_size, MemoryTypes... memory_type);
 
+  const std::unordered_map<std::type_index, std::unique_ptr<BaseLayer>>&
+  get_layers() const {
+    return layers_;
+  }
+
+  float voxel_size() const { return voxel_size_; }
+
  private:
   // Params
-  float voxel_size_;
+  float voxel_size_ = 0.0f;
 
   // Stored layers
   // Note(alexmillane): Currently we restrict the cake to storing a single layer

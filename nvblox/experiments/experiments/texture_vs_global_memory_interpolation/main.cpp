@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   google::InstallFailureSignalHandler();
 
   auto fuser =
-      nvblox::experiments::Fuse3DMatch::createFromCommandLineArgs(argc, argv);
+      nvblox::experiments::Fuser::createFromCommandLineArgs(argc, argv);
 
   // Run texture-based interpolation experiment
   *fuser.mapper().tsdf_integrator_ptr() = nvblox::experiments::ProjectiveTsdfIntegratorExperimentsTexture>();

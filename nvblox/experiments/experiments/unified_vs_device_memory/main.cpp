@@ -23,12 +23,11 @@ limitations under the License.
 #include "nvblox/core/cuda/warmup.h"
 #include "nvblox/core/layer.h"
 
-#include "nvblox/experiments/common/fuse_3dmatch.h"
+#include "nvblox/datasets/3dmatch.h"
+#include "nvblox/executables/fuser.h"
 
 DEFINE_bool(unified_memory, false, "Run the test using unified memory");
 DEFINE_bool(device_memory, false, "Run the test using device memory");
-DEFINE_string(timing_output_path, "./3dmatch_timings.txt",
-              "File in which to save the timing results.");
 
 DECLARE_bool(alsologtostderr);
 
@@ -55,26 +54,25 @@ int main(int argc, char* argv[]) {
     std::cout << "Loading 3DMatch files from " << dataset_base_path << ".\n";
   }
 
-  std::string esdf_output_path = "./3dmatch_esdf_pointcloud.ply";
-  std::string mesh_output_path = "./3dmatch_mesh.ply";
-  experiments::Fuse3DMatch fuser(dataset_base_path, FLAGS_timing_output_path,
-                                 mesh_output_path, esdf_output_path);
+  constexpr int seq_id = 1;
+  std::unique_ptr<Fuser> fuser =
+      datasets::threedmatch::createFuser(dataset_base_path, seq_id);
 
   // Replacing the TSDF and colors layers with layers stored in the appropriate
   // memory type
   if (FLAGS_device_memory) {
-    fuser.mapper().layers() =
+    fuser->mapper().layers() =
         LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, MeshLayer>(
-            fuser.voxel_size_m_, MemoryType::kDevice);
+            fuser->voxel_size_m_, MemoryType::kDevice);
   } else {
-    fuser.mapper().layers() =
+    fuser->mapper().layers() =
         LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, MeshLayer>(
-            fuser.voxel_size_m_, MemoryType::kUnified, MemoryType::kUnified,
+            fuser->voxel_size_m_, MemoryType::kUnified, MemoryType::kUnified,
             MemoryType::kDevice, MemoryType::kDevice);
   }
 
   warmupCuda();
-  fuser.run();
+  fuser->run();
 
   return 0;
 }

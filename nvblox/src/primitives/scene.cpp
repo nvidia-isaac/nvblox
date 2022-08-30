@@ -138,7 +138,7 @@ void Scene::generateDepthImageFromScene(const Camera& camera,
     for (u_C.y() = 0; u_C.y() < camera.height(); u_C.y()++) {
       // Get the ray going through this pixel.
       const Vector3f ray_direction =
-          T_S_C.linear() * camera.rayFromPixelIndices(u_C).normalized();
+          T_S_C.linear() * camera.vectorFromPixelIndices(u_C).normalized();
       // Get the intersection point for this ray.
       Vector3f ray_intersection;
       float ray_dist;

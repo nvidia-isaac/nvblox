@@ -66,6 +66,8 @@ class EsdfIntegratorTest : public ::testing::TestWithParam<Obstacle> {
   bool validateEsdf(const EsdfLayer& esdf_layer,
                     float max_squared_distance_vox);
 
+  float max_squared_distance_vox(float voxel_size) const;
+
   bool output_pointclouds_ = false;
   float block_size_;
   float voxel_size_ = 0.10f;
@@ -96,8 +98,8 @@ void EsdfIntegratorTest::SetUp() {
   gt_sdf_layer_.reset(new TsdfLayer(voxel_size_, MemoryType::kUnified));
   esdf_layer_.reset(new EsdfLayer(voxel_size_, MemoryType::kUnified));
 
-  esdf_integrator_.max_distance_m() = max_distance_;
-  esdf_integrator_.min_weight() = 1.0f;
+  esdf_integrator_.max_distance_m(max_distance_);
+  esdf_integrator_.min_weight(1.0f);
 
   camera_.reset(new Camera(300, 300, 320, 240, 640, 480));
 }
@@ -434,6 +436,11 @@ bool EsdfIntegratorTest::validateEsdf(const EsdfLayer& esdf_layer,
   return true;
 }
 
+float EsdfIntegratorTest::max_squared_distance_vox(float voxel_size) const {
+  const float max_distance_m = esdf_integrator_.max_distance_m();
+  return max_distance_m * max_distance_m / (voxel_size * voxel_size);
+}
+
 TEST_P(EsdfIntegratorTest, SingleEsdfTestCPU) {
   // Create a scene that's just a plane.
   addParameterizedObstacleToScene(GetParam());
@@ -453,8 +460,8 @@ TEST_P(EsdfIntegratorTest, SingleEsdfTestCPU) {
             very_small_cutoff_);
 
   // Check if all parents point the correct directions, etc.
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
 
   float slice_height = 1.0f;
   std::string obstacle_string = std::to_string(static_cast<int>(GetParam()));
@@ -495,8 +502,8 @@ TEST_P(EsdfIntegratorTest, SingleEsdfTestGPU) {
             very_small_cutoff_);
 
   // Check if all parents point the correct directions, etc.
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
 
   if (output_pointclouds_) {
     std::string obstacle_string = std::to_string(static_cast<int>(GetParam()));
@@ -573,8 +580,8 @@ TEST_P(EsdfIntegratorTest, ComplexSceneWithTsdf) {
   EXPECT_LE(compareEsdfToGt(*esdf_layer_, *gt_sdf_layer_, 4 * voxel_size_),
             0.20);
 
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
 
   if (output_pointclouds_) {
     //  Output the layer for inspection.
@@ -660,8 +667,8 @@ TEST_P(EsdfIntegratorTest, IncrementalTsdfAndEsdfWithObjectRemovalGPU) {
   EXPECT_LE(compareEsdfToEsdf(*esdf_layer_, esdf_layer_batch, voxel_size_),
             small_cutoff_);
 
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
 
   if (output_pointclouds_) {
     float slice_height = 3.75f;
@@ -724,8 +731,8 @@ TEST_P(EsdfIntegratorTest, IncrementalEsdf2DWithObjectRemoval) {
   EXPECT_LE(compareEsdfToEsdf(*esdf_layer_, esdf_layer_batch, voxel_size_),
             small_cutoff_);
 
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
   if (output_pointclouds_) {
     float slice_height = 1.0f;
     std::string obstacle_string = std::to_string(static_cast<int>(obstacle));
@@ -793,8 +800,8 @@ TEST_P(EsdfIntegratorTest, IncrementalEsdfSliceWithObjectRemovalGPU) {
   EXPECT_LE(compareEsdfToEsdf(*esdf_layer_, esdf_layer_batch, voxel_size_),
             small_cutoff_);
 
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
   if (output_pointclouds_) {
     float slice_height = output_z;
     std::string obstacle_string = std::to_string(static_cast<int>(obstacle));
@@ -849,8 +856,8 @@ TEST_P(EsdfIntegratorTest, IncrementalEsdfWithObjectRemoval) {
   EXPECT_LE(compareEsdfToEsdf(*esdf_layer_, esdf_layer_batch, voxel_size_),
             small_cutoff_);
 
-  EXPECT_TRUE(validateEsdf(
-      *esdf_layer_, esdf_integrator_.max_squared_distance_vox(voxel_size_)));
+  EXPECT_TRUE(
+      validateEsdf(*esdf_layer_, max_squared_distance_vox(voxel_size_)));
 
   if (output_pointclouds_) {
     float slice_height = 3.5f;

@@ -17,6 +17,8 @@ limitations under the License.
 
 #include <utility>
 
+#include "nvblox/core/color.h"
+
 namespace nvblox {
 namespace cuda {
 
@@ -30,6 +32,16 @@ float max(const int rows, const int cols, const float* image);
 float min(const int rows, const int cols, const float* image);
 std::pair<float, float> minmax(const int rows, const int cols,
                                const float* image);
+
+void elementWiseMinInPlace(const int rows, const int cols, const float constant,
+                           float* image);
+void elementWiseMaxInPlace(const int rows, const int cols, const float constant,
+                           float* image);
+
+void diff(const int rows, const int cols, const Color* image_1, const Color* image_2,
+          Color* diff_image_ptr);
+void diff(const int rows, const int cols, const float* image_1, const float* image_2,
+          float* diff_image_ptr);
 
 }  // namespace cuda
 }  // namespace nvblox

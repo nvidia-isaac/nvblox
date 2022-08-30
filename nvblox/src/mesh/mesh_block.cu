@@ -84,7 +84,8 @@ CudaMeshBlock::CudaMeshBlock(MeshBlock* block) {
   triangles = block->triangles.data();
   colors = block->colors.data();
 
-  size = block->vertices.size();
+  vertices_size = block->vertices.size();
+  triangles_size = block->triangles.size();
 }
 
 }  // namespace nvblox

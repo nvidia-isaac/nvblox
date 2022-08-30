@@ -21,21 +21,33 @@ limitations under the License.
 
 #include "nvblox/core/hash.h"
 #include "nvblox/core/types.h"
+#include "nvblox/core/unified_vector.h"
 
 namespace nvblox {
 
 typedef class stdgpu::unordered_set<Index3D, Index3DHash,
                                     std::equal_to<Index3D>>
-    Index3DDeviceSet_t;
+    Index3DDeviceSetType;
 
 struct Index3DDeviceSet {
   Index3DDeviceSet(size_t size);
   ~Index3DDeviceSet();
 
-  Index3DDeviceSet_t set;
+  /// Clear and resize operations which allow reusing a single set object.
+  /// If resizing to a smaller size, will *NOT* delete the existing set.
+  /// Clears the contents of the set in any case.
+  void resize(size_t size);
+
+  /// Clear the contents of the set.
+  void clear();
+
+  Index3DDeviceSetType set;
 };
 
 // Copies the contents of a Index3DDeviceSet to an std::vector.
-void copySetToVector(const Index3DDeviceSet_t& set, std::vector<Index3D>* vec);
+void copySetToVector(const Index3DDeviceSetType& set,
+                     std::vector<Index3D>* vec);
+void copySetToDeviceVector(const Index3DDeviceSetType& set,
+                           device_vector<Index3D>* vec);
 
 }  // namespace nvblox
