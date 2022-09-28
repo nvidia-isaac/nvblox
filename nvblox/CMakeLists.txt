@@ -24,13 +24,18 @@ option(BUILD_EXPERIMENTS "Build performance experimentation binaries" OFF)
 option(BUILD_FOR_ALL_ARCHS "Build for all GPU architectures" OFF)
 
 # Only used if the flag above is true.
-set(CUDA_ARCHITECTURE_FLAGS " -gencode=arch=compute_86,code=sm_86 \
-                              -gencode=arch=compute_80,code=sm_80 \
-                              -gencode=arch=compute_75,code=sm_75 \
-                              -gencode=arch=compute_72,code=sm_72 \
-                              -gencode=arch=compute_70,code=sm_70 \
-                              -gencode=arch=compute_61,code=sm_61 \
-                              -gencode=arch=compute_60,code=sm_60")
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+    set(CUDA_ARCHITECTURE_FLAGS "86;80;75;72;70;61;60")
+else()
+    set(CUDA_ARCHITECTURE_FLAGS " -gencode=arch=compute_86,code=sm_86 \
+                                  -gencode=arch=compute_80,code=sm_80 \
+                                  -gencode=arch=compute_75,code=sm_75 \
+                                  -gencode=arch=compute_72,code=sm_72 \
+                                  -gencode=arch=compute_70,code=sm_70 \
+                                  -gencode=arch=compute_61,code=sm_61 \
+                                  -gencode=arch=compute_60,code=sm_60")
+endif()
+
 
 # Suppress spammy Eigen CUDA warnings.
 # "expt-relaxed-constexpr" allows sharing constexpr between host and device code.
@@ -149,12 +154,11 @@ target_include_directories(nvblox_lib PUBLIC
 set_target_properties(nvblox_lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
-    set_target_properties(nvblox_lib PROPERTIES CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
-    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CUDA_ARCHITECTURES)
-else()
-    set_target_properties(nvblox_lib PROPERTIES CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS})
-    set_target_properties(nvblox_lib PROPERTIES EXPORT_PROPERTIES CMAKE_CUDA_FLAGS)
+    set_property(TARGET nvblox_lib APPEND PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+    set_property(TARGET nvblox_lib APPEND PROPERTY EXPORT_PROPERTIES CUDA_ARCHITECTURES)
 endif()
+set_property(TARGET nvblox_lib PROPERTY CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS})
+set_property(TARGET nvblox_lib APPEND PROPERTY EXPORT_PROPERTIES CMAKE_CUDA_FLAGS)
 
 ############
 # BINARIES #
