@@ -21,6 +21,10 @@ limitations under the License.
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/utils/timing.h"
 
+DEFINE_bool(
+    nvblox_test_file_output, false,
+    "Whether to output debug files from tests to disk or not. Off by default.");
+
 namespace nvblox {
 namespace test_utils {
 

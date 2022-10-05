@@ -24,6 +24,8 @@ limitations under the License.
 #include "nvblox/mesh/mesh.h"
 #include "nvblox/primitives/scene.h"
 
+#include "nvblox/tests/utils.h"
+
 using namespace nvblox;
 
 primitives::Scene getSphereInABoxScene(const Vector3f& sphere_center,
@@ -58,9 +60,13 @@ TEST(MapperTest, ClearOutsideSphere) {
   primitives::Scene scene = getSphereInABoxScene(sphere_center, sphere_radius);
 
   constexpr float voxel_size_m = 0.1;
-  RgbdMapper mapper(voxel_size_m, MemoryType::kUnified);
+  RgbdMapper mapper(voxel_size_m, MemoryType::kDevice);
 
-  scene.generateSdfFromScene(1.0, &mapper.tsdf_layer());
+  TsdfLayer tsdf_layer_host(voxel_size_m, MemoryType::kHost);
+
+  scene.generateSdfFromScene(1.0, &tsdf_layer_host);
+  mapper.tsdf_layer() = tsdf_layer_host;
+  
   EXPECT_GT(mapper.tsdf_layer().numAllocatedBlocks(), 0);
 
   mapper.generateMesh();
@@ -71,9 +77,12 @@ TEST(MapperTest, ClearOutsideSphere) {
     mapper.color_layer().allocateBlockAtIndex(idx);
   }
 
+  // Create a copy of the mesh layer on host.
+  MeshLayer mesh_layer_host(mapper.mesh_layer(), MemoryType::kHost);
+
   // Not all mesh points are on the sphere (walls are there).
   EXPECT_FALSE(
-      allMeshPointsOnSphere(mapper.mesh_layer(), sphere_center, sphere_radius));
+      allMeshPointsOnSphere(mesh_layer_host, sphere_center, sphere_radius));
 
   // Clearing outside of sphere
   mapper.clearOutsideRadius(sphere_center, sphere_radius);
@@ -83,12 +92,13 @@ TEST(MapperTest, ClearOutsideSphere) {
   EXPECT_EQ(mapper.tsdf_layer().numAllocatedBlocks(),
             mapper.color_layer().numAllocatedBlocks());
 
+  MeshLayer mesh_layer_host2(mapper.mesh_layer(), MemoryType::kHost);
+
   // Test resulting mesh
   EXPECT_TRUE(
-      allMeshPointsOnSphere(mapper.mesh_layer(), sphere_center, sphere_radius));
+      allMeshPointsOnSphere(mesh_layer_host2, sphere_center, sphere_radius));
 
-  constexpr bool kOutputMesh = false;
-  if (kOutputMesh) {
+  if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(mapper.mesh_layer(), "mapper_test.ply");
   }
 }

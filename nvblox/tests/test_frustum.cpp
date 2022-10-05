@@ -21,13 +21,15 @@ limitations under the License.
 #include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/voxels.h"
-#include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/3dmatch.h"
+#include "nvblox/datasets/image_loader.h"
 #include "nvblox/integrators/view_calculator.h"
 #include "nvblox/io/pointcloud_io.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
+
+#include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
@@ -250,8 +252,7 @@ TEST_F(FrustumTest, PlaneWithGround) {
     }
   }
 
-  bool output = false;
-  if (output) {
+  if (FLAGS_nvblox_test_file_output) {
     for (const Index3D& block_index : blocks_in_image_view) {
       TsdfBlock::Ptr block = tsdf_layer.allocateBlockAtIndex(block_index);
       for (int x = 0; x < TsdfBlock::kVoxelsPerSide; x++) {

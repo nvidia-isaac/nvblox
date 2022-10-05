@@ -19,8 +19,8 @@ limitations under the License.
 #include "nvblox/core/common_names.h"
 #include "nvblox/core/layer.h"
 #include "nvblox/core/voxels.h"
-#include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/3dmatch.h"
+#include "nvblox/datasets/image_loader.h"
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/mesh_io.h"
@@ -127,37 +127,30 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
   constexpr float kVoxelSizeM = 0.05f;
   const float kBlockSizeM = VoxelBlock<TsdfVoxel>::kVoxelsPerSide * kVoxelSizeM;
   ProjectiveTsdfIntegrator tsdf_integrator;
-  TsdfLayer tsdf_layer(kVoxelSizeM, MemoryType::kUnified);
+  TsdfLayer tsdf_layer(kVoxelSizeM, MemoryType::kDevice);
   tsdf_integrator.integrateFrame(depth_image_1, Transform::Identity(), camera,
                                  &tsdf_layer);
 
   // Integrate Color (GPU)
   ProjectiveColorIntegrator color_integrator;
-  ColorLayer color_layer(kVoxelSizeM, MemoryType::kUnified);
+  ColorLayer color_layer(kVoxelSizeM, MemoryType::kDevice);
   color_integrator.integrateFrame(color_image_1, Transform::Identity(), camera,
                                   tsdf_layer, &color_layer);
+  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
 
   // Generate a mesh from the "reconstruction"
   MeshIntegrator mesh_integrator;
-  MeshLayer mesh_layer_colored_on_gpu(kBlockSizeM, MemoryType::kUnified);
+  MeshLayer mesh_layer_colored_on_gpu(kBlockSizeM, MemoryType::kDevice);
   EXPECT_TRUE(mesh_integrator.integrateMeshFromDistanceField(
       tsdf_layer, &mesh_layer_colored_on_gpu));
 
   // Copy the mesh
-  MeshLayer mesh_layer_colored_on_cpu(kBlockSizeM, MemoryType::kUnified);
-  for (const Index3D& block_idx :
-       mesh_layer_colored_on_gpu.getAllBlockIndices()) {
-    MeshBlock::ConstPtr mesh_block =
-        mesh_layer_colored_on_gpu.getBlockAtIndex(block_idx);
-    MeshBlock::Ptr mesh_block_copy =
-        mesh_layer_colored_on_cpu.allocateBlockAtIndex(block_idx);
-    mesh_block_copy->vertices = unified_vector<Vector3f>(mesh_block->vertices);
-    mesh_block_copy->normals = unified_vector<Vector3f>(mesh_block->normals);
-  }
+  MeshLayer mesh_layer_colored_on_cpu(mesh_layer_colored_on_gpu,
+                                      MemoryType::kHost);
 
   // Color on GPU and CPU
   mesh_integrator.colorMeshGPU(color_layer, &mesh_layer_colored_on_gpu);
-  mesh_integrator.colorMeshCPU(color_layer, &mesh_layer_colored_on_cpu);
+  mesh_integrator.colorMeshCPU(color_layer_host, &mesh_layer_colored_on_cpu);
 
   // Compare colors between the two implementations
   int num_same = 0;
@@ -165,14 +158,17 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
   int num_diff_outside = 0;
   int total_vertices = 0;
 
-  auto block_indices_gpu = mesh_layer_colored_on_gpu.getAllBlockIndices();
+  MeshLayer mesh_layer_colored_on_gpu_host(mesh_layer_colored_on_gpu,
+                                           MemoryType::kHost);
+
+  auto block_indices_gpu = mesh_layer_colored_on_gpu_host.getAllBlockIndices();
   auto block_indices_cpu = mesh_layer_colored_on_cpu.getAllBlockIndices();
   EXPECT_EQ(block_indices_gpu.size(), block_indices_cpu.size());
   for (int idx = 0; idx < block_indices_gpu.size(); idx++) {
     const Index3D& block_idx = block_indices_gpu[idx];
 
     MeshBlock::ConstPtr block_gpu =
-        mesh_layer_colored_on_gpu.getBlockAtIndex(block_idx);
+        mesh_layer_colored_on_gpu_host.getBlockAtIndex(block_idx);
     MeshBlock::ConstPtr block_cpu =
         mesh_layer_colored_on_cpu.getBlockAtIndex(block_idx);
     CHECK(block_gpu);

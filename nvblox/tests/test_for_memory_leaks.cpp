@@ -118,7 +118,7 @@ TEST(MemoryLeakTest, 3DMatchMeshing) {
   constexpr int kNumRounds = 100;
   // Generate a mesh
   MeshIntegrator mesh_integrator;
-  MeshLayer mesh_layer_gpu(kBlockSizeM, MemoryType::kUnified);
+  MeshLayer mesh_layer_gpu(kBlockSizeM, MemoryType::kDevice);
   for (int i = 0; i < kNumRounds; i++) {
     std::cout << "i: " << i << std::endl;
     // Integrate depth

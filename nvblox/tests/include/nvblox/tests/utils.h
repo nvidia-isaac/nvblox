@@ -15,11 +15,15 @@ limitations under the License.
 */
 #pragma once
 
+#include <gflags/gflags.h>
+
 #include "nvblox/core/blox.h"
 #include "nvblox/core/color.h"
 #include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/voxels.h"
+
+DECLARE_bool(nvblox_test_file_output);
 
 namespace nvblox {
 namespace test_utils {
