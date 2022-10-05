@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include "nvblox/experiments/integrators/cuda/experimental_integrator_input_frames.cuh"
 
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/integrators/internal/integrators_common.h"
 
 namespace nvblox {
 namespace experiments {

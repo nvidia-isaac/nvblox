@@ -78,7 +78,7 @@ class Image {
   Image& operator=(Image&& other);
 
   // Deep copy constructor (second can be used to transition memory type)
-  Image(const Image& other);
+  explicit Image(const Image& other);
   Image(const Image& other, MemoryType memory_type);
   Image& operator=(const Image& other);
 
@@ -117,6 +117,9 @@ class Image {
   void populateFromBuffer(int rows, int cols, const ElementType* buffer,
                           MemoryType memory_type = kDefaultImageMemoryType);
 
+  // Set the image to 0.
+  void setZero();
+
   // Factories
   static inline Image fromBuffer(
       int rows, int cols, const ElementType* buffer,
@@ -144,6 +147,13 @@ std::pair<float, float> minmaxGPU(const DepthImage& image);
 float maxCPU(const DepthImage& image);
 float minCPU(const DepthImage& image);
 std::pair<float, float> minmaxCPU(const DepthImage& image);
+
+void elementWiseMinInPlace(const float constant, DepthImage* image);
+void elementWiseMaxInPlace(const float constant, DepthImage* image);
+
+template <typename ImageType>
+void getDifferenceImageGPU(const ImageType& image_1, const ImageType& image_2,
+                           ImageType* diff_image_ptr);
 
 }  // namespace image
 

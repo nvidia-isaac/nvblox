@@ -34,17 +34,6 @@ struct VoxelBlock {
   static void initOnGPU(VoxelBlock* block_ptr);
 };
 
-struct FreespaceBlock {
-  typedef unified_ptr<FreespaceBlock> Ptr;
-  typedef unified_ptr<const FreespaceBlock> ConstPtr;
-
-  bool free = true;
-};
-
-// Multires Block
-
-// Reference Block
-
 // Initialization Utility Functions
 template <typename BlockType>
 void setBlockBytesZeroOnGPU(BlockType* block_device_ptr);

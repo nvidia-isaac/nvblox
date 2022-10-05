@@ -56,11 +56,7 @@ inline AxisAlignedBoundingBox getAABBOfBlock(const float block_size,
 template <typename BlockType>
 AxisAlignedBoundingBox getAABBOfAllocatedBlocks(
     const BlockLayer<BlockType>& layer) {
-  AxisAlignedBoundingBox aabb;
-  for (const Index3D& idx : layer.getAllBlockIndices()) {
-    aabb = aabb.merged(getAABBOfBlock(layer.block_size(), idx));
-  }
-  return aabb;
+  return getAABBOfBlocks(layer.block_size(), layer.getAllBlockIndices());
 }
 
 template <typename BlockType>

@@ -41,23 +41,26 @@ bool Camera::project(const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C) const {
   return true;
 }
 
-Vector3f Camera::rayFromImagePlaneCoordinates(const Vector2f& u_C) const {
+float Camera::getDepth(const Vector3f& p_C) const {
+  return p_C.z();
+}
+
+Vector3f Camera::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
   // NOTE(alexmillane): We allow u_C values up to the outer edges of pixels,
-  // hence the GE and LE checks.
-  DCHECK_GE(u_C[0], 0.0f);
-  DCHECK_LE(u_C[0], width_);
-  DCHECK_GE(u_C[1], 0.0f);
-  DCHECK_LE(u_C[1], height_);
+  // such that:
+  // 0.0f < u_C[0] <= width
+  // 0.0f < u_C[1] <= height
   return Vector3f((u_C[0] - cu_) / fu_,  // NOLINT
                   (u_C[1] - cv_) / fv_,  // NOLINT
                   1.0f);
 }
 
-Vector3f Camera::rayFromPixelIndices(const Index2D& u_C) const {
+Vector3f Camera::vectorFromPixelIndices(const Index2D& u_C) const {
   // NOTE(alexmillane): The +0.5 here takes us from image plane indices, which
   // are equal to the coordinates of the lower pixel corner, to the pixel
   // center.
-  return rayFromImagePlaneCoordinates(u_C.cast<float>() + Vector2f(0.5, 0.5));
+  return vectorFromImagePlaneCoordinates(u_C.cast<float>() +
+                                         Vector2f(0.5, 0.5));
 }
 
 Camera Camera::fromIntrinsicsMatrix(const Eigen::Matrix3f& mat, int width,

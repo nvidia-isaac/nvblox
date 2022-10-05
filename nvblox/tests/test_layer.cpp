@@ -197,6 +197,128 @@ TEST(LayerTest, MoveOperations) {
 
   EXPECT_FALSE(tsdf_layer_2.isBlockAllocated(Index3D(0, 0, 0)));
   EXPECT_TRUE(tsdf_layer_3.isBlockAllocated(Index3D(0, 0, 0)));
+
+  TsdfLayer tsdf_layer_4(voxel_size_m, MemoryType::kHost);
+  tsdf_layer_4.allocateBlockAtIndex(Index3D(1, 1, 1));
+
+  TsdfLayer tsdf_layer_5 = std::move(tsdf_layer_4);
+  EXPECT_EQ(tsdf_layer_5.memory_type(), MemoryType::kHost);
+  EXPECT_TRUE(tsdf_layer_5.isBlockAllocated(Index3D(1, 1, 1)));
+
+  tsdf_layer_5 = std::move(tsdf_layer_1);
+  EXPECT_EQ(tsdf_layer_5.memory_type(), MemoryType::kDevice);
+  EXPECT_FALSE(tsdf_layer_5.isBlockAllocated(Index3D(0, 0, 0)));
+  EXPECT_FALSE(tsdf_layer_5.isBlockAllocated(Index3D(1, 1, 1)));
+  tsdf_layer_5 = std::move(tsdf_layer_3);
+  EXPECT_EQ(tsdf_layer_5.memory_type(), MemoryType::kDevice);
+  EXPECT_TRUE(tsdf_layer_5.isBlockAllocated(Index3D(0, 0, 0)));
+  EXPECT_FALSE(tsdf_layer_5.isBlockAllocated(Index3D(1, 1, 1)));
+}
+
+TEST(VoxelLayerTest, CopyVoxelsToHostFromUnified) {
+  constexpr float voxel_size_m = 1.0;
+  TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kUnified);
+  auto block_ptr = tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 0));
+
+  test_utils::setTsdfBlockVoxelsConstant(1.0f, block_ptr);
+
+  const auto res = tsdf_layer.getVoxel(Vector3f(0.0f, 0.0f, 0.0f));
+
+  EXPECT_TRUE(res.second);
+  EXPECT_EQ(res.first.distance, 1.0f);
+}
+
+TEST(VoxelLayerTest, CopyLayerTest) {
+  constexpr float voxel_size_m = 0.1f;
+
+  TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kDevice);
+
+  // Create some blocks.
+  std::vector<Index3D> all_blocks;
+  all_blocks.push_back(Index3D(0, 0, 0));
+  all_blocks.push_back(Index3D(1, 1, 1));
+  all_blocks.push_back(Index3D(1, 2, 3));
+
+  for (const Index3D& block_index : all_blocks) {
+    auto block_ptr = tsdf_layer.allocateBlockAtIndex(block_index);
+    test_utils::setTsdfBlockVoxelsConstant(block_index.norm(), block_ptr);
+  }
+
+  // Now copy over the layer with a deep copy operator.
+  LOG(INFO) << "About to do first copy of layer";
+  TsdfLayer tsdf_layer_host(tsdf_layer, MemoryType::kHost);
+  EXPECT_EQ(tsdf_layer_host.memory_type(), MemoryType::kHost);
+
+  std::vector<Index3D> all_blocks_host = tsdf_layer_host.getAllBlockIndices();
+  EXPECT_EQ(all_blocks_host.size(), all_blocks.size());
+
+  for (const Index3D& block_index : all_blocks) {
+    auto block_ptr = tsdf_layer_host.getBlockAtIndex(block_index);
+    ASSERT_TRUE(block_ptr);
+
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        for (int k = 0; k < 8; k++) {
+          EXPECT_NEAR(block_ptr->voxels[i][j][k].distance,
+                      static_cast<float>(block_index.norm()), 1e-4f);
+        }
+      }
+    }
+  }
+
+  // Now try the assignment. This triggers a second copy.
+  TsdfLayer tsdf_layer_assignment(voxel_size_m, MemoryType::kHost);
+  LOG(INFO) << "About to do second copy of layer";
+  tsdf_layer_assignment = tsdf_layer;
+  EXPECT_EQ(tsdf_layer_assignment.memory_type(), MemoryType::kHost);
+
+  std::vector<Index3D> block_indices_assignment =
+      tsdf_layer_assignment.getAllBlockIndices();
+  EXPECT_EQ(block_indices_assignment.size(), all_blocks.size());
+
+  for (const Index3D& block_index : all_blocks) {
+    auto block_ptr = tsdf_layer_assignment.getBlockAtIndex(block_index);
+    ASSERT_TRUE(block_ptr);
+
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        for (int k = 0; k < 8; k++) {
+          EXPECT_NEAR(block_ptr->voxels[i][j][k].distance,
+                      static_cast<float>(block_index.norm()), 1e-4f);
+        }
+      }
+    }
+  }
+}
+
+TEST(VoxelLayerTest, ClearBlocks) {
+  constexpr float voxel_size_m = 0.1f;
+
+  TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kDevice);
+
+  // Create some blocks.
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 0));
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 1));
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 2));
+  tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 3));
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 4);
+
+  // Fail to clear non-allocated block
+  tsdf_layer.clearBlocks({Index3D(0, 0, 4)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 4);
+
+  // Clear 1 block
+  tsdf_layer.clearBlocks({Index3D(0, 0, 0)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 3);
+
+  // Clear 1 more block + 1 non-existant block
+  tsdf_layer.clearBlocks({Index3D(0, 0, 1), Index3D(0, 0, 4)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 2);
+
+  // Clear the rest
+  tsdf_layer.clearBlocks(
+      {Index3D(0, 0, 2), Index3D(0, 0, 3), Index3D(0, 0, 4)});
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 0);
 }
 
 int main(int argc, char** argv) {

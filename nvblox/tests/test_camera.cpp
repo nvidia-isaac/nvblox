@@ -36,7 +36,7 @@ std::pair<Vector3f, Vector2f> getRandomVisibleRayAndImagePoint(
                      test_utils::randomFloatInRange(
                          0.0f, static_cast<float>(camera.height() - 1)));
   // Normalized ray
-  return {camera.rayFromImagePlaneCoordinates(u_C).normalized(), u_C};
+  return {camera.vectorFromImagePlaneCoordinates(u_C).normalized(), u_C};
 }
 
 Camera getTestCamera() {
@@ -146,12 +146,12 @@ TEST(CameraTest, AxisAlignedBoundingBox) {
 
   // Rays through the corners of the image plane
   const Vector3f ray_0_C =
-      camera.rayFromImagePlaneCoordinates(Vector2f(0.0f, 0.0f));
+      camera.vectorFromImagePlaneCoordinates(Vector2f(0.0f, 0.0f));
   const Vector3f ray_2_C =
-      camera.rayFromImagePlaneCoordinates(Vector2f(0.0f, camera.height()));
+      camera.vectorFromImagePlaneCoordinates(Vector2f(0.0f, camera.height()));
   const Vector3f ray_1_C =
-      camera.rayFromImagePlaneCoordinates(Vector2f(camera.width(), 0.0f));
-  const Vector3f ray_3_C = camera.rayFromImagePlaneCoordinates(
+      camera.vectorFromImagePlaneCoordinates(Vector2f(camera.width(), 0.0f));
+  const Vector3f ray_3_C = camera.vectorFromImagePlaneCoordinates(
       Vector2f(camera.width(), camera.height()));
 
   // Generate a random depths

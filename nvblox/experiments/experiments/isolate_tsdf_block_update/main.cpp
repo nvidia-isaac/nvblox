@@ -23,8 +23,8 @@ limitations under the License.
 #include "nvblox/core/common_names.h"
 #include "nvblox/core/cuda/warmup.h"
 #include "nvblox/core/types.h"
-#include "nvblox/datasets/parse_3dmatch.h"
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/datasets/3dmatch.h"
+#include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/utils/timing.h"
 
@@ -39,14 +39,23 @@ class ProjectiveTsdfIntegratorExperiment : public ProjectiveTsdfIntegrator {
   virtual ~ProjectiveTsdfIntegratorExperiment(){};
 
   // Expose this publically
-  void updateBlocks(const std::vector<Index3D>& block_indices,
-                    const DepthImage& depth_frame, const Transform& T_L_C,
-                    const Camera& camera, const float truncation_distance_m,
-                    TsdfLayer* layer) {
-    ProjectiveTsdfIntegrator::updateBlocks(block_indices, depth_frame, T_L_C,
-                                           camera, truncation_distance_m,
-                                           layer);
+  template <typename SensorType>
+  void integrateBlocksTemplate(const std::vector<Index3D>& block_indices,
+                               const DepthImage& depth_frame,
+                               const Transform& T_L_C, const SensorType& sensor,
+                               const float truncation_distance_m,
+                               TsdfLayer* layer) {
+    ProjectiveTsdfIntegrator::integrateBlocksTemplate(
+        block_indices, depth_frame, T_L_C, sensor, layer);
   }
+
+  // Expose this publically
+  //   std::vector<Index3D> getBlocksInViewUsingRaycasting(
+  //       const DepthImage& depth_frame, const Transform& T_L_C,
+  //       const Camera& camera, const float block_size) const {
+  //     return ProjectiveTsdfIntegrator::getBlocksInViewUsingRaycasting(
+  //         depth_frame, T_L_C, camera, block_size);
+  //   }
 };
 
 int main(int argc, char* argv[]) {
@@ -63,37 +72,44 @@ int main(int argc, char* argv[]) {
   ProjectiveTsdfIntegratorExperiment tsdf_integrator;
 
   const unsigned int frustum_raycast_subsampling_rate = 4;
-  tsdf_integrator.frustum_calculator().raycast_subsampling_factor(
+  tsdf_integrator.view_calculator().raycast_subsampling_factor(
       frustum_raycast_subsampling_rate);
+
+  const float truncation_distance_m =
+      tsdf_integrator.truncation_distance_vox() * kVoxelSize;
 
   // Update identified blocks (many times)
   constexpr int kNumIntegrations = 1000;
   for (int i = 0; i < kNumIntegrations; i++) {
     // Load images
-    auto image_loader_ptr = datasets::threedmatch::createDepthImageLoader(
-        dataset_base_path, kSeqNum);
+    auto image_loader_ptr =
+        datasets::threedmatch::internal::createDepthImageLoader(
+            dataset_base_path, kSeqNum);
 
     DepthImage depth_frame;
     CHECK(image_loader_ptr->getNextImage(&depth_frame));
 
     Eigen::Matrix3f camera_intrinsics;
-    CHECK(datasets::threedmatch::parseCameraFromFile(
-        datasets::threedmatch::getPathForCameraIntrinsics(dataset_base_path),
+    CHECK(datasets::threedmatch::internal::parseCameraFromFile(
+        datasets::threedmatch::internal::getPathForCameraIntrinsics(
+            dataset_base_path),
         &camera_intrinsics));
     const auto camera = Camera::fromIntrinsicsMatrix(
         camera_intrinsics, depth_frame.width(), depth_frame.height());
 
     Transform T_L_C;
-    CHECK(datasets::threedmatch::parsePoseFromFile(
-        datasets::threedmatch::getPathForFramePose(dataset_base_path, kSeqNum,
-                                                   0),
+    CHECK(datasets::threedmatch::internal::parsePoseFromFile(
+        datasets::threedmatch::internal::getPathForFramePose(dataset_base_path,
+                                                             kSeqNum, 0),
         &T_L_C));
 
     // Identify blocks we can (potentially) see (CPU)
     timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
     const std::vector<Index3D> block_indices =
-        tsdf_integrator.getBlocksInViewUsingRaycasting(
-            depth_frame, T_L_C, camera, tsdf_layer.block_size());
+        tsdf_integrator.view_calculator().getBlocksInImageViewRaycast(
+            depth_frame, T_L_C, camera, tsdf_layer.block_size(),
+            truncation_distance_m,
+            tsdf_integrator.max_integration_distance_m());
     blocks_in_view_timer.Stop();
 
     // Allocate blocks (CPU)
@@ -102,10 +118,9 @@ int main(int argc, char* argv[]) {
     allocate_blocks_timer.Stop();
 
     timing::Timer update_blocks_timer("tsdf/integrate/update_blocks");
-    const float truncation_distance_m =
-        tsdf_integrator.truncation_distance_vox() * kVoxelSize;
-    tsdf_integrator.updateBlocks(block_indices, depth_frame, T_L_C, camera,
-                                 truncation_distance_m, &tsdf_layer);
+    tsdf_integrator.integrateBlocksTemplate(block_indices, depth_frame, T_L_C,
+                                            camera, truncation_distance_m,
+                                            &tsdf_layer);
     update_blocks_timer.Stop();
 
     // Reset the layer such that we do TsdfBlock allocation.

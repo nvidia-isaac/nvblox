@@ -18,7 +18,7 @@ limitations under the License.
 #include "nvblox/core/image.h"
 #include "nvblox/core/interpolation_2d.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/datasets/parse_3dmatch.h"
+#include "nvblox/datasets/3dmatch.h"
 #include "nvblox/io/csv.h"
 
 #include "nvblox/tests/gpu_image_routines.h"
@@ -51,16 +51,18 @@ TEST(ColorImageTest, NearbyImagesSimilar) {
   constexpr int seq_id = 1;
   ColorImage image_1;
   EXPECT_TRUE(datasets::load8BitColorImage(
-      datasets::threedmatch::getPathForColorImage(base_path, seq_id, 0),
+      datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
+                                                            0),
       &image_1, MemoryType::kUnified));
   ColorImage image_2;
   EXPECT_TRUE(datasets::load8BitColorImage(
-      datasets::threedmatch::getPathForColorImage(base_path, seq_id, 1),
+      datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
+                                                            1),
       &image_2, MemoryType::kUnified));
 
   // Compute the diff image on the GPU
   ColorImage diff_image;
-  test_utils::getDifferenceImageOnGPU(image_1, image_2, &diff_image);
+  image::getDifferenceImageGPU(image_1, image_2, &diff_image);
 
   // Write diff image
   io::writeToCsv("./color_image_difference.csv", diff_image);
@@ -152,18 +154,13 @@ TEST(ColorImageTest, InterpolationLinear) {
                                            InterpolationType::kLinear));
   EXPECT_EQ(color.r, 5);
   EXPECT_EQ(color.g, 5);
-
-  EXPECT_TRUE(interpolation::interpolate2D(image, Vector2f(0.4, 0.4), &color,
-                                           InterpolationType::kLinear));
-  EXPECT_EQ(color.r, 4);
-  EXPECT_EQ(color.g, 4);
-  EXPECT_TRUE(interpolation::interpolate2D(image, Vector2f(0.4, 0.6), &color,
+  EXPECT_TRUE(interpolation::interpolate2D(image, Vector2f(0.5, 0.6), &color,
                                            InterpolationType::kLinear));
   EXPECT_EQ(color.r, 6);
-  EXPECT_EQ(color.g, 4);
-  EXPECT_TRUE(interpolation::interpolate2D(image, Vector2f(0.6, 0.4), &color,
+  EXPECT_EQ(color.g, 5);
+  EXPECT_TRUE(interpolation::interpolate2D(image, Vector2f(0.6, 0.5), &color,
                                            InterpolationType::kLinear));
-  EXPECT_EQ(color.r, 4);
+  EXPECT_EQ(color.r, 5);
   EXPECT_EQ(color.g, 6);
   EXPECT_TRUE(interpolation::interpolate2D(image, Vector2f(0.6, 0.6), &color,
                                            InterpolationType::kLinear));
@@ -171,19 +168,24 @@ TEST(ColorImageTest, InterpolationLinear) {
   EXPECT_EQ(color.g, 6);
 
   // Out of bounds
-  EXPECT_FALSE(interpolation::interpolate2D(
-      image, Vector2f(-0.6, 0.0), &color, InterpolationType::kNearestNeighbor));
-  EXPECT_FALSE(interpolation::interpolate2D(
-      image, Vector2f(0.0, -0.6), &color, InterpolationType::kNearestNeighbor));
-  EXPECT_FALSE(
-      interpolation::interpolate2D(image, Vector2f(-0.6, -0.6), &color,
-                                   InterpolationType::kNearestNeighbor));
-  EXPECT_FALSE(interpolation::interpolate2D(
-      image, Vector2f(1.6, 0.0), &color, InterpolationType::kNearestNeighbor));
-  EXPECT_FALSE(interpolation::interpolate2D(
-      image, Vector2f(0.0, 1.6), &color, InterpolationType::kNearestNeighbor));
-  EXPECT_FALSE(interpolation::interpolate2D(
-      image, Vector2f(1.6, 1.6), &color, InterpolationType::kNearestNeighbor));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(0.4, 0.4), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(0.4, 0.6), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(0.6, 0.4), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(-0.6, 0.0), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(0.0, -0.6), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(-0.6, -0.6), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(1.6, 0.0), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(0.0, 1.6), &color,
+                                            InterpolationType::kLinear));
+  EXPECT_FALSE(interpolation::interpolate2D(image, Vector2f(1.6, 1.6), &color,
+                                            InterpolationType::kLinear));
 }
 
 TEST(ColorImageTest, InterpolationGPU) {

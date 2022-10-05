@@ -24,7 +24,7 @@ limitations under the License.
 
 #include "nvblox/core/accessors.h"
 #include "nvblox/core/common_names.h"
-#include "nvblox/integrators/integrators_common.h"
+#include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/mesh/impl/marching_cubes_table.h"
 #include "nvblox/mesh/marching_cubes.h"
 #include "nvblox/mesh/mesh_integrator.h"
@@ -357,6 +357,7 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
 
   // Create an output mesh blocks vector..
   mesh_blocks_host_.resize(block_indices.size());
+  mesh_blocks_host_.setZero();
 
   block_ptrs_device_ = block_ptrs_host_;
   block_positions_device_ = block_positions_host_;
@@ -398,7 +399,9 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
     if (num_vertices > 0) {
       MeshBlock::Ptr output_block =
           mesh_layer->allocateBlockAtIndex(block_indices[i]);
-
+      if (output_block == nullptr) {
+        continue;
+      }
       // Grow the vector with a growth factor and a minimum allocation to avoid
       // repeated reallocation
       if (num_vertices > output_block->capacity()) {
@@ -433,48 +436,150 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
   // Optional third stage: welding.
   if (weld_vertices_) {
     timing::Timer welding_timer("mesh/gpu/mesh_blocks/welding");
-    weldVertices(block_indices, mesh_layer);
+    weldVertices(&mesh_blocks_device_);
+
+    mesh_blocks_host_ = mesh_blocks_device_;
+
+    // Set the sizes on CPU :(
+    for (size_t i = 0; i < block_indices.size(); i++) {
+      size_t new_size = mesh_blocks_host_[i].vertices_size;
+      MeshBlock::Ptr output_block =
+          mesh_layer->getBlockAtIndex(block_indices[i]);
+      if (output_block == nullptr) {
+        continue;
+      }
+      output_block->vertices.resize(new_size);
+      output_block->normals.resize(new_size);
+    }
   }
 }
 
-void MeshIntegrator::weldVertices(const std::vector<Index3D>& block_indices,
-                                  BlockLayer<MeshBlock>* mesh_layer) {
-  for (const Index3D& index : block_indices) {
-    MeshBlock::Ptr mesh_block = mesh_layer->getBlockAtIndex(index);
-
-    if (!mesh_block || mesh_block->size() <= 3) {
-      continue;
-    }
-
-    // Store a copy of the input vertices.
-    input_vertices_ = mesh_block->vertices;
-    input_normals_ = mesh_block->normals;
-
-    // sort vertices to bring duplicates together
-    thrust::sort(thrust::device, mesh_block->vertices.begin(),
-                 mesh_block->vertices.end(), VectorCompare<Vector3f>());
-
-    // Find unique vertices and erase redundancies. The iterator will point to
-    // the new last index.
-    auto iterator = thrust::unique(thrust::device, mesh_block->vertices.begin(),
-                                   mesh_block->vertices.end());
-
-    // Figure out the new size.
-    size_t new_size = iterator - mesh_block->vertices.begin();
-    mesh_block->vertices.resize(new_size);
-    mesh_block->normals.resize(new_size);
-
-    // Find the indices of the original triangles.
-    thrust::lower_bound(thrust::device, mesh_block->vertices.begin(),
-                        mesh_block->vertices.end(), input_vertices_.begin(),
-                        input_vertices_.end(), mesh_block->triangles.begin(),
-                        VectorCompare<Vector3f>());
-
-    // Reshuffle the normals to match.
-    thrust::scatter(thrust::device, input_normals_.begin(),
-                    input_normals_.end(), mesh_block->triangles.begin(),
-                    mesh_block->normals.begin());
+template <int kBlockThreads, int kItemsPerThread>
+__global__ void weldVerticesCubKernel(CudaMeshBlock* mesh_blocks) {
+  // First get the correct block for this.
+  int block_index = blockIdx.x;
+  CudaMeshBlock* block = &mesh_blocks[block_index];
+  int num_vals = block->vertices_size;
+  if (num_vals <= 0) {
+    return;
   }
+  if (num_vals >= kBlockThreads * kItemsPerThread) {
+    printf(
+        "WARNING! Mesh block is too big to weld. Exiting without doing "
+        "anything.\n");
+    return;
+  }
+
+  // Create all the storage needed for CUB operations. :)
+  constexpr int kValueScale = 1000;
+  typedef uint64_t VertexPositionHashValue;
+  typedef int VertexIndex;
+  typedef cub::BlockRadixSort<VertexPositionHashValue, kBlockThreads,
+                              kItemsPerThread, VertexIndex>
+      BlockRadixSortT;
+  typedef cub::BlockDiscontinuity<VertexPositionHashValue, kBlockThreads>
+      BlockDiscontinuityT;
+  typedef cub::BlockScan<VertexIndex, kBlockThreads> BlockScanT;
+
+  // Allocate type-safe, repurposable shared memory for collectives
+  __shared__ union {
+    typename BlockRadixSortT::TempStorage sort;
+    typename BlockDiscontinuityT::TempStorage discontinuity;
+    typename BlockScanT::TempStorage scan;
+  } temp_storage;
+
+  __shared__ int output_index;
+  if (threadIdx.x == 0) {
+    output_index = 0;
+  }
+
+  // First we create a values list which is actually the indicies.
+  // Obtain this block's segment of consecutive keys (blocked across threads)
+  uint64_t thread_keys[kItemsPerThread];
+  Vector3f thread_values[kItemsPerThread];
+  Vector3f thread_normals[kItemsPerThread];
+  int thread_inds[kItemsPerThread];
+  int head_flags[kItemsPerThread];
+  int head_indices[kItemsPerThread];
+  int thread_offset = threadIdx.x * kItemsPerThread;
+
+  // Fill in the keys from the values.
+  // I guess we can just do a for loop. kItemsPerThread should be fairly small.
+  Index3DHash index_hash;
+  for (int i = 0; i < kItemsPerThread; i++) {
+    if (thread_offset + i >= num_vals) {
+      // We just pack the key with a large value.
+      thread_values[i] = Vector3f::Zero();
+      thread_keys[i] = SIZE_MAX;
+      thread_inds[i] = -1;
+    } else {
+      thread_values[i] = block->vertices[thread_offset + i];
+      thread_keys[i] = index_hash(Index3D(thread_values[i].x() * kValueScale,
+                                          thread_values[i].y() * kValueScale,
+                                          thread_values[i].z() * kValueScale));
+      thread_inds[i] = block->triangles[thread_offset + i];
+    }
+  }
+
+  // We then sort the values.
+  __syncthreads();
+  // Collectively sort the keys
+  BlockRadixSortT(temp_storage.sort).Sort(thread_keys, thread_inds);
+  __syncthreads();
+  // We remove duplicates by find when the discontinuities happen.
+  BlockDiscontinuityT(temp_storage.discontinuity)
+      .FlagHeads(head_flags, thread_keys, cub::Inequality());
+  __syncthreads();
+  // Get the indices that'll be assigned to the new unique values.
+  BlockScanT(temp_storage.scan)
+      .InclusiveSum<kItemsPerThread>(head_flags, head_indices);
+  __syncthreads();
+
+  // Cool now write only 1 instance of the unique entries to the output.
+  for (int i = 0; i < kItemsPerThread; i++) {
+    if (thread_offset + i < num_vals) {
+      if (head_flags[i] == 1) {
+        // Get the proper value out. Cache this for in-place ops next step.
+        thread_values[i] = block->vertices[thread_inds[i]];
+        thread_normals[i] = block->normals[thread_inds[i]];
+        atomicMax(&output_index, head_indices[i]);
+      }
+      // For the key of each initial vertex, we find what index it now has.
+      block->triangles[thread_inds[i]] = head_indices[i] - 1;
+    }
+  }
+  __syncthreads();
+
+  // Have to do this twice since we do this in-place. Now actually replace
+  // the values.
+  for (int i = 0; i < kItemsPerThread; i++) {
+    if (thread_offset + i < num_vals) {
+      if (head_flags[i] == 1) {
+        // Get the proper value out.
+        block->vertices[head_indices[i] - 1] = thread_values[i];
+        block->normals[head_indices[i] - 1] = thread_normals[i];
+      }
+    }
+  }
+  __syncthreads();
+
+  if (threadIdx.x == 0) {
+    block->vertices_size = output_index;
+  }
+}
+
+void MeshIntegrator::weldVertices(
+    device_vector<CudaMeshBlock>* cuda_mesh_blocks) {
+  if (cuda_mesh_blocks->size() == 0) {
+    return;
+  }
+  // Together this should be >> the max number of vertices in the mesh.
+  constexpr int kNumThreads = 128;
+  constexpr int kNumItemsPerThread = 20;
+  weldVerticesCubKernel<kNumThreads, kNumItemsPerThread>
+      <<<cuda_mesh_blocks->size(), kNumThreads, 0, cuda_stream_>>>(
+          cuda_mesh_blocks->data());
+  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
 }
 
 }  // namespace nvblox

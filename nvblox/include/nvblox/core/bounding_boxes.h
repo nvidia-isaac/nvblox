@@ -27,6 +27,9 @@ inline std::vector<Index3D> getBlockIndicesTouchedByBoundingBox(
 inline AxisAlignedBoundingBox getAABBOfBlock(const float block_size,
                                              const Index3D& block_index);
 
+AxisAlignedBoundingBox getAABBOfBlocks(const float block_size,
+                                       const std::vector<Index3D>& blocks);
+
 template <typename BlockType>
 AxisAlignedBoundingBox getAABBOfAllocatedBlocks(
     const BlockLayer<BlockType>& layer);

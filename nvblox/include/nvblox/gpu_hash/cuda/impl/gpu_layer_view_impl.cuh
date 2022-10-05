@@ -78,9 +78,12 @@ void GPULayerView<BlockType>::reset(LayerType* layer_ptr) {
       static_cast<float>(layer_ptr->numAllocatedBlocks()) /
       static_cast<float>(gpu_hash_ptr_->max_num_blocks_);
   if (current_load_factor > max_load_factor_) {
-    const size_t new_max_num_blocks = std::ceil(
+    const size_t new_max_num_blocks = static_cast<size_t>(std::ceil(
         size_expansion_factor_ * std::max(gpu_hash_ptr_->max_num_blocks_,
-                                          layer_ptr->numAllocatedBlocks()));
+                                          layer_ptr->numAllocatedBlocks())));
+    VLOG(3) << "Resizing from " << gpu_hash_ptr_->max_num_blocks_ << " to "
+              << new_max_num_blocks << " to accomodate "
+              << layer_ptr->numAllocatedBlocks();
     reset(new_max_num_blocks);
     CHECK_LT(layer_ptr->numAllocatedBlocks(), gpu_hash_ptr_->max_num_blocks_);
   }
@@ -88,6 +91,14 @@ void GPULayerView<BlockType>::reset(LayerType* layer_ptr) {
   timing::Timer timer("gpu_hash/transfer");
 
   gpu_hash_ptr_->impl_.clear();
+
+  // This is necessary for bug-free operation, as clear does not sync
+  // afterwards.
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaPeekAtLastError());
+  if (gpu_hash_ptr_->impl_.full()) {
+    LOG(ERROR) << "Have a full GPU hash! This is bad!";
+  }
 
   block_size_ = layer_ptr->block_size();
 

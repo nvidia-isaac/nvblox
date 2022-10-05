@@ -51,28 +51,12 @@ float ProjectiveIntegratorBase::truncation_distance_m(float block_size) const {
          VoxelBlock<bool>::kVoxelsPerSide;
 }
 
-std::vector<Index3D> ProjectiveIntegratorBase::getBlocksInView(
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float block_size) const {
-  return FrustumCalculator::getBlocksInImageView(
-      depth_frame, T_L_C, camera, block_size, truncation_distance_m(block_size),
-      max_integration_distance_m_);
+const ViewCalculator& ProjectiveIntegratorBase::view_calculator() const {
+  return view_calculator_;
 }
-
-std::vector<Index3D> ProjectiveIntegratorBase::getBlocksInView(
-    const Transform& T_L_C, const Camera& camera,
-    const float block_size) const {
-  return frustum_calculator_.getBlocksInView(
-      T_L_C, camera, block_size,
-      max_integration_distance_m_ + truncation_distance_m(block_size));
-}
-
-std::vector<Index3D> ProjectiveIntegratorBase::getBlocksInViewUsingRaycasting(
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float block_size) const {
-  return frustum_calculator_.getBlocksInImageViewCuda(
-      depth_frame, T_L_C, camera, block_size, truncation_distance_m(block_size),
-      max_integration_distance_m_);
+/// Returns the object used to calculate the blocks in camera views.
+ViewCalculator& ProjectiveIntegratorBase::view_calculator() {
+  return view_calculator_;
 }
 
 }  // namespace nvblox

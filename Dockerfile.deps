@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/cuda:11.2.0-devel-ubuntu20.04
+FROM nvcr.io/nvidia/cuda:11.4.0-devel-ubuntu20.04
 
 # TZData goes first.
 RUN apt-get update
@@ -12,7 +12,7 @@ RUN apt-get update
 RUN apt-get install -y ssh git jq gnupg apt-utils software-properties-common build-essential cmake
 
 # Install dependencies.
-RUN apt-get install -y libgoogle-glog-dev libgtest-dev curl 
+RUN apt-get install -y libgoogle-glog-dev libgtest-dev curl libsqlite3-dev
 
 # Build gtest because gtest doesn't do this for you for some reason.
 RUN cd /usr/src/googletest && cmake . && cmake --build . --target install

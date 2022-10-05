@@ -23,12 +23,5 @@ namespace test_utils {
 void setImageConstantOnGpu(const float value, DepthImage* image_ptr);
 void setImageConstantOnGpu(const Color value, ColorImage* image_ptr);
 
-void getDifferenceImageOnGPU(const ColorImage& image_1,
-                             const ColorImage& image_2,
-                             ColorImage* diff_image_ptr);
-void getDifferenceImageOnGPU(const DepthImage& image_1,
-                             const DepthImage& image_2,
-                             DepthImage* diff_image_ptr);
-
 }  // namespace test_utils
 }  // namespace nvblox

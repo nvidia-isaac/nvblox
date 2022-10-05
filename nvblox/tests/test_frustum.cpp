@@ -22,11 +22,11 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/core/voxels.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/datasets/parse_3dmatch.h"
-#include "nvblox/integrators/frustum.h"
-#include "nvblox/integrators/ray_caster.h"
+#include "nvblox/datasets/3dmatch.h"
+#include "nvblox/integrators/view_calculator.h"
 #include "nvblox/io/pointcloud_io.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
 
 using namespace nvblox;
@@ -68,7 +68,7 @@ class FrustumTest : public ::testing::Test {
   // Base path for 3D Match dataset.
   std::string base_path_;
 
-  FrustumCalculator frustum_;
+  ViewCalculator frustum_;
 };
 
 TEST_F(FrustumTest, FarPlaneImageTest) {
@@ -90,17 +90,18 @@ TEST_F(FrustumTest, FarPlaneImageTest) {
                                      &depth_frame);
 
   // Figure out what the GT should be.
-  std::vector<Index3D> blocks_in_view = FrustumCalculator::getBlocksInView(
+  std::vector<Index3D> blocks_in_view = ViewCalculator::getBlocksInViewPlanes(
       T_S_C, *camera_, block_size_, max_distance);
   std::vector<Index3D> blocks_in_image_view =
-      FrustumCalculator::getBlocksInImageView(depth_frame, T_S_C, *camera_,
-                                              block_size_, 0.0f, max_distance);
+      ViewCalculator::getBlocksInImageViewPlanes(
+          depth_frame, T_S_C, *camera_, block_size_, 0.0f, max_distance);
   EXPECT_EQ(blocks_in_view.size(), blocks_in_image_view.size());
 
   // Now get the actual thing to test.
-  std::vector<Index3D> blocks_in_cuda_view = frustum_.getBlocksInImageViewCuda(
-      depth_frame, T_S_C, *camera_, block_size_, 0.0f,
-      max_distance + kFloatEpsilon);
+  std::vector<Index3D> blocks_in_cuda_view =
+      frustum_.getBlocksInImageViewRaycast(depth_frame, T_S_C, *camera_,
+                                           block_size_, 0.0f,
+                                           max_distance + kFloatEpsilon);
 
   // Sort all of the entries.
   std::sort(blocks_in_view.begin(), blocks_in_view.end(),
@@ -121,7 +122,7 @@ TEST_F(FrustumTest, FarPlaneImageTest) {
     for (int v = 0; v < camera_->cols(); v++) {
       // Get the depth at this image point.
       float depth = depth_frame(u, v);
-      Vector3f p_C = depth * camera_->rayFromPixelIndices(Index2D(v, u));
+      Vector3f p_C = depth * camera_->vectorFromPixelIndices(Index2D(v, u));
       Vector3f p_L = T_S_C * p_C;
 
       Index3D block_index = getBlockIndexFromPositionInLayer(block_size_, p_L);
@@ -167,22 +168,23 @@ TEST_F(FrustumTest, PlaneWithGround) {
 
   // Figure out what the GT should be.
   timing::Timer blocks_in_view_timer("blocks_in_view");
-  std::vector<Index3D> blocks_in_view = FrustumCalculator::getBlocksInView(
+  std::vector<Index3D> blocks_in_view = ViewCalculator::getBlocksInViewPlanes(
       T_S_C, *camera_, block_size_, max_distance);
   blocks_in_view_timer.Stop();
   timing::Timer blocks_in_image_view_timer("blocks_in_image_view");
   std::vector<Index3D> blocks_in_image_view =
-      FrustumCalculator::getBlocksInImageView(depth_frame, T_S_C, *camera_,
-                                              block_size_, 0.0f, max_distance);
+      ViewCalculator::getBlocksInImageViewPlanes(
+          depth_frame, T_S_C, *camera_, block_size_, 0.0f, max_distance);
   blocks_in_image_view_timer.Stop();
 
   EXPECT_EQ(blocks_in_view.size(), blocks_in_image_view.size());
 
   // Now get the actual thing to test.
   timing::Timer blocks_in_cuda_view_timer("blocks_in_cuda_view");
-  std::vector<Index3D> blocks_in_cuda_view = frustum_.getBlocksInImageViewCuda(
-      depth_frame, T_S_C, *camera_, block_size_, 0.0f,
-      max_distance + kFloatEpsilon);
+  std::vector<Index3D> blocks_in_cuda_view =
+      frustum_.getBlocksInImageViewRaycast(depth_frame, T_S_C, *camera_,
+                                           block_size_, 0.0f,
+                                           max_distance + kFloatEpsilon);
   EXPECT_LT(blocks_in_cuda_view.size(), blocks_in_image_view.size());
   blocks_in_cuda_view_timer.Stop();
 
@@ -220,7 +222,7 @@ TEST_F(FrustumTest, PlaneWithGround) {
     for (int v = 0; v < camera_->cols(); v++) {
       // Get the depth at this image point.
       float depth = depth_frame(u, v);
-      Vector3f p_C = depth * camera_->rayFromPixelIndices(Index2D(v, u));
+      Vector3f p_C = depth * camera_->vectorFromPixelIndices(Index2D(v, u));
       Vector3f p_L = T_S_C * p_C;
 
       Index3D block_index = getBlockIndexFromPositionInLayer(block_size_, p_L);
@@ -316,9 +318,9 @@ TEST_F(FrustumTest, BlocksInView) {
   constexpr float kMaxDist = 10.0f;
   constexpr float kTruncationDistance = 0.0f;
   const std::vector<Index3D> blocks_in_view =
-      FrustumCalculator::getBlocksInImageView(depth_frame, T_L_C, camera,
-                                              kBlockSize, kTruncationDistance,
-                                              kMaxDist);
+      ViewCalculator::getBlocksInImageViewPlanes(depth_frame, T_L_C, camera,
+                                                 kBlockSize,
+                                                 kTruncationDistance, kMaxDist);
 
   EXPECT_EQ(blocks_in_view.size(), 10);
   for (int i = 0; i < blocks_in_view.size(); i++) {
@@ -333,7 +335,8 @@ TEST_F(FrustumTest, ThreeDMatch) {
   float max_distance = 10.0f;
 
   std::unique_ptr<datasets::ImageLoader<DepthImage>> depth_image_loader =
-      datasets::threedmatch::createDepthImageLoader(base_path_, kSequenceNum);
+      datasets::threedmatch::internal::createDepthImageLoader(base_path_,
+                                                              kSequenceNum);
 
   // Get the first image.
   DepthImage depth_frame;
@@ -341,19 +344,19 @@ TEST_F(FrustumTest, ThreeDMatch) {
 
   // Get the tranform.
   Transform T_L_C;
-  ASSERT_TRUE(datasets::threedmatch::parsePoseFromFile(
-      datasets::threedmatch::getPathForFramePose(base_path_, kSequenceNum,
-                                                 kFrameNumber),
+  ASSERT_TRUE(datasets::threedmatch::internal::parsePoseFromFile(
+      datasets::threedmatch::internal::getPathForFramePose(
+          base_path_, kSequenceNum, kFrameNumber),
       &T_L_C));
 
   // Create a camera object.
   int image_width = depth_frame.cols();
   int image_height = depth_frame.rows();
   const std::string intrinsics_filename =
-      datasets::threedmatch::getPathForCameraIntrinsics(base_path_);
+      datasets::threedmatch::internal::getPathForCameraIntrinsics(base_path_);
   Eigen::Matrix3f camera_intrinsics;
-  ASSERT_TRUE(datasets::threedmatch::parseCameraFromFile(intrinsics_filename,
-                                                         &camera_intrinsics));
+  ASSERT_TRUE(datasets::threedmatch::internal::parseCameraFromFile(
+      intrinsics_filename, &camera_intrinsics));
   Camera camera = Camera::fromIntrinsicsMatrix(camera_intrinsics, image_width,
                                                image_height);
 
@@ -361,18 +364,18 @@ TEST_F(FrustumTest, ThreeDMatch) {
     // Now get the actual thing to test.
     timing::Timer blocks_in_cuda_view_timer("blocks_in_cuda_view");
     std::vector<Index3D> blocks_in_cuda_view =
-        frustum_.getBlocksInImageViewCuda(depth_frame, T_L_C, camera,
-                                          block_size_, 0.0f, max_distance);
+        frustum_.getBlocksInImageViewRaycast(depth_frame, T_L_C, camera,
+                                             block_size_, 0.0f, max_distance);
     blocks_in_cuda_view_timer.Stop();
 
     // Figure out what the GT should be.
     timing::Timer blocks_in_view_timer("blocks_in_view");
-    std::vector<Index3D> blocks_in_view = FrustumCalculator::getBlocksInView(
+    std::vector<Index3D> blocks_in_view = ViewCalculator::getBlocksInViewPlanes(
         T_L_C, camera, block_size_, max_distance);
     blocks_in_view_timer.Stop();
     timing::Timer blocks_in_image_view_timer("blocks_in_image_view");
     std::vector<Index3D> blocks_in_image_view =
-        FrustumCalculator::getBlocksInImageView(
+        ViewCalculator::getBlocksInImageViewPlanes(
             depth_frame, T_L_C, camera, block_size_, 0.0f, max_distance);
     blocks_in_image_view_timer.Stop();
   }
@@ -428,13 +431,13 @@ TEST_P(FrustumRayTracingSubsamplingTest, RayTracePixels) {
   Transform T_L_C;
   T_L_C = Eigen::Translation3f(1.0f, 1.0f, 0.0f);
 
-  FrustumCalculator frustum_calculator;
+  ViewCalculator view_calculator;
 
   unsigned int raycast_subsampling_factor = GetParam();
-  frustum_calculator.raycast_subsampling_factor(raycast_subsampling_factor);
+  view_calculator.raycast_subsampling_factor(raycast_subsampling_factor);
 
   const std::vector<Index3D> blocks_in_view =
-      frustum_calculator.getBlocksInImageViewCuda(
+      view_calculator.getBlocksInImageViewRaycast(
           depth_frame, T_L_C, camera, kBlockSize, 0.0,
           kDistanceToBlockCenters + 1.0f);
 

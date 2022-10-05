@@ -34,7 +34,7 @@ class BaseLayer {
 
   virtual ~BaseLayer() = default;
 
-  // Just an inteface class
+  // Just an interface class
 };
 
 template <typename _BlockType>
@@ -61,10 +61,10 @@ class BlockLayer : public BaseLayer {
         gpu_layer_view_up_to_date_(false) {}
   virtual ~BlockLayer() {}
 
-  // (Deep) Copy disabled
-  // NOTE(alexmillane): We could write these if needed in the future
-  BlockLayer(const BlockLayer& other) = delete;
-  BlockLayer& operator=(const BlockLayer& other) = delete;
+  // Deep copies, with optionally changing the memory type.
+  BlockLayer(const BlockLayer& other);
+  BlockLayer(const BlockLayer& other, MemoryType memory_type);
+  BlockLayer& operator=(const BlockLayer& other);
 
   // Move operations
   BlockLayer(BlockLayer&& other) = default;
@@ -93,6 +93,11 @@ class BlockLayer : public BaseLayer {
   // Clear the layer of all data
   void clear() { blocks_.clear(); }
 
+  // Clear (deallocate) blocks passed in
+  // Note if a block does not exist, this function just (silently)
+  // continues trying the rest of the list.
+  void clearBlocks(const std::vector<Index3D>& indices);
+
   MemoryType memory_type() const { return memory_type_; }
 
   // GPU Hash
@@ -101,8 +106,8 @@ class BlockLayer : public BaseLayer {
   GPULayerViewType getGpuLayerView() const;
 
  protected:
-  const float block_size_;
-  const MemoryType memory_type_;
+  float block_size_;
+  MemoryType memory_type_;
 
   // CPU Hash (Index3D -> BlockType::Ptr)
   BlockHash blocks_;
@@ -140,10 +145,11 @@ class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
   VoxelBlockLayer() = delete;
   virtual ~VoxelBlockLayer() {}
 
-  // (Deep) Copy disabled
-  // NOTE(alexmillane): We could write these if needed in the future
-  VoxelBlockLayer(const VoxelBlockLayer& other) = delete;
-  VoxelBlockLayer& operator=(const VoxelBlockLayer& other) = delete;
+  // Deep copies
+  VoxelBlockLayer(const VoxelBlockLayer& other);
+  VoxelBlockLayer(const VoxelBlockLayer& other, MemoryType memory_type);
+  // Assignment retains the current layer's memory type.
+  VoxelBlockLayer& operator=(const VoxelBlockLayer& other);
 
   // Move operations
   VoxelBlockLayer(VoxelBlockLayer&& other) = default;
@@ -166,11 +172,25 @@ class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
                  std::vector<VoxelType>* voxels_ptr,
                  std::vector<bool>* success_flags_ptr) const;
 
+  /// Get a voxel by copy by (closest) position
+  /// The position is given with respect to the layer frame (L). The function
+  /// returns the closest voxels to the passed points.
+  /// If memory_type_ == kDevice, the function retrieves voxel data from the GPU
+  /// and transfers it to the CPU. Modifications to the returned voxel data do
+  /// not affect the layer (they're copies).
+  /// Note that this function performs a Cudamemcpy for the voxel. So it's slow.
+  /// This function is intended for testing/convenience and shouldn't be used in
+  /// performance critical code.
+  /// @param p_L query position in layer frame
+  /// @return A pair containing the voxel copy and a flag indicating if the
+  /// voxel could be retrieved (ie if the voxel was allocated in the layer).
+  std::pair<VoxelType, bool> getVoxel(const Vector3f& p_L) const;
+
   /// Returns the size of the voxels in this layer.
   float voxel_size() const { return voxel_size_; }
 
  private:
-  const float voxel_size_;
+  float voxel_size_;
 };
 
 namespace traits {

@@ -172,6 +172,7 @@ unified_ptr<T>& unified_ptr<T>::operator=(const unified_ptr<T>& other) {
   ptr_ = other.ptr_;
   ref_counter_ = other.ref_counter_;
   memory_type_ = other.memory_type_;
+  size_ = other.size_;
   if (ptr_ != nullptr) {
     (*ref_counter_)++;
   }
@@ -184,6 +185,7 @@ unified_ptr<T>& unified_ptr<T>::operator=(unified_ptr<T>&& other) {
   ptr_ = other.ptr_;
   ref_counter_ = other.ref_counter_;
   memory_type_ = other.memory_type_;
+  size_ = other.size_;
   if (ptr_ != nullptr) {
     (*ref_counter_)++;
   }
@@ -198,6 +200,7 @@ unified_ptr<T>::operator unified_ptr<const T2>() const {
     const_ptr.ptr_ = ptr_;
     const_ptr.ref_counter_ = ref_counter_;
     const_ptr.memory_type_ = memory_type_;
+    const_ptr.size_ = size_;
     (*const_ptr.ref_counter_)++;
   }
   return const_ptr;
@@ -266,6 +269,7 @@ void unified_ptr<T>::reset() {
     }
     ptr_ = nullptr;
     ref_counter_ = nullptr;
+    size_ = 1;
   }
 }
 
@@ -305,49 +309,14 @@ unified_ptr<typename std::remove_cv<T>::type> unified_ptr<T>::clone(
   return Cloner<T>::clone(*this, memory_type, size_);
 }
 
-// Hint to move to GPU or CPU.
 template <typename T>
-void unified_ptr<T>::toGPU() {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  if (ptr_ == nullptr) {
-    return;
-  }
-  int device;
-  cudaGetDevice(&device);
-  checkCudaErrors(cudaMemPrefetchAsync(ptr_, sizeof(T), device));
-}
-
-template <typename T>
-void unified_ptr<T>::toGPU(cudaStream_t cuda_stream) {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  if (ptr_ == nullptr) {
-    return;
-  }
-  int device;
-  cudaGetDevice(&device);
-  checkCudaErrors(cudaMemPrefetchAsync(ptr_, sizeof(T), device, cuda_stream));
-}
-
-template <typename T>
-void unified_ptr<T>::toCPU() {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  if (ptr_ == nullptr) {
-    return;
-  }
-  checkCudaErrors(cudaMemPrefetchAsync(ptr_, sizeof(T), cudaCpuDeviceId));
-}
-
-template <typename T>
-void unified_ptr<T>::preferGPU() {
-  CHECK(memory_type_ == MemoryType::kUnified);
-  int device;
-  cudaGetDevice(&device);
-  checkCudaErrors(cudaMemAdvise(ptr_, sizeof(T),
-                                cudaMemAdviseSetPreferredLocation, device));
+void unified_ptr<T>::copyTo(unified_ptr<T_nonconst>& ptr) const {
+  cudaMemcpy(ptr.get(), this->get(), sizeof(T_noextent) * size_,
+             cudaMemcpyDefault);
 }
 
 template <typename T>
 void unified_ptr<T>::setZero() {
-  checkCudaErrors(cudaMemset(ptr_, 0, sizeof(T)));
+  checkCudaErrors(cudaMemset(ptr_, 0, sizeof(T_noextent) * size_));
 }
 }  // namespace nvblox

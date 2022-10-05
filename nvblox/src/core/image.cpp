@@ -67,5 +67,15 @@ std::pair<float, float> minmaxCPU(const DepthImage& image) {
   return {*res.first, *res.second};
 }
 
+void elementWiseMinInPlace(const float constant, DepthImage* image) {
+  cuda::elementWiseMinInPlace(image->rows(), image->cols(), constant,
+                              image->dataPtr());
+}
+
+void elementWiseMaxInPlace(const float constant, DepthImage* image) {
+  cuda::elementWiseMaxInPlace(image->rows(), image->cols(), constant,
+                              image->dataPtr());
+}
+
 }  // namespace image
 }  // namespace nvblox

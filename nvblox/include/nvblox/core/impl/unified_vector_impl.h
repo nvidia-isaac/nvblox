@@ -21,6 +21,8 @@ limitations under the License.
 #include <cstring>
 #include <type_traits>
 
+#include <memory>
+
 #include "nvblox/core/cuda/error_check.cuh"
 
 namespace nvblox {
@@ -34,8 +36,13 @@ unified_vector<T>::unified_vector(MemoryType memory_type)
       buffer_capacity_(0) {
   static_assert(std::is_default_constructible<T>::value,
                 "Need to have a default constructor to use unified_vector.");
-  static_assert(std::is_trivially_destructible<T>::value,
-                "Need to have a trivial destructor to use unified_vector.");
+  // NOTE(alexmillane): Some structures (eg. Ray) define custom destructors,
+  // (empty in Ray's case), even though they only contain data by value, and can
+  // be stored by unified_vector. We therefore have to remove the check below.
+  // The onus is therefore transferred to the user to not use the vector for
+  // stuff which needs a destructor called.
+  // static_assert(std::is_trivially_destructible<T>::value,
+  //               "Need to have a trivial destructor to use unified_vector.");
 }
 
 template <typename T>
@@ -74,6 +81,7 @@ template <typename T>
 unified_vector<T>::unified_vector(const std::vector<T>& other,
                                   MemoryType memory_type)
     : unified_vector(memory_type) {
+  static_assert(!std::is_same<T, bool>::value);
   resize(other.size());
 
   checkCudaErrors(cudaMemcpy(buffer_, other.data(), sizeof(T) * other.size(),
@@ -141,9 +149,26 @@ unified_vector<T>& unified_vector<T>::operator=(const std::vector<T>& other) {
 
 template <typename T>
 std::vector<T> unified_vector<T>::toVector() const {
+  static_assert(!std::is_same<T, bool>::value);
   std::vector<T> vect(buffer_size_);
   checkCudaErrors(cudaMemcpy(vect.data(), buffer_, sizeof(T) * buffer_size_,
                              cudaMemcpyDefault));
+  return vect;
+}
+
+// Specialization for bool
+template <>
+inline std::vector<bool> unified_vector<bool>::toVector() const {
+  // The memory layout of std::vector<bool> is different so we have to first
+  // copy to an intermediate buffer.
+  std::unique_ptr<bool[]> bool_buffer(new bool[buffer_size_]);
+  checkCudaErrors(cudaMemcpy(bool_buffer.get(), buffer_,
+                             sizeof(bool) * buffer_size_, cudaMemcpyDefault));
+  // Now populate the vector
+  std::vector<bool> vect(buffer_size_);
+  for (int i = 0; i < buffer_size_; i++) {
+    vect[i] = bool_buffer[i];
+  }
   return vect;
 }
 

@@ -46,3 +46,8 @@
 
 # Reconstructions
 *.ply
+
+# Documentation
+*docs/_build
+*docs/doxyoutput
+*docs/api

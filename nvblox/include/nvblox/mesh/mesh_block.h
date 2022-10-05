@@ -80,7 +80,8 @@ struct CudaMeshBlock {
   Vector3f* normals;
   int* triangles;
   Color* colors;
-  int size;
+  int vertices_size = 0;
+  int triangles_size = 0;
 };
 
 }  // namespace nvblox

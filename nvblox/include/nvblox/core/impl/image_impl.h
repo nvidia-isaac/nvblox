@@ -25,7 +25,9 @@ namespace nvblox {
 
 template <typename ElementType>
 Image<ElementType>::Image(const Image<ElementType>& other)
-    : Image(other, other.memory_type_){};
+    : Image(other, other.memory_type_) {
+  LOG(WARNING) << "Deep copy of Image.";
+};
 
 template <typename ElementType>
 Image<ElementType>::Image(const Image<ElementType>& other,
@@ -35,7 +37,6 @@ Image<ElementType>::Image(const Image<ElementType>& other,
       memory_type_(memory_type),
       data_(make_unified<ElementType[]>(static_cast<size_t>(rows_ * cols_),
                                         memory_type)) {
-  LOG(WARNING) << "Deep copy of Image.";
   cuda::copy(rows_, cols_, other.data_.get(), data_.get());
 }
 
@@ -109,4 +110,31 @@ void Image<ElementType>::populateFromBuffer(int rows, int cols,
              cudaMemcpyDefault);
 }
 
+template <typename ElementType>
+void Image<ElementType>::setZero() {
+  data_.setZero();
+}
+
+namespace image {
+
+template <typename ImageType>
+void getDifferenceImageGPU(const ImageType& image_1, const ImageType& image_2,
+                           ImageType* diff_image_ptr) {
+  CHECK_NOTNULL(diff_image_ptr);
+  CHECK_EQ(image_1.rows(), image_2.rows());
+  CHECK_EQ(image_1.cols(), image_2.cols());
+  CHECK(image_1.memory_type() == MemoryType::kDevice ||
+        image_1.memory_type() == MemoryType::kUnified);
+  CHECK(image_2.memory_type() == MemoryType::kDevice ||
+        image_2.memory_type() == MemoryType::kUnified);
+  if (diff_image_ptr->rows() != image_1.rows() ||
+      diff_image_ptr->cols() != image_1.cols()) {
+    *diff_image_ptr =
+        ImageType(image_1.rows(), image_1.cols(), image_1.memory_type());
+  }
+  cuda::diff(image_1.rows(), image_2.cols(), image_1.dataConstPtr(),
+             image_2.dataConstPtr(), diff_image_ptr->dataPtr());
+}
+
+}  // namespace image
 }  // namespace nvblox

@@ -50,10 +50,15 @@ typedef Eigen::AlignedBox3f AxisAlignedBoundingBox;
 
 typedef Eigen::Isometry3f Transform;
 
+// This can be replaced with std::byte once we go to C++17.
+typedef uint8_t Byte; 
+
 // Aligned Eigen containers
 template <typename Type>
 using AlignedVector = std::vector<Type, Eigen::aligned_allocator<Type>>;
 
-enum class InterpolationType { kNearestNeighbor, kLinear, kMax, kMin };
+enum class InterpolationType { kNearestNeighbor, kLinear};
+
+typedef Eigen::ParametrizedLine<float, 3> Ray;
 
 }  // namespace nvblox
