@@ -125,79 +125,77 @@ __global__ void markAllSitesCombinedKernel(
     Index3D* updated_vec, int* updated_vec_size, Index3D* to_clear_vec,
     int* to_clear_vec_size) {
   dim3 voxel_index = threadIdx;
+  int block_idx = blockIdx.x;
 
   __shared__ TsdfBlock* tsdf_block;
   __shared__ EsdfBlock* esdf_block;
-  __shared__ bool updated, to_clear;
-  // This for loop allows us to have fewer threadblocks than there are
-  // blocks in this computation. We assume the threadblock size is constant
-  // though to make our lives easier.
-  for (int block_idx = blockIdx.x; block_idx < num_blocks;
-       block_idx += gridDim.x) {
-    if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
-      tsdf_block = nullptr;
-      esdf_block = nullptr;
-      updated = false;
-      to_clear = false;
-      auto tsdf_it = tsdf_block_hash.find(block_indices[block_idx]);
-      if (tsdf_it != tsdf_block_hash.end()) {
-        tsdf_block = tsdf_it->second;
-      }
-      auto esdf_it = esdf_block_hash.find(block_indices[block_idx]);
-      if (esdf_it != esdf_block_hash.end()) {
-        esdf_block = esdf_it->second;
-      }
-    }
-    __syncthreads();
-    if (tsdf_block == nullptr || esdf_block == nullptr) {
-      continue;
-    }
+  __shared__ int updated;
+  __shared__ int to_clear;
+  __syncthreads();
 
-    // Get the correct voxel for this index.
-    const TsdfVoxel* tsdf_voxel =
-        &tsdf_block->voxels[voxel_index.x][voxel_index.y][voxel_index.z];
-    EsdfVoxel* esdf_voxel =
-        &esdf_block->voxels[voxel_index.x][voxel_index.y][voxel_index.z];
-    if (tsdf_voxel->weight >= min_weight) {
-      // Mark as inside if the voxel distance is negative.
-      bool is_inside = tsdf_voxel->distance <= 0.0f;
-      if (esdf_voxel->is_inside && is_inside == false) {
+  if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
+    tsdf_block = nullptr;
+    esdf_block = nullptr;
+    updated = false;
+    to_clear = false;
+    auto tsdf_it = tsdf_block_hash.find(block_indices[block_idx]);
+    if (tsdf_it != tsdf_block_hash.end()) {
+      tsdf_block = tsdf_it->second;
+    }
+    auto esdf_it = esdf_block_hash.find(block_indices[block_idx]);
+    if (esdf_it != esdf_block_hash.end()) {
+      esdf_block = esdf_it->second;
+    }
+  }
+  __syncthreads();
+  if (tsdf_block == nullptr || esdf_block == nullptr) {
+    return;
+  }
+
+  // Get the correct voxel for this index.
+  const TsdfVoxel* tsdf_voxel =
+      &tsdf_block->voxels[voxel_index.x][voxel_index.y][voxel_index.z];
+  EsdfVoxel* esdf_voxel =
+      &esdf_block->voxels[voxel_index.x][voxel_index.y][voxel_index.z];
+  if (tsdf_voxel->weight >= min_weight) {
+    // Mark as inside if the voxel distance is negative.
+    bool is_inside = tsdf_voxel->distance <= 0.0f;
+    if (esdf_voxel->is_inside && is_inside == false) {
+      clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
+      to_clear = true;
+    }
+    esdf_voxel->is_inside = is_inside;
+    if (is_inside && fabsf(tsdf_voxel->distance) <= max_site_distance_m) {
+      esdf_voxel->is_site = true;
+      esdf_voxel->squared_distance_vox = 0.0f;
+      esdf_voxel->parent_direction.setZero();
+      updated = true;
+    } else {
+      if (esdf_voxel->is_site) {
+        esdf_voxel->is_site = false;
+        // This voxel needs to be cleared.
+        clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
+        to_clear = true;
+      } else if (!esdf_voxel->observed) {
+        // This is a brand new voxel.
+        clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
+      } else if (esdf_voxel->squared_distance_vox <= 1e-4) {
+        // This is an invalid voxel that should be cleared.
         clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
         to_clear = true;
       }
-      esdf_voxel->is_inside = is_inside;
-      if (is_inside && fabsf(tsdf_voxel->distance) <= max_site_distance_m) {
-        esdf_voxel->is_site = true;
-        esdf_voxel->squared_distance_vox = 0.0f;
-        esdf_voxel->parent_direction.setZero();
-        updated = true;
-      } else {
-        if (esdf_voxel->is_site) {
-          esdf_voxel->is_site = false;
-          // This voxel needs to be cleared.
-          clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
-          to_clear = true;
-        } else if (!esdf_voxel->observed) {
-          // This is a brand new voxel.
-          clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
-        } else if (esdf_voxel->squared_distance_vox <= 1e-4) {
-          // This is an invalid voxel that should be cleared.
-          clearVoxelDevice(esdf_voxel, max_squared_distance_vox);
-          to_clear = true;
-        }
-      }
-      esdf_voxel->observed = true;
     }
+    esdf_voxel->observed = true;
+  }
 
-    __syncthreads();
-    if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
-      if (updated) {
-        updated_vec[atomicAdd(updated_vec_size, 1)] = block_indices[block_idx];
-      }
-      if (to_clear) {
-        to_clear_vec[atomicAdd(to_clear_vec_size, 1)] =
-            block_indices[block_idx];
-      }
+  __syncthreads();
+  
+  if (threadIdx.x == 1 && threadIdx.y == 1 && threadIdx.z == 1) {
+    if (updated) {
+      updated_vec[atomicAdd(updated_vec_size, 1)] = block_indices[block_idx];
+    }
+    if (to_clear) {
+      to_clear_vec[atomicAdd(to_clear_vec_size, 1)] = block_indices[block_idx];
     }
   }
 }
@@ -501,6 +499,10 @@ void EsdfIntegrator::markAllSitesCombined(
   CHECK_NOTNULL(esdf_layer);
   CHECK_NOTNULL(blocks_with_sites);
 
+  if (block_indices.empty()) {
+    return;
+  }
+
   // Caching.
   const float voxel_size = tsdf_layer.voxel_size();
   const float max_distance_vox = max_distance_m_ / voxel_size;
@@ -555,6 +557,10 @@ void EsdfIntegrator::markSitesInSliceCombined(
     float min_z, float max_z, float output_z, EsdfLayer* esdf_layer,
     device_vector<Index3D>* updated_blocks,
     device_vector<Index3D>* cleared_blocks) {
+  if (block_indices.empty()) {
+    return;
+  }
+
   // Caching.
   const float voxel_size = tsdf_layer.voxel_size();
   const float max_distance_vox = max_distance_m_ / voxel_size;
@@ -1023,6 +1029,10 @@ void EsdfIntegrator::sweepBlockBandCombined(
 void EsdfIntegrator::computeEsdfCombined(
     const device_vector<Index3D>& blocks_with_sites, EsdfLayer* esdf_layer) {
   CHECK_NOTNULL(esdf_layer);
+
+  if (blocks_with_sites.size() == 0) {
+    return;
+  }
   // Cache everything.
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const float voxel_size = esdf_layer->block_size() / kVoxelsPerSide;
@@ -1077,7 +1087,7 @@ __global__ void clearAllInvalidKernel(
     Index3D* block_indices, Index3DDeviceHashMapType<EsdfBlock> block_hash,
     float max_squared_distance_vox, Index3D* output_vector, int* updated_size) {
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
-  __shared__ bool block_updated;
+  __shared__ int block_updated;
   // Allow block size to be whatever.
   __shared__ EsdfBlock* block_ptr;
   // Get the current block for this... block.
@@ -1142,6 +1152,10 @@ __global__ void clearAllInvalidKernel(
 void EsdfIntegrator::clearAllInvalid(
     const std::vector<Index3D>& blocks_to_clear, EsdfLayer* esdf_layer,
     device_vector<Index3D>* updated_blocks) {
+  if (blocks_to_clear.size() == 0) {
+    return;
+  }
+
   // TODO: start out just getting all the blocks in the whole map.
   // Then replace with blocks within a radius of the cleared blocks.
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;

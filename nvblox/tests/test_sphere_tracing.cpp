@@ -38,7 +38,7 @@ class SphereTracingTest : public ::testing::Test {
  protected:
   SphereTracingTest()
       : layer_(
-            std::make_shared<TsdfLayer>(voxel_size_m_, MemoryType::kUnified)) {
+            std::make_shared<TsdfLayer>(voxel_size_m_, MemoryType::kDevice)) {
     constexpr float fu = 300;
     constexpr float fv = 300;
     constexpr int width = 640;
@@ -186,14 +186,18 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
 
   // Get the ground truth SDF for it.
   const float truncation_distance_m = 5.0;
-  scene.generateSdfFromScene(truncation_distance_m, layer_.get());
+  TsdfLayer layer_host(voxel_size_m_, MemoryType::kHost);
+  scene.generateSdfFromScene(truncation_distance_m, &layer_host);
 
   // Scale the distance for all voxels in the layer
   auto scaling_lambda = [distance_scaling](const Index3D&, const Index3D&,
                                            TsdfVoxel* voxel) {
     voxel->distance *= distance_scaling;
   };
-  callFunctionOnAllVoxels<TsdfVoxel>(layer_.get(), scaling_lambda);
+  callFunctionOnAllVoxels<TsdfVoxel>(&layer_host, scaling_lambda);
+
+  // Copy over to the device.
+  *layer_ = layer_host;
 
   // Sphere tracer
   SphereTracerTester sphere_tracer_gpu;
@@ -280,17 +284,22 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
   // Distance Field type
   const DistanceFieldType field_type = GetParam();
 
+  TsdfLayer layer_host(voxel_size_m_, MemoryType::kHost);
+
   // Distance field (GT or reconsruction)
   if (field_type == DistanceFieldType::kGroundTruth) {
     std::cout << "Testing on Ground Truth distance field." << std::endl;
-    scene.generateSdfFromScene(truncation_distance_m_, layer_.get());
+    scene.generateSdfFromScene(truncation_distance_m_, &layer_host);
   } else {
     std::cout << "Testing on reconstructed distance field." << std::endl;
-    getSphereSceneReconstruction(scene, layer_.get());
+    getSphereSceneReconstruction(scene, &layer_host);
   }
 
   // Sphere tracer
   SphereTracer sphere_tracer_gpu;
+
+  // Copy over to the GPU.
+  *layer_ = layer_host;
 
   // Declare the images here so we have access to them after the tests
   std::shared_ptr<const DepthImage> depth_image_sphere_traced_ptr;
@@ -354,13 +363,15 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
 
   std::cout << timing::Timing::Print() << std::endl;
 
-  // Write Images
-  io::writeToCsv("sphere_tracing_image.txt", *depth_image_sphere_traced_ptr);
-  io::writeToCsv("sphere_tracing_gt.txt", depth_frame_gt);
-  io::writeToCsv("sphere_tracing_diff.txt", diff);
+  if (FLAGS_nvblox_test_file_output) {
+    // Write Images
+    io::writeToCsv("sphere_tracing_image.txt", *depth_image_sphere_traced_ptr);
+    io::writeToCsv("sphere_tracing_gt.txt", depth_frame_gt);
+    io::writeToCsv("sphere_tracing_diff.txt", diff);
 
-  // Write Scene
-  // io::outputVoxelLayerToPly(*layer_, "sphere_tracing_scene.ply");
+    // Write Scene
+    // io::outputVoxelLayerToPly(*layer_, "sphere_tracing_scene.ply");
+  }
 }
 
 INSTANTIATE_TEST_CASE_P(SphereSceneTests, SphereTracingInSphereSceneTest,
@@ -482,10 +493,12 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
   std::cout << timing::Timing::Print() << std::endl;
 
   // Write Images
-  io::writeToCsv("sphere_tracing_image_full.csv", depth_image_full);
-  io::writeToCsv("sphere_tracing_image_half.csv", depth_image_half);
-  io::writeToCsv("sphere_tracing_image_quarter.csv", depth_image_quarter);
-  io::writeToCsv("sphere_tracing_image_subsampling_diff.csv", diff);
+  if (FLAGS_nvblox_test_file_output) {
+    io::writeToCsv("sphere_tracing_image_full.csv", depth_image_full);
+    io::writeToCsv("sphere_tracing_image_half.csv", depth_image_half);
+    io::writeToCsv("sphere_tracing_image_quarter.csv", depth_image_quarter);
+    io::writeToCsv("sphere_tracing_image_subsampling_diff.csv", diff);
+  }
 }
 
 TEST_F(SphereTracingTest, GettersAndSetters) {
@@ -565,19 +578,24 @@ TEST_F(SphereTracingTest, CastingFromPositiveAndNegative) {
   scene.aabb() = AxisAlignedBoundingBox(
       Vector3f(bound_box_2d.min().x(), bound_box_2d.min().y(), -5.0),
       Vector3f(bound_box_2d.max().x(), bound_box_2d.max().y(), 5.0));
-  scene.generateSdfFromScene(truncation_distance_m_, layer_.get());
+
+  TsdfLayer layer_host(voxel_size_m_, MemoryType::kHost);
+  scene.generateSdfFromScene(truncation_distance_m_, &layer_host);
 
   // Do some ray casting
   SphereTracer sphere_tracer;
 
   // Generate some points on a 2D grid BELOW THE PLANE FOR NOW
   const std::vector<Vector3f> grid_points =
-      generatePlanarGrid(bound_box_2d, 0.0f, *layer_);
+      generatePlanarGrid(bound_box_2d, 0.0f, layer_host);
+
+  // Copy over to the device.
+  *layer_ = layer_host;
 
   // Get distances at ray origins
   std::vector<TsdfVoxel> start_voxels;
   std::vector<bool> get_voxels_success_flags;
-  layer_->getVoxels(grid_points, &start_voxels, &get_voxels_success_flags);
+  layer_host.getVoxels(grid_points, &start_voxels, &get_voxels_success_flags);
 
   // Making dem rays
   std::vector<Ray> rays_L;

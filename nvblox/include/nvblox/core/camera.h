@@ -35,6 +35,12 @@ class Camera {
 
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
+  // Back projection (image plane point to 3D point)
+  __host__ __device__ inline Vector3f unprojectFromImagePlaneCoordinates(
+      const Vector2f& u_C, const float depth) const;
+  __host__ __device__ inline Vector3f unprojectFromPixelIndices(
+      const Index2D& u_C, const float depth) const;
+
   /// Get the axis aligned bounding box of the view in the LAYER coordinate
   /// frame.
   __host__ AxisAlignedBoundingBox getViewAABB(const Transform& T_L_C,

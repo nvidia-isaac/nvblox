@@ -59,13 +59,13 @@ TEST_F(SerializationTest, OpenInvalidFile) {
 }
 
 TEST_F(SerializationTest, SerializeAndDeserializeTsdfLayer) {
-  const std::string test_filename = "test_tsdf_layer.nvblox";
-
+  // This creates an in-memory database that can be shared within the process.
+  const std::string test_filename = "file:test1?mode=memory&cache=shared";
   // Create an empty Serializer object.
   Serializer serializer;
 
   // Create a TSDF layer from the scene.
-  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kUnified);
+  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
   scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
 
   // Make sure we can open a file.
@@ -74,6 +74,7 @@ TEST_F(SerializationTest, SerializeAndDeserializeTsdfLayer) {
   EXPECT_TRUE(serializer.valid());
 
   EXPECT_TRUE(serializer.writeLayerCake(cake_));
+
   LayerCake cake2 = serializer.loadLayerCake(MemoryType::kHost);
 
   EXPECT_EQ(cake2.voxel_size(), cake_.voxel_size());
@@ -109,12 +110,11 @@ TEST_F(SerializationTest, SerializeAndDeserializeTsdfLayer) {
   // And close it again.
   ASSERT_TRUE(serializer.close());
   EXPECT_FALSE(serializer.valid());
-
-  remove(test_filename.c_str());
 }
 
 TEST_F(SerializationTest, SerializeLayerParameters) {
-  const std::string test_filename = "test_serialize_layer.nvblox";
+  // This creates an in-memory database that can be shared within the process.
+  const std::string test_filename = "file:test2?mode=memory&cache=shared";
 
   const std::string layer_name = "awesome_layer";
   const std::string string_param_name = "stringy_parameter";
@@ -167,7 +167,7 @@ TEST_F(SerializationTest, SerializeLayerParameters) {
 
 TEST_F(SerializationTest, PopulateLayerParameterStruct) {
   // Create a TSDF layer from the scene.
-  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kUnified);
+  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
   scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
 
   LayerParameterStruct params =
@@ -179,7 +179,7 @@ TEST_F(SerializationTest, PopulateLayerParameterStruct) {
 
 TEST_F(SerializationTest, LayerBlockSerialization) {
   // Create a TSDF layer from the scene.
-  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kUnified);
+  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
   scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
 
   const TsdfLayer& tsdf_layer = *cake_.getConstPtr<TsdfLayer>();
@@ -195,7 +195,7 @@ TEST_F(SerializationTest, LayerBlockSerialization) {
 }
 
 TEST_F(SerializationTest, SerializeDeviceBlock) {
-  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kUnified);
+  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
   scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
   const TsdfLayer& tsdf_layer = *cake_.getConstPtr<TsdfLayer>();
 
@@ -241,7 +241,7 @@ TEST_F(SerializationTest, OverwriteTest) {
   // Idea here is to save twice. If overwriting is working, only the blocks from
   // the second save will show up in the reloaded map.
 
-  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kUnified);
+  cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
   TsdfLayer& tsdf_layer = *cake_.getPtr<TsdfLayer>();
   const std::string filename = "overwrite_test_layer.nvblx";
 

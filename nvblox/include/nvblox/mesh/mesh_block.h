@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "nvblox/core/blox.h"
 #include "nvblox/core/color.h"
+#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/core/unified_vector.h"
@@ -34,6 +35,10 @@ struct MeshBlock {
 
   MeshBlock(MemoryType memory_type = MemoryType::kDevice);
 
+  // "Clone" copy constructor, with the possibility to change device type.
+  MeshBlock(const MeshBlock& mesh_block);
+  MeshBlock(const MeshBlock& mesh_block, MemoryType memory_type);
+
   // Mesh Data
   // These unified vectors contain the mesh data for this block. Note that
   // Colors and/or intensities are optional. The "triangles" vector is a vector
@@ -42,7 +47,6 @@ struct MeshBlock {
   unified_vector<Vector3f> vertices;
   unified_vector<Vector3f> normals;
   unified_vector<Color> colors;
-  unified_vector<float> intensities;
   unified_vector<int> triangles;
 
   void clear();
@@ -57,7 +61,6 @@ struct MeshBlock {
   // Resize colors/intensities such that:
   // `colors.size()/intensities.size() == vertices.size()`
   void expandColorsToMatchVertices();
-  void expandIntensitiesToMatchVertices();
 
   // Copy mesh data to the CPU.
   std::vector<Vector3f> getVertexVectorOnCPU() const;
@@ -83,5 +86,26 @@ struct CudaMeshBlock {
   int vertices_size = 0;
   int triangles_size = 0;
 };
+
+/// Specialization of BlockLayer clone just for MeshBlocks.
+template <>
+inline BlockLayer<MeshBlock>::BlockLayer(const BlockLayer& other,
+                                         MemoryType memory_type)
+    : BlockLayer(other.block_size_, memory_type) {
+  LOG(INFO) << "Deep copy of Mesh BlockLayer containing "
+            << other.numAllocatedBlocks() << " blocks.";
+  // Re-create all the blocks.
+  std::vector<Index3D> all_block_indices = other.getAllBlockIndices();
+
+  // Iterate over all blocks, clonin'.
+  for (const Index3D& block_index : all_block_indices) {
+    typename MeshBlock::ConstPtr block = other.getBlockAtIndex(block_index);
+    if (block == nullptr) {
+      continue;
+    }
+    blocks_.emplace(block_index,
+                    std::make_shared<MeshBlock>(*block, memory_type));
+  }
+}
 
 }  // namespace nvblox

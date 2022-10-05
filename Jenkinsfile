@@ -26,7 +26,7 @@ pipeline {
     stage('Link Into External Project') {
       steps {
         dir("nvblox_lib_test") {
-          git credentialsId: 'isaac-git-master', url: 'ssh://git@gitlab-master.nvidia.com:12051/nvblox/nvblox_lib_test.git', branch: 'main'
+          git credentialsId: 'vault-svc-ssh', url: 'ssh://git@gitlab-master.nvidia.com:12051/nvblox/nvblox_lib_test.git', branch: 'main'
         }
         sh '''mkdir -p nvblox_lib_test/build'''
         sh '''cd nvblox_lib_test/build && cmake .. -DNVBLOX_INSTALL_PATH=${WORKSPACE}/nvblox/install && make'''

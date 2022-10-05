@@ -33,9 +33,10 @@ We depend on:
 - gflags (to run experiments)
 - CUDA 10.2 - 11.5 (others might work but are untested)
 - Eigen (no need to explicitly install, a recent version is built into the library)
+- SQLite 3 (for serialization)
 Please run
 ```
-sudo apt-get install -y libgoogle-glog-dev libgtest-dev libgflags-dev python3-dev
+sudo apt-get install -y libgoogle-glog-dev libgtest-dev libgflags-dev python3-dev libsqlite3-dev
 cd /usr/src/googletest && sudo cmake . && sudo cmake --build . --target install
 ```
 

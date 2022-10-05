@@ -41,8 +41,16 @@ bool Camera::project(const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C) const {
   return true;
 }
 
-float Camera::getDepth(const Vector3f& p_C) const {
-  return p_C.z();
+float Camera::getDepth(const Vector3f& p_C) const { return p_C.z(); }
+
+Vector3f Camera::unprojectFromImagePlaneCoordinates(const Vector2f& u_C,
+                                                    const float depth) const {
+  return depth * vectorFromImagePlaneCoordinates(u_C);
+}
+
+Vector3f Camera::unprojectFromPixelIndices(const Index2D& u_C,
+                                           const float depth) const {
+  return depth * vectorFromPixelIndices(u_C);
 }
 
 Vector3f Camera::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {

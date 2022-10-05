@@ -30,6 +30,7 @@ limitations under the License.
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/tests/mesh_utils.h"
+#include "nvblox/tests/utils.h"
 #include "nvblox/utils/timing.h"
 
 using namespace nvblox;
@@ -54,8 +55,6 @@ class MeshTest : public ::testing::Test {
 
     mesh_integrator_.weld_vertices(false);
   }
-
-  bool output_files_ = false;
 
   float block_size_;
   float voxel_size_ = 0.10;
@@ -145,7 +144,7 @@ TEST_F(MeshTest, PlaneMesh) {
     }
   }
 
-  if (output_files_) {
+  if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_cpu.ply");
   }
   std::cout << timing::Timing::Print();
@@ -169,7 +168,9 @@ TEST_F(MeshTest, ComplexScene) {
   std::vector<Index3D> block_indices_mesh = mesh_layer_->getAllBlockIndices();
   EXPECT_GT(block_indices_mesh.size(), 0);
 
-  io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_complex.ply");
+  if (FLAGS_nvblox_test_file_output) {
+    io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_complex.ply");
+  }
   std::cout << timing::Timing::Print();
 }
 
@@ -232,7 +233,7 @@ TEST_F(MeshTest, GPUPlaneTest) {
       EXPECT_NEAR(normal.z(), 0.0, kFloatEpsilon);
     }
   }
-  if (output_files_) {
+  if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_gpu.ply");
   }
   std::cout << timing::Timing::Print();
@@ -314,7 +315,7 @@ TEST_F(MeshTest, IncrementalMesh) {
   mesh_integrator_.integrateMeshFromDistanceField(*sdf_layer_,
                                                   batch_mesh_layer.get());
 
-  if (output_files_) {
+  if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_inc.ply");
     io::outputMeshLayerToPly(*batch_mesh_layer, "test_mesh_batch.ply");
   }
@@ -478,7 +479,7 @@ TEST_F(MeshTest, InPlaceWeldingTest) {
     EXPECT_LT(welded_mesh_block->vertices.size(), mesh_block->vertices.size());
   }
 
-  if (output_files_) {
+  if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(*welded_mesh_layer, "test_mesh_welded.ply");
     io::outputMeshLayerToPly(*mesh_layer_, "test_mesh_unwelded.ply");
   }
