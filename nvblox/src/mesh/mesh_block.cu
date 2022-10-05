@@ -20,8 +20,17 @@ namespace nvblox {
 MeshBlock::MeshBlock(MemoryType memory_type)
     : vertices(memory_type),
       normals(memory_type),
-      triangles(memory_type),
-      colors(memory_type) {}
+      colors(memory_type),
+      triangles(memory_type) {}
+
+MeshBlock::MeshBlock(const MeshBlock& mesh_block)
+    : MeshBlock(mesh_block, mesh_block.vertices.memory_type()) {}
+
+MeshBlock::MeshBlock(const MeshBlock& mesh_block, MemoryType memory_type)
+    : vertices(mesh_block.vertices, memory_type),
+      normals(mesh_block.normals, memory_type),
+      colors(mesh_block.colors, memory_type),
+      triangles(mesh_block.triangles, memory_type) {}
 
 void MeshBlock::clear() {
   vertices.resize(0);
@@ -69,11 +78,6 @@ size_t MeshBlock::capacity() const { return vertices.capacity(); }
 void MeshBlock::expandColorsToMatchVertices() {
   colors.reserve(vertices.capacity());
   colors.resize(vertices.size());
-}
-
-void MeshBlock::expandIntensitiesToMatchVertices() {
-  intensities.reserve(vertices.capacity());
-  intensities.resize(vertices.size());
 }
 
 // Set the pointers to point to the mesh block.

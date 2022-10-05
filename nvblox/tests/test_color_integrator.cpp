@@ -220,7 +220,7 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
   const float radians_increment = 2 * M_PI / (kNumTrajectoryPoints);
 
   // Color layer
-  ColorLayer color_layer(voxel_size_m_, MemoryType::kUnified);
+  ColorLayer color_layer(voxel_size_m_, MemoryType::kDevice);
 
   // Generate a random color for this scene
   const Color color = Color::Red();
@@ -254,6 +254,9 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
               std::inserter(touched_blocks, touched_blocks.end()));
   }
 
+  // Create a host copy of the layer.
+  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+
   // Lambda that checks if voxels have the passed color (if they have weight >
   // 0)
   auto color_check_lambda = [&color](const Index3D& voxel_idx,
@@ -265,8 +268,8 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
 
   // Check that all touched blocks are the color we chose
   for (const Index3D& block_idx : touched_blocks) {
-    callFunctionOnAllVoxels<ColorVoxel>(*color_layer.getBlockAtIndex(block_idx),
-                                        color_check_lambda);
+    callFunctionOnAllVoxels<ColorVoxel>(
+        *color_layer_host.getBlockAtIndex(block_idx), color_check_lambda);
   }
 
   // Check that most points on the surface of the sphere have been observed
@@ -276,7 +279,8 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
   const int num_surface_points_tested = sphere_points.size();
   for (const Vector3f p : sphere_points) {
     const ColorVoxel* color_voxel;
-    EXPECT_TRUE(getVoxelAtPosition<ColorVoxel>(color_layer, p, &color_voxel));
+    EXPECT_TRUE(
+        getVoxelAtPosition<ColorVoxel>(color_layer_host, p, &color_voxel));
     if (color_voxel->weight >= 1.0f) {
       ++num_points_on_sphere_surface_observed;
     }
@@ -293,7 +297,7 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
   EXPECT_GT(ratio_observed_surface_points, 0.5);
 
   // Check that all color blocks have a corresponding block in the tsdf layer
-  for (const Index3D block_idx : color_layer.getAllBlockIndices()) {
+  for (const Index3D block_idx : color_layer_host.getAllBlockIndices()) {
     EXPECT_NE(gt_layer_.getBlockAtIndex(block_idx), nullptr);
   }
 
@@ -305,7 +309,9 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
   mesh_integrator.colorMesh(color_layer, &mesh_layer);
 
   // Write to file
-  io::outputMeshLayerToPly(mesh_layer, "color_sphere_mesh.ply");
+  if (FLAGS_nvblox_test_file_output) {
+    io::outputMeshLayerToPly(mesh_layer, "color_sphere_mesh.ply");
+  }
 }
 
 TEST_F(ColorIntegrationTest, ColoredSpheres) {
@@ -362,7 +368,7 @@ TEST_F(ColorIntegrationTest, ColoredSpheres) {
 
   // Color layer
   ProjectiveColorIntegrator color_integrator;
-  ColorLayer color_layer(voxel_size_m_, MemoryType::kUnified);
+  ColorLayer color_layer(voxel_size_m_, MemoryType::kDevice);
 
   const auto color_1 = Color::Red();
   const auto color_2 = Color::Green();
@@ -382,17 +388,19 @@ TEST_F(ColorIntegrationTest, ColoredSpheres) {
 
   // Generate a mesh from the "reconstruction"
   MeshIntegrator mesh_integrator;
-  BlockLayer<MeshBlock> mesh_layer(block_size_m_, MemoryType::kUnified);
+  BlockLayer<MeshBlock> mesh_layer(block_size_m_, MemoryType::kDevice);
   EXPECT_TRUE(
       mesh_integrator.integrateMeshFromDistanceField(gt_layer_, &mesh_layer));
   mesh_integrator.colorMesh(color_layer, &mesh_layer);
 
+  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+
   const float sphere_1_observed_ratio =
-      checkSphereColor(color_layer, center_1, kSphereRadius, color_1);
+      checkSphereColor(color_layer_host, center_1, kSphereRadius, color_1);
   const float sphere_2_observed_ratio =
-      checkSphereColor(color_layer, center_2, kSphereRadius, color_2);
+      checkSphereColor(color_layer_host, center_2, kSphereRadius, color_2);
   const float sphere_3_observed_ratio =
-      checkSphereColor(color_layer, center_3, kSphereRadius, color_3);
+      checkSphereColor(color_layer_host, center_3, kSphereRadius, color_3);
 
   EXPECT_GT(sphere_1_observed_ratio, 0.2);
   EXPECT_GT(sphere_2_observed_ratio, 0.2);
@@ -406,7 +414,9 @@ TEST_F(ColorIntegrationTest, ColoredSpheres) {
             << std::endl;
 
   // Write to file
-  io::outputMeshLayerToPly(mesh_layer, "colored_spheres.ply");
+  if (FLAGS_nvblox_test_file_output) {
+    io::outputMeshLayerToPly(mesh_layer, "colored_spheres.ply");
+  }
 }
 
 TEST_F(ColorIntegrationTest, OcclusionTesting) {
@@ -433,7 +443,7 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
 
   // Integrate a color image
   ProjectiveColorIntegrator color_integrator;
-  ColorLayer color_layer(voxel_size_m_, MemoryType::kUnified);
+  ColorLayer color_layer(voxel_size_m_, MemoryType::kDevice);
 
   const auto color_1 = Color::Red();
   const auto image_1 = generateSolidColorImage(color_1, height_, width_);
@@ -442,9 +452,11 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
   color_integrator.integrateFrame(image_1, T_S_C, camera_, gt_layer_,
                                   &color_layer, &updated_blocks);
 
+  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+
   // Check front sphere (observed voxels red)
   const float sphere_1_observed_ratio =
-      checkSphereColor(color_layer, center_1, kSphereRadius, color_1);
+      checkSphereColor(color_layer_host, center_1, kSphereRadius, color_1);
   EXPECT_GT(sphere_1_observed_ratio, 0.2);
   std::cout << "sphere_1_observed_ratio: " << sphere_1_observed_ratio
             << std::endl;
@@ -455,7 +467,7 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
   for (const Vector3f p : sphere_points) {
     const ColorVoxel* color_voxel;
     const bool block_allocated =
-        getVoxelAtPosition<ColorVoxel>(color_layer, p, &color_voxel);
+        getVoxelAtPosition<ColorVoxel>(color_layer_host, p, &color_voxel);
     if (block_allocated) {
       EXPECT_EQ(color_voxel->weight, 0.0f);
     }
@@ -463,11 +475,14 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
 
   // Generate a mesh from the "reconstruction"
   MeshIntegrator mesh_integrator;
-  MeshLayer mesh_layer(block_size_m_, MemoryType::kUnified);
+  MeshLayer mesh_layer(block_size_m_, MemoryType::kDevice);
   EXPECT_TRUE(
       mesh_integrator.integrateMeshFromDistanceField(gt_layer_, &mesh_layer));
   mesh_integrator.colorMesh(color_layer, &mesh_layer);
-  io::outputMeshLayerToPly(mesh_layer, "colored_spheres_occluded.ply");
+
+  if (FLAGS_nvblox_test_file_output) {
+    io::outputMeshLayerToPly(mesh_layer, "colored_spheres_occluded.ply");
+  }
 }
 
 int main(int argc, char** argv) {

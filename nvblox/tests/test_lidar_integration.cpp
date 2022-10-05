@@ -184,8 +184,7 @@ TEST_F(LidarIntegrationTest, LidarBlocksInView) {
   }
 
   // Debug. Write block indices to file so I can display later.
-  constexpr bool kWriteDebugOutput = false;
-  if (kWriteDebugOutput) {
+  if (FLAGS_nvblox_test_file_output) {
     const std::string blocks_in_view_filepath = "./blocks_in_view_lidar.csv";
     io::writeToCsv(blocks_in_view_filepath, blocks_in_view_mat);
   }
@@ -217,7 +216,8 @@ TEST_F(LidarIntegrationTest, SurroundingSphere) {
 
   // Check all TSDF voxels have close to the distance they should.
   const float block_size = voxelSizeToBlockSize(voxel_size);
-  const float truncation_distance_m = tsdf_integrator.truncation_distance_vox() * voxel_size;
+  const float truncation_distance_m =
+      tsdf_integrator.truncation_distance_vox() * voxel_size;
   auto lambda = [&](const Index3D& block_index, const Index3D& voxel_index,
                     const TsdfVoxel* voxel) {
     if (voxel->weight > 0.0f) {
@@ -231,8 +231,7 @@ TEST_F(LidarIntegrationTest, SurroundingSphere) {
   };
   callFunctionOnAllVoxels<TsdfVoxel>(layer, lambda);
 
-  constexpr bool kWriteDebugOutput = false;
-  if (kWriteDebugOutput) {
+  if (FLAGS_nvblox_test_file_output) {
     // Write out the mesh
     const std::string mesh_filepath = "lidar_sphere_mesh.ply";
     io::outputMeshLayerToPly(mesh_layer, mesh_filepath);
