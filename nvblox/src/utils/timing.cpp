@@ -217,6 +217,9 @@ void Timing::Print(std::ostream& out) {
 
   out << "NVBlox Timing\n";
   out << "-----------\n";
+  out << "operation\tsample_number\ttotal_second\tmean_second\tmin_second\tmax_"
+         "second\n";
+  out << "-----------\n";
   for (typename map_t::value_type t : tagMap) {
     size_t i = t.second;
     out.width((std::streamsize)Instance().maxTagLength_);
