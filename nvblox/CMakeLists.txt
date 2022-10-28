@@ -201,6 +201,7 @@ target_link_libraries(nvblox_interface INTERFACE
     nvblox_lib
     nvblox_gpu_hash
     nvblox_cuda_check
+    nvblox_datasets
     ${GLOG_LIBRARIES}
     ${CUDA_LIBRARIES}
     Eigen3::Eigen

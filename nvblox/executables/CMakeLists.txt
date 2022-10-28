@@ -1,8 +1,11 @@
+include_directories(include)
+
 # Datasets library
 add_library(nvblox_datasets SHARED
     src/datasets/3dmatch.cpp
     src/datasets/image_loader.cpp
     src/datasets/replica.cpp
+    src/datasets/fusionportable.cpp
     src/fuser.cpp
 )
 target_include_directories(nvblox_datasets PUBLIC 
@@ -31,3 +34,12 @@ target_link_libraries(fuse_replica
     nvblox_lib nvblox_datasets
 )
 set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+# Replica executable
+add_executable(fuse_fusionportable
+    src/fuse_fusionportable.cpp
+)
+target_link_libraries(fuse_fusionportable
+    nvblox_lib nvblox_datasets
+)
+set_target_properties(fuse_fusionportable PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
