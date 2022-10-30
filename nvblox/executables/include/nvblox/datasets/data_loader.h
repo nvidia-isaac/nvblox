@@ -27,8 +27,9 @@ enum class DataLoadResult { kSuccess, kBadFrame, kNoMoreData };
 
 class RgbdDataLoaderInterface {
  public:
-  RgbdDataLoaderInterface(std::unique_ptr<ImageLoader<DepthImage>>&& depth_image_loader,
-                 std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader)
+  RgbdDataLoaderInterface(
+      std::unique_ptr<ImageLoader<DepthImage>>&& depth_image_loader,
+      std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader)
       : depth_image_loader_(std::move(depth_image_loader)),
         color_image_loader_(std::move(color_image_loader)) {}
   virtual ~RgbdDataLoaderInterface() = default;

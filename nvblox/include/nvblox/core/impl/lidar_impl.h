@@ -14,6 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+NOTE(jjiao):
+This implements the operation that project lidar points onto a depth image
+This implementation is only valid for lidars that have average elevation angle
+  i.e., VLP16, otherwise, the lidar_impl.h should be rewritten for a specific
+  lidar type
+*/
+
 #pragma once
 
 #include "math.h"

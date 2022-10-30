@@ -1,3 +1,9 @@
+# Develop nvblox
+### Development
+1. Nvblox offers API to integrate LiDAR frames, but users need to write the specific API to use the KITTI and FusionPortable dataset
+2. (solved) ROS1 interface: users need to create the nvblox_ros to use ROS
+
+--------------------------
 # nvblox
 Signed Distance Functions (SDFs) on NVIDIA GPUs.
 
@@ -158,3 +164,7 @@ export OPENBLAS_CORETYPE=ARMV8
 
 # License
 This code is under an [open-source license](LICENSE) (Apache 2.0). :)
+
+# Reference
+[1] Parallel Banding Algorithm to Compute Exact Distance Transform with the GPU
+> compute EDT with the GPU

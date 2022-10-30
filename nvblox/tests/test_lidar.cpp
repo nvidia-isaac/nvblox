@@ -23,8 +23,7 @@ limitations under the License.
 using namespace nvblox;
 
 constexpr float kFloatEpsilon = 1e-4;
-class LidarTest
-    : public ::testing::Test {
+class LidarTest : public ::testing::Test {
  protected:
   LidarTest() {}
 };

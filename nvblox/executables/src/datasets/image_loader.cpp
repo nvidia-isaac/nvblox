@@ -25,6 +25,7 @@ limitations under the License.
 namespace nvblox {
 namespace datasets {
 
+// TODO(jjiao): load CPU data into GPU memory
 bool load16BitDepthImage(const std::string& filename,
                          DepthImage* depth_frame_ptr, MemoryType memory_type,
                          const float scale_factor) {
