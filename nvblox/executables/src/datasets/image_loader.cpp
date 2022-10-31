@@ -25,10 +25,9 @@ limitations under the License.
 namespace nvblox {
 namespace datasets {
 
-// TODO(jjiao): load CPU data into GPU memory
 bool load16BitDepthImage(const std::string& filename,
                          DepthImage* depth_frame_ptr, MemoryType memory_type,
-                         const float scale_factor) {
+                         const float scale_factor, const float scale_offset) {
   CHECK_NOTNULL(depth_frame_ptr);
   timing::Timer stbi_timer("file_loading/depth_image/stbi");
   int width, height, num_channels;
@@ -49,7 +48,7 @@ bool load16BitDepthImage(const std::string& filename,
   std::vector<float> float_image_data(height * width);
   for (int lin_idx = 0; lin_idx < float_image_data.size(); lin_idx++) {
     float_image_data[lin_idx] =
-        static_cast<float>(image_data[lin_idx]) * scale_factor;
+        static_cast<float>(image_data[lin_idx]) * scale_factor + scale_offset;
   }
 
   *depth_frame_ptr = DepthImage::fromBuffer(
@@ -87,7 +86,8 @@ template <>
 bool ImageLoader<DepthImage>::getImage(int image_idx, DepthImage* image_ptr) {
   CHECK_NOTNULL(image_ptr);
   bool res = load16BitDepthImage(index_to_filepath_(image_idx), image_ptr,
-                                 memory_type_, depth_image_scaling_factor_);
+                                 memory_type_, depth_image_scaling_factor_,
+                                 depth_image_scaling_offset_);
   return res;
 }
 

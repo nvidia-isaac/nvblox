@@ -46,6 +46,13 @@ class DataLoader : public RgbdDataLoaderInterface {
                           Camera* camera_ptr,           // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
+  // NOTE(jjiao): need to define the virutal function (not used) here
+  DataLoadResult loadNext(DepthImage* depth_frame_ptr,        // NOLINT
+                          Transform* T_L_C_ptr,               // NOLINT
+                          Camera* camera_ptr,                 // NOLINT
+                          DepthImage* z_frame_ptr = nullptr,  // NOLINT
+                          ColorImage* color_frame_ptr = nullptr) override;
+
  protected:
   const std::string base_path_;
 

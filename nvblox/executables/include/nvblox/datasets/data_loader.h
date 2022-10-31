@@ -24,14 +24,18 @@ namespace nvblox {
 namespace datasets {
 
 enum class DataLoadResult { kSuccess, kBadFrame, kNoMoreData };
+enum class SensorType { RGBD, LIDAR, OSLIDAR };
 
 class RgbdDataLoaderInterface {
  public:
   RgbdDataLoaderInterface(
       std::unique_ptr<ImageLoader<DepthImage>>&& depth_image_loader,
-      std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader)
+      std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader,
+      SensorType sensor_type = SensorType::RGBD)
       : depth_image_loader_(std::move(depth_image_loader)),
-        color_image_loader_(std::move(color_image_loader)) {}
+        color_image_loader_(std::move(color_image_loader)),
+        sensor_type_(sensor_type) {}
+
   virtual ~RgbdDataLoaderInterface() = default;
 
   /// Interface for a function that loads the next frames in a dataset
@@ -45,10 +49,27 @@ class RgbdDataLoaderInterface {
                                   Camera* camera_ptr,           // NOLINT
                                   ColorImage* color_frame_ptr = nullptr) = 0;
 
+  /// Interface for a function that loads the next frames in a dataset
+  ///@param[out] depth_frame_ptr The loaded depth frame.
+  ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
+  ///@param[out] camera_ptr The intrinsic camera model.
+  ///@param[out] z_frame_ptr The loaded z frame.
+  ///@param[out] color_frame_ptr Optional, load color frame.
+  ///@return Whether loading succeeded.
+  virtual DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
+                                  Transform* T_L_C_ptr,         // NOLINT
+                                  Camera* camera_ptr,           // NOLINT
+                                  DepthImage* z_frame_ptr = nullptr,
+                                  ColorImage* color_frame_ptr = nullptr) = 0;
+
+  SensorType getSensorType() const { return sensor_type_; }
+
  protected:
   // Objects which do (multithreaded) image loading.
   std::unique_ptr<ImageLoader<DepthImage>> depth_image_loader_;
   std::unique_ptr<ImageLoader<ColorImage>> color_image_loader_;
+  // sensor type
+  SensorType sensor_type_;
 };
 
 }  // namespace datasets

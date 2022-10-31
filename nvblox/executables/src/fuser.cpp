@@ -300,52 +300,101 @@ void Fuser::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
 }
 
 bool Fuser::integrateFrame(const int frame_number) {
-  timing::Timer timer_file("fuser/file_loading");
-  DepthImage depth_frame;
-  ColorImage color_frame;
-  Transform T_L_C;
-  Camera camera;
-  const datasets::DataLoadResult load_result =
-      data_loader_->loadNext(&depth_frame, &T_L_C, &camera, &color_frame);
-  timer_file.Stop();
+  // sensor 1: handle RGBD sensor
+  if (data_loader_->getSensorType() == datasets::SensorType::RGBD) {
+    timing::Timer timer_file("fuser/file_loading");
+    DepthImage depth_frame;
+    ColorImage color_frame;
+    Transform T_L_C;
+    Camera camera;
+    const datasets::DataLoadResult load_result =
+        data_loader_->loadNext(&depth_frame, &T_L_C, &camera, &color_frame);
+    timer_file.Stop();
 
-  if (load_result == datasets::DataLoadResult::kBadFrame) {
-    return true;  // Bad data but keep going
-  }
-  if (load_result == datasets::DataLoadResult::kNoMoreData) {
-    return false;  // Shows over folks
-  }
-
-  timing::Timer per_frame_timer("fuser/time_per_frame");
-  if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate("fuser/integrate_tsdf");
-    mapper_->integrateDepth(depth_frame, T_L_C, camera);
-    timer_integrate.Stop();
-  }
-
-  if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate_color("fuser/integrate_color");
-    mapper_->integrateColor(color_frame, T_L_C, camera);
-    timer_integrate_color.Stop();
-  }
-
-  if (mesh_frame_subsampling_ > 0) {
-    if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
-      timing::Timer timer_mesh("fuser/mesh");
-      mapper_->updateMesh();
+    if (load_result == datasets::DataLoadResult::kBadFrame) {
+      return true;  // Bad data but keep going
     }
-  }
-
-  if (esdf_frame_subsampling_ > 0) {
-    if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
-      timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
-      updateEsdf();
-      timer_integrate_esdf.Stop();
+    if (load_result == datasets::DataLoadResult::kNoMoreData) {
+      return false;  // Shows over folks
     }
+
+    timing::Timer per_frame_timer("fuser/time_per_frame");
+    if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
+      timing::Timer timer_integrate("fuser/integrate_tsdf");
+      mapper_->integrateDepth(depth_frame, T_L_C, camera);
+      timer_integrate.Stop();
+    }
+
+    if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+      timing::Timer timer_integrate_color("fuser/integrate_color");
+      mapper_->integrateColor(color_frame, T_L_C, camera);
+      timer_integrate_color.Stop();
+    }
+
+    if (mesh_frame_subsampling_ > 0) {
+      if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
+        timing::Timer timer_mesh("fuser/mesh");
+        mapper_->updateMesh();
+      }
+    }
+
+    if (esdf_frame_subsampling_ > 0) {
+      if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
+        timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
+        updateEsdf();
+        timer_integrate_esdf.Stop();
+      }
+    }
+    per_frame_timer.Stop();
   }
+  // sensor 2: handle OSLIDAR
+  else if (data_loader_->getSensorType() == datasets::SensorType::OSLIDAR) {
+    timing::Timer timer_file("fuser/file_loading");
+    DepthImage depth_frame;
+    DepthImage z_frame;
+    ColorImage color_frame;
+    Transform T_L_C;
+    Camera camera;
+    const datasets::DataLoadResult load_result = data_loader_->loadNext(
+        &depth_frame, &T_L_C, &camera, &z_frame, &color_frame);
+    timer_file.Stop();
 
-  per_frame_timer.Stop();
+    if (load_result == datasets::DataLoadResult::kBadFrame) {
+      return true;  // Bad data but keep going
+    }
+    if (load_result == datasets::DataLoadResult::kNoMoreData) {
+      return false;  // Shows over folks
+    }
 
+    timing::Timer per_frame_timer("fuser/time_per_frame");
+    if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
+      timing::Timer timer_integrate("fuser/integrate_tsdf");
+      mapper_->integrateDepth(depth_frame, T_L_C, camera);
+      timer_integrate.Stop();
+    }
+
+    if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+      timing::Timer timer_integrate_color("fuser/integrate_color");
+      mapper_->integrateColor(color_frame, T_L_C, camera);
+      timer_integrate_color.Stop();
+    }
+
+    if (mesh_frame_subsampling_ > 0) {
+      if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
+        timing::Timer timer_mesh("fuser/mesh");
+        mapper_->updateMesh();
+      }
+    }
+
+    if (esdf_frame_subsampling_ > 0) {
+      if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
+        timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
+        updateEsdf();
+        timer_integrate_esdf.Stop();
+      }
+    }
+    per_frame_timer.Stop();
+  }
   return true;
 }
 

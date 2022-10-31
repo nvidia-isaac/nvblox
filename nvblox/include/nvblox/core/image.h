@@ -135,8 +135,7 @@ class Image {
 
 using DepthImage = Image<float>;
 using ColorImage = Image<Color>;
-using ZImage = Image<float>;
-using CoordImage = Image<Vector3f>;
+using CoorImage = Image<Vector3f>;
 
 // Image Reductions
 namespace image {

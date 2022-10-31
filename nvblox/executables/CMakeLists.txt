@@ -35,7 +35,7 @@ target_link_libraries(fuse_replica
 )
 set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-# Replica executable
+# FusionPortable executable
 add_executable(fuse_fusionportable
     src/fuse_fusionportable.cpp
 )

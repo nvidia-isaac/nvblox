@@ -29,10 +29,14 @@ namespace datasets {
 // depth is expressed in mm, and we converts it to a float with meters (through
 // a multiplication with 1.0/1000.0).
 constexpr float kDefaultUintDepthScaleFactor = 1.0f / 1000.0f;
+constexpr float kDefaultUintDepthScaleOffset = 0.0f;
+
 bool load16BitDepthImage(
     const std::string& filename, DepthImage* depth_frame_ptr,
     MemoryType memory_type = kDefaultImageMemoryType,
-    const float scaling_factor = kDefaultUintDepthScaleFactor);
+    const float scaling_factor = kDefaultUintDepthScaleFactor,
+    const float scaling_offset = 0.0f);
+
 bool load8BitColorImage(const std::string& filename,
                         ColorImage* color_image_ptr,
                         MemoryType memory_type = kDefaultImageMemoryType);
@@ -45,10 +49,12 @@ class ImageLoader {
  public:
   ImageLoader(IndexToFilepathFunction index_to_filepath,
               MemoryType memory_type = kDefaultImageMemoryType,
-              float depth_image_scaling_factor = kDefaultUintDepthScaleFactor)
+              float depth_image_scaling_factor = kDefaultUintDepthScaleFactor,
+              float depth_image_scaling_offset = kDefaultUintDepthScaleOffset)
       : index_to_filepath_(index_to_filepath),
         memory_type_(memory_type),
-        depth_image_scaling_factor_(depth_image_scaling_factor) {}
+        depth_image_scaling_factor_(depth_image_scaling_factor),
+        depth_image_scaling_offset_(depth_image_scaling_offset) {}
   virtual ~ImageLoader() {}
 
   virtual bool getNextImage(ImageType* image_ptr);
@@ -62,6 +68,7 @@ class ImageLoader {
 
   // Note(alexmillane): Only used for depth image loading. Ignored for color;
   const float depth_image_scaling_factor_;
+  const float depth_image_scaling_offset_;
 };
 
 // Multi-threaded image loader
@@ -72,10 +79,11 @@ using ImageOptional = std::pair<bool, ImageType>;
 template <typename ImageType>
 class MultiThreadedImageLoader : public ImageLoader<ImageType> {
  public:
-  MultiThreadedImageLoader(IndexToFilepathFunction index_to_filepath,
-                           int num_threads,
-                           MemoryType memory_type = kDefaultImageMemoryType,
-                           float depth_image_scaling_factor = kDefaultUintDepthScaleFactor);
+  MultiThreadedImageLoader(
+      IndexToFilepathFunction index_to_filepath, int num_threads,
+      MemoryType memory_type = kDefaultImageMemoryType,
+      float depth_image_scaling_factor = kDefaultUintDepthScaleFactor,
+      float depth_image_scaling_offset = kDefaultUintDepthScaleOffset);
   ~MultiThreadedImageLoader();
 
   bool getNextImage(ImageType* image_ptr) override;
@@ -95,7 +103,8 @@ template <typename ImageType>
 std::unique_ptr<ImageLoader<ImageType>> createImageLoader(
     IndexToFilepathFunction index_to_path_function,
     const bool multithreaded = true,
-    const float depth_image_scaling_factor = kDefaultUintDepthScaleFactor);
+    const float depth_image_scaling_factor = kDefaultUintDepthScaleFactor,
+    const float depth_image_scaling_offset = kDefaultUintDepthScaleOffset);
 
 }  // namespace datasets
 }  // namespace nvblox

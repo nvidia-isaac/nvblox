@@ -214,7 +214,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   } else {
     if (!replica::internal::parseCameraFromFile(
             replica::internal::getPathForCameraIntrinsics(base_path_), &camera_,
-            &scale)) { 
+            &scale)) {
       LOG(INFO) << "Couldn't find camera params file";
       return DataLoadResult::kNoMoreData;
     }
@@ -250,6 +250,12 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   timer_file_pose.Stop();
   return DataLoadResult::kSuccess;
 }
+
+// NOTE(jjiao): need to define the virutal function (not used) here
+DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
+                                    Transform* T_L_C_ptr, Camera* camera_ptr,
+                                    DepthImage* z_frame_ptr,
+                                    ColorImage* color_frame_ptr) {}
 
 }  // namespace replica
 }  // namespace datasets

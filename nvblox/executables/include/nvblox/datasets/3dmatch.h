@@ -35,7 +35,7 @@ std::unique_ptr<Fuser> createFuser(const std::string base_path,
 class DataLoader : public RgbdDataLoaderInterface {
  public:
   DataLoader(const std::string& base_path, const int seq_id,
-                        bool multithreaded = true);
+             bool multithreaded = true);
 
   /// Interface for a function that loads the next frames in a dataset
   ///@param[out] depth_frame_ptr The loaded depth frame.
@@ -46,6 +46,13 @@ class DataLoader : public RgbdDataLoaderInterface {
   DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
                           Transform* T_L_C_ptr,         // NOLINT
                           Camera* camera_ptr,           // NOLINT
+                          ColorImage* color_frame_ptr = nullptr) override;
+
+  // NOTE(jjiao): need to define the virutal function (not used) here
+  DataLoadResult loadNext(DepthImage* depth_frame_ptr,        // NOLINT
+                          Transform* T_L_C_ptr,               // NOLINT
+                          Camera* camera_ptr,                 // NOLINT
+                          DepthImage* z_frame_ptr = nullptr,  // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
  protected:

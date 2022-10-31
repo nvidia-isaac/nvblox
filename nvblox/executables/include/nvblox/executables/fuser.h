@@ -80,7 +80,8 @@ class Fuser {
   float voxel_size_m_ = 0.05;
   int tsdf_frame_subsampling_ = 1;
   int color_frame_subsampling_ = 1;
-  // By default we just do the mesh and esdf once at the end (if output paths exist)
+  // By default we just do the mesh and esdf once at the end (if output paths
+  // exist)
   int mesh_frame_subsampling_ = -1;
   int esdf_frame_subsampling_ = -1;
 

@@ -67,6 +67,9 @@ bool parseCameraFromFile(const std::string& filename,
   return false;
 }
 
+// *********************
+// TODO(jjiao): implement the dataloader for the FusionProtable dataset
+// *********************
 std::string getPathForCameraIntrinsics(const std::string& base_path) {
   return base_path + "/camera-intrinsics.txt";
 }
@@ -98,6 +101,15 @@ std::string getPathForColorImage(const std::string& base_path, const int seq_id,
   return ss.str();
 }
 
+std::string getPathForZImage(const std::string& base_path, const int seq_id,
+                             const int frame_id) {
+  std::stringstream ss;
+  ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
+     << "/frame-" << std::setw(6) << frame_id << ".z.png";
+
+  return ss.str();
+}
+
 std::unique_ptr<ImageLoader<DepthImage>> createDepthImageLoader(
     const std::string& base_path, const int seq_id, const bool multithreaded) {
   return createImageLoader<DepthImage>(
@@ -112,11 +124,19 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
       multithreaded);
 }
 
+std::unique_ptr<ImageLoader<DepthImage>> createZImageLoader(
+    const std::string& base_path, const int seq_id, const bool multithreaded) {
+  return createImageLoader<DepthImage>(
+      std::bind(getPathForZImage, base_path, seq_id, std::placeholders::_1),
+      multithreaded, kDefaultUintDepthScaleFactor,
+      kDefaultUintDepthScaleOffset);
+}
+
 }  // namespace internal
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path,
                                    const int seq_id) {
-  // Object to load 3DMatch data
+  // Object to load FusionPortable data
   auto data_loader = std::make_unique<DataLoader>(base_path, seq_id);
   // Fuser
   return std::make_unique<Fuser>(std::move(data_loader));
@@ -127,7 +147,10 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
     : RgbdDataLoaderInterface(fusionportable::internal::createDepthImageLoader(
                                   base_path, seq_id, multithreaded),
                               fusionportable::internal::createColorImageLoader(
-                                  base_path, seq_id, multithreaded)),
+                                  base_path, seq_id, multithreaded),
+                              SensorType::OSLIDAR),
+      z_image_loader_(std::move(fusionportable::internal::createZImageLoader(
+          base_path, seq_id, multithreaded))),
       base_path_(base_path),
       seq_id_(seq_id) {
   //
@@ -137,15 +160,19 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
 ///@param[out] depth_frame_ptr The loaded depth frame.
 ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
 ///@param[out] camera_ptr The intrinsic camera model.
+///@param[out] z_frame_ptr The loaded z frame.
 ///@param[out] color_frame_ptr Optional, load color frame.
 ///@return Whether loading succeeded.
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
+                                    DepthImage* z_frame_ptr,
                                     ColorImage* color_frame_ptr) {
   CHECK_NOTNULL(depth_frame_ptr);
   CHECK_NOTNULL(T_L_C_ptr);
   CHECK_NOTNULL(camera_ptr);
-  // CHECK_NOTNULL(color_frame_ptr); // Can be null
+  // CHECK_NOTNULL(z_frame_ptr);
+  // CHECK_NOTNULL(color_frame_ptr);  // can be null
+
   // Because we might fail along the way, increment the frame number before we
   // start.
   const int frame_number = frame_number_;
@@ -154,17 +181,25 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   // Load the image into a Depth Frame.
   CHECK(depth_image_loader_);
   timing::Timer timer_file_depth("file_loading/depth_image");
-  // DepthImage depth_frame;
   if (!depth_image_loader_->getNextImage(depth_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
   timer_file_depth.Stop();
 
+  // Load the image into a Z Frame.
+  // if (z_frame_ptr) {
+  //   CHECK(z_image_loader_);
+  //   timing::Timer timer_file_coord("file_loading/z_image");
+  //   if (!z_image_loader_->getNextImage(z_frame_ptr)) {
+  //     return DataLoadResult::kNoMoreData;
+  //   }
+  //   timer_file_coord.Stop();
+  // }
+
   // Load the color image into a ColorImage
   if (color_frame_ptr) {
     CHECK(color_image_loader_);
     timing::Timer timer_file_color("file_loading/color_image");
-    // ColorImage color_frame;
     if (!color_image_loader_->getNextImage(color_frame_ptr)) {
       return DataLoadResult::kNoMoreData;
     }
@@ -179,6 +214,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
           &camera_intrinsics)) {
     return DataLoadResult::kNoMoreData;
   }
+
   // Create a camera object.
   const int image_width = depth_frame_ptr->cols();
   const int image_height = depth_frame_ptr->rows();
@@ -195,11 +231,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
           &T_O_C)) {
     return DataLoadResult::kNoMoreData;
   }
-
-  // Rotate the world frame since Y is up in the normal 3D match dasets.
-  Eigen::Quaternionf q_L_O =
-      Eigen::Quaternionf::FromTwoVectors(Vector3f(0, 1, 0), Vector3f(0, 0, 1));
-  *T_L_C_ptr = q_L_O * T_O_C;
+  *T_L_C_ptr = T_O_C;
 
   // Check that the loaded data doesn't contain NaNs or a faulty rotation
   // matrix. This does occur. If we find one, skip that frame and move to the
@@ -211,11 +243,21 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     LOG(WARNING) << "Bad CSV data.";
     return DataLoadResult::kBadFrame;  // Bad data, but keep going.
   }
-
   timer_file_pose.Stop();
 
   return DataLoadResult::kSuccess;
 }
+
+// NOTE(jjiao): need to define the virutal function (not used) here
+/// Interface for a function that loads the next frames in a dataset
+///@param[out] depth_frame_ptr The loaded depth frame.
+///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
+///@param[out] camera_ptr The intrinsic camera model.
+///@param[out] color_frame_ptr Optional, load color frame.
+///@return Whether loading succeeded.
+DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
+                                    Transform* T_L_C_ptr, Camera* camera_ptr,
+                                    ColorImage* color_frame_ptr) {}
 
 }  // namespace fusionportable
 }  // namespace datasets

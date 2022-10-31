@@ -127,7 +127,8 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
     : RgbdDataLoaderInterface(threedmatch::internal::createDepthImageLoader(
                                   base_path, seq_id, multithreaded),
                               threedmatch::internal::createColorImageLoader(
-                                  base_path, seq_id, multithreaded)),
+                                  base_path, seq_id, multithreaded),
+                              SensorType::RGBD),
       base_path_(base_path),
       seq_id_(seq_id) {
   //
@@ -216,6 +217,12 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
 
   return DataLoadResult::kSuccess;
 }
+
+// NOTE(jjiao): need to define the virutal function (not used) here
+DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
+                                    Transform* T_L_C_ptr, Camera* camera_ptr,
+                                    DepthImage* z_frame_ptr,
+                                    ColorImage* color_frame_ptr) {}
 
 }  // namespace threedmatch
 }  // namespace datasets

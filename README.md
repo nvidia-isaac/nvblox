@@ -1,6 +1,8 @@
 # Develop nvblox
 ### Development
 1. Nvblox offers API to integrate LiDAR frames, but users need to write the specific API to use the KITTI and FusionPortable dataset
+    1. [std::move](https://en.cppreference.com/w/cpp/utility/move): an efficient way to move resources from A to B 
+
 2. (solved) ROS1 interface: users need to create the nvblox_ros to use ROS
 
 --------------------------

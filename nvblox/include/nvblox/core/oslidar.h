@@ -23,16 +23,17 @@ namespace nvblox {
 // NOTE(jjiao):
 // image coordinates to pixel indices
 // return u_C.array().floor().cast<int>();
+// image angle order:
+// from left to right: 0       -> 2pi
+// fron bottom to top: phi_min -> phi_max
 class OSLidar {
  public:
   OSLidar() = delete;
-  // __host__ __device__ inline OSLidar(int num_azimuth_divisions,
-  //                                    int num_elevation_divisions,
-  //                                    float vertical_fov_rad);
-  __host__ __device__ inline OSLidar(
-      int num_azimuth_divisions, int num_elevation_divisions,
-      float vertical_fov_rad, float horizontal_fov_rad,
-      std::shared_ptr<CoordImage>& coord_image_ptr);
+  __host__ __device__ inline OSLidar(int num_azimuth_divisions,
+                                     int num_elevation_divisions,
+                                     float vertical_fov_rad,
+                                     float horizontal_fov_rad,
+                                     std::shared_ptr<DepthImage>& z_image_ptr);
   __host__ __device__ inline ~OSLidar() = default;
 
   // TODO(jjiao): This function is used to check whether p_C is projected on the
@@ -49,17 +50,18 @@ class OSLidar {
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
   // Back projection (image plane point to 3D point)
+  // NOTE(jjiao): for OUSTER lidars, 3D points cannot be calculated
+  // directly by angles. They should be retrieved from the coord_image_ptr
   __host__ __device__ inline Vector3f unprojectFromImagePlaneCoordinates(
       const Vector2f& u_C, const float depth) const;
   __host__ __device__ inline Vector3f unprojectFromPixelIndices(
       const Index2D& u_C, const float depth) const;
 
   // Back projection (image plane point to ray)
-  // NOTE(alexmillane): These return normalized vectors
   __host__ __device__ inline Vector3f vectorFromImagePlaneCoordinates(
-      const Vector2f& u_C) const;
+      const Vector2f& u_C, const float depth) const;
   __host__ __device__ inline Vector3f vectorFromPixelIndices(
-      const Index2D& u_C) const;
+      const Index2D& u_C, const float depth) const;
 
   // Conversions between pixel indices and image plane coordinates
   __host__ __device__ inline Vector2f pixelIndexToImagePlaneCoordsOfCenter(
@@ -103,7 +105,7 @@ class OSLidar {
   float rads_per_pixel_elevation_;
   float rads_per_pixel_azimuth_;
 
-  std::shared_ptr<CoordImage> coord_image_ptr_;
+  std::shared_ptr<DepthImage> z_image_ptr_;
 };
 
 // Equality
