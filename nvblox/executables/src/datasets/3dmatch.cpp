@@ -218,10 +218,9 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   return DataLoadResult::kSuccess;
 }
 
-// NOTE(jjiao): need to define the virutal function (not used) here
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
-                                    DepthImage* z_frame_ptr,
+                                    OSLidar* lidar_ptr, DepthImage* z_frame_ptr,
                                     ColorImage* color_frame_ptr) {}
 
 }  // namespace threedmatch
