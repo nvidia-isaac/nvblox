@@ -21,6 +21,7 @@ limitations under the License.
 #include "nvblox/core/image.h"
 #include "nvblox/core/layer.h"
 #include "nvblox/core/lidar.h"
+#include "nvblox/core/oslidar.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/voxels.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
@@ -63,6 +64,19 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
   /// 3D indices of blocks affected by the integration.
   void integrateFrame(const DepthImage& depth_frame, const Transform& T_L_C,
                       const Lidar& lidar, TsdfLayer* layer,
+                      std::vector<Index3D>* updated_blocks = nullptr);
+
+  /// Integrates a depth image in to the passed TSDF layer.
+  /// @param depth_frame A depth image.
+  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
+  /// points in the camera frame (C) to the layer frame (L).
+  /// @param lidar A the Ouster LiDAR model.
+  /// @param layer A pointer to the layer into which this observation will be
+  /// intergrated.
+  /// @param updated_blocks Optional pointer to a vector which will contain the
+  /// 3D indices of blocks affected by the integration.
+  void integrateFrame(const DepthImage& depth_frame, const Transform& T_L_C,
+                      const OSLidar& lidar, TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
 
   /// Blocks until GPU operations are complete
@@ -109,6 +123,8 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
                        const Camera& camera, TsdfLayer* layer_ptr);
   void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,
                        const Lidar& lidar, TsdfLayer* layer_ptr);
+  void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,
+                       const OSLidar& lidar, TsdfLayer* layer_ptr);
 
   template <typename SensorType>
   void integrateBlocksTemplate(const std::vector<Index3D>& block_indices,

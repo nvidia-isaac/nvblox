@@ -24,6 +24,7 @@ limitations under the License.
 #include "nvblox/core/layer.h"
 #include "nvblox/core/layer_cake.h"
 #include "nvblox/core/lidar.h"
+#include "nvblox/core/oslidar.h"
 #include "nvblox/core/voxels.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/projective_color_integrator.h"
@@ -105,6 +106,15 @@ class RgbdMapper : public MapperBase {
   ///@param lidar Intrinsics model of the LiDAR.
   void integrateLidarDepth(const DepthImage& depth_frame,
                            const Transform& T_L_C, const Lidar& lidar);
+
+  /// Integrates a 3D LiDAR scan into the reconstruction.
+  ///@param depth_frame Depth image representing the LiDAR scan. To convert a
+  ///                   lidar scan to a DepthImage see TODOOO.
+  ///@param T_L_C Pose of the LiDAR, specified as a transform from LiDAR-frame
+  ///             to Layer-frame transform.
+  ///@param lidar Intrinsics model of the Ouster LiDAR.
+  void integrateOSLidarDepth(const DepthImage& depth_frame,
+                             const Transform& T_L_C, const OSLidar& lidar);
 
   /// Updates the mesh blocks which require an update
   /// @return The indices of the blocks that were updated in this call.

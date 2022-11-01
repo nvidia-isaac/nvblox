@@ -355,44 +355,55 @@ bool Fuser::integrateFrame(const int frame_number) {
     ColorImage color_frame;
     Transform T_L_C;
     Camera camera;
+    OSLidar oslidar;
     const datasets::DataLoadResult load_result = data_loader_->loadNext(
-        &depth_frame, &T_L_C, &camera, &z_frame, &color_frame);
+        &depth_frame, &T_L_C, &camera, &oslidar, &z_frame, &color_frame);
     timer_file.Stop();
 
     if (load_result == datasets::DataLoadResult::kBadFrame) {
+      LOG(INFO) << "Bad frame: wrong parameters of intrinsics or extrinsics";
       return true;  // Bad data but keep going
     }
     if (load_result == datasets::DataLoadResult::kNoMoreData) {
+      LOG(INFO) << "No more data: lack of depth_frame, z_frame, "
+                   "or color_frame";
       return false;  // Shows over folks
     }
 
     timing::Timer per_frame_timer("fuser/time_per_frame");
+
     if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
       timing::Timer timer_integrate("fuser/integrate_tsdf");
-      mapper_->integrateDepth(depth_frame, T_L_C, camera);
+      mapper_->integrateOSLidarDepth(depth_frame, T_L_C, oslidar);
       timer_integrate.Stop();
     }
 
-    if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-      timing::Timer timer_integrate_color("fuser/integrate_color");
-      mapper_->integrateColor(color_frame, T_L_C, camera);
-      timer_integrate_color.Stop();
-    }
+    // if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
+    //   timing::Timer timer_integrate("fuser/integrate_tsdf");
+    //   mapper_->integrateDepth(depth_frame, T_L_C, camera);
+    //   timer_integrate.Stop();
+    // }
 
-    if (mesh_frame_subsampling_ > 0) {
-      if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
-        timing::Timer timer_mesh("fuser/mesh");
-        mapper_->updateMesh();
-      }
-    }
+    // if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+    //   timing::Timer timer_integrate_color("fuser/integrate_color");
+    //   mapper_->integrateColor(color_frame, T_L_C, camera);
+    //   timer_integrate_color.Stop();
+    // }
 
-    if (esdf_frame_subsampling_ > 0) {
-      if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
-        timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
-        updateEsdf();
-        timer_integrate_esdf.Stop();
-      }
-    }
+    // if (mesh_frame_subsampling_ > 0) {
+    //   if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
+    //     timing::Timer timer_mesh("fuser/mesh");
+    //     mapper_->updateMesh();
+    //   }
+    // }
+
+    // if (esdf_frame_subsampling_ > 0) {
+    //   if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
+    //     timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
+    //     updateEsdf();
+    //     timer_integrate_esdf.Stop();
+    //   }
+    // }
     per_frame_timer.Stop();
   }
   return true;
@@ -404,6 +415,7 @@ bool Fuser::integrateFrames() {
          integrateFrame(frame_number++)) {
     timing::mark("Frame " + std::to_string(frame_number - 1), Color::Red());
     LOG(INFO) << "Integrating frame " << frame_number - 1;
+    std::cout << std::endl;
   }
   LOG(INFO) << "Ran out of data at frame: " << frame_number - 1;
   return true;
