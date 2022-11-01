@@ -18,6 +18,8 @@ limitations under the License.
 namespace nvblox {
 
 template <typename SensorType>
+// NOTE(jjiao): this function project a voxel in the world onto the camera plane
+// to check whether the voxel is visible or not
 __device__ inline bool projectThreadVoxel(
     const Index3D* block_indices_device_ptr, const SensorType& sensor,
     const Transform& T_C_L, const float block_size, Eigen::Vector2f* u_px_ptr,

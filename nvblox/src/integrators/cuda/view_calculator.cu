@@ -201,6 +201,7 @@ __global__ void combinedBlockIndicesInImageKernel(
   setIndexUpdated(block_index, aabb_min, aabb_size, aabb_updated);
 
   // Ok raycast to the correct point in the block.
+  // TODO(jjiao): raycast all voxels interact with the ray
   RayCaster raycaster(T_L_C.translation() / block_size, p_L / block_size);
   Index3D ray_index = Index3D::Zero();
   while (raycaster.nextRayIndex(&ray_index)) {
@@ -244,6 +245,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   setup_timer.Stop();
 
   // Raycast
+  // default: true
   if (raycast_to_pixels_) {
     getBlocksByRaycastingPixels(T_L_C, camera, depth_frame, block_size,
                                 truncation_distance_m,

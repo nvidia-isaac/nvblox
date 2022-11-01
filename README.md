@@ -5,6 +5,26 @@
 
 2. (solved) ROS1 interface: users need to create the nvblox_ros to use ROS
 
+### Code Pipeline
+
+1. Data loader
+
+2. Frame integration
+
+   1. After loading data (the code API): Fuser::integrateFrame(const int frame_number)
+
+   2. RgbdMapper::integrateOSLidarDepth -> ProjectiveTsdfIntegrator::integrateFrame -> ProjectiveTsdfIntegrator::integrateFrameTemplate 
+
+      > * set <code>voxel_size</code> and <code>truncation_distance</code>
+      > * Identify blocks given the camera view: <code>view_calculator_.getBlocksInImageViewRaycast</code>
+      >   * <code>getBlocksByRaycastingPixels</code>: Raycasts through (possibly subsampled) pixels in the image. Done in GPU
+      >   * <code>*void* combinedBlockIndicesInImageKernel</code>: 
+      >
+      >
+      > * TSDF integration given block indices: <code>integrateBlocksTemplate</code>
+      >
+      >   * <code>ProjectiveTsdfIntegrator::integrateBlocks</code>: block integration for the OSLidar
+
 --------------------------
 # nvblox
 Signed Distance Functions (SDFs) on NVIDIA GPUs.

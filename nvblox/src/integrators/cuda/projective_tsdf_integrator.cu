@@ -24,6 +24,8 @@ limitations under the License.
 
 namespace nvblox {
 
+// TODO(jjiao): update the voxel according to the traditional TSDF update method
+// TODO: probabilistic update
 __device__ inline bool updateVoxel(const float surface_depth_measured,
                                    TsdfVoxel* voxel_ptr,
                                    const float voxel_depth_m,
@@ -161,7 +163,7 @@ __device__ inline bool interpolateOSLidarImage(
       // If we can't successfully do closest, fail to intgrate this voxel.
       return false;
     }
-    // TODO(jjiao): need to understand this function
+
     // Additional check
     // Check that this voxel is close to the ray passing through the pixel.
     // Note(alexmillane): This is to prevent large numbers of voxels
@@ -276,8 +278,7 @@ __global__ void integrateBlocksKernel(
               max_weight);
 }
 
-// TODO(jjiao):
-// OSLIDAR
+// TODO(jjiao): OSLIDAR
 __global__ void integrateBlocksKernel(
     const Index3D* block_indices_device_ptr, const OSLidar lidar,
     const float* image, int rows, int cols, const Transform T_C_L,
@@ -293,7 +294,7 @@ __global__ void integrateBlocksKernel(
   Vector3f p_voxel_center_C;
   if (!projectThreadVoxel(block_indices_device_ptr, lidar, T_C_L, block_size,
                           &u_px, &voxel_depth_m, &p_voxel_center_C)) {
-    return;
+    return;  // false: the voxel is not visible
   }
 
   // If voxel further away than the limit, skip this voxel
@@ -361,8 +362,6 @@ void ProjectiveTsdfIntegrator::
   lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ = value;
 }
 
-// TODO(jjiao): please check whether the output of using OSLidar(SensorType) are
-// correct
 template <typename SensorType>
 void ProjectiveTsdfIntegrator::integrateFrameTemplate(
     const DepthImage& depth_frame, const Transform& T_L_C,
@@ -375,13 +374,19 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
   const float voxel_size =
       layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
   const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
+  LOG(INFO) << "block_size: " << layer->block_size()
+            << ", truncation_distance_m: " << truncation_distance_m
+            << ", voxel_size: " << voxel_size
+            << ", max_integration_distance_m: " << max_integration_distance_m_;
 
   // Identify blocks we can (potentially) see
+  // TODO(jjiao):
   timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
   const std::vector<Index3D> block_indices =
       view_calculator_.getBlocksInImageViewRaycast(
           depth_frame, T_L_C, sensor, layer->block_size(),
           truncation_distance_m, max_integration_distance_m_);
+  LOG(INFO) << "block_indices size: " << block_indices.size();
   blocks_in_view_timer.Stop();
 
   // Allocate blocks (CPU)
@@ -390,6 +395,7 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
   allocate_blocks_timer.Stop();
 
   // Update identified blocks
+  // TODO(jjiao): integration
   timing::Timer update_blocks_timer("tsdf/integrate/update_blocks");
   integrateBlocksTemplate<SensorType>(block_indices, depth_frame, T_L_C, sensor,
                                       layer);
@@ -501,8 +507,6 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
   checkCudaErrors(cudaPeekAtLastError());
 }
 
-// TODO(jjiao):
-// OSLidar
 void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
                                                const Transform& T_C_L,
                                                const OSLidar& lidar,
