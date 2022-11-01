@@ -48,11 +48,19 @@ class DataLoader : public RgbdDataLoaderInterface {
                           Camera* camera_ptr,           // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
-  DataLoadResult loadNext(DepthImage* depth_frame_ptr,        // NOLINT
-                          Transform* T_L_C_ptr,               // NOLINT
-                          Camera* camera_ptr,                 // NOLINT
-                          OSLidar* lidar_ptr,                 // NOLINT
-                          DepthImage* z_frame_ptr = nullptr,  // NOLINT
+  /// Interface for a function that loads the next frames in a dataset
+  ///@param[out] depth_frame_ptr The loaded depth frame.
+  ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
+  ///@param[out] camera_ptr The intrinsic camera model.
+  ///@param[out] lidar_ptr The intrinsic oslidar model.
+  ///@param[out] z_frame_ptr The loaded z frame.
+  ///@param[out] color_frame_ptr Optional, load color frame.
+  ///@return Whether loading succeeded.
+  DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
+                          Transform* T_L_C_ptr,         // NOLINT
+                          Camera* camera_ptr,           // NOLINT
+                          OSLidar* lidar_ptr,           // NOLINT
+                          DepthImage* z_frame_ptr,      // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
  protected:

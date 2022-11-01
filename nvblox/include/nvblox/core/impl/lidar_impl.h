@@ -31,9 +31,10 @@ This implementation is only valid for lidars that have average elevation angle
 namespace nvblox {
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
-             float vertical_fov_rad)
+             float horizontal_fov_rad, float vertical_fov_rad)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
+      horizontal_fov_rad_(horizontal_fov_rad),
       vertical_fov_rad_(vertical_fov_rad) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);

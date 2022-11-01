@@ -28,12 +28,13 @@ namespace nvblox {
 // fron bottom to top: phi_min -> phi_max
 class OSLidar {
  public:
-  OSLidar() = delete;
+  __host__ __device__ inline OSLidar() = default;
   __host__ __device__ inline OSLidar(int num_azimuth_divisions,
                                      int num_elevation_divisions,
-                                     float vertical_fov_rad,
                                      float horizontal_fov_rad,
-                                     std::shared_ptr<DepthImage>& z_image_ptr);
+                                     float vertical_fov_rad,
+                                     DepthImage* depth_image_ptr,
+                                     DepthImage* z_image_ptr);
   __host__ __device__ inline ~OSLidar() = default;
 
   // TODO(jjiao): This function is used to check whether p_C is projected on the
@@ -59,9 +60,9 @@ class OSLidar {
 
   // Back projection (image plane point to ray)
   __host__ __device__ inline Vector3f vectorFromImagePlaneCoordinates(
-      const Vector2f& u_C, const float depth) const;
+      const Vector2f& u_C) const;
   __host__ __device__ inline Vector3f vectorFromPixelIndices(
-      const Index2D& u_C, const float depth) const;
+      const Index2D& u_C) const;
 
   // Conversions between pixel indices and image plane coordinates
   __host__ __device__ inline Vector2f pixelIndexToImagePlaneCoordsOfCenter(
@@ -94,8 +95,8 @@ class OSLidar {
   // Core parameters
   int num_azimuth_divisions_;
   int num_elevation_divisions_;
-  float vertical_fov_rad_;
   float horizontal_fov_rad_;
+  float vertical_fov_rad_;
 
   // Dependent parameters
   float start_polar_angle_rad_;
@@ -105,7 +106,8 @@ class OSLidar {
   float rads_per_pixel_elevation_;
   float rads_per_pixel_azimuth_;
 
-  std::shared_ptr<DepthImage> z_image_ptr_;
+  DepthImage* depth_image_ptr_;
+  DepthImage* z_image_ptr_;
 };
 
 // Equality

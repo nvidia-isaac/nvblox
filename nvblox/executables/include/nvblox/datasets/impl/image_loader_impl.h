@@ -18,6 +18,7 @@ limitations under the License.
 namespace nvblox {
 namespace datasets {
 
+// NOTE(jjiao): this function loads image depending on the specified ImageType
 template <typename ImageType>
 bool ImageLoader<ImageType>::getNextImage(ImageType* image_ptr) {
   bool res = getImage(image_idx_, image_ptr);

@@ -67,9 +67,30 @@ bool parseCameraFromFile(const std::string& filename,
   return false;
 }
 
+bool parseLidarFromFile(const std::string& filename,
+                        Eigen::Matrix<double, 4, 1>* intrinsics) {
+  CHECK_NOTNULL(intrinsics);
+  constexpr int kDimension = 4;
+  std::ifstream fin(filename);
+  if (fin.is_open()) {
+    for (int col = 0; col < kDimension; col++) {
+      float item = 0.0;
+      fin >> item;
+      (*intrinsics)(col) = item;
+    }
+    fin.close();
+    return true;
+  }
+  return false;
+}  // namespace internal
+
 // *********************
 // TODO(jjiao): implement the dataloader for the FusionProtable dataset
 // *********************
+std::string getPathForLidarIntrinsics(const std::string& base_path) {
+  return base_path + "/lidar-intrinsics.txt";
+}
+
 std::string getPathForCameraIntrinsics(const std::string& base_path) {
   return base_path + "/camera-intrinsics.txt";
 }
@@ -88,7 +109,8 @@ std::string getPathForDepthImage(const std::string& base_path, const int seq_id,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".depth.png";
-
+  // TODO(jjiao): cout function for debug, should be removed after tests
+  // std::cout << ss.str() << std::endl;
   return ss.str();
 }
 
@@ -97,7 +119,8 @@ std::string getPathForColorImage(const std::string& base_path, const int seq_id,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".color.png";
-
+  // TODO(jjiao): cout function for debug, should be removed after tests
+  // std::cout << ss.str() << std::endl;
   return ss.str();
 }
 
@@ -106,7 +129,8 @@ std::string getPathForZImage(const std::string& base_path, const int seq_id,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".z.png";
-
+  // TODO(jjiao): cout function for debug, should be removed after tests
+  // std::cout << ss.str() << std::endl;
   return ss.str();
 }
 
@@ -114,7 +138,7 @@ std::unique_ptr<ImageLoader<DepthImage>> createDepthImageLoader(
     const std::string& base_path, const int seq_id, const bool multithreaded) {
   return createImageLoader<DepthImage>(
       std::bind(getPathForDepthImage, base_path, seq_id, std::placeholders::_1),
-      multithreaded);
+      multithreaded, kDefaultUintDepthScaleFactor, 0.0f);
 }
 
 std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
@@ -136,8 +160,10 @@ std::unique_ptr<ImageLoader<DepthImage>> createZImageLoader(
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path,
                                    const int seq_id) {
+  bool multithreaded = false;
   // Object to load FusionPortable data
-  auto data_loader = std::make_unique<DataLoader>(base_path, seq_id);
+  auto data_loader =
+      std::make_unique<DataLoader>(base_path, seq_id, multithreaded);
   // Fuser
   return std::make_unique<Fuser>(std::move(data_loader));
 }
@@ -165,12 +191,13 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
 ///@return Whether loading succeeded.
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
-                                    DepthImage* z_frame_ptr,
+                                    OSLidar* lidar_ptr, DepthImage* z_frame_ptr,
                                     ColorImage* color_frame_ptr) {
   CHECK_NOTNULL(depth_frame_ptr);
   CHECK_NOTNULL(T_L_C_ptr);
   CHECK_NOTNULL(camera_ptr);
-  // CHECK_NOTNULL(z_frame_ptr);
+  CHECK_NOTNULL(lidar_ptr);
+  CHECK_NOTNULL(z_frame_ptr);
   // CHECK_NOTNULL(color_frame_ptr);  // can be null
 
   // Because we might fail along the way, increment the frame number before we
@@ -178,24 +205,48 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   const int frame_number = frame_number_;
   ++frame_number_;
 
+  // *********************************************
+  // *********************************************
+  // *********************************************
   // Load the image into a Depth Frame.
   CHECK(depth_image_loader_);
   timing::Timer timer_file_depth("file_loading/depth_image");
   if (!depth_image_loader_->getNextImage(depth_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
+  LOG(INFO) << "depth_frame: " << depth_frame_ptr->width() << " X "
+            << depth_frame_ptr->height()
+            << ", max range: " << image::max(*depth_frame_ptr)
+            << ", min range: " << image::min(*depth_frame_ptr);
   timer_file_depth.Stop();
 
   // Load the image into a Z Frame.
-  // if (z_frame_ptr) {
-  //   CHECK(z_image_loader_);
-  //   timing::Timer timer_file_coord("file_loading/z_image");
-  //   if (!z_image_loader_->getNextImage(z_frame_ptr)) {
-  //     return DataLoadResult::kNoMoreData;
-  //   }
-  //   timer_file_coord.Stop();
-  // }
+  CHECK(z_image_loader_);
+  timing::Timer timer_file_coord("file_loading/z_image");
+  if (!z_image_loader_->getNextImage(z_frame_ptr)) {
+    return DataLoadResult::kNoMoreData;
+  }
+  LOG(INFO) << "z_frame: " << z_frame_ptr->width() << " X "
+            << z_frame_ptr->height() << ", max z: " << image::max(*z_frame_ptr)
+            << ", min z: " << image::min(*z_frame_ptr);
+  timer_file_coord.Stop();
 
+  timing::Timer timer_file_camera("file_loading/lidar");
+  Eigen::Matrix<double, 4, 1> lidar_intrinsics;
+  if (!fusionportable::internal::parseLidarFromFile(
+          fusionportable::internal::getPathForLidarIntrinsics(base_path_),
+          &lidar_intrinsics)) {
+    return DataLoadResult::kNoMoreData;
+  }
+  *lidar_ptr = OSLidar(int(lidar_intrinsics(0)), int(lidar_intrinsics(1)),
+                       lidar_intrinsics(2), lidar_intrinsics(3),
+                       depth_frame_ptr, z_frame_ptr);
+  LOG(INFO) << "lidar model: " << lidar_ptr->num_azimuth_divisions() << " "
+            << lidar_ptr->num_elevation_divisions();
+
+  // *********************************************
+  // *********************************************
+  // *********************************************
   // Load the color image into a ColorImage
   if (color_frame_ptr) {
     CHECK(color_image_loader_);
@@ -207,21 +258,32 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   }
 
   // Get the camera for this frame.
-  timing::Timer timer_file_camera("file_loading/camera");
-  Eigen::Matrix3f camera_intrinsics;
-  if (!fusionportable::internal::parseCameraFromFile(
-          fusionportable::internal::getPathForCameraIntrinsics(base_path_),
-          &camera_intrinsics)) {
-    return DataLoadResult::kNoMoreData;
+  if (color_frame_ptr) {
+    timing::Timer timer_file_camera("file_loading/camera");
+    Eigen::Matrix3f camera_intrinsics;
+    if (!fusionportable::internal::parseCameraFromFile(
+            fusionportable::internal::getPathForCameraIntrinsics(base_path_),
+            &camera_intrinsics)) {
+      return DataLoadResult::kNoMoreData;
+    }
+    // std::cout << "camera intrinsic: \n" << camera_intrinsics << std::endl;
+
+    // Create a camera object.
+    const int image_width = color_frame_ptr->cols();
+    const int image_height = color_frame_ptr->rows();
+    *camera_ptr = Camera::fromIntrinsicsMatrix(camera_intrinsics, image_width,
+                                               image_height);
+    timer_file_camera.Stop();
+
+    if (!camera_intrinsics.allFinite()) {
+      LOG(WARNING) << "Bad CSV data.";
+      return DataLoadResult::kBadFrame;  // Bad data, but keep going.
+    }
   }
 
-  // Create a camera object.
-  const int image_width = depth_frame_ptr->cols();
-  const int image_height = depth_frame_ptr->rows();
-  *camera_ptr = Camera::fromIntrinsicsMatrix(camera_intrinsics, image_width,
-                                             image_height);
-  timer_file_camera.Stop();
-
+  // *********************************************
+  // *********************************************
+  // *********************************************
   // Get the transform.
   timing::Timer timer_file_pose("file_loading/pose");
   Transform T_O_C;
@@ -232,12 +294,13 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     return DataLoadResult::kNoMoreData;
   }
   *T_L_C_ptr = T_O_C;
+  // std::cout << "T_L_C: \n" << T_L_C_ptr->matrix() << std::endl;
 
   // Check that the loaded data doesn't contain NaNs or a faulty rotation
   // matrix. This does occur. If we find one, skip that frame and move to the
   // next.
   constexpr float kRotationMatrixDetEpsilon = 1e-4;
-  if (!T_L_C_ptr->matrix().allFinite() || !camera_intrinsics.allFinite() ||
+  if (!T_L_C_ptr->matrix().allFinite() ||
       std::abs(T_L_C_ptr->matrix().block<3, 3>(0, 0).determinant() - 1.0f) >
           kRotationMatrixDetEpsilon) {
     LOG(WARNING) << "Bad CSV data.";

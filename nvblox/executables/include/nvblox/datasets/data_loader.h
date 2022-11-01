@@ -17,6 +17,8 @@ limitations under the License.
 
 #include "nvblox/core/camera.h"
 #include "nvblox/core/image.h"
+#include "nvblox/core/lidar.h"
+#include "nvblox/core/oslidar.h"
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/image_loader.h"
 
@@ -53,13 +55,15 @@ class RgbdDataLoaderInterface {
   ///@param[out] depth_frame_ptr The loaded depth frame.
   ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
   ///@param[out] camera_ptr The intrinsic camera model.
+  ///@param[out] lidar_ptr The intrinsic Ouster lidar model.
   ///@param[out] z_frame_ptr The loaded z frame.
   ///@param[out] color_frame_ptr Optional, load color frame.
   ///@return Whether loading succeeded.
-  virtual DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
-                                  Transform* T_L_C_ptr,         // NOLINT
-                                  Camera* camera_ptr,           // NOLINT
-                                  DepthImage* z_frame_ptr = nullptr,
+  virtual DataLoadResult loadNext(DepthImage* depth_frame_ptr,        // NOLINT
+                                  Transform* T_L_C_ptr,               // NOLINT
+                                  Camera* camera_ptr,                 // NOLINT
+                                  OSLidar* lidar_ptr,                 // NOLINT
+                                  DepthImage* z_frame_ptr = nullptr,  // NOLINT
                                   ColorImage* color_frame_ptr = nullptr) = 0;
 
   SensorType getSensorType() const { return sensor_type_; }

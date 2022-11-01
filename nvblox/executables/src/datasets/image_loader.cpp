@@ -29,7 +29,14 @@ bool load16BitDepthImage(const std::string& filename,
                          DepthImage* depth_frame_ptr, MemoryType memory_type,
                          const float scale_factor, const float scale_offset) {
   CHECK_NOTNULL(depth_frame_ptr);
-  timing::Timer stbi_timer("file_loading/depth_image/stbi");
+  std::string timer_name;
+  if (scale_offset == 0.0f) {
+    timer_name = "file_loading/depth_image/stbi";
+  } else {
+    timer_name = "file_loading/z_image/stbi";
+  }
+  timing::Timer stbi_timer(timer_name);
+
   int width, height, num_channels;
   uint16_t* image_data =
       stbi_load_16(filename.c_str(), &width, &height, &num_channels, 0);
@@ -47,8 +54,18 @@ bool load16BitDepthImage(const std::string& filename,
   //                    ~1ms. So only do this when 1ms is relevant.
   std::vector<float> float_image_data(height * width);
   for (int lin_idx = 0; lin_idx < float_image_data.size(); lin_idx++) {
-    float_image_data[lin_idx] =
-        static_cast<float>(image_data[lin_idx]) * scale_factor + scale_offset;
+    if (scale_offset == 0.0f) {
+      float_image_data[lin_idx] =
+          static_cast<float>(image_data[lin_idx]) * scale_factor;
+    } else {
+      if (image_data[lin_idx] == 0) {
+        float_image_data[lin_idx] = static_cast<float>(image_data[lin_idx]);
+      } else {
+        float_image_data[lin_idx] =
+            static_cast<float>(image_data[lin_idx]) * scale_factor -
+            scale_offset;
+      }
+    }
   }
 
   *depth_frame_ptr = DepthImage::fromBuffer(

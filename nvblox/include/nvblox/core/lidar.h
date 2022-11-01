@@ -24,6 +24,7 @@ class Lidar {
   Lidar() = delete;
   __host__ __device__ inline Lidar(int num_azimuth_divisions,
                                    int num_elevation_divisions,
+                                   float horizontal_fov_rad,
                                    float vertical_fov_rad);
   __host__ __device__ inline ~Lidar() = default;
 
@@ -81,6 +82,7 @@ class Lidar {
   // Core parameters
   int num_azimuth_divisions_;
   int num_elevation_divisions_;
+  float horizontal_fov_rad_;
   float vertical_fov_rad_;
 
   // Dependent parameters
