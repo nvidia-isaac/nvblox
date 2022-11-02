@@ -30,15 +30,24 @@ namespace nvblox {
 // default: 2048, 128, 45
 OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
                  float horizontal_fov_rad, float vertical_fov_rad,
-                 DepthImage* depth_image_ptr, DepthImage* z_image_ptr)
+                 const DepthImage& depth_image, const DepthImage& z_image)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
-      horizontal_fov_rad_(horizontal_fov_rad),
-      vertical_fov_rad_(vertical_fov_rad),
-      depth_image_ptr_(depth_image_ptr),
-      z_image_ptr_(z_image_ptr) {
+      horizontal_fov_rad_(horizontal_fov_rad / 180.0 * M_PI),
+      vertical_fov_rad_(vertical_fov_rad / 180.0 * M_PI) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
+  CHECK(depth_image.rows() == num_elevation_divisions);
+  CHECK(depth_image.cols() == num_azimuth_divisions);
+  CHECK(z_image.rows() == num_elevation_divisions);
+  CHECK(z_image.cols() == num_azimuth_divisions);
+
+  cudaMalloc((void**)&depth_image_ptr_, sizeof(float) * depth_image.numel());
+  cudaMalloc((void**)&z_image_ptr_, sizeof(float) * z_image.numel());
+  cudaMemcpy(depth_image_ptr_, depth_image.dataConstPtr(),
+             sizeof(float) * depth_image.numel(), cudaMemcpyHostToDevice);
+  cudaMemcpy(z_image_ptr_, z_image.dataConstPtr(),
+             sizeof(float) * z_image.numel(), cudaMemcpyHostToDevice);
 
   // ****** TODO(jjiao): to be deleted_nvblox implementation
   // Angular distance between pixels
@@ -81,6 +90,11 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   start_azimuth_angle_rad_ = 0;
 }
 
+OSLidar::~OSLidar() {
+  cudaFree(depth_image_ptr_);
+  cudaFree(z_image_ptr_);
+}
+
 int OSLidar::num_azimuth_divisions() const { return num_azimuth_divisions_; }
 
 int OSLidar::num_elevation_divisions() const {
@@ -88,6 +102,8 @@ int OSLidar::num_elevation_divisions() const {
 }
 
 float OSLidar::vertical_fov_rad() const { return vertical_fov_rad_; }
+
+float OSLidar::horizontal_fov_rad() const { return horizontal_fov_rad_; }
 
 int OSLidar::numel() const {
   return num_azimuth_divisions_ * num_elevation_divisions_;
@@ -164,6 +180,10 @@ Index2D OSLidar::imagePlaneCoordsToPixelIndex(const Vector2f& u_C) const {
 // ***************************
 Vector3f OSLidar::unprojectFromImagePlaneCoordinates(const Vector2f& u_C,
                                                      const float depth) const {
+  Vector3f p = depth * vectorFromImagePlaneCoordinates(u_C);
+  // LOG(INFO) << "Project: " << u_C.y() << " " << u_C.x() << ", " << depth <<
+  // "; "
+  //           << p.x() << " " << p.y() << " " << p.z();
   return depth * vectorFromImagePlaneCoordinates(u_C);
 }
 
@@ -174,11 +194,23 @@ Vector3f OSLidar::unprojectFromPixelIndices(const Index2D& u_C,
 
 // ***************************
 Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
-  float z = (*z_image_ptr_)(round(u_C.y()), round(u_C.x()));
-  float depth = (*depth_image_ptr_)(round(u_C.y()), round(u_C.x()));
+  // float z = (*z_image_ptr_)(round(u_C.y()), round(u_C.x()));
+  // float depth = (*depth_image_ptr_)(round(u_C.y()), round(u_C.x()));
+  float z = image::access<float>(round(u_C.y()), round(u_C.x()),
+                                 num_azimuth_divisions_, z_image_ptr_);
+  float depth = image::access<float>(round(u_C.y()), round(u_C.x()),
+                                     num_azimuth_divisions_, depth_image_ptr_);
   float r = sqrt(depth * depth - z * z);
   float azimuth_angle_rad = M_PI - u_C.x() * rads_per_pixel_azimuth_;
-  return Vector3f(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), z) /
+  // return Vector3f(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), z)
+  // /
+  //        depth;
+  printf("z: %f, depth: %f, r: %f, azimth: %f\n", z, depth, r,
+         azimuth_angle_rad);
+  Vector3f p(-r * sin(azimuth_angle_rad), -z, r * cos(azimuth_angle_rad));
+  p /= depth;
+  printf("x: %f, y: %f, z: %f\n", p.x(), p.y(), p.z());
+  return Vector3f(-r * sin(azimuth_angle_rad), -z, r * cos(azimuth_angle_rad)) /
          depth;
 }
 
@@ -199,9 +231,16 @@ AxisAlignedBoundingBox OSLidar::getViewAABB(const Transform& T_L_C,
                -max_depth * sin(vertical_fov_rad_ / 2.0f)),
       Vector3f(max_depth, max_depth,
                max_depth * sin(vertical_fov_rad_ / 2.0f)));
+  // LOG(INFO) << "max_depth: " << max_depth << ", " << vertical_fov_rad_ / 2.0
+  //           << ", " << max_depth * sin(vertical_fov_rad_ / 2.0);
+  // LOG(INFO) << "box_min: " << box.min().transpose()
+  //           << ", box_max: " << box.max().transpose();
+
   // Translate the box to the sensor's location (note that orientation doesn't
   // matter as the OSLidar sees in the circle)
   box.translate(T_L_C.translation());
+  // LOG(INFO) << "box_min: " << box.min().transpose()
+  //           << ", box_max: " << box.max().transpose();
   return box;
 }
 

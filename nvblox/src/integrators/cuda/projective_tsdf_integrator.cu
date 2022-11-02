@@ -380,7 +380,6 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
             << ", max_integration_distance_m: " << max_integration_distance_m_;
 
   // Identify blocks we can (potentially) see
-  // TODO(jjiao):
   timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
   const std::vector<Index3D> block_indices =
       view_calculator_.getBlocksInImageViewRaycast(

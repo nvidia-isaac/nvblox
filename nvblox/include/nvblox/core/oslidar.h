@@ -33,9 +33,9 @@ class OSLidar {
                                      int num_elevation_divisions,
                                      float horizontal_fov_rad,
                                      float vertical_fov_rad,
-                                     DepthImage* depth_image_ptr,
-                                     DepthImage* z_image_ptr);
-  __host__ __device__ inline ~OSLidar() = default;
+                                     const DepthImage& depth_image,
+                                     const DepthImage& z_image);
+  __host__ __device__ inline ~OSLidar();
 
   // TODO(jjiao): This function is used to check whether p_C is projected on the
   // the image plane, or outside the OSLidar's FOV
@@ -77,6 +77,7 @@ class OSLidar {
 
   __host__ __device__ inline int num_azimuth_divisions() const;
   __host__ __device__ inline int num_elevation_divisions() const;
+  __host__ __device__ inline float horizontal_fov_rad() const;
   __host__ __device__ inline float vertical_fov_rad() const;
   __host__ __device__ inline int numel() const;
   __host__ __device__ inline int rows() const;
@@ -106,8 +107,9 @@ class OSLidar {
   float rads_per_pixel_elevation_;
   float rads_per_pixel_azimuth_;
 
-  DepthImage* depth_image_ptr_;
-  DepthImage* z_image_ptr_;
+  // TODO(jjiao): should be allocate memory and move this memory in CPU to GPU?
+  float* depth_image_ptr_;
+  float* z_image_ptr_;
 };
 
 // Equality

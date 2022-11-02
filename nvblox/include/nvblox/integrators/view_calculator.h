@@ -165,6 +165,7 @@ class ViewCalculator {
       bool* aabb_updated_cuda);
 
   // Raycasts through (possibly subsampled) pixels in the image.
+  // aabb_updated_cuda is the updated variables
   template <typename SensorType>
   void getBlocksByRaycastingPixels(
       const Transform& T_L_C,                  // NOLINT

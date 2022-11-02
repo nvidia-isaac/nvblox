@@ -191,6 +191,7 @@ __global__ void combinedBlockIndicesInImageKernel(
   }
 
   // Ok now project this thing into space.
+  // in the camera coordinate
   Vector3f p_C = (depth + truncation_distance_m) *
                  camera.vectorFromPixelIndices(Index2D(pixel_col, pixel_row));
   Vector3f p_L = T_L_C * p_C;
@@ -201,7 +202,8 @@ __global__ void combinedBlockIndicesInImageKernel(
   setIndexUpdated(block_index, aabb_min, aabb_size, aabb_updated);
 
   // Ok raycast to the correct point in the block.
-  // TODO(jjiao): raycast all voxels interact with the ray
+  // TODO(jjiao): raycast all voxels interact with the ray? need to be
+  // investigated
   RayCaster raycaster(T_L_C.translation() / block_size, p_L / block_size);
   Index3D ray_index = Index3D::Zero();
   while (raycaster.nextRayIndex(&ray_index)) {
@@ -228,8 +230,16 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   const Index3D aabb_size = max_index - min_index + Index3D::Ones();
   const size_t aabb_linear_size = aabb_size.x() * aabb_size.y() * aabb_size.z();
 
-  // A 3D grid of bools, one for each block in the AABB, which indicates if it
-  // is in the view. The 3D grid is represented as a flat vector.
+  // TODO(jjiao): to be removed
+  // LOG(INFO) << "max_index: " << max_index.transpose();
+  // LOG(INFO) << "min_index: " << min_index.transpose();
+  // LOG(INFO) << "aabb_size: " << aabb_size.x() << " " << aabb_size.y() << " "
+  //           << aabb_size.z();
+  // LOG(INFO) << "aabb_linear_size: " << aabb_linear_size;
+
+  // A 3D grid of bools, one for each block in the
+  // AABB, which indicates if it is in the view. The 3D grid is represented
+  // as a flat vector.
   if (aabb_linear_size > aabb_device_buffer_.size()) {
     constexpr float kBufferExpansionFactor = 1.5f;
     const int new_size =
@@ -237,6 +247,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
     aabb_device_buffer_.reserve(new_size);
     aabb_host_buffer_.reserve(new_size);
   }
+
   checkCudaErrors(cudaMemsetAsync(aabb_device_buffer_.data(), 0,
                                   sizeof(bool) * aabb_linear_size));
   aabb_device_buffer_.resize(aabb_linear_size);
@@ -247,6 +258,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   // Raycast
   // default: true
   if (raycast_to_pixels_) {
+    LOG(INFO) << "getBlocksByRaycastingPixels";
     getBlocksByRaycastingPixels(T_L_C, camera, depth_frame, block_size,
                                 truncation_distance_m,
                                 max_integration_distance_m, min_index,
