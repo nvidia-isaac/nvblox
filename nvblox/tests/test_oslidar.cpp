@@ -50,7 +50,7 @@ TEST_P(ParameterizedoslidarTest, Extremes) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad, depth_image, z_image);
+                  horizontal_fov_rad, vertical_fov_rad);
 
   //-------------------
   // Elevation extremes
@@ -134,9 +134,7 @@ TEST_P(ParameterizedoslidarTest, SphereTest) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad, depth_image, z_image);
-  EXPECT_EQ(z_image.rows(), num_elevation_divisions);
-  EXPECT_EQ(z_image.cols(), num_azimuth_divisions);
+                  horizontal_fov_rad, vertical_fov_rad);
 
   // Pointcloud
   Eigen::MatrixX3f pointcloud(num_azimuth_divisions * num_elevation_divisions,
@@ -222,7 +220,7 @@ TEST_P(ParameterizedoslidarTest, OutOfBoundsTest) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad, depth_image, z_image);
+                  horizontal_fov_rad, vertical_fov_rad);
 
   // Outside on top and bottom
   const float rads_per_pixel_elevation =
@@ -355,7 +353,7 @@ TEST_P(ParameterizedoslidarTest, RandomPixelRoundTrips) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad, depth_image, z_image);
+                  horizontal_fov_rad, vertical_fov_rad);
 
   // TODO(jjiao): The projection and unprojection of points of OS lidar is
   // uninvertible

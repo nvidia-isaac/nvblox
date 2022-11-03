@@ -278,7 +278,6 @@ __global__ void integrateBlocksKernel(
               max_weight);
 }
 
-// TODO(jjiao): OSLIDAR
 __global__ void integrateBlocksKernel(
     const Index3D* block_indices_device_ptr, const OSLidar lidar,
     const float* image, int rows, int cols, const Transform T_C_L,
@@ -334,6 +333,9 @@ ProjectiveTsdfIntegrator::ProjectiveTsdfIntegrator()
 ProjectiveTsdfIntegrator::~ProjectiveTsdfIntegrator() {
   finish();
   checkCudaErrors(cudaStreamDestroy(integration_stream_));
+
+  cudaFree(depth_frame_ptr_cuda_);
+  cudaFree(z_frame_ptr_cuda_);
 }
 
 void ProjectiveTsdfIntegrator::finish() const {
@@ -421,9 +423,26 @@ void ProjectiveTsdfIntegrator::integrateFrame(
 
 // OSLidar
 void ProjectiveTsdfIntegrator::integrateFrame(
-    const DepthImage& depth_frame, const Transform& T_L_C, const OSLidar& lidar,
-    TsdfLayer* layer, std::vector<Index3D>* updated_blocks) {
-  integrateFrameTemplate(depth_frame, T_L_C, lidar, layer, updated_blocks);
+    const DepthImage& depth_frame, const DepthImage& z_frame,
+    const Transform& T_L_C, OSLidar& oslidar, TsdfLayer* layer,
+    std::vector<Index3D>* updated_blocks) {
+  cudaPointerAttributes attributes;
+  cudaError_t error =
+      cudaPointerGetAttributes(&attributes, depth_frame_ptr_cuda_);
+  // check whether the GPU memory has been allocated
+  if (attributes.type == cudaMemoryType::cudaMemoryTypeUnregistered) {
+    cudaMalloc((void**)&depth_frame_ptr_cuda_,
+               sizeof(float) * depth_frame.numel());
+    cudaMalloc((void**)&z_frame_ptr_cuda_, sizeof(float) * z_frame.numel());
+  }
+  cudaMemcpy(depth_frame_ptr_cuda_, depth_frame.dataConstPtr(),
+             sizeof(float) * depth_frame.numel(), cudaMemcpyHostToDevice);
+  cudaMemcpy(z_frame_ptr_cuda_, z_frame.dataConstPtr(),
+             sizeof(float) * z_frame.numel(), cudaMemcpyHostToDevice);
+  oslidar.setDepthFrameCUDA(depth_frame_ptr_cuda_);
+  oslidar.setZFrameCUDA(z_frame_ptr_cuda_);
+
+  integrateFrameTemplate(depth_frame, T_L_C, oslidar, layer, updated_blocks);
 }
 
 // Camera

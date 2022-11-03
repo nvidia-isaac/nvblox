@@ -32,9 +32,7 @@ class OSLidar {
   __host__ __device__ inline OSLidar(int num_azimuth_divisions,
                                      int num_elevation_divisions,
                                      float horizontal_fov_rad,
-                                     float vertical_fov_rad,
-                                     const DepthImage& depth_image,
-                                     const DepthImage& z_image);
+                                     float vertical_fov_rad);
   __host__ __device__ inline ~OSLidar();
 
   // TODO(jjiao): This function is used to check whether p_C is projected on the
@@ -69,6 +67,14 @@ class OSLidar {
       const Index2D& u_C) const;
   __host__ __device__ inline Index2D imagePlaneCoordsToPixelIndex(
       const Vector2f& u_C) const;
+
+  __host__ void setDepthFrameCUDA(float* depth_image_ptr_cuda) {
+    depth_image_ptr_cuda_ = depth_image_ptr_cuda;
+  }
+
+  __host__ void setZFrameCUDA(float* z_image_ptr_cuda) {
+    z_image_ptr_cuda_ = z_image_ptr_cuda;
+  }
 
   // View
   __host__ inline AxisAlignedBoundingBox getViewAABB(
@@ -108,8 +114,8 @@ class OSLidar {
   float rads_per_pixel_azimuth_;
 
   // TODO(jjiao): should be allocate memory and move this memory in CPU to GPU?
-  float* depth_image_ptr_;
-  float* z_image_ptr_;
+  float* depth_image_ptr_cuda_;
+  float* z_image_ptr_cuda_;
 };
 
 // Equality

@@ -374,7 +374,7 @@ bool Fuser::integrateFrame(const int frame_number) {
 
     if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
       timing::Timer timer_integrate("fuser/integrate_tsdf");
-      mapper_->integrateOSLidarDepth(depth_frame, T_L_C, oslidar);
+      mapper_->integrateOSLidarDepth(depth_frame, z_frame, T_L_C, oslidar);
       timer_integrate.Stop();
     }
 

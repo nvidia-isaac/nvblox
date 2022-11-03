@@ -254,7 +254,9 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
                                     OSLidar* lidar_ptr, DepthImage* z_frame_ptr,
-                                    ColorImage* color_frame_ptr) {}
+                                    ColorImage* color_frame_ptr) {
+  return DataLoadResult::kNoMoreData;
+}
 
 }  // namespace replica
 }  // namespace datasets

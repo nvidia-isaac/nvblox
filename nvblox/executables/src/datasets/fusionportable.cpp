@@ -239,12 +239,16 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     return DataLoadResult::kNoMoreData;
   }
   *lidar_ptr = OSLidar(int(lidar_intrinsics(0)), int(lidar_intrinsics(1)),
-                       lidar_intrinsics(2), lidar_intrinsics(3),
-                       *depth_frame_ptr, *z_frame_ptr);
+                       lidar_intrinsics(2), lidar_intrinsics(3));
   LOG(INFO) << "lidar model: " << lidar_ptr->num_azimuth_divisions() << " "
             << lidar_ptr->num_elevation_divisions() << " "
             << lidar_ptr->horizontal_fov_rad() << " "
             << lidar_ptr->vertical_fov_rad();
+
+  CHECK(depth_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
+  CHECK(depth_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());
+  CHECK(z_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
+  CHECK(z_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());
 
   // *********************************************
   // *********************************************
@@ -322,7 +326,9 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
 ///@return Whether loading succeeded.
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
-                                    ColorImage* color_frame_ptr) {}
+                                    ColorImage* color_frame_ptr) {
+  return DataLoadResult::kNoMoreData;
+}
 
 }  // namespace fusionportable
 }  // namespace datasets

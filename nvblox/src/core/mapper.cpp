@@ -57,12 +57,14 @@ void RgbdMapper::integrateLidarDepth(const DepthImage& depth_frame,
 }
 
 void RgbdMapper::integrateOSLidarDepth(const DepthImage& depth_frame,
+                                       const DepthImage& z_frame,
                                        const Transform& T_L_C,
-                                       const OSLidar& lidar) {
+                                       OSLidar& oslidar) {
   // Call the integrator.
   std::vector<Index3D> updated_blocks;
-  lidar_tsdf_integrator_.integrateFrame(
-      depth_frame, T_L_C, lidar, layers_.getPtr<TsdfLayer>(), &updated_blocks);
+  lidar_tsdf_integrator_.integrateFrame(depth_frame, z_frame, T_L_C, oslidar,
+                                        layers_.getPtr<TsdfLayer>(),
+                                        &updated_blocks);
 
   // Update all the relevant queues.
   mesh_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());

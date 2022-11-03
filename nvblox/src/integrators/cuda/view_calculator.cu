@@ -167,6 +167,7 @@ __global__ void combinedBlockIndicesInImageKernel(
   int pixel_row = ray_idx_row * raycast_subsampling_factor;
   int pixel_col = ray_idx_col * raycast_subsampling_factor;
 
+  // TODO(jjiao): accelerate this sentence
   // Hooray we do nothing.
   if (pixel_row >= (rows + raycast_subsampling_factor - 1) ||
       pixel_col >= (cols + raycast_subsampling_factor - 1)) {
@@ -401,15 +402,24 @@ void ViewCalculator::getBlocksByRaycastingPixels(
   dim3 block_dim(rounded_rows, rounded_cols);
   dim3 thread_dim(kThreadDim, kThreadDim);
 
+  // cudaMalloc()
+  // cudaMemcpy(lidar.depth_image_ptr(gpu), depth_image(cpu))
+
   timing::Timer combined_kernel_timer("in_view/combined_kernel");
   combinedBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, cuda_stream_>>>(
       T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,
       truncation_distance_m, raycast_subsampling_factor_, min_index, aabb_size,
       aabb_updated_cuda);
+
+  // cudaFree()
+
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
   checkCudaErrors(cudaPeekAtLastError());
   combined_kernel_timer.Stop();
 }
 
 }  // namespace nvblox
+
+// .cpp
+// lidar.depth_frame_ptr[i] -> segmentation fault
