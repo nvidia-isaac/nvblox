@@ -351,13 +351,13 @@ bool Fuser::integrateFrame(const int frame_number) {
   else if (data_loader_->getSensorType() == datasets::SensorType::OSLIDAR) {
     timing::Timer timer_file("fuser/file_loading");
     DepthImage depth_frame;
-    DepthImage z_frame;
+    DepthImage height_frame;
     ColorImage color_frame;
     Transform T_L_C;
     Camera camera;
     OSLidar oslidar;
     const datasets::DataLoadResult load_result = data_loader_->loadNext(
-        &depth_frame, &T_L_C, &camera, &oslidar, &z_frame, &color_frame);
+        &depth_frame, &T_L_C, &camera, &oslidar, &height_frame, &color_frame);
     timer_file.Stop();
 
     if (load_result == datasets::DataLoadResult::kBadFrame) {
@@ -365,7 +365,7 @@ bool Fuser::integrateFrame(const int frame_number) {
       return true;  // Bad data but keep going
     }
     if (load_result == datasets::DataLoadResult::kNoMoreData) {
-      LOG(INFO) << "No more data: lack of depth_frame, z_frame, "
+      LOG(INFO) << "No more data: lack of depth_frame, height_frame, "
                    "or color_frame";
       return false;  // Shows over folks
     }
@@ -374,7 +374,7 @@ bool Fuser::integrateFrame(const int frame_number) {
 
     if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
       timing::Timer timer_integrate("fuser/integrate_tsdf");
-      mapper_->integrateOSLidarDepth(depth_frame, z_frame, T_L_C, oslidar);
+      mapper_->integrateOSLidarDepth(depth_frame, height_frame, T_L_C, oslidar);
       timer_integrate.Stop();
     }
 

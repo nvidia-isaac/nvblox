@@ -124,11 +124,11 @@ std::string getPathForColorImage(const std::string& base_path, const int seq_id,
   return ss.str();
 }
 
-std::string getPathForZImage(const std::string& base_path, const int seq_id,
-                             const int frame_id) {
+std::string getPathForHeightImage(const std::string& base_path,
+                                  const int seq_id, const int frame_id) {
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
-     << "/frame-" << std::setw(6) << frame_id << ".z.png";
+     << "/frame-" << std::setw(6) << frame_id << ".height.png";
   // TODO(jjiao): cout function for debug, should be removed after tests
   // std::cout << ss.str() << std::endl;
   return ss.str();
@@ -148,10 +148,11 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
       multithreaded);
 }
 
-std::unique_ptr<ImageLoader<DepthImage>> createZImageLoader(
+std::unique_ptr<ImageLoader<DepthImage>> createHeightImageLoader(
     const std::string& base_path, const int seq_id, const bool multithreaded) {
   return createImageLoader<DepthImage>(
-      std::bind(getPathForZImage, base_path, seq_id, std::placeholders::_1),
+      std::bind(getPathForHeightImage, base_path, seq_id,
+                std::placeholders::_1),
       multithreaded, kDefaultUintDepthScaleFactor,
       kDefaultUintDepthScaleOffset);
 }
@@ -175,8 +176,9 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
                               fusionportable::internal::createColorImageLoader(
                                   base_path, seq_id, multithreaded),
                               SensorType::OSLIDAR),
-      z_image_loader_(std::move(fusionportable::internal::createZImageLoader(
-          base_path, seq_id, multithreaded))),
+      height_image_loader_(
+          std::move(fusionportable::internal::createHeightImageLoader(
+              base_path, seq_id, multithreaded))),
       base_path_(base_path),
       seq_id_(seq_id) {
   //
@@ -186,18 +188,19 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
 ///@param[out] depth_frame_ptr The loaded depth frame.
 ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
 ///@param[out] camera_ptr The intrinsic camera model.
-///@param[out] z_frame_ptr The loaded z frame.
+///@param[out] height_frame_ptr The loaded z frame.
 ///@param[out] color_frame_ptr Optional, load color frame.
 ///@return Whether loading succeeded.
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
-                                    OSLidar* lidar_ptr, DepthImage* z_frame_ptr,
+                                    OSLidar* lidar_ptr,
+                                    DepthImage* height_frame_ptr,
                                     ColorImage* color_frame_ptr) {
   CHECK_NOTNULL(depth_frame_ptr);
   CHECK_NOTNULL(T_L_C_ptr);
   CHECK_NOTNULL(camera_ptr);
   CHECK_NOTNULL(lidar_ptr);
-  CHECK_NOTNULL(z_frame_ptr);
+  CHECK_NOTNULL(height_frame_ptr);
   // CHECK_NOTNULL(color_frame_ptr);  // can be null
 
   // Because we might fail along the way, increment the frame number before we
@@ -221,14 +224,15 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   timer_file_depth.Stop();
 
   // Load the image into a Z Frame.
-  CHECK(z_image_loader_);
-  timing::Timer timer_file_coord("file_loading/z_image");
-  if (!z_image_loader_->getNextImage(z_frame_ptr)) {
+  CHECK(height_image_loader_);
+  timing::Timer timer_file_coord("file_loading/height_image");
+  if (!height_image_loader_->getNextImage(height_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
-  LOG(INFO) << "z_frame: " << z_frame_ptr->width() << " X "
-            << z_frame_ptr->height() << ", max z: " << image::max(*z_frame_ptr)
-            << ", min z: " << image::min(*z_frame_ptr);
+  LOG(INFO) << "height_frame: " << height_frame_ptr->width() << " X "
+            << height_frame_ptr->height()
+            << ", max height: " << image::max(*height_frame_ptr)
+            << ", min height: " << image::min(*height_frame_ptr);
   timer_file_coord.Stop();
 
   timing::Timer timer_file_camera("file_loading/lidar");
@@ -247,8 +251,8 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
 
   CHECK(depth_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
   CHECK(depth_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());
-  CHECK(z_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
-  CHECK(z_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());
+  CHECK(height_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
+  CHECK(height_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());
 
   // *********************************************
   // *********************************************

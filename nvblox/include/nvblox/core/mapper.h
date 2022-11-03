@@ -114,8 +114,8 @@ class RgbdMapper : public MapperBase {
   ///             to Layer-frame transform.
   ///@param lidar Intrinsics model of the Ouster LiDAR.
   void integrateOSLidarDepth(const DepthImage& depth_frame,
-                             const DepthImage& z_frame, const Transform& T_L_C,
-                             OSLidar& oslidar);
+                             const DepthImage& height_frame,
+                             const Transform& T_L_C, OSLidar& oslidar);
 
   /// Updates the mesh blocks which require an update
   /// @return The indices of the blocks that were updated in this call.

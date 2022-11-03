@@ -33,7 +33,7 @@ bool load16BitDepthImage(const std::string& filename,
   if (scale_offset == 0.0f) {
     timer_name = "file_loading/depth_image/stbi";
   } else {
-    timer_name = "file_loading/z_image/stbi";
+    timer_name = "file_loading/height_image/stbi";
   }
   timing::Timer stbi_timer(timer_name);
 

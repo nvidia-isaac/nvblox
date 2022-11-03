@@ -27,7 +27,7 @@ namespace nvblox {
 namespace datasets {
 namespace fusionportable {
 
-// TODO(jjiao): the default settings of preprocess z_image
+// TODO(jjiao): the default settings of preprocess height_image
 constexpr float kDefaultUintDepthScaleFactor = 1.0f / 1000.0f;
 constexpr float kDefaultUintDepthScaleOffset = 10.0f;
 
@@ -52,18 +52,18 @@ class DataLoader : public RgbdDataLoaderInterface {
   ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
   ///@param[out] camera_ptr The intrinsic camera model.
   ///@param[out] lidar_ptr The intrinsic oslidar model.
-  ///@param[out] z_frame_ptr The loaded z frame.
+  ///@param[out] height_frame_ptr The loaded z frame.
   ///@param[out] color_frame_ptr Optional, load color frame.
   ///@return Whether loading succeeded.
-  DataLoadResult loadNext(DepthImage* depth_frame_ptr,        // NOLINT
-                          Transform* T_L_C_ptr,               // NOLINT
-                          Camera* camera_ptr,                 // NOLINT
-                          OSLidar* lidar_ptr,                 // NOLINT
-                          DepthImage* z_frame_ptr = nullptr,  // NOLINT
+  DataLoadResult loadNext(DepthImage* depth_frame_ptr,             // NOLINT
+                          Transform* T_L_C_ptr,                    // NOLINT
+                          Camera* camera_ptr,                      // NOLINT
+                          OSLidar* lidar_ptr,                      // NOLINT
+                          DepthImage* height_frame_ptr = nullptr,  // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
  protected:
-  std::unique_ptr<ImageLoader<DepthImage>> z_image_loader_;
+  std::unique_ptr<ImageLoader<DepthImage>> height_image_loader_;
 
   const std::string base_path_;
   const int seq_id_;
@@ -86,15 +86,15 @@ std::string getPathForFramePose(const std::string& base_path, const int seq_id,
 
 std::string getPathForDepthImage(const std::string& base_path, const int seq_id,
                                  const int frame_id);
-std::string getPathForZImage(const std::string& base_path, const int seq_id,
-                             const int frame_id);
+std::string getPathForHeightImage(const std::string& base_path,
+                                  const int seq_id, const int frame_id);
 std::string getPathForColorImage(const std::string& base_path, const int seq_id,
                                  const int frame_id);
 
 std::unique_ptr<ImageLoader<DepthImage>> createDepthImageLoader(
     const std::string& base_path, const int seq_id,
     const bool multithreaded = true);
-std::unique_ptr<ImageLoader<DepthImage>> createZImageLoader(
+std::unique_ptr<ImageLoader<DepthImage>> createHeightImageLoader(
     const std::string& base_path, const int seq_id,
     const bool multithreaded = true);
 std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(

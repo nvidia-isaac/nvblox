@@ -68,7 +68,7 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
 
   /// Integrates a depth image in to the passed TSDF layer.
   /// @param depth_frame A depth image.
-  /// @param z_frame A z image.
+  /// @param height_frame A z image.
   /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
   /// points in the camera frame (C) to the layer frame (L).
   /// @param lidar A the Ouster LiDAR model.
@@ -76,9 +76,9 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
   /// intergrated.
   /// @param updated_blocks Optional pointer to a vector which will contain the
   /// 3D indices of blocks affected by the integration.
-  void integrateFrame(const DepthImage& depth_frame, const DepthImage& z_frame,
-                      const Transform& T_L_C, OSLidar& oslidar,
-                      TsdfLayer* layer,
+  void integrateFrame(const DepthImage& depth_frame,
+                      const DepthImage& height_frame, const Transform& T_L_C,
+                      OSLidar& oslidar, TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
 
   /// Blocks until GPU operations are complete
@@ -155,7 +155,7 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
 
   // TODO(jjiao): store depth image and z image into GPU memory
   float* depth_frame_ptr_cuda_;
-  float* z_frame_ptr_cuda_;
+  float* height_frame_ptr_cuda_;
 };
 
 }  // namespace nvblox

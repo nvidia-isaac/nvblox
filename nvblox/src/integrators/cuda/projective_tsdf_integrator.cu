@@ -335,7 +335,7 @@ ProjectiveTsdfIntegrator::~ProjectiveTsdfIntegrator() {
   checkCudaErrors(cudaStreamDestroy(integration_stream_));
 
   cudaFree(depth_frame_ptr_cuda_);
-  cudaFree(z_frame_ptr_cuda_);
+  cudaFree(height_frame_ptr_cuda_);
 }
 
 void ProjectiveTsdfIntegrator::finish() const {
@@ -423,7 +423,7 @@ void ProjectiveTsdfIntegrator::integrateFrame(
 
 // OSLidar
 void ProjectiveTsdfIntegrator::integrateFrame(
-    const DepthImage& depth_frame, const DepthImage& z_frame,
+    const DepthImage& depth_frame, const DepthImage& height_frame,
     const Transform& T_L_C, OSLidar& oslidar, TsdfLayer* layer,
     std::vector<Index3D>* updated_blocks) {
   cudaPointerAttributes attributes;
@@ -433,14 +433,15 @@ void ProjectiveTsdfIntegrator::integrateFrame(
   if (attributes.type == cudaMemoryType::cudaMemoryTypeUnregistered) {
     cudaMalloc((void**)&depth_frame_ptr_cuda_,
                sizeof(float) * depth_frame.numel());
-    cudaMalloc((void**)&z_frame_ptr_cuda_, sizeof(float) * z_frame.numel());
+    cudaMalloc((void**)&height_frame_ptr_cuda_,
+               sizeof(float) * height_frame.numel());
   }
   cudaMemcpy(depth_frame_ptr_cuda_, depth_frame.dataConstPtr(),
              sizeof(float) * depth_frame.numel(), cudaMemcpyHostToDevice);
-  cudaMemcpy(z_frame_ptr_cuda_, z_frame.dataConstPtr(),
-             sizeof(float) * z_frame.numel(), cudaMemcpyHostToDevice);
+  cudaMemcpy(height_frame_ptr_cuda_, height_frame.dataConstPtr(),
+             sizeof(float) * height_frame.numel(), cudaMemcpyHostToDevice);
   oslidar.setDepthFrameCUDA(depth_frame_ptr_cuda_);
-  oslidar.setZFrameCUDA(z_frame_ptr_cuda_);
+  oslidar.setZFrameCUDA(height_frame_ptr_cuda_);
 
   integrateFrameTemplate(depth_frame, T_L_C, oslidar, layer, updated_blocks);
 }
