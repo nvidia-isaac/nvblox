@@ -296,7 +296,6 @@ __global__ void integrateBlocksKernel(
                           &u_px, &voxel_depth_m, &p_voxel_center_C)) {
     return;  // false: the voxel is not visible
   }
-
   // printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
   // u_px.y(),
   //        p_voxel_center_C.x(), p_voxel_center_C.y(), p_voxel_center_C.z(),

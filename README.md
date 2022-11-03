@@ -25,6 +25,27 @@
       >
       >   * <code>ProjectiveTsdfIntegrator::integrateBlocks</code>: block integration for the OSLidar
 
+### Run an example
+
+In this example we fuse data from the [FusionPortable dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
+
+```
+xxx
+```
+
+Navigate to and run the `fuse_3dmatch` binary. From the nvblox base folder run
+
+```
+cd nvblox/build
+./executables/fuse_fusionportable /Spy/dataset/nvblox/20220216_garden_day/ -tsdf_integrator_max_integration_distance_m 70 -num_frames 250 --mesh_output_path /Spy/dataset/nvblox/20220216_garden_day/mesh.ply
+```
+
+Once it's done we can view the output mesh using the Open3D viewer.
+
+```
+python3 ../../visualization/visualize_mesh.py /Spy/dataset/nvblox/20220216_garden_day/mesh.ply
+```
+
 --------------------------
 # nvblox
 Signed Distance Functions (SDFs) on NVIDIA GPUs.
@@ -77,6 +98,7 @@ cmake .. && make && cd tests && ctest
 ```
 
 ## Run an example
+
 In this example we fuse data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
 ```
 wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
