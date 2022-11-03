@@ -82,7 +82,6 @@ class ProjectiveIntegratorBase {
   ViewCalculator& view_calculator();
 
  protected:
-
   // Truncation distance in meters for this block size.
   float truncation_distance_m(float block_size) const;
 

@@ -21,7 +21,7 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/data_loader.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_lidar.h"
 
 namespace nvblox {
 namespace datasets {
@@ -31,9 +31,9 @@ namespace fusionportable {
 constexpr float kDefaultUintDepthScaleFactor = 1.0f / 1000.0f;
 constexpr float kDefaultUintDepthScaleOffset = 10.0f;
 
-// Build a Fuser for the FusionPortable dataset
-std::unique_ptr<Fuser> createFuser(const std::string base_path,
-                                   const int seq_id);
+// Build a FuserLidar for the FusionPortable dataset
+std::unique_ptr<FuserLidar> createFuser(const std::string base_path,
+                                        const int seq_id);
 
 ///@brief A class for loading FusionPortable data
 class DataLoader : public RgbdDataLoaderInterface {

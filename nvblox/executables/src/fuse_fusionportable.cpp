@@ -17,7 +17,7 @@ limitations under the License.
 #include <glog/logging.h>
 
 #include "nvblox/datasets/fusionportable.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_lidar.h"
 
 DECLARE_bool(alsologtostderr);
 
@@ -45,15 +45,15 @@ int main(int argc, char* argv[]) {
   // Fuser
   // NOTE(alexmillane): Hardcode the sequence ID.
   constexpr int seq_id = 1;
-  std::unique_ptr<Fuser> fuser =
+  std::unique_ptr<FuserLidar> fuser_lidar =
       datasets::fusionportable::createFuser(base_path, seq_id);
 
   // Mesh location (optional)
   if (argc >= 3) {
-    fuser->mesh_output_path_ = argv[2];
-    LOG(INFO) << "Mesh location:" << fuser->mesh_output_path_;
+    fuser_lidar->mesh_output_path_ = argv[2];
+    LOG(INFO) << "Mesh location:" << fuser_lidar->mesh_output_path_;
   }
 
   // Make sure the layers are the correct resolution.
-  return fuser->run();
+  return fuser_lidar->run();
 }

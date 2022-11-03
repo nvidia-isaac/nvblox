@@ -203,8 +203,6 @@ __global__ void combinedBlockIndicesInImageKernel(
   setIndexUpdated(block_index, aabb_min, aabb_size, aabb_updated);
 
   // Ok raycast to the correct point in the block.
-  // TODO(jjiao): raycast all voxels interact with the ray? need to be
-  // investigated
   RayCaster raycaster(T_L_C.translation() / block_size, p_L / block_size);
   Index3D ray_index = Index3D::Zero();
   while (raycaster.nextRayIndex(&ray_index)) {
@@ -231,13 +229,6 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   const Index3D aabb_size = max_index - min_index + Index3D::Ones();
   const size_t aabb_linear_size = aabb_size.x() * aabb_size.y() * aabb_size.z();
 
-  // TODO(jjiao): to be removed
-  // LOG(INFO) << "max_index: " << max_index.transpose();
-  // LOG(INFO) << "min_index: " << min_index.transpose();
-  // LOG(INFO) << "aabb_size: " << aabb_size.x() << " " << aabb_size.y() << " "
-  //           << aabb_size.z();
-  // LOG(INFO) << "aabb_linear_size: " << aabb_linear_size;
-
   // A 3D grid of bools, one for each block in the
   // AABB, which indicates if it is in the view. The 3D grid is represented
   // as a flat vector.
@@ -259,7 +250,6 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   // Raycast
   // default: true
   if (raycast_to_pixels_) {
-    LOG(INFO) << "getBlocksByRaycastingPixels";
     getBlocksByRaycastingPixels(T_L_C, camera, depth_frame, block_size,
                                 truncation_distance_m,
                                 max_integration_distance_m, min_index,
@@ -377,6 +367,7 @@ void ViewCalculator::getBlocksByRaycastingCorners(
   raycast_blocks_timer.Stop();
 }
 
+// TODO(jjiao)
 template <typename SensorType>
 void ViewCalculator::getBlocksByRaycastingPixels(
     const Transform& T_L_C, const SensorType& camera,
@@ -402,17 +393,12 @@ void ViewCalculator::getBlocksByRaycastingPixels(
   dim3 block_dim(rounded_rows, rounded_cols);
   dim3 thread_dim(kThreadDim, kThreadDim);
 
-  // cudaMalloc()
-  // cudaMemcpy(lidar.depth_image_ptr(gpu), depth_image(cpu))
-
   timing::Timer combined_kernel_timer("in_view/combined_kernel");
   combinedBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, cuda_stream_>>>(
       T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,
       truncation_distance_m, raycast_subsampling_factor_, min_index, aabb_size,
       aabb_updated_cuda);
-
-  // cudaFree()
 
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
   checkCudaErrors(cudaPeekAtLastError());

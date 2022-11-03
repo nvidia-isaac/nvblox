@@ -159,14 +159,14 @@ std::unique_ptr<ImageLoader<DepthImage>> createHeightImageLoader(
 
 }  // namespace internal
 
-std::unique_ptr<Fuser> createFuser(const std::string base_path,
-                                   const int seq_id) {
+std::unique_ptr<FuserLidar> createFuser(const std::string base_path,
+                                        const int seq_id) {
   bool multithreaded = false;
   // Object to load FusionPortable data
   auto data_loader =
       std::make_unique<DataLoader>(base_path, seq_id, multithreaded);
-  // Fuser
-  return std::make_unique<Fuser>(std::move(data_loader));
+  // FuserLidar
+  return std::make_unique<FuserLidar>(std::move(data_loader));
 }
 
 DataLoader::DataLoader(const std::string& base_path, const int seq_id,

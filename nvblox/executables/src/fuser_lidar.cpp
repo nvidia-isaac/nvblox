@@ -13,12 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/executables/fuser.h"
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_lidar.h"
 #include "nvblox/io/mesh_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/io/pointcloud_io.h"
@@ -81,7 +80,8 @@ DEFINE_double(esdf_integrator_max_distance_m, -1.0,
 
 namespace nvblox {
 
-Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
+FuserLidar::FuserLidar(
+    std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
     : data_loader_(std::move(data_loader)) {
   // NOTE(alexmillane): We require the voxel size before we construct the
   // mapper, so we grab this parameter first and separately.
@@ -97,8 +97,9 @@ Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
   // Default parameters
   mapper_->mesh_integrator().min_weight(2.0f);
   mapper_->color_integrator().max_integration_distance_m(5.0f);
-  mapper_->tsdf_integrator().max_integration_distance_m(5.0f);
-  mapper_->tsdf_integrator().view_calculator().raycast_subsampling_factor(4);
+  mapper_->lidar_tsdf_integrator().max_integration_distance_m(1.0f);
+  mapper_->lidar_tsdf_integrator().view_calculator().raycast_subsampling_factor(
+      4);
   mapper_->esdf_integrator().max_distance_m(4.0f);
   mapper_->esdf_integrator().min_weight(2.0f);
 
@@ -106,7 +107,7 @@ Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
   readCommandLineFlags();
 };
 
-void Fuser::readCommandLineFlags() {
+void FuserLidar::readCommandLineFlags() {
   // Dataset flags
   if (!gflags::GetCommandLineFlagInfoOrDie("num_frames").is_default) {
     LOG(INFO) << "Command line parameter found: num_frames = "
@@ -168,7 +169,7 @@ void Fuser::readCommandLineFlags() {
     LOG(INFO) << "Command line parameter found: "
                  "tsdf_integrator_max_integration_distance_m= "
               << FLAGS_tsdf_integrator_max_integration_distance_m;
-    mapper_->tsdf_integrator().max_integration_distance_m(
+    mapper_->lidar_tsdf_integrator().max_integration_distance_m(
         FLAGS_tsdf_integrator_max_integration_distance_m);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie(
@@ -177,14 +178,15 @@ void Fuser::readCommandLineFlags() {
     LOG(INFO) << "Command line parameter found: "
                  "tsdf_integrator_truncation_distance_vox = "
               << FLAGS_tsdf_integrator_truncation_distance_vox;
-    mapper_->tsdf_integrator().truncation_distance_vox(
+    mapper_->lidar_tsdf_integrator().truncation_distance_vox(
         FLAGS_tsdf_integrator_truncation_distance_vox);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie("tsdf_integrator_max_weight")
            .is_default) {
     LOG(INFO) << "Command line parameter found: tsdf_integrator_max_weight = "
               << FLAGS_tsdf_integrator_max_weight;
-    mapper_->tsdf_integrator().max_weight(FLAGS_tsdf_integrator_max_weight);
+    mapper_->lidar_tsdf_integrator().max_weight(
+        FLAGS_tsdf_integrator_max_weight);
   }
 
   // Mesh integrator
@@ -241,7 +243,7 @@ void Fuser::readCommandLineFlags() {
   }
 }
 
-int Fuser::run() {
+int FuserLidar::run() {
   LOG(INFO) << "Trying to integrate the first frame: ";
   if (!integrateFrames()) {
     LOG(FATAL)
@@ -276,27 +278,27 @@ int Fuser::run() {
   return 0;
 }
 
-RgbdMapper& Fuser::mapper() { return *mapper_; }
+RgbdMapper& FuserLidar::mapper() { return *mapper_; }
 
-void Fuser::setVoxelSize(float voxel_size) { voxel_size_m_ = voxel_size; }
+void FuserLidar::setVoxelSize(float voxel_size) { voxel_size_m_ = voxel_size; }
 
-void Fuser::setTsdfFrameSubsampling(int subsample) {
+void FuserLidar::setTsdfFrameSubsampling(int subsample) {
   tsdf_frame_subsampling_ = subsample;
 }
 
-void Fuser::setColorFrameSubsampling(int subsample) {
+void FuserLidar::setColorFrameSubsampling(int subsample) {
   color_frame_subsampling_ = subsample;
 }
 
-void Fuser::setMeshFrameSubsampling(int subsample) {
+void FuserLidar::setMeshFrameSubsampling(int subsample) {
   mesh_frame_subsampling_ = subsample;
 }
 
-void Fuser::setEsdfFrameSubsampling(int subsample) {
+void FuserLidar::setEsdfFrameSubsampling(int subsample) {
   esdf_frame_subsampling_ = subsample;
 }
 
-void Fuser::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
+void FuserLidar::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
   if (esdf_mode_ != RgbdMapper::EsdfMode::kUnset) {
     LOG(WARNING) << "EsdfMode already set. Cannot change once set once. Not "
                     "doing anything.";
@@ -304,55 +306,67 @@ void Fuser::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
   esdf_mode_ = esdf_mode;
 }
 
-bool Fuser::integrateFrame(const int frame_number) {
+bool FuserLidar::integrateFrame(const int frame_number) {
   timing::Timer timer_file("fuser/file_loading");
   DepthImage depth_frame;
+  DepthImage height_frame;
   ColorImage color_frame;
   Transform T_L_C;
   Camera camera;
-  const datasets::DataLoadResult load_result =
-      data_loader_->loadNext(&depth_frame, &T_L_C, &camera, &color_frame);
+  OSLidar oslidar;
+  const datasets::DataLoadResult load_result = data_loader_->loadNext(
+      &depth_frame, &T_L_C, &camera, &oslidar, &height_frame, &color_frame);
   timer_file.Stop();
 
   if (load_result == datasets::DataLoadResult::kBadFrame) {
+    LOG(INFO) << "Bad frame: wrong parameters of intrinsics or extrinsics";
     return true;  // Bad data but keep going
   }
   if (load_result == datasets::DataLoadResult::kNoMoreData) {
+    LOG(INFO) << "No more data: lack of depth_frame, height_frame, "
+                 "or color_frame";
     return false;  // Shows over folks
   }
 
   timing::Timer per_frame_timer("fuser/time_per_frame");
+
   if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
     timing::Timer timer_integrate("fuser/integrate_tsdf");
-    mapper_->integrateDepth(depth_frame, T_L_C, camera);
+    mapper_->integrateOSLidarDepth(depth_frame, height_frame, T_L_C, oslidar);
     timer_integrate.Stop();
   }
 
-  if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate_color("fuser/integrate_color");
-    mapper_->integrateColor(color_frame, T_L_C, camera);
-    timer_integrate_color.Stop();
-  }
+  // if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
+  //   timing::Timer timer_integrate("fuser/integrate_tsdf");
+  //   mapper_->integrateDepth(depth_frame, T_L_C, camera);
+  //   timer_integrate.Stop();
+  // }
 
-  if (mesh_frame_subsampling_ > 0) {
-    if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
-      timing::Timer timer_mesh("fuser/mesh");
-      mapper_->updateMesh();
-    }
-  }
+  // if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+  //   timing::Timer timer_integrate_color("fuser/integrate_color");
+  //   mapper_->integrateColor(color_frame, T_L_C, camera);
+  //   timer_integrate_color.Stop();
+  // }
 
-  if (esdf_frame_subsampling_ > 0) {
-    if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
-      timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
-      updateEsdf();
-      timer_integrate_esdf.Stop();
-    }
-  }
+  // if (mesh_frame_subsampling_ > 0) {
+  //   if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
+  //     timing::Timer timer_mesh("fuser/mesh");
+  //     mapper_->updateMesh();
+  //   }
+  // }
+
+  // if (esdf_frame_subsampling_ > 0) {
+  //   if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
+  //     timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
+  //     updateEsdf();
+  //     timer_integrate_esdf.Stop();
+  //   }
+  // }
   per_frame_timer.Stop();
   return true;
-}  // namespace nvblox
+}
 
-bool Fuser::integrateFrames() {
+bool FuserLidar::integrateFrames() {
   int frame_number = 0;
   while (frame_number < num_frames_to_integrate_ &&
          integrateFrame(frame_number++)) {
@@ -364,7 +378,7 @@ bool Fuser::integrateFrames() {
   return true;
 }
 
-void Fuser::updateEsdf() {
+void FuserLidar::updateEsdf() {
   switch (esdf_mode_) {
     case RgbdMapper::EsdfMode::kUnset:
       break;
@@ -377,17 +391,17 @@ void Fuser::updateEsdf() {
   }
 }
 
-bool Fuser::outputPointcloudPly() {
+bool FuserLidar::outputPointcloudPly() {
   timing::Timer timer_write("fuser/esdf/write");
   return io::outputVoxelLayerToPly(mapper_->esdf_layer(), esdf_output_path_);
 }
 
-bool Fuser::outputMeshPly() {
+bool FuserLidar::outputMeshPly() {
   timing::Timer timer_write("fuser/mesh/write");
   return io::outputMeshLayerToPly(mapper_->mesh_layer(), mesh_output_path_);
 }
 
-bool Fuser::outputTimingsToFile() {
+bool FuserLidar::outputTimingsToFile() {
   LOG(INFO) << "Writing timing to: " << timing_output_path_;
   std::ofstream timing_file(timing_output_path_);
   timing_file << nvblox::timing::Timing::Print();
@@ -395,7 +409,7 @@ bool Fuser::outputTimingsToFile() {
   return true;
 }
 
-bool Fuser::outputMapToFile() {
+bool FuserLidar::outputMapToFile() {
   timing::Timer timer_serialize("fuser/map/write");
   return mapper_->saveMap(map_output_path_);
 }

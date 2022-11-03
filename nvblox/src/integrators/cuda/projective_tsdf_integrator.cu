@@ -125,7 +125,6 @@ __device__ inline bool interpolateLidarImage(
   return true;
 }
 
-// TODO(jjiao):
 __device__ inline bool interpolateOSLidarImage(
     const OSLidar& lidar, const Vector3f& p_voxel_center_C, const float* image,
     const Vector2f& u_px, const int rows, const int cols,
@@ -278,6 +277,7 @@ __global__ void integrateBlocksKernel(
               max_weight);
 }
 
+// TODO(jjiao): main function to integrate blocks in GPU
 __global__ void integrateBlocksKernel(
     const Index3D* block_indices_device_ptr, const OSLidar lidar,
     const float* image, int rows, int cols, const Transform T_C_L,
@@ -286,6 +286,7 @@ __global__ void integrateBlocksKernel(
     const float linear_interpolation_max_allowable_difference_m,
     const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
     TsdfBlock** block_device_ptrs) {
+  // function 1
   // Get - the image-space projection of the voxel associated with this thread
   //     - the depth associated with the projection.
   Eigen::Vector2f u_px;
@@ -296,6 +297,12 @@ __global__ void integrateBlocksKernel(
     return;  // false: the voxel is not visible
   }
 
+  if (u_px.y() < 50) {
+    printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
+           u_px.y(), p_voxel_center_C.x(), p_voxel_center_C.y(),
+           p_voxel_center_C.z(), voxel_depth_m);
+  }
+
   // If voxel further away than the limit, skip this voxel
   if (max_integration_distance > 0.0f) {
     if (voxel_depth_m > max_integration_distance) {
@@ -303,6 +310,7 @@ __global__ void integrateBlocksKernel(
     }
   }
 
+  // function 2
   // Interpolate on the image plane
   float image_value;
   if (!interpolateOSLidarImage(
@@ -320,6 +328,7 @@ __global__ void integrateBlocksKernel(
   TsdfVoxel* voxel_ptr = &(block_device_ptrs[blockIdx.x]
                                ->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
 
+  // function 3
   // Update the voxel using the update rule for this layer type
   updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
               max_weight);
@@ -526,6 +535,7 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
   checkCudaErrors(cudaPeekAtLastError());
 }
 
+// OSLidar
 void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
                                                const Transform& T_C_L,
                                                const OSLidar& lidar,

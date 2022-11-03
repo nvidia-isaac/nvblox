@@ -2,11 +2,7 @@ include_directories(include)
 
 # Datasets library
 add_library(nvblox_datasets SHARED
-    src/datasets/3dmatch.cpp
     src/datasets/image_loader.cpp
-    src/datasets/replica.cpp
-    src/datasets/fusionportable.cpp
-    src/fuser.cpp
 )
 target_include_directories(nvblox_datasets PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -16,9 +12,11 @@ target_include_directories(nvblox_datasets PUBLIC
 target_link_libraries(nvblox_datasets nvblox_lib)
 set_target_properties(nvblox_datasets PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-
+####################################
 # 3Dmatch executable
 add_executable(fuse_3dmatch
+    src/datasets/3dmatch.cpp
+    src/fuser.cpp
     src/fuse_3dmatch.cpp
 )
 target_link_libraries(fuse_3dmatch
@@ -28,6 +26,8 @@ set_target_properties(fuse_3dmatch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Replica executable
 add_executable(fuse_replica
+    src/datasets/replica.cpp
+    src/fuser.cpp
     src/fuse_replica.cpp
 )
 target_link_libraries(fuse_replica
@@ -37,6 +37,8 @@ set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # FusionPortable executable
 add_executable(fuse_fusionportable
+    src/datasets/fusionportable.cpp
+    src/fuser_lidar.cpp
     src/fuse_fusionportable.cpp
 )
 target_link_libraries(fuse_fusionportable
