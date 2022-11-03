@@ -37,13 +37,11 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
 
-  // ****** TODO(jjiao): to be deleted_nvblox implementation
   // Angular distance between pixels
   // Note(alexmillane): Note the difference in division by N vs. (N-1) below.
   // This is because in the azimuth direction there's a wrapping around. The
   // point at pi/-pi is not double sampled, generating this difference.
   // ****************
-
   rads_per_pixel_elevation_ =
       vertical_fov_rad / static_cast<float>(num_elevation_divisions_ - 1);
   rads_per_pixel_azimuth_ =
@@ -53,29 +51,14 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
   azimuth_pixels_per_rad_ = 1.0f / rads_per_pixel_azimuth_;
 
-  // ****** TODO(jjiao): to be deleted_nvblox implementation
-  // The angular lower-extremes of the image-plane
-  // NOTE(alexmillane): Because beams pass through the angular extremes of the
-  // FoV, the corresponding lower extreme pixels start half a pixel width
-  // below this.
-  // Note(alexmillane): Note that we use polar angle here, not elevation.
-  // Polar is from the top of the sphere down, elevation, the middle up.
-  // start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad / 2.0f +
-  //                                         rads_per_pixel_elevation_ / 2.0f);
-  // start_azimuth_angle_rad_ = -M_PI - rads_per_pixel_azimuth_ / 2.0f;
-  // *************
-
-  // NOTE(jjiao): define the depth image
   // ********************* polar_angle
-  // ****** the start polar_angle indicate the direction: x=0, -z
-  // ****** the end polar_angle indicate the direction: x=0, +z
+  // ****** the start polar_angle indicate the direction: x=0, +z
+  // ****** the end polar_angle indicate the direction: x=0, -z
   // ********************* azimuth_angle
-  // ****** the start azimuth_angle indicate the direction: x=0, +y
-  // ****** the end azimuth_angle indicate the direction: x=0, -y
-  // from bottom to top
-  start_polar_angle_rad_ = -vertical_fov_rad / 2.0f;
-  // from left to right
-  start_azimuth_angle_rad_ = 0;
+  // ****** the start and end azimuth_angle: clockwise
+  // -x, y=0 -> +x, y=0
+  start_polar_angle_rad_ = M_PI / 2.0f - vertical_fov_rad / 2.0f;
+  start_azimuth_angle_rad_ = 0.0f;
 }
 
 OSLidar::~OSLidar() {}
@@ -99,26 +82,16 @@ int OSLidar::cols() const { return num_azimuth_divisions_; }
 int OSLidar::rows() const { return num_elevation_divisions_; }
 
 bool OSLidar::project(const Vector3f& p_C, Vector2f* u_C) const {
-  const float rxy = p_C.head<2>().norm();
+  const float r = p_C.norm();
   constexpr float kMinProjectionEps = 0.01;
-  if (p_C.norm() < kMinProjectionEps) {
-    return false;
-  }
-  const float polar_angle_rad = atan2(p_C.z(), rxy);
-  const float azimuth_angle_rad = M_PI - atan2(p_C.y(), p_C.x());
+  if (r < kMinProjectionEps) return false;
 
-  // ****** TODO(jjiao): to be deleted_nvblox implementation
-  // float v_float =
-  //     (polar_angle_rad - start_polar_angle_rad_) * elevation_pixels_per_rad_;
-  // float u_float =
-  //     (azimuth_angle_rad - start_azimuth_angle_rad_) *
-  //     azimuth_pixels_per_rad_;
-  // ***********************
+  const float polar_angle_rad = acos(p_C.z() / r);
+  const float azimuth_angle_rad = M_PI - atan2(p_C.y(), p_C.x());
 
   // To image plane coordinates
   float v_float =
       (polar_angle_rad - start_polar_angle_rad_) / rads_per_pixel_elevation_;
-  v_float = (num_elevation_divisions_ - 1) - v_float;
   float u_float =
       (azimuth_angle_rad - start_azimuth_angle_rad_) / rads_per_pixel_azimuth_;
 
@@ -166,10 +139,6 @@ Index2D OSLidar::imagePlaneCoordsToPixelIndex(const Vector2f& u_C) const {
 // ***************************
 Vector3f OSLidar::unprojectFromImagePlaneCoordinates(const Vector2f& u_C,
                                                      const float depth) const {
-  Vector3f p = depth * vectorFromImagePlaneCoordinates(u_C);
-  // LOG(INFO) << "Project: " << u_C.y() << " " << u_C.x() << ", " << depth <<
-  // "; "
-  //           << p.x() << " " << p.y() << " " << p.z();
   return depth * vectorFromImagePlaneCoordinates(u_C);
 }
 
@@ -180,23 +149,22 @@ Vector3f OSLidar::unprojectFromPixelIndices(const Index2D& u_C,
 
 // ***************************
 Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
-  float z = image::access<float>(round(u_C.y()), round(u_C.x()),
-                                 num_azimuth_divisions_, z_image_ptr_cuda_);
+  float height =
+      image::access<float>(round(u_C.y()), round(u_C.x()),
+                           num_azimuth_divisions_, height_image_ptr_cuda_);
   float depth =
       image::access<float>(round(u_C.y()), round(u_C.x()),
                            num_azimuth_divisions_, depth_image_ptr_cuda_);
-  float r = sqrt(depth * depth - z * z);
-  float azimuth_angle_rad = M_PI - u_C.x() * rads_per_pixel_azimuth_;
+  float r = sqrt(depth * depth - height * height);
+  float azimuth_angle_rad =
+      u_C.x() * rads_per_pixel_azimuth_ + start_azimuth_angle_rad_;
 
-  // Vector3f p(-r * sin(azimuth_angle_rad), -z, r * cos(azimuth_angle_rad));
-  // p /= depth;
   // printf(
   //     "ux: %f, uy: %f --- z: %f, depth: %f, r: %f, azimth: %f --- x: %f, y: "
   //     "%f, z: %f\n",
   //     u_C.x(), u_C.y(), z, depth, r, azimuth_angle_rad, p.x(), p.y(), p.z());
-
-  return Vector3f(-r * sin(azimuth_angle_rad), -z, r * cos(azimuth_angle_rad)) /
-         depth;
+  Vector3f p(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), height);
+  return p / depth;
 }
 
 Vector3f OSLidar::vectorFromPixelIndices(const Index2D& u_C) const {

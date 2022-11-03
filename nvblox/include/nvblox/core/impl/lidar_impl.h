@@ -58,6 +58,12 @@ Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
   // below this.
   // Note(alexmillane): Note that we use polar angle here, not elevation.
   // Polar is from the top of the sphere down, elevation, the middle up.
+  // ********************* polar_angle
+  // ****** the start polar_angle indicate the direction: x=0, +z
+  // ****** the end polar_angle indicate the direction: x=0, -z
+  // ********************* azimuth_angle
+  // ****** the start and end azimuth_angle: counterclockwise
+  // -x, y=0 -> +x, y=0
   start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad / 2.0f +
                                           rads_per_pixel_elevation_ / 2.0f);
   start_azimuth_angle_rad_ = -M_PI - rads_per_pixel_azimuth_ / 2.0f;

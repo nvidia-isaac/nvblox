@@ -35,9 +35,9 @@ class OSLidar {
                                      float vertical_fov_rad);
   __host__ __device__ inline ~OSLidar();
 
-  // TODO(jjiao): This function is used to check whether p_C is projected on the
-  // the image plane, or outside the OSLidar's FOV
-  // Projects a 3D point to the (floating-point) image plane
+  // TODO(jjiao): This function is used to check whether p_C (in the camera
+  // coordinate) is projected on the the image plane, or outside the OSLidar's
+  // FOV Projects a 3D point to the (floating-point) image plane
   __host__ __device__ inline bool project(const Vector3f& p_C,
                                           Vector2f* u_C) const;
 
@@ -49,8 +49,7 @@ class OSLidar {
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
   // Back projection (image plane point to 3D point)
-  // NOTE(jjiao): for OUSTER lidars, 3D points cannot be calculated
-  // directly by angles. They should be retrieved from the coord_image_ptr
+  // represented in the lidar coordinate system
   __host__ __device__ inline Vector3f unprojectFromImagePlaneCoordinates(
       const Vector2f& u_C, const float depth) const;
   __host__ __device__ inline Vector3f unprojectFromPixelIndices(
@@ -72,8 +71,8 @@ class OSLidar {
     depth_image_ptr_cuda_ = depth_image_ptr_cuda;
   }
 
-  __host__ void setZFrameCUDA(float* z_image_ptr_cuda) {
-    z_image_ptr_cuda_ = z_image_ptr_cuda;
+  __host__ void setZFrameCUDA(float* height_image_ptr_cuda) {
+    height_image_ptr_cuda_ = height_image_ptr_cuda;
   }
 
   // View
@@ -115,7 +114,7 @@ class OSLidar {
 
   // TODO(jjiao): should be allocate memory and move this memory in CPU to GPU?
   float* depth_image_ptr_cuda_;
-  float* z_image_ptr_cuda_;
+  float* height_image_ptr_cuda_;
 };
 
 // Equality
