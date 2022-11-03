@@ -297,11 +297,10 @@ __global__ void integrateBlocksKernel(
     return;  // false: the voxel is not visible
   }
 
-  if (u_px.y() < 50) {
-    printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
-           u_px.y(), p_voxel_center_C.x(), p_voxel_center_C.y(),
-           p_voxel_center_C.z(), voxel_depth_m);
-  }
+  // printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
+  // u_px.y(),
+  //        p_voxel_center_C.x(), p_voxel_center_C.y(), p_voxel_center_C.z(),
+  //        voxel_depth_m);
 
   // If voxel further away than the limit, skip this voxel
   if (max_integration_distance > 0.0f) {
@@ -385,10 +384,11 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
   const float voxel_size =
       layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
   const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
-  LOG(INFO) << "block_size: " << layer->block_size()
-            << ", truncation_distance_m: " << truncation_distance_m
-            << ", voxel_size: " << voxel_size
-            << ", max_integration_distance_m: " << max_integration_distance_m_;
+  // LOG(INFO) << "block_size: " << layer->block_size()
+  //           << ", truncation_distance_m: " << truncation_distance_m
+  //           << ", voxel_size: " << voxel_size
+  //           << ", max_integration_distance_m: " <<
+  //           max_integration_distance_m_;
 
   // Identify blocks we can (potentially) see
   timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
@@ -397,6 +397,10 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
           depth_frame, T_L_C, sensor, layer->block_size(),
           truncation_distance_m, max_integration_distance_m_);
   LOG(INFO) << "block_indices size: " << block_indices.size();
+  // for (auto& block : block_indices) {
+  //   std::cout << block.x() << " " << block.y() << " " << block.z() <<
+  //   std::endl;
+  // }
   blocks_in_view_timer.Stop();
 
   // Allocate blocks (CPU)

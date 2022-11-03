@@ -29,11 +29,11 @@ namespace nvblox {
 
 // default: 2048, 128, 45
 OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
-                 float horizontal_fov_rad, float vertical_fov_rad)
+                 float horizontal_fov_deg, float vertical_fov_deg)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
-      horizontal_fov_rad_(horizontal_fov_rad / 180.0 * M_PI),
-      vertical_fov_rad_(vertical_fov_rad / 180.0 * M_PI) {
+      horizontal_fov_rad_(horizontal_fov_deg / 180.0 * M_PI),
+      vertical_fov_rad_(vertical_fov_deg / 180.0 * M_PI) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
 
@@ -43,7 +43,7 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   // point at pi/-pi is not double sampled, generating this difference.
   // ****************
   rads_per_pixel_elevation_ =
-      vertical_fov_rad / static_cast<float>(num_elevation_divisions_ - 1);
+      vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
   rads_per_pixel_azimuth_ =
       horizontal_fov_rad_ / static_cast<float>(num_azimuth_divisions_ - 1);
 
@@ -57,8 +57,14 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   // ********************* azimuth_angle
   // ****** the start and end azimuth_angle: clockwise
   // -x, y=0 -> +x, y=0
-  start_polar_angle_rad_ = M_PI / 2.0f - vertical_fov_rad / 2.0f;
+  start_polar_angle_rad_ = M_PI / 2.0f - vertical_fov_rad_ / 2.0f;
   start_azimuth_angle_rad_ = 0.0f;
+
+  // printf("horizontal_fov_rad: %f, vertical_fov_rad: %f\n",
+  // horizontal_fov_rad_,
+  //        vertical_fov_rad_);
+  // printf("start_polar: %f, start_azimuth: %f\n", start_polar_angle_rad_,
+  //        start_azimuth_angle_rad_);
 }
 
 OSLidar::~OSLidar() {}

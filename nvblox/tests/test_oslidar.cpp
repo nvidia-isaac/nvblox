@@ -42,15 +42,15 @@ TEST_P(ParameterizedoslidarTest, Extremes) {
   const auto params = GetParam();
   const int num_azimuth_divisions = std::get<0>(params);
   const int num_elevation_divisions = std::get<1>(params);
-  const float vertical_fov_deg = std::get<2>(params);
-  const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float horizontal_fov_deg = std::get<3>(params);
-  const float horizontal_fov_rad = horizontal_fov_deg * M_PI / 180.0f;
+  const float horizontal_fov_deg = std::get<2>(params);
+  const float horizontal_fov_rad = horizontal_fov_deg / 180.0 * M_PI;
+  const float vertical_fov_deg = std::get<3>(params);
+  const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
 
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
-  DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
+  DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad);
+                  horizontal_fov_deg, vertical_fov_deg);
 
   //-------------------
   // Elevation extremes
@@ -126,15 +126,15 @@ TEST_P(ParameterizedoslidarTest, SphereTest) {
   const auto params = GetParam();
   const int num_azimuth_divisions = std::get<0>(params);
   const int num_elevation_divisions = std::get<1>(params);
-  const float vertical_fov_deg = std::get<2>(params);
-  const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float horizontal_fov_deg = std::get<3>(params);
-  const float horizontal_fov_rad = horizontal_fov_deg * M_PI / 180.0f;
+  const float horizontal_fov_deg = std::get<2>(params);
+  const float horizontal_fov_rad = horizontal_fov_deg / 180.0 * M_PI;
+  const float vertical_fov_deg = std::get<3>(params);
+  const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
 
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
-  DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
+  DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad);
+                  horizontal_fov_deg, vertical_fov_deg);
 
   // Pointcloud
   Eigen::MatrixX3f pointcloud(num_azimuth_divisions * num_elevation_divisions,
@@ -212,15 +212,15 @@ TEST_P(ParameterizedoslidarTest, OutOfBoundsTest) {
   const auto params = GetParam();
   const int num_azimuth_divisions = std::get<0>(params);
   const int num_elevation_divisions = std::get<1>(params);
-  const float vertical_fov_deg = std::get<2>(params);
-  const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float horizontal_fov_deg = std::get<3>(params);
-  const float horizontal_fov_rad = horizontal_fov_deg * M_PI / 180.0f;
+  const float horizontal_fov_deg = std::get<2>(params);
+  const float horizontal_fov_rad = horizontal_fov_deg / 180.0 * M_PI;
+  const float vertical_fov_deg = std::get<3>(params);
+  const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
 
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
-  DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
+  DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad);
+                  horizontal_fov_deg, vertical_fov_deg);
 
   // Outside on top and bottom
   const float rads_per_pixel_elevation =
@@ -255,13 +255,13 @@ TEST_P(ParameterizedoslidarTest, PixelToRayExtremes) {
   //   const int num_azimuth_divisions = std::get<0>(params);
   //   const int num_elevation_divisions = std::get<1>(params);
   //   const float vertical_fov_deg = std::get<2>(params);
-  //   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
+  //   const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
   //   const float half_vertical_fov_rad = vertical_fov_rad / 2.0;
 
-  //   DepthImagez_image(epthImage(num_elevation_divisions,
+  //   DepthImageheight_image(epthImage(num_elevation_divisions,
   //   num_azimuth_divisions); OSLidar oslidar(num_azimuth_divisions,
   //   num_elevation_divisions,
-  //                    z_image);vertical_fov, **
+  //                    height_image);vertical_fov, **
   //   // Special pixels to use
   //   const float middle_elevation_pixel = (num_elevation_divisions - 1) /
   // 2;
@@ -335,7 +335,7 @@ TEST_P(ParameterizedoslidarTest, PixelToRayExtremes) {
 // clang-format off
 INSTANTIATE_TEST_CASE_P(
     ParameterizedoslidarTests, ParameterizedoslidarTest, ::testing::Values(
-      std::tuple<int, int, float, float>(2048, 128, 45.0f, 360.0f)));
+      std::tuple<int, int, float, float>(2048, 128, 360.0f, 45.0f)));
 // clang-format on
 
 TEST_P(ParameterizedoslidarTest, RandomPixelRoundTrips) {
@@ -346,14 +346,14 @@ TEST_P(ParameterizedoslidarTest, RandomPixelRoundTrips) {
   const int num_azimuth_divisions = std::get<0>(params);
   const int num_elevation_divisions = std::get<1>(params);
   const float vertical_fov_deg = std::get<2>(params);
-  const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
+  const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
   const float horizontal_fov_deg = std::get<3>(params);
-  const float horizontal_fov_rad = horizontal_fov_deg * M_PI / 180.0f;
+  const float horizontal_fov_rad = horizontal_fov_deg / 180.0 * M_PI;
 
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
-  DepthImage z_image(num_elevation_divisions, num_azimuth_divisions);
+  DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_rad, vertical_fov_rad);
+                  horizontal_fov_deg, vertical_fov_deg);
 
   // TODO(jjiao): The projection and unprojection of points of OS lidar is
   // uninvertible
