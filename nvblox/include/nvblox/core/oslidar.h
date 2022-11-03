@@ -31,8 +31,8 @@ class OSLidar {
   __host__ __device__ inline OSLidar() = default;
   __host__ __device__ inline OSLidar(int num_azimuth_divisions,
                                      int num_elevation_divisions,
-                                     float horizontal_fov_rad,
-                                     float vertical_fov_rad);
+                                     float horizontal_fov_deg,
+                                     float vertical_fov_deg);
   __host__ __device__ inline ~OSLidar();
 
   // TODO(jjiao): This function is used to check whether p_C (in the camera

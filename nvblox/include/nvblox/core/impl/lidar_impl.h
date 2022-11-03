@@ -31,11 +31,11 @@ This implementation is only valid for lidars that have average elevation angle
 namespace nvblox {
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
-             float horizontal_fov_rad, float vertical_fov_rad)
+             float horizontal_fov_deg, float vertical_fov_deg)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
-      horizontal_fov_rad_(horizontal_fov_rad),
-      vertical_fov_rad_(vertical_fov_rad) {
+      horizontal_fov_rad_(horizontal_fov_deg / 180.0f * M_PI),
+      vertical_fov_rad_(vertical_fov_deg / 180.0f * M_PI) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
 
@@ -44,9 +44,9 @@ Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
   // This is because in the azimuth direction there's a wrapping around. The
   // point at pi/-pi is not double sampled, generating this difference.
   rads_per_pixel_elevation_ =
-      vertical_fov_rad / static_cast<float>(num_elevation_divisions_ - 1);
+      vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
   rads_per_pixel_azimuth_ =
-      2.0f * M_PI / static_cast<float>(num_azimuth_divisions_);
+      horizontal_fov_rad_ / static_cast<float>(num_azimuth_divisions_);
 
   // Inverse of the above
   elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
@@ -64,7 +64,7 @@ Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
   // ********************* azimuth_angle
   // ****** the start and end azimuth_angle: counterclockwise
   // -x, y=0 -> +x, y=0
-  start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad / 2.0f +
+  start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad_ / 2.0f +
                                           rads_per_pixel_elevation_ / 2.0f);
   start_azimuth_angle_rad_ = -M_PI - rads_per_pixel_azimuth_ / 2.0f;
 }
