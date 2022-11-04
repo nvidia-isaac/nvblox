@@ -27,7 +27,6 @@ This implements the operation that project OSLidar points onto a depth image
 
 namespace nvblox {
 
-// default: 2048, 128, 45
 OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
                  float horizontal_fov_deg, float vertical_fov_deg)
     : num_azimuth_divisions_(num_azimuth_divisions),
@@ -58,16 +57,40 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   // ****** the start and end azimuth_angle: clockwise
   // -x, y=0 -> +x, y=0
   start_polar_angle_rad_ = M_PI / 2.0f - vertical_fov_rad_ / 2.0f;
+  end_polar_angle_rad_ = M_PI / 2.0f + vertical_fov_rad_ / 2.0f;
   start_azimuth_angle_rad_ = 0.0f;
 
-  // printf("horizontal_fov_rad: %f, vertical_fov_rad: %f\n",
-  // horizontal_fov_rad_,
-  //        vertical_fov_rad_);
-  // printf("start_polar: %f, start_azimuth: %f\n", start_polar_angle_rad_,
-  //        start_azimuth_angle_rad_);
+  // printIntrinsics();
 }
 
 OSLidar::~OSLidar() {}
+
+// default: 2048, 128, 45
+void OSLidar::setIntrinsics() {
+  vertical_fov_rad_ = end_polar_angle_rad_ - start_polar_angle_rad_;
+
+  start_azimuth_angle_rad_ = 0.0f;
+
+  rads_per_pixel_elevation_ =
+      vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
+  rads_per_pixel_azimuth_ =
+      horizontal_fov_rad_ / static_cast<float>(num_azimuth_divisions_ - 1);
+
+  elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
+  azimuth_pixels_per_rad_ = 1.0f / rads_per_pixel_azimuth_;
+
+  printIntrinsics();
+}
+
+void OSLidar::printIntrinsics() const {
+  printf("OSLidar intrinsics--------------------\n");
+  printf("horizontal_fov_rad: %f\n", horizontal_fov_rad_);
+  printf("vertical_fov_rad: %f\n", vertical_fov_rad_);
+  printf("start_polar: %f\n", start_polar_angle_rad_);
+  printf("end_polar: %f\n", end_polar_angle_rad_);
+  printf("rads_per_pixel_elevation: %f\n", rads_per_pixel_elevation_);
+  printf("rads_per_pixel_azimuth: %f\n", rads_per_pixel_azimuth_);
+}
 
 int OSLidar::num_azimuth_divisions() const { return num_azimuth_divisions_; }
 

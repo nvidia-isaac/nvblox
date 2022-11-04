@@ -17,33 +17,40 @@
 
       > * set <code>voxel_size</code> and <code>truncation_distance</code>
       > * Identify blocks given the camera view: <code>view_calculator_.getBlocksInImageViewRaycast</code>
-      >   * <code>getBlocksByRaycastingPixels</code>: Raycasts through (possibly subsampled) pixels in the image. Done in GPU
-      >   * <code>*void* combinedBlockIndicesInImageKernel</code>: 
+      >   * <code>getBlocksByRaycastingPixels</code>: Raycasts through (possibly subsampled) pixels in the image, use the kernal function
+      >   * <code>*void* combinedBlockIndicesInImageKernel</code>: retrieve visiable block by raycasting voxels, done in GPU
       >
       >
       > * TSDF integration given block indices: <code>integrateBlocksTemplate</code>
       >
-      >   * <code>ProjectiveTsdfIntegrator::integrateBlocks</code>: block integration for the OSLidar
+      >   * <code>ProjectiveTsdfIntegrator::integrateBlocks</code>: block integration for the OSLidar, use the kernal function
+      >   * <code>integrateBlocksKernel</code>: TSDF integration for each block, done in GPU
+      >     * <code>projectThreadVoxel</code>: convert blocks' indices into coordinates, retrieve voxels from the block, and project them onto the image to check whether they are visible or not
+      >     * <code>interpolateOSLidarImage</code>: linear interpolation of depth images given float coordinates
+      >     * <code>updateVoxel</code>: update the TSDF values of all visible voxels. 
 
 ### Run an example
 
-In this example we fuse data from the [FusionPortable dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
+In this example we fuse data from the [FusionPortable dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/fusionportable`.
 
 ```
 xxx
 ```
 
-Navigate to and run the `fuse_3dmatch` binary. From the nvblox base folder run
+Navigate to and run the `fuse_fusionportable` binary. From the nvblox base folder run
 
 ```
 cd nvblox/build
-./executables/fuse_fusionportable /Spy/dataset/nvblox/20220216_garden_day/ -tsdf_integrator_max_integration_distance_m 70 -num_frames 250 --mesh_output_path /Spy/dataset/nvblox/20220216_garden_day/mesh.ply
+./executables/fuse_fusionportable path_to_dataset\
+-tsdf_integrator_max_integration_distance_m 70 \
+-num_frames 250 \
+-mesh_output_path path_to_save_mesh
 ```
 
 Once it's done we can view the output mesh using the Open3D viewer.
 
 ```
-python3 ../../visualization/visualize_mesh.py /Spy/dataset/nvblox/20220216_garden_day/mesh.ply
+python3 ../../visualization/visualize_mesh.py path_to_save_mesh
 ```
 
 --------------------------

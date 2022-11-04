@@ -367,7 +367,6 @@ void ViewCalculator::getBlocksByRaycastingCorners(
   raycast_blocks_timer.Stop();
 }
 
-// TODO(jjiao)
 template <typename SensorType>
 void ViewCalculator::getBlocksByRaycastingPixels(
     const Transform& T_L_C, const SensorType& camera,

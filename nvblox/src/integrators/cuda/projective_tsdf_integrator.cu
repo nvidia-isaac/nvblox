@@ -433,28 +433,66 @@ void ProjectiveTsdfIntegrator::integrateFrame(
   integrateFrameTemplate(depth_frame, T_L_C, lidar, layer, updated_blocks);
 }
 
+__global__ void compOSLidarIntrinsics(OSLidar& oslidar, int rows, int cols,
+                                      float* start_polar_angle_rad,
+                                      float* end_polar_angle_rad,
+                                      const float* depth_image,
+                                      const float* height_image) {
+  int index = threadIdx.x;
+  int stride = blockDim.x;
+  for (int i = index; i < cols; i += stride) {
+    {
+      float dep = image::access<float>(0, i, cols, depth_image);
+      if (dep < 1e-4) continue;
+      float h = image::access<float>(0, i, cols, height_image);
+      float polar_angle_rad = acos(h / dep);
+      *start_polar_angle_rad = polar_angle_rad < *start_polar_angle_rad
+                                   ? polar_angle_rad
+                                   : *start_polar_angle_rad;
+    }
+    {
+      float dep = image::access<float>(rows - 1, i, cols, depth_image);
+      if (dep < 1e-4) continue;
+      float h = image::access<float>(rows - 1, i, cols, height_image);
+      float polar_angle_rad = acos(h / dep);
+      *end_polar_angle_rad = polar_angle_rad > *end_polar_angle_rad
+                                 ? polar_angle_rad
+                                 : *end_polar_angle_rad;
+    }
+  }
+}
+
 // OSLidar
 void ProjectiveTsdfIntegrator::integrateFrame(
-    const DepthImage& depth_frame, const DepthImage& height_frame,
-    const Transform& T_L_C, OSLidar& oslidar, TsdfLayer* layer,
-    std::vector<Index3D>* updated_blocks) {
-  cudaPointerAttributes attributes;
-  cudaError_t error =
-      cudaPointerGetAttributes(&attributes, depth_frame_ptr_cuda_);
-  // check whether the GPU memory has been allocated
-  if (attributes.type == cudaMemoryType::cudaMemoryTypeUnregistered) {
-    cudaMalloc((void**)&depth_frame_ptr_cuda_,
-               sizeof(float) * depth_frame.numel());
-    cudaMalloc((void**)&height_frame_ptr_cuda_,
-               sizeof(float) * height_frame.numel());
-  }
-  cudaMemcpy(depth_frame_ptr_cuda_, depth_frame.dataConstPtr(),
-             sizeof(float) * depth_frame.numel(), cudaMemcpyHostToDevice);
-  cudaMemcpy(height_frame_ptr_cuda_, height_frame.dataConstPtr(),
-             sizeof(float) * height_frame.numel(), cudaMemcpyHostToDevice);
-  oslidar.setDepthFrameCUDA(depth_frame_ptr_cuda_);
-  oslidar.setZFrameCUDA(height_frame_ptr_cuda_);
-
+    DepthImage& depth_frame, DepthImage& height_frame, const Transform& T_L_C,
+    OSLidar& oslidar, TsdfLayer* layer, std::vector<Index3D>* updated_blocks) {
+  // set depth_frame and height_frame
+  oslidar.setDepthFrameCUDA(depth_frame.dataPtr());
+  oslidar.setHeightFrameCUDA(height_frame.dataPtr());
+  // compute OSLidar start and end polar angle, and set intrinsics
+  float* start_polar_angle_rad;
+  float* end_polar_angle_rad;
+  float min_value = M_PI;
+  float max_value = -M_PI;
+  cudaMalloc((void**)&start_polar_angle_rad, sizeof(float));
+  cudaMalloc((void**)&end_polar_angle_rad, sizeof(float));
+  cudaMemcpy(start_polar_angle_rad, &min_value, sizeof(float),
+             cudaMemcpyHostToDevice);
+  cudaMemcpy(end_polar_angle_rad, &max_value, sizeof(float),
+             cudaMemcpyHostToDevice);
+  compOSLidarIntrinsics<<<1, 256>>>(oslidar, oslidar.num_elevation_divisions(),
+                                    oslidar.num_azimuth_divisions(),
+                                    start_polar_angle_rad, end_polar_angle_rad,
+                                    depth_frame.dataConstPtr(),
+                                    height_frame.dataConstPtr());
+  cudaMemcpy(&oslidar.start_polar_angle_rad_, start_polar_angle_rad,
+             sizeof(float), cudaMemcpyDeviceToHost);
+  cudaMemcpy(&oslidar.end_polar_angle_rad_, end_polar_angle_rad, sizeof(float),
+             cudaMemcpyDeviceToHost);
+  cudaFree(start_polar_angle_rad);
+  cudaFree(end_polar_angle_rad);
+  oslidar.setIntrinsics();
+  // frame integration
   integrateFrameTemplate(depth_frame, T_L_C, oslidar, layer, updated_blocks);
 }
 

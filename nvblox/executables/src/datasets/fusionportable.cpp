@@ -242,12 +242,8 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
           &lidar_intrinsics)) {
     return DataLoadResult::kNoMoreData;
   }
-  *lidar_ptr = OSLidar(int(lidar_intrinsics(0)), int(lidar_intrinsics(1)),
+  *lidar_ptr = OSLidar(lidar_intrinsics(0), lidar_intrinsics(1),
                        lidar_intrinsics(2), lidar_intrinsics(3));
-  LOG(INFO) << "lidar model: " << lidar_ptr->num_azimuth_divisions() << " "
-            << lidar_ptr->num_elevation_divisions() << " "
-            << lidar_ptr->horizontal_fov_rad() << " "
-            << lidar_ptr->vertical_fov_rad();
 
   CHECK(depth_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
   CHECK(depth_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());

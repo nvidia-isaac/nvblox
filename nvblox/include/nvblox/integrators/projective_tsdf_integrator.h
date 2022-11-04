@@ -76,9 +76,9 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
   /// intergrated.
   /// @param updated_blocks Optional pointer to a vector which will contain the
   /// 3D indices of blocks affected by the integration.
-  void integrateFrame(const DepthImage& depth_frame,
-                      const DepthImage& height_frame, const Transform& T_L_C,
-                      OSLidar& oslidar, TsdfLayer* layer,
+  void integrateFrame(DepthImage& depth_frame, DepthImage& height_frame,
+                      const Transform& T_L_C, OSLidar& oslidar,
+                      TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
 
   /// Blocks until GPU operations are complete

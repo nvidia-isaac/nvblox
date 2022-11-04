@@ -56,8 +56,8 @@ void RgbdMapper::integrateLidarDepth(const DepthImage& depth_frame,
   esdf_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());
 }
 
-void RgbdMapper::integrateOSLidarDepth(const DepthImage& depth_frame,
-                                       const DepthImage& height_frame,
+void RgbdMapper::integrateOSLidarDepth(DepthImage& depth_frame,
+                                       DepthImage& height_frame,
                                        const Transform& T_L_C,
                                        OSLidar& oslidar) {
   // Call the integrator.

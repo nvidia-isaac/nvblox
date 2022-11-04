@@ -35,9 +35,12 @@ class OSLidar {
                                      float vertical_fov_deg);
   __host__ __device__ inline ~OSLidar();
 
+  __host__ __device__ inline void setIntrinsics();
+  __host__ __device__ inline void printIntrinsics() const;
+
   // TODO(jjiao): This function is used to check whether p_C (in the camera
-  // coordinate) is projected on the the image plane, or outside the OSLidar's
-  // FOV Projects a 3D point to the (floating-point) image plane
+  // coordinate) is projected on the the image plane, or outside the
+  // OSLidar's FOV Projects a 3D point to the (floating-point) image plane
   __host__ __device__ inline bool project(const Vector3f& p_C,
                                           Vector2f* u_C) const;
 
@@ -48,6 +51,8 @@ class OSLidar {
   // Gets the depth of a point
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
+  // TODO(jjiao): This function is used to unproject a pixel to a 3D point given
+  // the 2D coordinate of an image
   // Back projection (image plane point to 3D point)
   // represented in the lidar coordinate system
   __host__ __device__ inline Vector3f unprojectFromImagePlaneCoordinates(
@@ -71,7 +76,7 @@ class OSLidar {
     depth_image_ptr_cuda_ = depth_image_ptr_cuda;
   }
 
-  __host__ void setZFrameCUDA(float* height_image_ptr_cuda) {
+  __host__ void setHeightFrameCUDA(float* height_image_ptr_cuda) {
     height_image_ptr_cuda_ = height_image_ptr_cuda;
   }
 
@@ -97,6 +102,13 @@ class OSLidar {
     __host__ inline size_t operator()(const OSLidar& OSLidar) const;
   };
 
+ public:
+  float start_polar_angle_rad_;
+  float end_polar_angle_rad_;
+
+  float* depth_image_ptr_cuda_;
+  float* height_image_ptr_cuda_;
+
  private:
   // Core parameters
   int num_azimuth_divisions_;
@@ -105,16 +117,11 @@ class OSLidar {
   float vertical_fov_rad_;
 
   // Dependent parameters
-  float start_polar_angle_rad_;
   float start_azimuth_angle_rad_;
   float elevation_pixels_per_rad_;
   float azimuth_pixels_per_rad_;
   float rads_per_pixel_elevation_;
   float rads_per_pixel_azimuth_;
-
-  // TODO(jjiao): should be allocate memory and move this memory in CPU to GPU?
-  float* depth_image_ptr_cuda_;
-  float* height_image_ptr_cuda_;
 };
 
 // Equality
