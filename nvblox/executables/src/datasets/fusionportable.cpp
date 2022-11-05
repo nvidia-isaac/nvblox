@@ -68,9 +68,9 @@ bool parseCameraFromFile(const std::string& filename,
 }
 
 bool parseLidarFromFile(const std::string& filename,
-                        Eigen::Matrix<double, 4, 1>* intrinsics) {
+                        Eigen::Matrix<double, 8, 1>* intrinsics) {
   CHECK_NOTNULL(intrinsics);
-  constexpr int kDimension = 4;
+  const int kDimension = intrinsics->rows();
   std::ifstream fin(filename);
   if (fin.is_open()) {
     for (int col = 0; col < kDimension; col++) {
@@ -85,14 +85,17 @@ bool parseLidarFromFile(const std::string& filename,
 }  // namespace internal
 
 // *********************
-// TODO(jjiao): implement the dataloader for the FusionProtable dataset
 // *********************
-std::string getPathForLidarIntrinsics(const std::string& base_path) {
-  return base_path + "/lidar-intrinsics.txt";
-}
-
 std::string getPathForCameraIntrinsics(const std::string& base_path) {
   return base_path + "/camera-intrinsics.txt";
+}
+
+std::string getPathForLidarIntrinsics(const std::string& base_path,
+                                      const int seq_id, const int frame_id) {
+  std::stringstream ss;
+  ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
+     << "/frame-" << std::setw(6) << frame_id << ".lidar-intrinsics.txt";
+  return ss.str();
 }
 
 std::string getPathForFramePose(const std::string& base_path, const int seq_id,
@@ -100,7 +103,6 @@ std::string getPathForFramePose(const std::string& base_path, const int seq_id,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".pose.txt";
-
   return ss.str();
 }
 
@@ -109,8 +111,6 @@ std::string getPathForDepthImage(const std::string& base_path, const int seq_id,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".depth.png";
-  // TODO(jjiao): cout function for debug, should be removed after tests
-  // std::cout << ss.str() << std::endl;
   return ss.str();
 }
 
@@ -119,8 +119,6 @@ std::string getPathForColorImage(const std::string& base_path, const int seq_id,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".color.png";
-  // TODO(jjiao): cout function for debug, should be removed after tests
-  // std::cout << ss.str() << std::endl;
   return ss.str();
 }
 
@@ -223,7 +221,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
             << ", min range: " << image::min(*depth_frame_ptr);
   timer_file_depth.Stop();
 
-  // Load the image into a Z Frame.
+  // Load the image into a Height Frame.
   CHECK(height_image_loader_);
   timing::Timer timer_file_coord("file_loading/height_image");
   if (!height_image_loader_->getNextImage(height_frame_ptr)) {
@@ -235,16 +233,27 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
             << ", min height: " << image::min(*height_frame_ptr);
   timer_file_coord.Stop();
 
+  // Load lidar intrinsics:
+  //  num_azimuth_divisions
+  //  num_elevation_divisions
+  //  horizontal_fov_rad
+  //  vertical_fov_rad
+  //  start_azimuth_angle_rad
+  //  end_azimuth_angle_rad
+  //  start_elevation_angle_rad
+  //  end_elevation_angle_rad
   timing::Timer timer_file_camera("file_loading/lidar");
-  Eigen::Matrix<double, 4, 1> lidar_intrinsics;
+  Eigen::Matrix<double, 8, 1> lidar_intrinsics;
   if (!fusionportable::internal::parseLidarFromFile(
-          fusionportable::internal::getPathForLidarIntrinsics(base_path_),
+          fusionportable::internal::getPathForLidarIntrinsics(
+              base_path_, seq_id_, frame_number),
           &lidar_intrinsics)) {
     return DataLoadResult::kNoMoreData;
   }
-  *lidar_ptr = OSLidar(lidar_intrinsics(0), lidar_intrinsics(1),
-                       lidar_intrinsics(2), lidar_intrinsics(3));
-
+  *lidar_ptr =
+      OSLidar(lidar_intrinsics(0), lidar_intrinsics(1), lidar_intrinsics(2),
+              lidar_intrinsics(3), lidar_intrinsics(4), lidar_intrinsics(5),
+              lidar_intrinsics(6), lidar_intrinsics(7));
   CHECK(depth_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());
   CHECK(depth_frame_ptr->cols() == lidar_ptr->num_azimuth_divisions());
   CHECK(height_frame_ptr->rows() == lidar_ptr->num_elevation_divisions());

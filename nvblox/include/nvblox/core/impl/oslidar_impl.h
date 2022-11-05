@@ -27,20 +27,23 @@ This implements the operation that project OSLidar points onto a depth image
 
 namespace nvblox {
 
+// given initial intrinsics from the intrisics file, but need to be refined for
+// each new scan
 OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
-                 float horizontal_fov_deg, float vertical_fov_deg)
+                 float horizontal_fov_rad, float vertical_fov_rad,
+                 float start_azimuth_angle_rad, float end_azimuth_angle_rad,
+                 float start_elevation_angle_rad, float end_elevation_angle_rad)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
-      horizontal_fov_rad_(horizontal_fov_deg / 180.0 * M_PI),
-      vertical_fov_rad_(vertical_fov_deg / 180.0 * M_PI) {
+      horizontal_fov_rad_(horizontal_fov_rad),
+      vertical_fov_rad_(vertical_fov_rad),
+      start_azimuth_angle_rad_(start_azimuth_angle_rad),
+      end_azimuth_angle_rad_(end_azimuth_angle_rad),
+      start_elevation_angle_rad_(start_elevation_angle_rad),
+      end_elevation_angle_rad_(end_elevation_angle_rad) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
 
-  // Angular distance between pixels
-  // Note(alexmillane): Note the difference in division by N vs. (N-1) below.
-  // This is because in the azimuth direction there's a wrapping around. The
-  // point at pi/-pi is not double sampled, generating this difference.
-  // ****************
   rads_per_pixel_elevation_ =
       vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
   rads_per_pixel_azimuth_ =
@@ -50,44 +53,17 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
   azimuth_pixels_per_rad_ = 1.0f / rads_per_pixel_azimuth_;
 
-  // ********************* polar_angle
-  // ****** the start polar_angle indicate the direction: x=0, +z
-  // ****** the end polar_angle indicate the direction: x=0, -z
-  // ********************* azimuth_angle
-  // ****** the start and end azimuth_angle: clockwise
-  // -x, y=0 -> +x, y=0
-  start_polar_angle_rad_ = M_PI / 2.0f - vertical_fov_rad_ / 2.0f;
-  end_polar_angle_rad_ = M_PI / 2.0f + vertical_fov_rad_ / 2.0f;
-  start_azimuth_angle_rad_ = 0.0f;
-
-  // printIntrinsics();
+  printIntrinsics();
 }
 
 OSLidar::~OSLidar() {}
-
-// default: 2048, 128, 45
-void OSLidar::setIntrinsics() {
-  vertical_fov_rad_ = end_polar_angle_rad_ - start_polar_angle_rad_;
-
-  start_azimuth_angle_rad_ = 0.0f;
-
-  rads_per_pixel_elevation_ =
-      vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
-  rads_per_pixel_azimuth_ =
-      horizontal_fov_rad_ / static_cast<float>(num_azimuth_divisions_ - 1);
-
-  elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
-  azimuth_pixels_per_rad_ = 1.0f / rads_per_pixel_azimuth_;
-
-  printIntrinsics();
-}
 
 void OSLidar::printIntrinsics() const {
   printf("OSLidar intrinsics--------------------\n");
   printf("horizontal_fov_rad: %f\n", horizontal_fov_rad_);
   printf("vertical_fov_rad: %f\n", vertical_fov_rad_);
-  printf("start_polar: %f\n", start_polar_angle_rad_);
-  printf("end_polar: %f\n", end_polar_angle_rad_);
+  printf("start_elevation: %f\n", start_elevation_angle_rad_);
+  printf("end_elevation: %f\n", end_elevation_angle_rad_);
   printf("rads_per_pixel_elevation: %f\n", rads_per_pixel_elevation_);
   printf("rads_per_pixel_azimuth: %f\n", rads_per_pixel_azimuth_);
 }
@@ -115,12 +91,10 @@ bool OSLidar::project(const Vector3f& p_C, Vector2f* u_C) const {
   constexpr float kMinProjectionEps = 0.01;
   if (r < kMinProjectionEps) return false;
 
-  const float polar_angle_rad = acos(p_C.z() / r);
+  const float elevation_angle_rad = acos(p_C.z() / r);
   const float azimuth_angle_rad = M_PI - atan2(p_C.y(), p_C.x());
-
-  // To image plane coordinates
-  float v_float =
-      (polar_angle_rad - start_polar_angle_rad_) / rads_per_pixel_elevation_;
+  float v_float = (elevation_angle_rad - start_elevation_angle_rad_) /
+                  rads_per_pixel_elevation_;
   float u_float =
       (azimuth_angle_rad - start_azimuth_angle_rad_) / rads_per_pixel_azimuth_;
 
@@ -132,8 +106,7 @@ bool OSLidar::project(const Vector3f& p_C, Vector2f* u_C) const {
   // Points out of FOV
   // NOTE(alexmillane): It should be impossible to escape the -pi-to-pi range in
   // azimuth due to wrap around this. Therefore we don't check.
-  if (v_float < -kMinProjectionEps ||
-      v_float > num_elevation_divisions_ + kMinProjectionEps - 1) {
+  if ((round(v_float) < 0) || (round(v_float) > num_elevation_divisions_ - 1)) {
     return false;
   }
 
@@ -155,7 +128,6 @@ Vector2f OSLidar::pixelIndexToImagePlaneCoordsOfCenter(
     const Index2D& u_C) const {
   // The index cast to a float is the coordinates of the lower corner of the
   // pixel.
-  // return u_C.cast<float>() + Vector2f(0.5f, 0.5f);
   return u_C.cast<float>();
 }
 
@@ -186,7 +158,7 @@ Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
                            num_azimuth_divisions_, depth_image_ptr_cuda_);
   float r = sqrt(depth * depth - height * height);
   float azimuth_angle_rad =
-      u_C.x() * rads_per_pixel_azimuth_ + start_azimuth_angle_rad_;
+      M_PI - (u_C.x() + start_azimuth_angle_rad_) * rads_per_pixel_azimuth_;
   Vector3f p(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), height);
   // printf(
   //     "ux: %.1f, uy: %.1f, height: %.1f, r: %.1f, depth: %.1f, azimth: %.1f,

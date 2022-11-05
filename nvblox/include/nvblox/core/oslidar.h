@@ -29,13 +29,14 @@ namespace nvblox {
 class OSLidar {
  public:
   __host__ __device__ inline OSLidar() = default;
-  __host__ __device__ inline OSLidar(int num_azimuth_divisions,
-                                     int num_elevation_divisions,
-                                     float horizontal_fov_deg,
-                                     float vertical_fov_deg);
+  __host__ __device__ inline OSLidar(
+      int num_azimuth_divisions, int num_elevation_divisions,
+      float horizontal_fov_rad, float vertical_fov_rad,
+      float start_azimuth_angle_rad, float end_azimuth_angle_rad,
+      float start_elevation_angle_rad, float end_elevation_angle_rad);
   __host__ __device__ inline ~OSLidar();
 
-  __host__ __device__ inline void setIntrinsics();
+  // __host__ __device__ inline void setIntrinsics();
   __host__ __device__ inline void printIntrinsics() const;
 
   // TODO(jjiao): This function is used to check whether p_C (in the camera
@@ -102,22 +103,33 @@ class OSLidar {
     __host__ inline size_t operator()(const OSLidar& OSLidar) const;
   };
 
- public:
-  float start_polar_angle_rad_;
-  float end_polar_angle_rad_;
-
+ private:
   float* depth_image_ptr_cuda_;
   float* height_image_ptr_cuda_;
 
- private:
   // Core parameters
   int num_azimuth_divisions_;
   int num_elevation_divisions_;
   float horizontal_fov_rad_;
   float vertical_fov_rad_;
 
-  // Dependent parameters
+  // Angular distance between pixels
+  // Note(alexmillane): Note the difference in division by N vs. (N-1) below.
+  // This is because in the azimuth direction there's a wrapping around. The
+  // point at pi/-pi is not double sampled, generating this difference.
   float start_azimuth_angle_rad_;
+  float end_azimuth_angle_rad_;
+
+  // ********************* elevation_angle
+  // ****** the start elevation_angle indicate the direction: x=0, +z
+  // ****** the end elevation_angle indicate the direction: x=0, -z
+  // ********************* azimuth_angle
+  // ****** the start and end azimuth_angle: clockwise
+  // -x, y=0 -> +x, y=0
+  float start_elevation_angle_rad_;
+  float end_elevation_angle_rad_;
+
+  // Dependent parameters
   float elevation_pixels_per_rad_;
   float azimuth_pixels_per_rad_;
   float rads_per_pixel_elevation_;

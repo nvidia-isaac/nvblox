@@ -125,6 +125,7 @@ __device__ inline bool interpolateLidarImage(
   return true;
 }
 
+// nearest_interpolation_max_allowable_squared_dist_to_ray_m, default: 0.125**2
 __device__ inline bool interpolateOSLidarImage(
     const OSLidar& lidar, const Vector3f& p_voxel_center_C, const float* image,
     const Vector2f& u_px, const int rows, const int cols,
@@ -294,12 +295,11 @@ __global__ void integrateBlocksKernel(
   Vector3f p_voxel_center_C;
   if (!projectThreadVoxel(block_indices_device_ptr, lidar, T_C_L, block_size,
                           &u_px, &voxel_depth_m, &p_voxel_center_C)) {
+    // printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
+    //        u_px.y(), p_voxel_center_C.x(), p_voxel_center_C.y(),
+    //        p_voxel_center_C.z(), voxel_depth_m);
     return;  // false: the voxel is not visible
   }
-  // printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
-  // u_px.y(),
-  //        p_voxel_center_C.x(), p_voxel_center_C.y(), p_voxel_center_C.z(),
-  //        voxel_depth_m);
 
   // If voxel further away than the limit, skip this voxel
   if (max_integration_distance > 0.0f) {
@@ -383,11 +383,6 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
   const float voxel_size =
       layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
   const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
-  // LOG(INFO) << "block_size: " << layer->block_size()
-  //           << ", truncation_distance_m: " << truncation_distance_m
-  //           << ", voxel_size: " << voxel_size
-  //           << ", max_integration_distance_m: " <<
-  //           max_integration_distance_m_;
 
   // Identify blocks we can (potentially) see
   timing::Timer blocks_in_view_timer("tsdf/integrate/get_blocks_in_view");
@@ -396,10 +391,6 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
           depth_frame, T_L_C, sensor, layer->block_size(),
           truncation_distance_m, max_integration_distance_m_);
   LOG(INFO) << "block_indices size: " << block_indices.size();
-  // for (auto& block : block_indices) {
-  //   std::cout << block.x() << " " << block.y() << " " << block.z() <<
-  //   std::endl;
-  // }
   blocks_in_view_timer.Stop();
 
   // Allocate blocks (CPU)
@@ -408,7 +399,6 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
   allocate_blocks_timer.Stop();
 
   // Update identified blocks
-  // TODO(jjiao): integration
   timing::Timer update_blocks_timer("tsdf/integrate/update_blocks");
   integrateBlocksTemplate<SensorType>(block_indices, depth_frame, T_L_C, sensor,
                                       layer);
@@ -433,66 +423,10 @@ void ProjectiveTsdfIntegrator::integrateFrame(
   integrateFrameTemplate(depth_frame, T_L_C, lidar, layer, updated_blocks);
 }
 
-__global__ void compOSLidarIntrinsics(OSLidar& oslidar, int rows, int cols,
-                                      float* start_polar_angle_rad,
-                                      float* end_polar_angle_rad,
-                                      const float* depth_image,
-                                      const float* height_image) {
-  int index = threadIdx.x;
-  int stride = blockDim.x;
-  for (int i = index; i < cols; i += stride) {
-    {
-      float dep = image::access<float>(0, i, cols, depth_image);
-      if (dep < 1e-4) continue;
-      float h = image::access<float>(0, i, cols, height_image);
-      float polar_angle_rad = acos(h / dep);
-      *start_polar_angle_rad = polar_angle_rad < *start_polar_angle_rad
-                                   ? polar_angle_rad
-                                   : *start_polar_angle_rad;
-    }
-    {
-      float dep = image::access<float>(rows - 1, i, cols, depth_image);
-      if (dep < 1e-4) continue;
-      float h = image::access<float>(rows - 1, i, cols, height_image);
-      float polar_angle_rad = acos(h / dep);
-      *end_polar_angle_rad = polar_angle_rad > *end_polar_angle_rad
-                                 ? polar_angle_rad
-                                 : *end_polar_angle_rad;
-    }
-  }
-}
-
 // OSLidar
 void ProjectiveTsdfIntegrator::integrateFrame(
-    DepthImage& depth_frame, DepthImage& height_frame, const Transform& T_L_C,
-    OSLidar& oslidar, TsdfLayer* layer, std::vector<Index3D>* updated_blocks) {
-  // set depth_frame and height_frame
-  oslidar.setDepthFrameCUDA(depth_frame.dataPtr());
-  oslidar.setHeightFrameCUDA(height_frame.dataPtr());
-  // compute OSLidar start and end polar angle, and set intrinsics
-  float* start_polar_angle_rad;
-  float* end_polar_angle_rad;
-  float min_value = M_PI;
-  float max_value = -M_PI;
-  cudaMalloc((void**)&start_polar_angle_rad, sizeof(float));
-  cudaMalloc((void**)&end_polar_angle_rad, sizeof(float));
-  cudaMemcpy(start_polar_angle_rad, &min_value, sizeof(float),
-             cudaMemcpyHostToDevice);
-  cudaMemcpy(end_polar_angle_rad, &max_value, sizeof(float),
-             cudaMemcpyHostToDevice);
-  compOSLidarIntrinsics<<<1, 256>>>(oslidar, oslidar.num_elevation_divisions(),
-                                    oslidar.num_azimuth_divisions(),
-                                    start_polar_angle_rad, end_polar_angle_rad,
-                                    depth_frame.dataConstPtr(),
-                                    height_frame.dataConstPtr());
-  cudaMemcpy(&oslidar.start_polar_angle_rad_, start_polar_angle_rad,
-             sizeof(float), cudaMemcpyDeviceToHost);
-  cudaMemcpy(&oslidar.end_polar_angle_rad_, end_polar_angle_rad, sizeof(float),
-             cudaMemcpyDeviceToHost);
-  cudaFree(start_polar_angle_rad);
-  cudaFree(end_polar_angle_rad);
-  oslidar.setIntrinsics();
-  // frame integration
+    DepthImage& depth_frame, const Transform& T_L_C, OSLidar& oslidar,
+    TsdfLayer* layer, std::vector<Index3D>* updated_blocks) {
   integrateFrameTemplate(depth_frame, T_L_C, oslidar, layer, updated_blocks);
 }
 

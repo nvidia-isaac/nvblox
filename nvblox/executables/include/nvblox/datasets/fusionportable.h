@@ -41,7 +41,6 @@ class DataLoader : public RgbdDataLoaderInterface {
   DataLoader(const std::string& base_path, const int seq_id,
              bool multithreaded = true);
 
-  // NOTE(jjiao): need to define the virutal function (not used) here
   DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
                           Transform* T_L_C_ptr,         // NOLINT
                           Camera* camera_ptr,           // NOLINT
@@ -78,9 +77,10 @@ bool parsePoseFromFile(const std::string& filename, Transform* transform);
 bool parseCameraFromFile(const std::string& filename,
                          Eigen::Matrix3f* intrinsics);
 bool parseLidarFromFile(const std::string& filename,
-                        Eigen::Matrix<double, 4, 1>* intrinsics);
+                        Eigen::Matrix<double, 8, 1>* intrinsics);
 std::string getPathForCameraIntrinsics(const std::string& base_path);
-std::string getPathForLidarIntrinsics(const std::string& base_path);
+std::string getPathForLidarIntrinsics(const std::string& base_path,
+                                      const int seq_id, const int frame_id);
 std::string getPathForFramePose(const std::string& base_path, const int seq_id,
                                 const int frame_id);
 
