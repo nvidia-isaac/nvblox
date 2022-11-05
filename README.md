@@ -35,20 +35,37 @@
 
 #### Demo 
 
+Create a docker container
+
+```
+docker pull iidcramlab/nvblox:20221105-ros-noetic-open3d
+xhost local:docker
+docker run -it --net=host --env="DISPLAY" -v $HOME/.Xauthority:/root/.Xauthority:rw \
+-v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+--name nvblox \
+iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
+```
+
+Download data
+
+1. FusionPortable_20220216_garden_day: http://gofile.me/72EEc/Fa0eMVojB
+
 Navigate to and run the `fuse_fusionportable` binary. From the nvblox base folder run
 
 ```
-cd nvblox/build
-./executables/fuse_fusionportable path_to_dataset\
--tsdf_integrator_max_integration_distance_m 70 \
--num_frames 250 \
--mesh_output_path path_to_save_mesh
+cd nvblox/build \
+make \
+./executables/fuse_fusionportable 20220216_garden_day/ \
+tsdf_integrator_max_integration_distance_m 50 \
+-num_frames 300 \
+-voxel_size 0.1 \
+-mesh_output_path 20220216_garden_day/mesh_0.1.ply
 ```
 
 Once it's done we can view the output mesh using the Open3D viewer.
 
 ```
-python3 ../../visualization/visualize_mesh.py path_to_save_mesh
+python3 ../../visualization/visualize_mesh.py 20220216_garden_day/mesh_0.1.ply
 ```
 
 --------------------------
