@@ -374,7 +374,6 @@ bool FuserLidar::integrateFrames() {
          integrateFrame(frame_number++)) {
     timing::mark("Frame " + std::to_string(frame_number - 1), Color::Red());
     LOG(INFO) << "Integrating frame " << frame_number - 1;
-    std::cout << std::endl;
   }
   LOG(INFO) << "Ran out of data at frame: " << frame_number - 1;
   return true;

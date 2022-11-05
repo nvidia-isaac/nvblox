@@ -215,10 +215,10 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   if (!depth_image_loader_->getNextImage(depth_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
-  LOG(INFO) << "depth_frame: " << depth_frame_ptr->width() << " X "
-            << depth_frame_ptr->height()
-            << ", max range: " << image::max(*depth_frame_ptr)
-            << ", min range: " << image::min(*depth_frame_ptr);
+  // LOG(INFO) << "depth_frame: " << depth_frame_ptr->width() << " X "
+  //           << depth_frame_ptr->height()
+  //           << ", max range: " << image::max(*depth_frame_ptr)
+  //           << ", min range: " << image::min(*depth_frame_ptr);
   timer_file_depth.Stop();
 
   // Load the image into a Height Frame.
@@ -227,10 +227,10 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   if (!height_image_loader_->getNextImage(height_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
-  LOG(INFO) << "height_frame: " << height_frame_ptr->width() << " X "
-            << height_frame_ptr->height()
-            << ", max height: " << image::max(*height_frame_ptr)
-            << ", min height: " << image::min(*height_frame_ptr);
+  // LOG(INFO) << "height_frame: " << height_frame_ptr->width() << " X "
+  //           << height_frame_ptr->height()
+  //           << ", max height: " << image::max(*height_frame_ptr)
+  //           << ", min height: " << image::min(*height_frame_ptr);
   timer_file_coord.Stop();
 
   // Load lidar intrinsics:

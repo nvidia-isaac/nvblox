@@ -29,13 +29,11 @@
       >     * <code>interpolateOSLidarImage</code>: linear interpolation of depth images given float coordinates
       >     * <code>updateVoxel</code>: update the TSDF values of all visible voxels. 
 
-### Run an example
+### Run an example with the FusionPortable dataset
 
-In this example we fuse data from the [FusionPortable dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/fusionportable`.
+#### [Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
 
-```
-xxx
-```
+#### Demo 
 
 Navigate to and run the `fuse_fusionportable` binary. From the nvblox base folder run
 

@@ -53,7 +53,7 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
   azimuth_pixels_per_rad_ = 1.0f / rads_per_pixel_azimuth_;
 
-  printIntrinsics();
+  // printIntrinsics();
 }
 
 OSLidar::~OSLidar() {}
