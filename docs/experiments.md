@@ -1,0 +1,26 @@
+### Experimental Results
+
+##### Reconstruction results (voxel_size = 0.1)
+* Sequence: 20220216_garden_day
+  * NVBlox: Point cloud distance [m]: 0.0713986; Coverage [%]: 0.648376
+  * VDBMapping: Point cloud distance [m]: 0.074576; Coverage [%]: 0.724301
+
+##### Computation time (voxel_size = 0.1)
+* Sequence: 20220216_garden_day
+  * NVBLox: 14.2ms per frame (total 2000)
+  * VDBMapping: 384.062 ms per frame (total 2500)
+
+#### Appendix
+
+**Reconstruction results of NVBLox (voxel_size = 0.1)**
+
+<p align="center">
+	<center><img src="images/20220216_garden_day_mesh_img.png" width="450" /></center>
+    <br>
+    <center><img src="images/20220216_garden_day_mesh_img_eval_error.png" width="450" /></center>
+</p>
+
+
+
+
+

@@ -351,11 +351,12 @@ bool FuserLidar::integrateFrame(const int frame_number) {
     timer_integrate.Stop();
   }
 
-  if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate_color("fuser/integrate_color");
-    mapper_->integrateColor(color_frame, Twc, camera);
-    timer_integrate_color.Stop();
-  }
+  // TODO(jjiao): please use the optimized camera pose
+  // if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+  //   timing::Timer timer_integrate_color("fuser/integrate_color");
+  //   mapper_->integrateColor(color_frame, Twc, camera);
+  //   timer_integrate_color.Stop();
+  // }
 
   // if (mesh_frame_subsampling_ > 0) {
   //   if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
