@@ -311,12 +311,25 @@ bool FuserLidar::integrateFrame(const int frame_number) {
   DepthImage depth_frame;
   DepthImage height_frame;
   ColorImage color_frame;
-  Transform T_L_C;
+  Transform Twb;
   Camera camera;
   OSLidar oslidar;
   const datasets::DataLoadResult load_result = data_loader_->loadNext(
-      &depth_frame, &T_L_C, &camera, &oslidar, &height_frame, &color_frame);
+      &depth_frame, &Twb, &camera, &oslidar, &height_frame, &color_frame);
   timer_file.Stop();
+
+  Eigen::Quaternionf Qcb(0.500292, 0.490181, -0.508467, 0.500889);
+  Eigen::Vector3f tcb(0.067436, -0.022029, -0.078333);
+  Eigen::Quaternionf Qbc = Qcb.inverse();
+  Eigen::Vector3f tbc = -(Qbc * tcb);
+
+  Transform Tbc = Transform::Identity();
+  Tbc.translate(tbc);
+  Tbc.rotate(Qbc);
+  Transform Twc = Twb * Tbc;
+  // std::cout << "Twb: " << std::endl << Twb.matrix() << std::endl;
+  // std::cout << "Tbc: " << std::endl << Tbc.matrix() << std::endl;
+  // std::cout << "Twc: " << std::endl << Twc.matrix() << std::endl;
 
   if (load_result == datasets::DataLoadResult::kBadFrame) {
     LOG(INFO) << "Bad frame: wrong parameters of intrinsics or extrinsics";
@@ -334,21 +347,15 @@ bool FuserLidar::integrateFrame(const int frame_number) {
     timing::Timer timer_integrate("fuser/integrate_tsdf");
     oslidar.setDepthFrameCUDA(depth_frame.dataPtr());
     oslidar.setHeightFrameCUDA(height_frame.dataPtr());
-    mapper_->integrateOSLidarDepth(depth_frame, T_L_C, oslidar);
+    mapper_->integrateOSLidarDepth(depth_frame, Twb, oslidar);
     timer_integrate.Stop();
   }
 
-  // if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
-  //   timing::Timer timer_integrate("fuser/integrate_tsdf");
-  //   mapper_->integrateDepth(depth_frame, T_L_C, camera);
-  //   timer_integrate.Stop();
-  // }
-
-  // if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-  //   timing::Timer timer_integrate_color("fuser/integrate_color");
-  //   mapper_->integrateColor(color_frame, T_L_C, camera);
-  //   timer_integrate_color.Stop();
-  // }
+  if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+    timing::Timer timer_integrate_color("fuser/integrate_color");
+    mapper_->integrateColor(color_frame, Twc, camera);
+    timer_integrate_color.Stop();
+  }
 
   // if (mesh_frame_subsampling_ > 0) {
   //   if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {

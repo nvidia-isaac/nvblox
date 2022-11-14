@@ -127,8 +127,6 @@ std::string getPathForHeightImage(const std::string& base_path,
   std::stringstream ss;
   ss << base_path << "/seq-" << std::setfill('0') << std::setw(2) << seq_id
      << "/frame-" << std::setw(6) << frame_id << ".height.png";
-  // TODO(jjiao): cout function for debug, should be removed after tests
-  // std::cout << ss.str() << std::endl;
   return ss.str();
 }
 
@@ -215,10 +213,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   if (!depth_image_loader_->getNextImage(depth_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
-  // LOG(INFO) << "depth_frame: " << depth_frame_ptr->width() << " X "
-  //           << depth_frame_ptr->height()
-  //           << ", max range: " << image::max(*depth_frame_ptr)
-  //           << ", min range: " << image::min(*depth_frame_ptr);
   timer_file_depth.Stop();
 
   // Load the image into a Height Frame.
@@ -227,13 +221,9 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   if (!height_image_loader_->getNextImage(height_frame_ptr)) {
     return DataLoadResult::kNoMoreData;
   }
-  // LOG(INFO) << "height_frame: " << height_frame_ptr->width() << " X "
-  //           << height_frame_ptr->height()
-  //           << ", max height: " << image::max(*height_frame_ptr)
-  //           << ", min height: " << image::min(*height_frame_ptr);
   timer_file_coord.Stop();
 
-  // Load lidar intrinsics:
+  // NOTE(jjiao): Load lidar intrinsics:
   //  num_azimuth_divisions
   //  num_elevation_divisions
   //  horizontal_fov_rad
@@ -281,7 +271,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
             &camera_intrinsics)) {
       return DataLoadResult::kNoMoreData;
     }
-    // std::cout << "camera intrinsic: \n" << camera_intrinsics << std::endl;
 
     // Create a camera object.
     const int image_width = color_frame_ptr->cols();
@@ -310,6 +299,8 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   }
   *T_L_C_ptr = T_O_C;
   // std::cout << "T_L_C: \n" << T_L_C_ptr->matrix() << std::endl;
+
+  // TODO(jjiao): load lidar-camera extrinsics
 
   // Check that the loaded data doesn't contain NaNs or a faulty rotation
   // matrix. This does occur. If we find one, skip that frame and move to the

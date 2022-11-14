@@ -31,7 +31,9 @@
 
 ### Run an example with the FusionPortable dataset
 
-#### [Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
+[Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
+
+[Experiments on NVBlox and VDBMapping](docs/experiments.md)
 
 #### Demo 
 
@@ -65,7 +67,7 @@ tsdf_integrator_max_integration_distance_m 50 \
 Once it's done we can view the output mesh using the Open3D viewer.
 
 ```
-python3 ../../visualization/visualize_mesh.py 20220216_garden_day/mesh_0.1.ply
+python3 ../../visualization/visualize_mesh.py 20220216_garden_day_mesh.ply
 ```
 
 --------------------------
