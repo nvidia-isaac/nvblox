@@ -19,18 +19,19 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Class for casting rays through a voxelized space from origin to destination.
 class RayCaster {
  public:
   __host__ __device__ inline RayCaster(const Vector3f& origin,
                                        const Vector3f& destination,
                                        float scale = 1.0f);
 
-  // Returns the index, so in "unscaled" coordinates.
+  /// Returns the index, so in "unscaled" coordinates.
   __host__ __device__ inline bool nextRayIndex(Index3D* ray_index);
-  // Returns scaled coordinates. Just the above multiplied by the scale factor.
+  /// Returns scaled coordinates. Just the above multiplied by the scale factor.
   __host__ __device__ inline bool nextRayPositionScaled(Vector3f* ray_position);
 
-  // Just raycasts over the whole thing and puts them in a vector for you.
+  /// Just raycasts over the whole thing and puts them in a vector for you.
   __host__ void getAllIndices(std::vector<Index3D>* indices);
 
  private:

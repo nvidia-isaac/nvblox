@@ -22,6 +22,8 @@ limitations under the License.
 struct sqlite3;
 
 namespace nvblox {
+/// Class to wrap access to the C interface of SQLite in a slightly more
+/// usable format.
 class SqliteDatabase {
  public:
   /// Default constructor for invalid file. Must call open before using.
@@ -39,22 +41,23 @@ class SqliteDatabase {
   /// Close the file.
   bool close();
 
-  // Run a statement that does not have a return value.
+  /// Run a statement that does not have a return value.
   bool runStatement(const std::string& statement);
+  /// Run a return-value-less statement on a byte blob. 
   bool runStatementWithBlob(const std::string& statement,
                             const std::vector<Byte>& blob);
 
-  // Run a query that has a SINGLE return value of the given type:
+  /// Run a query that has a SINGLE return value of the given type:
   bool runSingleQueryString(const std::string& sql_query, std::string* result);
   bool runSingleQueryInt(const std::string& sql_query, int* result);
   bool runSingleQueryFloat(const std::string& sql_query, float* result);
   bool runSingleQueryBlob(const std::string& sql_query,
                           std::vector<Byte>* result);
 
-  // Returns MULTIPLE values.
+  /// Returns MULTIPLE values.
   bool runMultipleQueryString(const std::string& sql_query,
                               std::vector<std::string>* result);
-  // Return multiple values in an index.
+  /// Return multiple values in an index.
   bool runMultipleQueryIndex3D(const std::string& sql_query,
                                std::vector<Index3D>* result);
 

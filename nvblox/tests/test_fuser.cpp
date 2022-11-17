@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <gtest/gtest.h>
+#include <gflags/gflags.h>
 
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/executables/fuser.h"

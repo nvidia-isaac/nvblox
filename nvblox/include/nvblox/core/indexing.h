@@ -22,8 +22,8 @@ namespace nvblox {
 __host__ __device__ inline float voxelSizeToBlockSize(const float voxel_size);
 __host__ __device__ inline float blockSizeToVoxelSize(const float block_size);
 
-// Assuming a fixed-size voxel block, get the voxel index of a voxel at that
-// position within a block.
+/// Assuming a fixed-size voxel block, get the voxel index of a voxel at that
+/// position within a block.
 __host__ __device__ inline Index3D getVoxelIndexFromPositionInLayer(
     const float block_size, const Vector3f& position);
 

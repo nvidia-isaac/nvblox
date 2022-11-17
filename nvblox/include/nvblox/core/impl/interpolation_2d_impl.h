@@ -75,6 +75,12 @@ struct FloatPixelGreaterThanZero {
   }
 };
 
+struct ColorPixelAlphaGreaterThanZero {
+  __host__ __device__ static inline bool check(const Color& pixel_value) {
+    return pixel_value.a > 0;
+  }
+};
+
 }  // namespace checkers
 
 // CPU interfaces

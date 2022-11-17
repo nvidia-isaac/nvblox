@@ -17,8 +17,8 @@ limitations under the License.
 
 #include "nvblox/core/image.h"
 #include "nvblox/core/interpolation_2d.h"
-#include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/3dmatch.h"
+#include "nvblox/datasets/image_loader.h"
 #include "nvblox/io/csv.h"
 
 #include "nvblox/tests/gpu_image_routines.h"
@@ -218,6 +218,23 @@ TEST(ColorImageTest, InterpolationGPU) {
         static_cast<uint8_t>(std::round((u_px_vec[i].y() * 10.0f)));
     EXPECT_NEAR(values[i].g, x, kFloatEpsilon);
     EXPECT_NEAR(values[i].r, y, kFloatEpsilon);
+  }
+}
+
+TEST(ColorImageTest, LoadedImageAlpha) {
+  // Load 3dmatch image
+  const std::string base_path = "./data/3dmatch";
+  constexpr int seq_id = 1;
+  ColorImage image;
+  EXPECT_TRUE(datasets::load8BitColorImage(
+      datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
+                                                            0),
+      &image, MemoryType::kUnified));
+
+  for (int row_idx = 0; row_idx < image.rows(); row_idx++) {
+    for (int col_idx = 0; col_idx < image.rows(); col_idx++) {
+      CHECK_EQ(image(row_idx, col_idx).a, 255);
+    }
   }
 }
 

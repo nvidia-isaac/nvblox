@@ -60,11 +60,15 @@ class Scene {
  public:
   Scene();
 
-  /// === Creating an environment ===
+  /// Create an environment by adding primitives, which are then owned by the
+  /// scene.
   void addPrimitive(std::unique_ptr<Primitive> primitive);
 
-  /// Convenience functions for setting up bounded areas.
+  /// @brief  Adds a ground level (normal up) at a given height on the Z axis.
+  /// @param height Height, in meters, of the ground.
   void addGroundLevel(float height);
+  /// @brief  Adds a ceiling at a given height. All heights on the Z axis.
+  /// @param height Height, in meters, of the ceiling.
   void addCeiling(float height);
 
   /// Add 4 walls (infinite planes) bounding the space. In case this is not the
@@ -75,14 +79,14 @@ class Scene {
   /// Deletes all objects!
   void clear();
 
-  /// === Generating synthetic data from environment ===
   /// Generates a synthetic view given camera parameters and a transformation
   /// of the camera to the scene.
   void generateDepthImageFromScene(const Camera& camera, const Transform& T_S_C,
                                    float max_dist,
                                    DepthImage* depth_frame) const;
 
-  /// === Computing ground truth SDFs ===
+  /// Computes the ground truth SDFs (either TSDF or ESDF depending on template
+  /// parameter).
   template <typename VoxelType>
   void generateSdfFromScene(float max_dist,
                             VoxelBlockLayer<VoxelType>* layer) const;

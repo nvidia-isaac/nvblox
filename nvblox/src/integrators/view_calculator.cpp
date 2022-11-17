@@ -16,6 +16,7 @@ limitations under the License.
 #include "nvblox/integrators/view_calculator.h"
 
 #include "nvblox/core/bounding_boxes.h"
+#include "nvblox/utils/timing.h"
 
 namespace nvblox {
 
@@ -23,6 +24,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
     const Transform& T_L_C, const Camera& camera, const float block_size,
     const float max_distance) {
   CHECK_GT(max_distance, 0.0f);
+  timing::Timer("view_calculator/get_blocks_in_view_planes");
 
   // View frustum
   constexpr float kMinDistance = 0.0f;
@@ -50,6 +52,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewPlanes(
     const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
     const float block_size, const float truncation_distance_m,
     const float max_integration_distance_m) {
+  timing::Timer("view_calculator/get_blocks_in_image_view_planes");
   float min_depth, max_depth;
   std::tie(min_depth, max_depth) = image::minmaxGPU(depth_frame);
   float max_depth_plus_trunc = max_depth + truncation_distance_m;

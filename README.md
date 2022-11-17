@@ -1,11 +1,14 @@
 # nvblox
 Signed Distance Functions (SDFs) on NVIDIA GPUs.
 
+<div align="left"><img src="docs/images/nvblox_logo.png" width=256px/></div>
+
 An SDF library which offers
 * Support for storage of various voxel types
 * GPU accelerated agorithms such as:
   * TSDF construction
   * ESDF construction
+  * Meshing
 * ROS2 interface (see [isaac_ros_nvblox](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox))
 * ~~Python bindings~~ (coming soon)
 
@@ -31,7 +34,7 @@ We depend on:
 - gtest
 - glog
 - gflags (to run experiments)
-- CUDA 10.2 - 11.5 (others might work but are untested)
+- CUDA 11.0 - 11.6 (others might work but are untested)
 - Eigen (no need to explicitly install, a recent version is built into the library)
 - SQLite 3 (for serialization)
 Please run
@@ -69,11 +72,13 @@ you should see a mesh of a room:
 
 # Docker
 
-We have several dockerfiles which layer on top of one another for the following purposes:
+We have several dockerfiles (in the `docker` subfolder) which layer on top of one another for the following purposes:
 
 * **Docker.deps**
 * * This installs our dependencies.
 * * This is used in our CI, where the later steps (building and testing) are taken care of by Jenkins (and not docker).
+* **Docker.jetson_deps**
+* * Same as above, just on the Jetson (Jetpack 5 and above).
 * **Docker.build**
 * * Layers on top of Docker.deps.
 * * This builds our package.
@@ -101,13 +106,13 @@ Restart docker
 ```
 sudo systemctl restart docker
 ```
-Now Let's build Dockerfile.deps docker image. This image install contains our dependacies. 
+Now Let's build Dockerfile.deps docker image. This image install contains our dependencies. (In case you are running this on the Jetson, simply substitute docker/`Dockerfile.jetson_deps` below and the rest of the instructions remain the same.
 ```
-docker build -t nvblox_deps -f Dockerfile.deps .
+docker build -t nvblox_deps -f docker/Dockerfile.deps .
 ```
 Now let's build the Dockerfile.build. This image layers on the last, and actually builds the nvblox library.
 ```
-docker build -t nvblox -f Dockerfile.build .
+docker build -t nvblox -f docker/Dockerfile.build .
 ```
 Now let's run the 3DMatch example inside the docker. Note there's some additional complexity in the `docker run` command such that we can forward X11 to the host (we're going to be view a reconstruction in a GUI). Run the container using:
 ```
@@ -120,7 +125,7 @@ apt-get update
 apt-get install unzip
 wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
 unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
-cd nvblox/nvblox/build/experiments/
+cd nvblox/nvblox/build/executables/
 ./fuse_3dmatch ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
 ```
 Now let's visualize. From the same experiments folder run:
@@ -131,7 +136,7 @@ python3 ../../visualization/visualize_mesh.py mesh.ply
 ```
 
 # Additional instructions for Jetson Xavier
-These instructions are for a native build on the Jetson Xavier. A Docker based build is coming soon.
+These instructions are for a native build on the Jetson Xavier. You can see the instructions above for running in docker.
 
 The instructions for the native build above work, with one exception:
 
@@ -155,6 +160,15 @@ sudo apt-get install cmake
 ```
 export OPENBLAS_CORETYPE=ARMV8
 ```
+
+# Building for multiple GPU architectures
+By default, the library builds ONLY for the compute capability (CC) of the machine it's being built on. To build binaries that can be used across multiple machines (i.e., pre-built binaries for CI, for example), you can use the `BUILD_FOR_ALL_ARCHS` flag and set it to true. Example:
+```
+cmake .. -DBUILD_FOR_ALL_ARCHS=True -DCMAKE_INSTALL_PREFIX=../install/ && make -j8 && make install
+```
+
+# Building redistributable binaries, with static dependencies
+If you want to include nvblox in another CMake project, simply `find_package(nvblox)` should bring in the correct libraries and headers. However, if you want to include it in a different build system such as Bazel, you can see the instructions here: [docs/redistibutable.md].
 
 # License
 This code is under an [open-source license](LICENSE) (Apache 2.0). :)

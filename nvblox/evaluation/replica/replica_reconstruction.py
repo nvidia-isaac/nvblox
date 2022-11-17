@@ -22,6 +22,7 @@ import subprocess
 from pathlib import Path
 from typing import Tuple
 import json
+import pandas as pd
 
 import replica
 import timing
@@ -29,7 +30,9 @@ import timing
 
 def replica_reconstruction(dataset_path: Path,
                            output_root_path: Path = None,
-                           fuse_replica_binary_path: Path = None) -> Tuple[Path, Path]:
+                           fuse_replica_binary_path: Path = None,
+                           esdf_frame_subsampling : int = 1,
+                           mesh_frame_subsampling : int = -1) -> Tuple[Path, Path]:
     """Builds a reconstruction for the replica dataset
 
     Args:
@@ -42,6 +45,12 @@ def replica_reconstruction(dataset_path: Path,
 
         fuse_replica_binary_path (Path, optional): The path to the binary which does the
             fusion. Defaults to the build folder. Defaults to None.
+
+        esdf_frame_subsampling (int, optional): How often to compute the ESDF. We compute
+            Every N frames. Defaults to 1 (every frame).
+
+        mesh_frame_subsampling (int, optional): How often to compute the Mesh. We compute
+            Every N frames. Defaults to -1, which means compute once at the end.
 
     Raises:
         Exception: If the binary is not found.
@@ -71,21 +80,26 @@ def replica_reconstruction(dataset_path: Path,
     esdf_output_path_flag = "--esdf_output_path"
     timing_output_path_flag = "--timing_output_path"
     esdf_frame_subsampling_flag = "--esdf_frame_subsampling"
+    mesh_frame_subsampling_flag = "--mesh_frame_subsampling"
     subprocess.run([f"{fuse_replica_binary_path}", f"{dataset_path}",
                    mesh_output_path_flag, f"{reconstructed_mesh_path}",
                    esdf_output_path_flag, f"{reconstructed_esdf_path}",
                    timing_output_path_flag, f"{timing_path}",
-                   esdf_frame_subsampling_flag, f"{1}"])
+                   esdf_frame_subsampling_flag, f"{esdf_frame_subsampling}",
+                   mesh_frame_subsampling_flag, f"{mesh_frame_subsampling}"])
 
     # Extract the means of the timers
     timings_df = timing.get_timings_as_dataframe(timing_path)
     means_series = timings_df['mean']
+    means_series.index = ['mean/' + row_name for row_name in means_series.index]
+    total_series = timings_df['total_time']
+    total_series.index = ['total/' + row_name for row_name in total_series.index]
 
     # Write the results to a JSON
     output_timings_path = output_dir / 'timing.json'
     print(f"Writing the timings to: {output_timings_path}")
     with open(output_timings_path, "w") as timings_file:
-        json.dump(means_series.to_dict(), timings_file, indent=4)
+        json.dump(pd.concat([means_series, total_series]).to_dict(), timings_file, indent=4)
 
     return reconstructed_mesh_path, reconstructed_esdf_path
 
@@ -93,8 +107,7 @@ def replica_reconstruction(dataset_path: Path,
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        description="""Reconstruct a mesh from the replica dataset and test it 
-                       against ground-truth geometry.""")
+        description="""Reconstruct a mesh from the replica dataset.""")
 
     parser.add_argument("dataset_path", type=Path,
                         help="Path to the dataset root folder.")

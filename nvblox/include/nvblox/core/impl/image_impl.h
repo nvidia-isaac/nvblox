@@ -18,8 +18,6 @@ limitations under the License.
 #include <algorithm>
 
 #include "nvblox/core/cuda/image_cuda.h"
-#include "nvblox/core/interpolation_2d.h"
-#include "nvblox/io/csv.h"
 
 namespace nvblox {
 

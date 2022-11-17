@@ -22,12 +22,12 @@ limitations under the License.
 
 namespace nvblox {
 
-// Bind default functions for the given types.
+/// Bind default functions for the given types.
 template <typename LayerType>
 LayerSerializationFunctions bindDefaultFunctions();
 
-// Registers all the common layer types for serialization. Must be called before
-// you serialize or de-serialize anything.
+/// Registers all the common layer types for serialization. Must be called before
+/// you serialize or de-serialize anything.
 inline void registerCommonTypes();
 
 }  // namespace nvblox

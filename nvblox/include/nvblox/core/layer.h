@@ -23,10 +23,12 @@ limitations under the License.
 #include "nvblox/core/traits.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
+#include "nvblox/core/unified_vector.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 
 namespace nvblox {
 
+/// Base class for all layer objects.
 class BaseLayer {
  public:
   typedef std::shared_ptr<BaseLayer> Ptr;
@@ -37,17 +39,18 @@ class BaseLayer {
   // Just an interface class
 };
 
+/// A layer that contains blocks, which are stored in a hash map. 
 template <typename _BlockType>
 class BlockLayer : public BaseLayer {
  public:
   typedef std::shared_ptr<BlockLayer> Ptr;
   typedef std::shared_ptr<const BlockLayer> ConstPtr;
 
-  // Check that custom block types implement allocate
+  /// Check that custom block types implement allocate
   static_assert(traits::has_allocate<_BlockType>::value,
                 "BlockType must implement an allocate() function.");
 
-  // Allows inspection of the contained BlockType through LayerType::BlockType
+  /// Allows inspection of the contained BlockType through LayerType::BlockType
   typedef _BlockType BlockType;
   typedef BlockLayer<BlockType> LayerType;
   typedef GPULayerView<BlockType> GPULayerViewType;
@@ -61,55 +64,55 @@ class BlockLayer : public BaseLayer {
         gpu_layer_view_up_to_date_(false) {}
   virtual ~BlockLayer() {}
 
-  // Deep copies, with optionally changing the memory type.
+  /// Deep copies, with optionally changing the memory type.
   BlockLayer(const BlockLayer& other);
   BlockLayer(const BlockLayer& other, MemoryType memory_type);
   BlockLayer& operator=(const BlockLayer& other);
 
-  // Move operations
+  /// Move operations
   BlockLayer(BlockLayer&& other) = default;
   BlockLayer& operator=(BlockLayer&& other) = default;
 
-  // Block accessors by index.
+  /// Block accessors by index.
   typename BlockType::Ptr getBlockAtIndex(const Index3D& index);
   typename BlockType::ConstPtr getBlockAtIndex(const Index3D& index) const;
   typename BlockType::Ptr allocateBlockAtIndex(const Index3D& index);
 
-  // Block accessors by position.
+  /// Block accessors by position.
   typename BlockType::Ptr getBlockAtPosition(const Vector3f& position);
   typename BlockType::ConstPtr getBlockAtPosition(
       const Vector3f& position) const;
   typename BlockType::Ptr allocateBlockAtPosition(const Vector3f& position);
 
-  // Get all blocks indices.
+  /// Get all blocks indices.
   std::vector<Index3D> getAllBlockIndices() const;
 
-  // Check if allocated
+  /// Check if allocated
   bool isBlockAllocated(const Index3D& index) const;
 
   __host__ __device__ float block_size() const { return block_size_; }
   int numAllocatedBlocks() const { return blocks_.size(); }
 
-  // Clear the layer of all data
+  /// Clear the layer of all data
   void clear() { blocks_.clear(); }
 
-  // Clear (deallocate) blocks passed in
-  // Note if a block does not exist, this function just (silently)
-  // continues trying the rest of the list.
+  /// Clear (deallocate) blocks passed in
+  /// Note if a block does not exist, this function just (silently)
+  /// continues trying the rest of the list.
   void clearBlocks(const std::vector<Index3D>& indices);
 
   MemoryType memory_type() const { return memory_type_; }
 
-  // GPU Hash
-  // Note(alexmillane): The hash returned here is invalidated by calls to
-  // allocateBlock
+  /// GPU Hash
+  /// Note(alexmillane): The hash returned here is invalidated by calls to
+  /// allocateBlock
   GPULayerViewType getGpuLayerView() const;
 
  protected:
   float block_size_;
   MemoryType memory_type_;
 
-  // CPU Hash (Index3D -> BlockType::Ptr)
+  /// CPU Hash (Index3D -> BlockType::Ptr)
   BlockHash blocks_;
 
   /// GPU Hash
@@ -124,6 +127,8 @@ class BlockLayer : public BaseLayer {
   mutable std::unique_ptr<GPULayerViewType> gpu_layer_view_;
 };
 
+/// Specialization for BlockLayer that exclusively contains VoxelBlocks to make
+/// access easier.
 template <typename VoxelType>
 class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
  public:
@@ -145,13 +150,13 @@ class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
   VoxelBlockLayer() = delete;
   virtual ~VoxelBlockLayer() {}
 
-  // Deep copies
+  /// Deep copies
   VoxelBlockLayer(const VoxelBlockLayer& other);
   VoxelBlockLayer(const VoxelBlockLayer& other, MemoryType memory_type);
   // Assignment retains the current layer's memory type.
   VoxelBlockLayer& operator=(const VoxelBlockLayer& other);
 
-  // Move operations
+  /// Move operations
   VoxelBlockLayer(VoxelBlockLayer&& other) = default;
   VoxelBlockLayer& operator=(VoxelBlockLayer&& other) = default;
 
@@ -171,6 +176,10 @@ class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
   void getVoxels(const std::vector<Vector3f>& positions_L,
                  std::vector<VoxelType>* voxels_ptr,
                  std::vector<bool>* success_flags_ptr) const;
+
+  void getVoxelsGPU(const device_vector<Vector3f>& positions_L,
+                    device_vector<VoxelType>* voxels_ptr,
+                    device_vector<bool>* success_flags_ptr) const;
 
   /// Get a voxel by copy by (closest) position
   /// The position is given with respect to the layer frame (L). The function

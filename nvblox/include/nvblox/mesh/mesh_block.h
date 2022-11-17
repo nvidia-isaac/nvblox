@@ -26,17 +26,19 @@ limitations under the License.
 
 namespace nvblox {
 
-// A mesh block containing all of the triangles from this block.
-// Each block contains only the UPPER part of its neighbors: i.e., the max
-// x, y, and z axes. Its neighbors are responsible for the rest.
+/// A mesh block containing all of the triangles from this block.
+/// Each block contains only the UPPER part of its neighbors: i.e., the max
+/// x, y, and z axes. Its neighbors are responsible for the rest.
 struct MeshBlock {
   typedef std::shared_ptr<MeshBlock> Ptr;
   typedef std::shared_ptr<const MeshBlock> ConstPtr;
 
+  /// Create a mesh block of the specified memory type.
   MeshBlock(MemoryType memory_type = MemoryType::kDevice);
 
-  // "Clone" copy constructor, with the possibility to change device type.
+  /// "Clone" copy constructor, with the possibility to change device type.
   MeshBlock(const MeshBlock& mesh_block);
+  /// "Clone" to a different memory type.
   MeshBlock(const MeshBlock& mesh_block, MemoryType memory_type);
 
   // Mesh Data
@@ -49,17 +51,21 @@ struct MeshBlock {
   unified_vector<Color> colors;
   unified_vector<int> triangles;
 
+  /// Clear all data within the mesh block.
   void clear();
 
-  // Resize and reserve.
+  /// Resize vertices and normals to the correct number of vertices.
   void resizeToNumberOfVertices(size_t new_size);
+  /// Reserve space in the vertices and normals vectors.
   void reserveNumberOfVertices(size_t new_capacity);
 
+  /// Size of the vertices vector.
   size_t size() const;
+  /// Capacity (allocated size) of the vertices vector.
   size_t capacity() const;
 
-  // Resize colors/intensities such that:
-  // `colors.size()/intensities.size() == vertices.size()`
+  /// Resize colors/intensities such that:
+  /// `colors.size()/intensities.size() == vertices.size()`
   void expandColorsToMatchVertices();
 
   // Copy mesh data to the CPU.
@@ -68,13 +74,13 @@ struct MeshBlock {
   std::vector<int> getTriangleVectorOnCPU() const;
   std::vector<Color> getColorVectorOnCPU() const;
 
-  // Note(alexmillane): Memory type ignored, MeshBlocks live in CPU memory.
+  /// Note(alexmillane): Memory type ignored, MeshBlocks live in CPU memory.
   static Ptr allocate(MemoryType memory_type);
 };
 
-// Helper struct for mesh blocks on CUDA.
-// NOTE: We need this because we cant pass MeshBlock to kernel functions because
-// of the presence of unified_vector members.
+/// Helper struct for mesh blocks on CUDA.
+/// NOTE: We need this because we can't pass MeshBlock to kernel functions because
+/// of the presence of unified_vector members.
 struct CudaMeshBlock {
   CudaMeshBlock() = default;
   CudaMeshBlock(MeshBlock* block);

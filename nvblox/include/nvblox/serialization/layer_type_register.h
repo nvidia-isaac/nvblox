@@ -26,12 +26,15 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Struct of various layer parameters of different types.
 struct LayerParameterStruct {
   std::map<std::string, std::string> string_params;
   std::map<std::string, int> int_params;
   std::map<std::string, float> float_params;
 };
 
+/// Struct holding callbacks for serialization functions for various layer
+/// types.
 struct LayerSerializationFunctions {
   // Serialization functions.
   typedef std::function<LayerParameterStruct(const BaseLayer*)>
@@ -69,23 +72,24 @@ class LayerTypeRegister {
   // No constructor!
   LayerTypeRegister() = delete;
 
-  // Register a type and how to construct one.
+  /// Register a type and how to construct one.
   static void registerType(
       const std::string& type_name, const std::type_index& type_index,
       const LayerSerializationFunctions& serialization_functions);
 
-  // Create a layer of a given type.
+  /// Create a layer of a given type.
   static std::unique_ptr<BaseLayer> createLayer(
       const std::string& type_name, MemoryType memory_type,
       const LayerParameterStruct& layer_params);
 
-  // Get the struct of function callbacks.
+  /// Get the struct of function callbacks.
   static LayerSerializationFunctions getSerializationFunctions(
       const std::string& type_name);
 
-  // Get the name of the layer based on its type index.
+  /// Get the name of the layer based on its type index.
   static std::string getLayerName(const std::type_index& type_index);
 
+  /// Look up the type index based on a layer name. 
   static std::type_index getLayerTypeIndex(const std::string& type_name);
 
  private:

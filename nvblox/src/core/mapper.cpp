@@ -202,4 +202,56 @@ bool RgbdMapper::loadMap(const std::string& filename) {
   return true;
 }
 
+// Human stuff below
+
+HumanMapper::HumanMapper(float voxel_size_m, MemoryType memory_type)
+    : RgbdMapper(voxel_size_m, memory_type) {}
+
+void HumanMapper::integrateDepth(const DepthImage& depth_frame,
+                                 const MonoImage& mask, const Transform& T_L_C,
+                                 const Camera& camera) {
+  // Remove humans from the depth image
+  image_masker_.splitImageOnGPU(depth_frame, mask, &depth_frame_no_humans_,
+                                &depth_frame_only_humans_);
+  // Do normal integration with the humans removed
+  RgbdMapper::integrateDepth(depth_frame_no_humans_, T_L_C, camera);
+}
+
+void HumanMapper::integrateDepth(const DepthImage& depth_frame,
+                                 const MonoImage& mask, const Transform& T_L_CD,
+                                 const Transform& T_CM_CD,
+                                 const Camera& depth_camera,
+                                 const Camera& mask_camera) {
+  // Remove humans from the depth image
+  image_masker_.splitImageOnGPU(depth_frame, mask, T_CM_CD, depth_camera,
+                                mask_camera, &depth_frame_no_humans_,
+                                &depth_frame_only_humans_);
+
+  // Do normal integration with the humans removed
+  RgbdMapper::integrateDepth(depth_frame_no_humans_, T_L_CD, depth_camera);
+}
+
+void HumanMapper::integrateColor(const ColorImage& color_frame,
+                                 const MonoImage& mask, const Transform& T_L_C,
+                                 const Camera& camera) {
+  // Remove humans from the color image
+  image_masker_.splitImageOnGPU(color_frame, mask, &color_frame_no_humans_,
+                                &color_frame_only_humans_);
+  // Do normal integration with the humans removed
+  RgbdMapper::integrateColor(color_frame_no_humans_, T_L_C, camera);
+}
+
+const DepthImage& HumanMapper::getLastDepthFrameWithoutHumans() {
+  return depth_frame_no_humans_;
+}
+const DepthImage& HumanMapper::getLastDepthFrameOnlyHumans() {
+  return depth_frame_only_humans_;
+}
+const ColorImage& HumanMapper::getLastColorFrameWithoutHumans() {
+  return color_frame_no_humans_;
+}
+const ColorImage& HumanMapper::getLastColorFrameOnlyHumans() {
+  return color_frame_only_humans_;
+}
+
 }  // namespace nvblox

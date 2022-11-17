@@ -116,9 +116,7 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path,
                                    const int seq_id) {
-  // Object to load 3DMatch data
   auto data_loader = std::make_unique<DataLoader>(base_path, seq_id);
-  // Fuser
   return std::make_unique<Fuser>(std::move(data_loader));
 }
 

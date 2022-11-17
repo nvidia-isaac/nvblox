@@ -166,7 +166,7 @@ inline std::vector<bool> unified_vector<bool>::toVector() const {
                              sizeof(bool) * buffer_size_, cudaMemcpyDefault));
   // Now populate the vector
   std::vector<bool> vect(buffer_size_);
-  for (int i = 0; i < buffer_size_; i++) {
+  for (size_t i = 0; i < buffer_size_; i++) {
     vect[i] = bool_buffer[i];
   }
   return vect;

@@ -22,6 +22,7 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Class to integrate TSDF data into a mesh using marching cubes.
 class MeshIntegrator {
  public:
   MeshIntegrator();
@@ -32,18 +33,25 @@ class MeshIntegrator {
       const TsdfLayer& distance_layer, BlockLayer<MeshBlock>* mesh_layer,
       const DeviceType device_type = DeviceType::kGPU);
 
-  /// Integrates only the selected blocks from the distance layer.
+  /// Integrates only the selected blocks from the distance layer on the CPU.
+  /// Prefer to use the GPU version.
   bool integrateBlocksCPU(const TsdfLayer& distance_layer,
                           const std::vector<Index3D>& block_indices,
                           BlockLayer<MeshBlock>* mesh_layer);
 
+  /// @brief Integrate new TSDF blocks into a mesh on the GPU.
+  /// @param distance_layer The TSDF layer to integrate.
+  /// @param block_indices Which block indices to integrate, can either be
+  /// updated ones or all blocks in the TSDF layer.
+  /// @param mesh_layer The mesh layer for output.
+  /// @return Whether the integration succeeded.
   bool integrateBlocksGPU(const TsdfLayer& distance_layer,
                           const std::vector<Index3D>& block_indices,
                           BlockLayer<MeshBlock>* mesh_layer);
 
-  // Color mesh layer.
-  // TODO(alexmillane): Currently these functions color vertices by taking the
-  // CLOSEST color. Would be good to have an option at least for interpolation.
+  /// Color mesh layer.
+  /// TODO(alexmillane): Currently these functions color vertices by taking the
+  /// CLOSEST color. Would be good to have an option at least for interpolation.
   void colorMesh(const ColorLayer& color_layer, MeshLayer* mesh_layer);
   void colorMesh(const ColorLayer& color_layer,
                  const std::vector<Index3D>& block_indices,

@@ -19,6 +19,8 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Helper class for handling input LIDAR pointclouds and storing the LIDAR
+/// intrinsics. This helps convert a LIDAR pointcloud into a depth image.
 class Lidar {
  public:
   Lidar() = delete;
@@ -27,37 +29,37 @@ class Lidar {
                                    float vertical_fov_rad);
   __host__ __device__ inline ~Lidar() = default;
 
-  // Projects a 3D point to the (floating-point) image plane
+  /// Projects a 3D point to the (floating-point) image plane
   __host__ __device__ inline bool project(const Vector3f& p_C,
                                           Vector2f* u_C) const;
 
-  // Projects a 3D point to the (index-based) image plane
+  /// Projects a 3D point to the (index-based) image plane
   __host__ __device__ inline bool project(const Vector3f& p_C,
                                           Index2D* u_C) const;
 
-  // Gets the depth of a point
+  /// Gets the depth of a point
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
-  // Back projection (image plane point to 3D point)
+  /// Back projection (image plane point to 3D point)
   __host__ __device__ inline Vector3f unprojectFromImagePlaneCoordinates(
       const Vector2f& u_C, const float depth) const;
   __host__ __device__ inline Vector3f unprojectFromPixelIndices(
       const Index2D& u_C, const float depth) const;
 
-  // Back projection (image plane point to ray)
-  // NOTE(alexmillane): These return normalized vectors
+  /// Back projection (image plane point to ray)
+  /// NOTE(alexmillane): These return normalized vectors
   __host__ __device__ inline Vector3f vectorFromImagePlaneCoordinates(
       const Vector2f& u_C) const;
   __host__ __device__ inline Vector3f vectorFromPixelIndices(
       const Index2D& u_C) const;
 
-  // Conversions between pixel indices and image plane coordinates
+  /// Conversions between pixel indices and image plane coordinates
   __host__ __device__ inline Vector2f pixelIndexToImagePlaneCoordsOfCenter(
       const Index2D& u_C) const;
   __host__ __device__ inline Index2D imagePlaneCoordsToPixelIndex(
       const Vector2f& u_C) const;
 
-  // View
+  /// View
   __host__ inline AxisAlignedBoundingBox getViewAABB(
       const Transform& T_L_C, const float min_depth,
       const float max_depth) const;
@@ -69,10 +71,10 @@ class Lidar {
   __host__ __device__ inline int rows() const;
   __host__ __device__ inline int cols() const;
 
-  // Equality
+  /// Equality
   __host__ inline friend bool operator==(const Lidar& lhs, const Lidar& rhs);
 
-  // Hash
+  /// Hash
   struct Hash {
     __host__ inline size_t operator()(const Lidar& lidar) const;
   };

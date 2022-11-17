@@ -24,6 +24,7 @@ namespace io {
 
 void writeToCsv(const std::string& filepath, const DepthImage& frame);
 void writeToCsv(const std::string& filepath, const ColorImage& frame);
+void writeToCsv(const std::string& filepath, const MonoImage& frame);
 
 template <typename Derived>
 void writeToCsv(const std::string& filepath,

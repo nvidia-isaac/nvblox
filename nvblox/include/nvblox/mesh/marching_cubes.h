@@ -30,25 +30,25 @@
 namespace nvblox {
 namespace marching_cubes {
 
-// This (internal) struct contains intermediate results of marching cubes.
+/// This (internal) struct contains intermediate results of marching cubes.
 struct PerVoxelMarchingCubesResults {
-  // The 3D positions of the corners of a 2x2x2 cube of voxels formed by the
-  // surrounding voxel neighbours in the positive direction of each coordinate.
+  /// The 3D positions of the corners of a 2x2x2 cube of voxels formed by the
+  /// surrounding voxel neighbours in the positive direction of each coordinate.
   Vector3f vertex_coords[8];
-  // The value of the TSDF at each of the neighbouring voxels described above.
+  /// The value of the TSDF at each of the neighbouring voxels described above.
   float vertex_sdf[8];
-  // Does this voxel contain a mesh? (Does it straddle a zero level set?)
+  /// Does this voxel contain a mesh? (Does it straddle a zero level set?)
   bool contains_mesh = false;
-  // The index into the marching cubes triangle table (found in
-  // nvblox/mesh/impl/marching_cubes_table.h). This index is determined based on
-  // the tsdf configuration (+/-) of the surrounding voxels and is the main
-  // contribution of marching cubes algorithm.
+  /// The index into the marching cubes triangle table (found in
+  /// nvblox/mesh/impl/marching_cubes_table.h). This index is determined based on
+  /// the tsdf configuration (+/-) of the surrounding voxels and is the main
+  /// contribution of marching cubes algorithm.
   uint8_t marching_cubes_table_index = 0;
-  // At the end of marching cubes, vertices calculated for this and other voxels
-  // in this MeshBlock are stored in a single vector. This member indicates where
-  // in this vertex vector the vertices associated with this voxel begin. It is
-  // calculated through an exclusive prefix sum of the numbers of vertices
-  // in each voxel of this MeshBlock.
+  /// At the end of marching cubes, vertices calculated for this and other voxels
+  /// in this MeshBlock are stored in a single vector. This member indicates where
+  /// in this vertex vector the vertices associated with this voxel begin. It is
+  /// calculated through an exclusive prefix sum of the numbers of vertices
+  /// in each voxel of this MeshBlock.
   int vertex_vector_start_index;
 };
 

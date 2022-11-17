@@ -1,0 +1,20 @@
+FROM nvcr.io/nvidia/l4t-jetpack:r35.1.0
+
+# TZData goes first.
+RUN apt-get update
+ENV TZ Europe/Berlin
+ENV DEBIAN_FRONTEND noninteractive
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get install -y tzdata
+
+# Install basics.
+RUN apt-get update
+RUN apt-get install -y ssh git jq gnupg apt-utils software-properties-common build-essential cmake
+
+# Install dependencies.
+RUN apt-get install -y libgoogle-glog-dev libgtest-dev curl libsqlite3-dev
+
+# Build gtest because gtest doesn't do this for you for some reason.
+RUN cd /usr/src/googletest && cmake . && cmake --build . --target install
+
+ENV DEBIAN_FRONTEND teletype

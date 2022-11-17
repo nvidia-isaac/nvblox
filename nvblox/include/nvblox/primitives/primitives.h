@@ -57,7 +57,7 @@ class Primitive {
  public:
   enum class Type { kPlane, kCube, kSphere, kCylinder };
 
-  // Epsilon for ray intersection and computation.
+  /// Epsilon for ray intersection and computation.
   static constexpr float kEpsilon = 1e-4;
 
   Primitive(const Vector3f& center, Type type)
@@ -84,6 +84,7 @@ class Primitive {
   Color color_;
 };
 
+/// Primitive sphere, given a center and a radius.
 class Sphere : public Primitive {
  public:
   Sphere(const Vector3f& center, float radius)
@@ -102,6 +103,8 @@ class Sphere : public Primitive {
   float radius_;
 };
 
+/// Primitive cube, given a center and an X,Y,Z size (can be a rectangular
+/// prism).
 class Cube : public Primitive {
  public:
   Cube(const Vector3f& center, const Vector3f& size)
@@ -119,6 +122,7 @@ class Cube : public Primitive {
   Vector3f size_;
 };
 
+/// Primitive plane, given a center and a normal.
 /// Requires normal being passed in to ALREADY BE NORMALIZED!!!!
 class Plane : public Primitive {
  public:
@@ -142,7 +146,7 @@ class Plane : public Primitive {
   Vector3f normal_;
 };
 
-/// Cylinder centered on the XY plane!
+/// Cylinder centered on the XY plane, with a given radius and height (in Z).
 class Cylinder : public Primitive {
  public:
   Cylinder(const Vector3f& center, float radius, float height)

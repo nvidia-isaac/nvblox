@@ -24,13 +24,13 @@ limitations under the License.
 namespace nvblox {
 namespace interpolation {
 
-// Single points
+/// Single points
 bool interpolateOnCPU(const Vector3f& p_L, const TsdfLayer& layer,
                       float* distance);
 bool interpolateOnCPU(const Vector3f& p_L, const EsdfLayer& layer,
                       float* distance);
 
-// Vectors of points
+/// Vectors of points
 template <typename VoxelType>
 void interpolateOnCPU(const std::vector<Vector3f>& points_L,
                       const VoxelBlockLayer<VoxelType>& layer,

@@ -115,6 +115,11 @@ def evaluate_mesh(reconstructed_mesh_path: Path,
     with open(output_statistics_path, "w") as statistics_file:
         json.dump(statistics_dict, statistics_file, indent=4)
 
+    # Write raw errors to a file
+    errors_path = output_dir / 'surface_errors.txt'
+    print(f'Writing errors to: {errors_path}')
+    np.savetxt(errors_path, per_vertex_errors)
+
     # Visualization
     if do_error_visualization:
         o3d.visualization.draw_geometries([error_mesh])

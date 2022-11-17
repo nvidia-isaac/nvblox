@@ -22,6 +22,7 @@ add_library(nvblox_test_utils SHARED
     lib/cuda/gpu_layer_utils.cu
     lib/cuda/increment_kernel.cu
     lib/cuda/interpolation_2d_gpu.cu
+    lib/cuda/layer.cu
     lib/cuda/mesh_utils.cu
     lib/cuda/projective_tsdf_integrator_cuda_components.cu
     lib/cuda/test_utils_cuda.cu
@@ -152,3 +153,19 @@ gtest_discover_tests(test_bounding_spheres ${TEST_OPTIONS})
 add_executable(test_mapper test_mapper.cpp)
 target_link_libraries(test_mapper nvblox_test_utils)
 gtest_discover_tests(test_mapper ${TEST_OPTIONS})
+
+add_executable(test_image_masker test_image_masker.cpp)
+target_link_libraries(test_image_masker nvblox_test_utils)
+gtest_discover_tests(test_image_masker ${TEST_OPTIONS})
+
+add_executable(test_human_mapper test_human_mapper.cpp)
+target_link_libraries(test_human_mapper nvblox_test_utils)
+gtest_discover_tests(test_human_mapper ${TEST_OPTIONS})
+
+add_executable(test_image_projector test_image_projector.cpp)
+target_link_libraries(test_image_projector nvblox_test_utils)
+gtest_discover_tests(test_image_projector ${TEST_OPTIONS})
+
+add_executable(test_pointcloud test_pointcloud.cpp)
+target_link_libraries(test_pointcloud nvblox_test_utils)
+gtest_discover_tests(test_pointcloud ${TEST_OPTIONS})

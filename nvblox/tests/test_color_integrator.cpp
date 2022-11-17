@@ -98,6 +98,11 @@ class TestProjectiveColorIntegratorGPU : public ProjectiveColorIntegrator {
   FRIEND_TEST(ColorIntegrationTest, TruncationBandTest);
 };
 
+bool colorsEqualIgnoreAlpha(const Color& color_1, const Color& color_2) {
+  return (color_1.r == color_2.r) && (color_1.g == color_2.g) &&
+         (color_1.b == color_2.b);
+}
+
 ColorImage generateSolidColorImage(const Color& color, const int height,
                                    const int width) {
   // Generate a random color for this scene
@@ -137,7 +142,7 @@ float checkSphereColor(const ColorLayer& color_layer, const Vector3f& center,
                          const Color& color_2) -> void {
     ++num_tested;
     if (voxel.weight >= 1.0f) {
-      EXPECT_EQ(voxel.color, color_2);
+      EXPECT_TRUE(colorsEqualIgnoreAlpha(voxel.color, color_2));
       ++num_observed;
     }
   };
@@ -262,7 +267,7 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
   auto color_check_lambda = [&color](const Index3D& voxel_idx,
                                      const ColorVoxel* voxel) -> void {
     if (voxel->weight > 0.0f) {
-      EXPECT_EQ(voxel->color, color);
+      EXPECT_TRUE(colorsEqualIgnoreAlpha(voxel->color, color));
     }
   };
 

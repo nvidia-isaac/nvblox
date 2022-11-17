@@ -16,6 +16,7 @@ limitations under the License.
 #include <gtest/gtest.h>
 
 #include "nvblox/core/types.h"
+#include "nvblox/core/interpolation_2d.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
 
