@@ -21,18 +21,27 @@ limitations under the License.
 #include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/utils/timing.h"
+#include "nvblox/utils/weight_function.h"
 
 namespace nvblox {
+// setting the voxel update method
+// 1: constant weight, truncate the fused_distance
+// 2: constant weight, truncate the voxel_distance_measured
+// 3: linear weight, truncate the voxel_distance_measured
+const int voxel_update_method = 3;
+}  // namespace nvblox
 
+namespace nvblox {
 // TODO(jjiao): update the voxel according to the traditional TSDF update method
-// TODO: probabilistic update
+// TODO(jjiao): we can try different methods based on the probabilitics to
+// improve the voxel update
 __device__ inline bool updateVoxel(const float surface_depth_measured,
                                    TsdfVoxel* voxel_ptr,
                                    const float voxel_depth_m,
                                    const float truncation_distance_m,
                                    const float max_weight) {
   // Get the MEASURED depth of the VOXEL
-  const float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
+  float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
 
   // If we're behind the negative truncation distance, just continue.
   if (voxel_distance_measured < -truncation_distance_m) {
@@ -46,25 +55,57 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
   // NOTE(alexmillane): We could try to use CUDA math functions to speed up
   // below
   // https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__SINGLE.html#group__CUDA__MATH__SINGLE
-
-  // Fuse
-  constexpr float measurement_weight = 1.0f;
-  float fused_distance = (voxel_distance_measured * measurement_weight +
-                          voxel_distance_current * voxel_weight_current) /
-                         (measurement_weight + voxel_weight_current);
-
-  // Clip
-  if (fused_distance > 0.0f) {
-    fused_distance = fmin(truncation_distance_m, fused_distance);
-  } else {
-    fused_distance = fmax(-truncation_distance_m, fused_distance);
+  if (voxel_update_method == 1) {
+    // Fuse
+    constexpr float measurement_weight = 1.0f;
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    // Clip
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    // Write NEW voxel values (to global GPU memory)
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
+  } else if (voxel_update_method == 2) {
+    voxel_distance_measured =
+        fminf(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight = tsdf_constant_weight(voxel_distance_measured);
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
+  } else if (voxel_update_method == 3) {
+    voxel_distance_measured =
+        fminf(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight =
+        tsdf_linear_weight(voxel_distance_measured, truncation_distance_m);
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
   }
-  const float weight =
-      fmin(measurement_weight + voxel_weight_current, max_weight);
-
-  // Write NEW voxel values (to global GPU memory)
-  voxel_ptr->distance = fused_distance;
-  voxel_ptr->weight = weight;
   return true;
 }
 
@@ -278,6 +319,7 @@ __global__ void integrateBlocksKernel(
               max_weight);
 }
 
+// OSLiDAR
 // TODO(jjiao): main function to integrate blocks in GPU
 __global__ void integrateBlocksKernel(
     const Index3D* block_indices_device_ptr, const OSLidar lidar,
@@ -295,6 +337,7 @@ __global__ void integrateBlocksKernel(
   Vector3f p_voxel_center_C;
   if (!projectThreadVoxel(block_indices_device_ptr, lidar, T_C_L, block_size,
                           &u_px, &voxel_depth_m, &p_voxel_center_C)) {
+    // TODO(jjiao): please remove these sentences after debugging
     // printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
     //        u_px.y(), p_voxel_center_C.x(), p_voxel_center_C.y(),
     //        p_voxel_center_C.z(), voxel_depth_m);

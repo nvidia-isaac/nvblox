@@ -87,7 +87,7 @@ class ProjectiveIntegratorBase {
 
   // Params
   float truncation_distance_vox_ = 4.0f;
-  float max_weight_ = 100.0f;
+  float max_weight_ = 100.0f;  // TODO(jjiao): set a proper max_weight
   float max_integration_distance_m_ = 10.0f;
 
   // Frustum calculation.

@@ -270,7 +270,10 @@ int FuserLidar::run() {
     outputMapToFile();
   }
 
-  LOG(INFO) << nvblox::timing::Timing::Print();
+  // std::vector<std::string> keywords = {std::string("fuser"),
+  //                                      std::string("tsdf")};
+  std::vector<std::string> keywords = {std::string("integrate")};
+  LOG(INFO) << nvblox::timing::Timing::Print(keywords);
 
   LOG(INFO) << "Writing timings to file.";
   outputTimingsToFile();

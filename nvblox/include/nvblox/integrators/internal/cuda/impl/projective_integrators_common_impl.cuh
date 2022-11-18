@@ -20,6 +20,17 @@ namespace nvblox {
 template <typename SensorType>
 // NOTE(jjiao): this function project a voxel in the world onto the camera plane
 // to check whether the voxel is visible or not
+/*
+ * This function projects a voxel in the world onto the camera plane to check
+ whether the voxel is visible or not
+ * @param [in] block_indices_device_ptr:
+ * @param [in] sensor: the sensor object, like the camera, lidar, etc
+ * @param [in] T_C_L: the transformation from the world to the camera
+ * @param [in] block_size:
+ * @param [out] u_px_ptr: the image coordinates projected from the voxel
+ * @param [out] u_depth_ptr: the depth of the 3D points
+ * @param [out] p_voxel_center_C_ptr: the voxel in the world coordinate system
+*/
 __device__ inline bool projectThreadVoxel(
     const Index3D* block_indices_device_ptr, const SensorType& sensor,
     const Transform& T_C_L, const float block_size, Eigen::Vector2f* u_px_ptr,

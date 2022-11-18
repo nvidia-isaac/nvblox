@@ -201,6 +201,9 @@ class Timing {
   static double GetHz(std::string const& tag);
   static void Print(std::ostream& out);
   static std::string Print();
+  static void Print(std::ostream& out,
+                    std::vector<std::string> const& keywords);
+  static std::string Print(std::vector<std::string> const& keywords);
   static std::string SecondsToTimeString(double seconds);
   static void Reset();
   static const map_t& GetTimers() { return Instance().tagMap_; }
