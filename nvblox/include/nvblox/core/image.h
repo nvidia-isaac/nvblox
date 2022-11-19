@@ -134,6 +134,7 @@ class Image {
 };
 
 using DepthImage = Image<float>;
+using NormalImage = Image<Vector3f>;
 using ColorImage = Image<Color>;
 using CoorImage = Image<Vector3f>;
 

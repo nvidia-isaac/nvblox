@@ -144,6 +144,7 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
       multithreaded);
 }
 
+// TODO: we need a more proper way to set kDefaultUintDepthScaleOffset
 std::unique_ptr<ImageLoader<DepthImage>> createHeightImageLoader(
     const std::string& base_path, const int seq_id, const bool multithreaded) {
   return createImageLoader<DepthImage>(

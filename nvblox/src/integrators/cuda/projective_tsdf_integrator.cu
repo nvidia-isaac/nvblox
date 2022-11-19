@@ -28,6 +28,7 @@ namespace nvblox {
 // 1: constant weight, truncate the fused_distance
 // 2: constant weight, truncate the voxel_distance_measured
 // 3: linear weight, truncate the voxel_distance_measured
+// 4: exponential weight, truncate the voxel_distance_measured
 const int voxel_update_method = 3;
 }  // namespace nvblox
 
@@ -93,6 +94,23 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight =
         tsdf_linear_weight(voxel_distance_measured, truncation_distance_m);
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
+  } else if (voxel_update_method == 4) {
+    voxel_distance_measured =
+        fminf(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight =
+        tsdf_exp_weight(voxel_distance_measured, truncation_distance_m);
     float fused_distance = (voxel_distance_measured * measurement_weight +
                             voxel_distance_current * voxel_weight_current) /
                            (measurement_weight + voxel_weight_current);
@@ -561,6 +579,7 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
   // Kernel call - One ThreadBlock launched per VoxelBlock
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
+  // NOTE(jjiao): the number of visible blocks
   const int num_thread_blocks = block_indices_device_.size();
 
   // Metric truncation distance for this layer
@@ -577,6 +596,8 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
                2);
 
   // Kernel
+  // std::cout << "num_thread_blocks: " << num_thread_blocks << std::endl;
+  // std::cout << "kVoxelsPerSide: " << kVoxelsPerSide << std::endl;
   integrateBlocksKernel<<<num_thread_blocks, kThreadsPerBlock, 0,
                           integration_stream_>>>(
       block_indices_device_.data(),                               // NOLINT

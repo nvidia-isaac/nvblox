@@ -26,6 +26,9 @@ struct TsdfVoxel {
   float distance = 0.0f;
   // How many observations/how confident we are in this observation.
   float weight = 0.0f;
+  // ADD(jjiao): for the implementation of signed distance gradient, its
+  // direction is from the surface toward the sensor // NOLINT
+  Vector3f gradient = Vector3f::Zero();
 };
 
 struct EsdfVoxel {

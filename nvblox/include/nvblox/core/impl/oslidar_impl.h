@@ -157,8 +157,7 @@ Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
       image::access<float>(round(u_C.y()), round(u_C.x()),
                            num_azimuth_divisions_, depth_image_ptr_cuda_);
   float r = sqrt(depth * depth - height * height);
-  float azimuth_angle_rad =
-      M_PI - (u_C.x() + start_azimuth_angle_rad_) * rads_per_pixel_azimuth_;
+  float azimuth_angle_rad = M_PI - u_C.x() * rads_per_pixel_azimuth_;
   Vector3f p(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), height);
   // printf(
   //     "ux: %.1f, uy: %.1f, height: %.1f, r: %.1f, depth: %.1f, azimth: %.1f,

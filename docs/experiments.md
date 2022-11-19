@@ -5,6 +5,7 @@
   * NVBlox (constant weight, truncate fused_distance): Point cloud distance [m]: 0.0713986; Coverage [%]: 0.648376
   * NVBlox (constant weight, truncate measured_distance): Point cloud distance [m]: 0.070609; Coverage [%]: 0.716344
   * NVBlox (linear weight, truncate fused_distance): Point cloud distance [m]: 0.0687769; Coverage [%]: 0.73421
+  * NVBlox (exp weight, truncate fused_distance): Point cloud distance [m]: 0.0690283; Coverage [%]: 0.714388
   * VDBMapping: Point cloud distance [m]: 0.074576; Coverage [%]: 0.724301
 
 ##### Computation time (voxel_size = 0.1)
