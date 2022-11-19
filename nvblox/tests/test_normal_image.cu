@@ -51,20 +51,36 @@ __host__ __device__ inline ElementType access(int row_idx, int col_idx,
   return data[row_idx * cols + col_idx];
 }
 
+__device__ __host__ inline Eigen::Vector3f retrievePoint(
+    const float v, const float u, const float* depth_image,
+    const float* height_image, const int w, const int h,
+    const LidarIntrinsics& lidar_intrinsics) {
+  Eigen::Vector3f p = Eigen::Vector3f::Zero();
+  float depth = access<float>(v, u, w, depth_image);
+  if (depth <= 1e-4) return p;
+  float height = access<float>(v, u, w, height_image);
+  float r = sqrt(depth * depth - height * height);
+  float azimuth_angle_rad = M_PI - u * lidar_intrinsics.rads_per_pixel_azimuth;
+  p(0) = r * cos(azimuth_angle_rad);
+  p(1) = r * sin(azimuth_angle_rad);
+  p(2) = height;
+  return p;
+}
+
 __global__ void computeNormalImage(float* depth_image, float* height_image,
-                                   float* normal_image, const int width,
-                                   const int height,
+                                   float* normal_image, const int w,
+                                   const int h,
                                    const LidarIntrinsics lidar_intrinsics) {
   // method 1:
   // int tid = blockDim.x * blockIdx.x + threadIdx.x;
   // int stride = blockDim.x;
-  // for (int u = tid; u < width; u += stride) {
-  //   for (int v = 0; v < height; v++) {
+  // for (int u = tid; u < w; u += stride) {
+  //   for (int v = 0; v < h; v++) {
   //     int uu, vv;
-  //     if (u == width - 1) uu = 0;
-  //     if (v == height - 1) vv = 0;
-  //     normal_image_x[v * width + u] =
-  //         depth_image[v * width + u] - depth_image[vv * width + uu];
+  //     if (u == w - 1) uu = 0;
+  //     if (v == h - 1) vv = 0;
+  //     normal_image_x[v * w + u] =
+  //         depth_image[v * w + u] - depth_image[vv * w + uu];
   //   }
   // }
 
@@ -72,29 +88,56 @@ __global__ void computeNormalImage(float* depth_image, float* height_image,
   // int tid = threadIdx.x;
   // int u_stride = blockDim.x;
   // int v_stride = 128 / 16;
-  // for (int u = tid; u < width; u += u_stride) {
+  // for (int u = tid; u < w; u += u_stride) {
   //   for (int v = blockIdx.x * v_stride; v < (blockIdx.x + 1) * v_stride; v++)
   //   {
   //     int uu, vv;
-  //     if (u == width - 1) uu = 0;
-  //     if (v == height - 1) vv = 0;
-  //     normal_image_x[v * width + u] =
-  //         depth_image[v * width + u] - depth_image[vv * width + uu];
+  //     if (u == w - 1) uu = 0;
+  //     if (v == h - 1) vv = 0;
+  //     normal_image_x[v * w + u] =
+  //         depth_image[v * w + u] - depth_image[vv * w + uu];
   //   }
   // }
 
   int tid = blockDim.x * blockIdx.x + threadIdx.x;
-  int stride = blockDim.x;
-  for (int u = tid; u < width; u += stride) {
-    for (int v = 0; v < height; v++) {
-      // int uu, vv;
-      // if (u == width - 1) uu = 0;
-      // if (v == height - 1) vv = 0;
-      // normal_image_x[v * width + u] =
-      //     depth_image[v * width + u] - depth_image[vv * width + uu];
-      normal_image[3 * (v * width + u)] = 1.0;
-      normal_image[3 * (v * width + u) + 1] = 0.0;
-      normal_image[3 * (v * width + u) + 2] = 0.0;
+  int u_stride = blockDim.x;
+  int v_stride = 1;
+  for (int u = tid; u < w; u += u_stride) {
+    for (int v = 0; v < h; v += v_stride) {
+      normal_image[3 * (v * w + u)] = 0.0f;
+      normal_image[3 * (v * w + u) + 1] = 0.0f;
+      normal_image[3 * (v * w + u) + 2] = 0.0f;
+
+      float sign = 1.0f;
+      int uu, vv;
+      if (u == w - 1) {
+        uu = 0;
+      } else {
+        uu = u + 1;
+      }
+      if (v == h - 1) {
+        vv = 0;
+        sign *= -1.0f;
+      } else {
+        vv = v + 1;
+      }
+
+      float d = access<float>(v, u, w, depth_image);
+      float d1 = access<float>(v, uu, w, depth_image);
+      float d2 = access<float>(vv, u, w, depth_image);
+      if (fabs(d - d1) > 1.0 * d) continue;
+      if (fabs(d - d2) > 1.0 * d) continue;
+
+      Eigen::Vector3f p = retrievePoint(v, u, depth_image, height_image, w, h,
+                                        lidar_intrinsics);
+      Eigen::Vector3f p1 = retrievePoint(v, uu, depth_image, height_image, w, h,
+                                         lidar_intrinsics);
+      Eigen::Vector3f p2 = retrievePoint(vv, u, depth_image, height_image, w, h,
+                                         lidar_intrinsics);
+      Eigen::Vector3f n = ((p1 - p).cross(p2 - p)).normalized() * sign;
+      normal_image[3 * (v * w + u)] = n.x();
+      normal_image[3 * (v * w + u) + 1] = n.y();
+      normal_image[3 * (v * w + u) + 2] = n.z();
     }
   }
 }
@@ -115,15 +158,6 @@ int main(int argc, char** argv) {
           "frame-000000.height.png"),
       FACTOR, OFFSET);
 
-  float* depth_image_cuda;
-  float* height_image_cuda;
-  cudaMalloc((void**)&depth_image_cuda, sizeof(float) * 2048 * 128);
-  cudaMemcpy(depth_image_cuda, depth_image.data(), sizeof(float) * 2048 * 128,
-             cudaMemcpyHostToDevice);
-  cudaMalloc((void**)&height_image_cuda, sizeof(float) * 2048 * 128);
-  cudaMemcpy(height_image_cuda, height_image.data(), sizeof(float) * 2048 * 128,
-             cudaMemcpyHostToDevice);
-
   LidarIntrinsics lidar_intrinsics;
   printf("OSLidar intrinsics--------------------\n");
   printf("width: %d\n", lidar_intrinsics.width);
@@ -138,13 +172,22 @@ int main(int argc, char** argv) {
          lidar_intrinsics.rads_per_pixel_elevation);
 
   //////////////////////////////// function 1: compute normal images
-  int block_size = 256;
+  int block_size = 512;
   int grid_size = 1;
 
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
   cudaEventRecord(start, NULL);
+
+  float* depth_image_cuda;
+  float* height_image_cuda;
+  cudaMalloc((void**)&depth_image_cuda, sizeof(float) * 2048 * 128);
+  cudaMemcpy(depth_image_cuda, depth_image.data(), sizeof(float) * 2048 * 128,
+             cudaMemcpyHostToDevice);
+  cudaMalloc((void**)&height_image_cuda, sizeof(float) * 2048 * 128);
+  cudaMemcpy(height_image_cuda, height_image.data(), sizeof(float) * 2048 * 128,
+             cudaMemcpyHostToDevice);
 
   float* normal_image_cuda;
   cudaMalloc((void**)&normal_image_cuda, sizeof(float) * 2048 * 128 * 3);
@@ -172,9 +215,9 @@ int main(int argc, char** argv) {
   pcl::PointCloud<pcl::PointXYZINormal> cloud;
   for (int u = 0; u < width; u++) {
     for (int v = 0; v < height; v++) {
-      float height = access<float>(v, u, width, height_image.data());
       float depth = access<float>(v, u, width, depth_image.data());
-      if (height <= 1e-4 || depth <= 1e-4) continue;
+      if (depth <= 1e-4) continue;
+      float height = access<float>(v, u, width, height_image.data());
       float* normal = new float[3];
       normal[0] = normal_image[3 * (v * width + u)];
       normal[1] = normal_image[3 * (v * width + u) + 1];
