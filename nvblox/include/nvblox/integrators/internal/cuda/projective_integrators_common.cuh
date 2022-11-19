@@ -21,7 +21,6 @@ limitations under the License.
 #include "nvblox/core/types.h"
 
 namespace nvblox {
-
 /// Camera projection of a voxel onto the image plane.
 /// Projects the center of the voxel associated with this GPU block/thread into
 /// the image plane. Internally uses threadIdx and blockIdx to select the

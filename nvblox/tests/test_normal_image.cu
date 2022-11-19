@@ -172,8 +172,6 @@ int main(int argc, char** argv) {
          lidar_intrinsics.rads_per_pixel_elevation);
 
   //////////////////////////////// function 1: compute normal images
-  int block_size = 512;
-  int grid_size = 1;
 
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
@@ -191,6 +189,9 @@ int main(int argc, char** argv) {
 
   float* normal_image_cuda;
   cudaMalloc((void**)&normal_image_cuda, sizeof(float) * 2048 * 128 * 3);
+
+  int block_size = 512;
+  int grid_size = 1;
   computeNormalImage<<<grid_size, block_size>>>(
       depth_image_cuda, height_image_cuda, normal_image_cuda, width, height,
       lidar_intrinsics);

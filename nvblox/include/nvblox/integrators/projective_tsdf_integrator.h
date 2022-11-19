@@ -150,10 +150,6 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
 
   // CUDA stream to process ingration on
   cudaStream_t integration_stream_;
-
-  // TODO(jjiao): store depth image and z image into GPU memory
-  float* depth_frame_ptr_cuda_;
-  float* height_frame_ptr_cuda_;
 };
 
 }  // namespace nvblox

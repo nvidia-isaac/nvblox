@@ -60,6 +60,8 @@ class OSLidar {
       const Vector2f& u_C, const float depth) const;
   __host__ __device__ inline Vector3f unprojectFromPixelIndices(
       const Index2D& u_C, const float depth) const;
+  __host__ __device__ inline Vector3f unprojectFromImageIndex(
+      const Index2D& u_C) const;
 
   // Back projection (image plane point to ray)
   __host__ __device__ inline Vector3f vectorFromImagePlaneCoordinates(
@@ -73,12 +75,28 @@ class OSLidar {
   __host__ __device__ inline Index2D imagePlaneCoordsToPixelIndex(
       const Vector2f& u_C) const;
 
-  __host__ void setDepthFrameCUDA(float* depth_image_ptr_cuda) {
+  __host__ __device__ void setDepthFrameCUDA(float* depth_image_ptr_cuda) {
     depth_image_ptr_cuda_ = depth_image_ptr_cuda;
   }
 
-  __host__ void setHeightFrameCUDA(float* height_image_ptr_cuda) {
+  __host__ __device__ void setHeightFrameCUDA(float* height_image_ptr_cuda) {
     height_image_ptr_cuda_ = height_image_ptr_cuda;
+  }
+
+  __host__ __device__ void setNormalFrameCUDA(float* normal_image_ptr_cuda) {
+    normal_image_ptr_cuda_ = normal_image_ptr_cuda;
+  }
+
+  __host__ __device__ inline float* getDepthFrameCUDA() const {
+    return depth_image_ptr_cuda_;
+  }
+
+  __host__ __device__ inline float* getHeightFrameCUDA() const {
+    return height_image_ptr_cuda_;
+  }
+
+  __host__ __device__ inline float* getNormalFrameCUDA() const {
+    return normal_image_ptr_cuda_;
   }
 
   // View
@@ -90,6 +108,8 @@ class OSLidar {
   __host__ __device__ inline int num_elevation_divisions() const;
   __host__ __device__ inline float horizontal_fov_rad() const;
   __host__ __device__ inline float vertical_fov_rad() const;
+  __host__ __device__ inline float rads_per_pixel_elevation() const;
+  __host__ __device__ inline float rads_per_pixel_azimuth() const;
   __host__ __device__ inline int numel() const;
   __host__ __device__ inline int rows() const;
   __host__ __device__ inline int cols() const;
@@ -106,6 +126,7 @@ class OSLidar {
  private:
   float* depth_image_ptr_cuda_;
   float* height_image_ptr_cuda_;
+  float* normal_image_ptr_cuda_;
 
   // Core parameters
   int num_azimuth_divisions_;

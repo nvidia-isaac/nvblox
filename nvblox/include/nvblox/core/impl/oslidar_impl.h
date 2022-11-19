@@ -78,6 +78,14 @@ float OSLidar::vertical_fov_rad() const { return vertical_fov_rad_; }
 
 float OSLidar::horizontal_fov_rad() const { return horizontal_fov_rad_; }
 
+float OSLidar::rads_per_pixel_elevation() const {
+  return rads_per_pixel_elevation_;
+}
+
+float OSLidar::rads_per_pixel_azimuth() const {
+  return rads_per_pixel_azimuth_;
+}
+
 int OSLidar::numel() const {
   return num_azimuth_divisions_ * num_elevation_divisions_;
 }
@@ -148,6 +156,17 @@ Vector3f OSLidar::unprojectFromPixelIndices(const Index2D& u_C,
   return depth * vectorFromPixelIndices(u_C);
 }
 
+Vector3f OSLidar::unprojectFromImageIndex(const Index2D& u_C) const {
+  float height = image::access<float>(u_C.y(), u_C.x(), num_azimuth_divisions_,
+                                      height_image_ptr_cuda_);
+  float depth = image::access<float>(u_C.y(), u_C.x(), num_azimuth_divisions_,
+                                     depth_image_ptr_cuda_);
+  float r = sqrt(depth * depth - height * height);
+  float azimuth_angle_rad = M_PI - u_C.x() * rads_per_pixel_azimuth_;
+  Vector3f p(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), height);
+  return p;
+}
+
 // ***************************
 Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
   float height =
@@ -213,5 +232,4 @@ bool operator==(const OSLidar& lhs, const OSLidar& rhs) {
          (std::fabs(lhs.vertical_fov_rad_ - rhs.vertical_fov_rad_) <
           std::numeric_limits<float>::epsilon());
 }
-
 }  // namespace nvblox
