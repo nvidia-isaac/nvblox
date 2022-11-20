@@ -23,6 +23,8 @@ limitations under the License.
 #include "nvblox/io/pointcloud_io.h"
 #include "nvblox/utils/timing.h"
 
+#include "nvblox/core/cuda/image_operation.h"
+
 // Layer params
 DEFINE_double(voxel_size, 0.0f, "Voxel resolution in meters.");
 
@@ -272,7 +274,8 @@ int FuserLidar::run() {
 
   // std::vector<std::string> keywords = {std::string("fuser"),
   //                                      std::string("tsdf")};
-  std::vector<std::string> keywords = {std::string("integrate")};
+  std::vector<std::string> keywords = {std::string("integrate"),
+                                       std::string("normal")};
   LOG(INFO) << nvblox::timing::Timing::Print(keywords);
 
   LOG(INFO) << "Writing timings to file.";
@@ -347,9 +350,14 @@ bool FuserLidar::integrateFrame(const int frame_number) {
   timing::Timer per_frame_timer("fuser/time_per_frame");
 
   if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate("fuser/integrate_tsdf");
     oslidar.setDepthFrameCUDA(depth_frame.dataPtr());
     oslidar.setHeightFrameCUDA(height_frame.dataPtr());
+
+    timing::Timer timer_normal("fuser/compute_normal_image");
+    nvblox::cuda::getNormalImageOSLidar(oslidar);
+    timer_normal.Stop();
+
+    timing::Timer timer_integrate("fuser/integrate_tsdf");
     mapper_->integrateOSLidarDepth(depth_frame, Twb, oslidar);
     timer_integrate.Stop();
   }

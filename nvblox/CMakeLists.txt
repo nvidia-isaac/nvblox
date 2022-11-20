@@ -104,6 +104,7 @@ add_library(nvblox_lib SHARED
     src/core/cuda/blox.cu
     src/core/cuda/image_cuda.cu
     src/core/cuda/warmup.cu
+    src/core/cuda/image_operation.cu
     src/core/image.cpp
     src/core/interpolation_3d.cpp
     src/core/mapper.cpp

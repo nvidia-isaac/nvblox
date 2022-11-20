@@ -33,9 +33,6 @@ const int voxel_update_method = 3;
 }  // namespace nvblox
 
 namespace nvblox {
-__host__ __device__ inline int idivup(int a, int b) {
-  return ((a % b) != 0) ? (a / b + 1) : (a / b);
-}
 
 // TODO(jjiao): update the voxel according to the traditional TSDF update method
 // TODO(jjiao): we can try different methods based on the probabilitics to
@@ -245,115 +242,6 @@ __device__ inline bool interpolateOSLidarImage(
   // interpolations fail.
 
   return true;
-}
-
-// __device__ void computeOSLidarPoint(const float u, const float v,
-//                                     const float uu, const float vv,
-//                                     const float sign, const OSLidar& lidar) {
-//   Index2D u_px(u, v);
-//   Eigen::Vector3f p = lidar.unprojectFromImageIndex(u_px);
-//   // Eigen::Vector3f p1 = lidar.unprojectFromImageIndex(Eigen::Vector2i(uu,
-//   v));
-//   // Eigen::Vector3f p2 = lidar.unprojectFromImageIndex(Eigen::Vector2i(u,
-//   vv));
-//   // Eigen::Vector3f n = ((p1 - p).cross(p2 - p)).normalized() * sign;
-//   // normal_image[3 * (v * w + u)] = n.x();
-//   // normal_image[3 * (v * w + u) + 1] = n.y();
-//   // normal_image[3 * (v * w + u) + 2] = n.z();
-//   // printf("%f, %f, %f\n", n.x(), n.y(), n.z());
-//   // printf("%f, %f, %f\n", n.x(), n.y(), n.z());
-// }
-
-// NOTE(jjiao): we cannot directly give the value from CPU and avoid
-// dangerous operations, like bug1: int w_ = lidar.num_azimuth_divisions();
-// bug2: int h_ = lidar.num_elevation_divisions();
-// bug3: cannot print in the loop
-// we cannot correctly use values of w_ and h_
-__global__ void computeNormalImage(float* normal_image, const OSLidar& lidar,
-                                   const int w, const int h,
-                                   const float rads_per_pixel_azimuth) {
-  const float* depth_image = lidar.getDepthFrameCUDA();
-  const float* height_image = lidar.getHeightFrameCUDA();
-  const float pi = 3.1415926535f;
-
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  int u_stride = blockDim.x;
-  int v_stride = 1;
-  for (int u = tid; u < w; u += u_stride) {
-    for (int v = 0; v < h; v += v_stride) {
-      normal_image[3 * (v * w + u)] = 0.0f;
-      normal_image[3 * (v * w + u) + 1] = 0.0f;
-      normal_image[3 * (v * w + u) + 2] = 0.0f;
-
-      float sign = 1.0f;
-      int uu, vv;
-      if (u == w - 1) {
-        uu = 0;
-      } else {
-        uu = u + 1;
-      }
-      if (v == h - 1) {
-        vv = 0;
-        sign *= -1.0f;
-      } else {
-        vv = v + 1;
-      }
-
-      float d = image::access<float>(v, u, w, depth_image);
-      float d1 = image::access<float>(v, uu, w, depth_image);
-      float d2 = image::access<float>(vv, u, w, depth_image);
-      // on the boundary, not continous
-      if (abs(d - d1) > 1.0 * d) continue;
-      // on the boundary, not continous
-      if (abs(d - d2) > 1.0 * d) continue;
-
-      float px, py, pz;
-      float px1, py1, pz1;
-      float px2, py2, pz2;
-
-      {
-        float depth = image::access<float>(v, u, w, depth_image);
-        float height = image::access<float>(v, u, w, height_image);
-        float r = sqrt(depth * depth - height * height);
-        float azimuth_angle_rad = pi - u * rads_per_pixel_azimuth;
-        px = r * cos(azimuth_angle_rad);
-        py = r * sin(azimuth_angle_rad);
-        pz = height;
-      }
-
-      {
-        float depth = image::access<float>(v, uu, w, depth_image);
-        float height = image::access<float>(v, uu, w, height_image);
-        float r = sqrt(depth * depth - height * height);
-        float azimuth_angle_rad = pi - uu * rads_per_pixel_azimuth;
-        px1 = r * cos(azimuth_angle_rad);
-        py1 = r * sin(azimuth_angle_rad);
-        pz1 = height;
-      }
-
-      {
-        float depth = image::access<float>(vv, u, w, depth_image);
-        float height = image::access<float>(vv, u, w, height_image);
-        float r = sqrt(depth * depth - height * height);
-        float azimuth_angle_rad = pi - u * rads_per_pixel_azimuth;
-        px2 = r * cos(azimuth_angle_rad);
-        py2 = r * sin(azimuth_angle_rad);
-        pz2 = height;
-      }
-
-      // Eigen::Vector3f p = lidar.unprojectFromImageIndex(Eigen::Vector2i(u,
-      // v)); Eigen::Vector3f p1 =
-      //     lidar.unprojectFromImageIndex(Eigen::Vector2i(uu, v));
-      // Eigen::Vector3f p2 =
-      //     lidar.unprojectFromImageIndex(Eigen::Vector2i(u, vv));
-      // Eigen::Vector3f n = ((p1 - p).cross(p2 - p)).normalized() * sign;
-      // normal_image[3 * (v * w + u)] = n.x();
-      // normal_image[3 * (v * w + u) + 1] = n.y();
-      // normal_image[3 * (v * w + u) + 2] = n.z();
-      // printf("%f, %f, %f\n", n.x(), n.y(), n.z());
-      // printf("%f, %f, %f\n", n.x(), n.y(), n.z());
-    }
-  }
 }
 
 // CAMERA
@@ -708,18 +596,6 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
                    voxel_size,
                2);
 
-  // compute normal images
-  float* normal_frame_cuda;
-  checkCudaErrors(
-      cudaMalloc(&normal_frame_cuda, sizeof(float) * depth_frame.numel() * 3));
-  int w_c = lidar.num_azimuth_divisions();
-  int h_c = lidar.num_elevation_divisions();
-  float rads_per_pixel_azimuth = lidar.rads_per_pixel_azimuth();
-  int block_size = idivup(depth_frame.cols(), 2);
-  int grid_size = 1;
-  computeNormalImage<<<grid_size, block_size>>>(normal_frame_cuda, lidar, w_c,
-                                                h_c, rads_per_pixel_azimuth);
-
   // Kernel
   // std::cout << "num_thread_blocks: " << num_thread_blocks << std::endl;
   // std::cout << "kVoxelsPerSide: " << kVoxelsPerSide << std::endl;
@@ -741,7 +617,6 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
 
   // Finish processing of the frame before returning control
   finish();
-  checkCudaErrors(cudaFree(normal_frame_cuda));
   checkCudaErrors(cudaPeekAtLastError());
 }
 
