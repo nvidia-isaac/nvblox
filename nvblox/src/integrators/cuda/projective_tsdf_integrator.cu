@@ -24,19 +24,8 @@ limitations under the License.
 #include "nvblox/utils/weight_function.h"
 
 namespace nvblox {
-// setting the voxel update method
-// 1: constant weight, truncate the fused_distance
-// 2: constant weight, truncate the voxel_distance_measured
-// 3: linear weight, truncate the voxel_distance_measured
-// 4: exponential weight, truncate the voxel_distance_measured
-const int voxel_update_method = 3;
-}  // namespace nvblox
 
-namespace nvblox {
-
-// TODO(jjiao): update the voxel according to the traditional TSDF update method
-// TODO(jjiao): we can try different methods based on the probabilitics to
-// improve the voxel update
+// NOTE(jjiao): the original nvblox implementation
 __device__ inline bool updateVoxel(const float surface_depth_measured,
                                    TsdfVoxel* voxel_ptr,
                                    const float voxel_depth_m,
@@ -57,7 +46,48 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
   // NOTE(alexmillane): We could try to use CUDA math functions to speed up
   // below
   // https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__SINGLE.html#group__CUDA__MATH__SINGLE
-  if (voxel_update_method == 1) {
+  // Fuse
+  constexpr float measurement_weight = 1.0f;
+  float fused_distance = (voxel_distance_measured * measurement_weight +
+                          voxel_distance_current * voxel_weight_current) /
+                         (measurement_weight + voxel_weight_current);
+  // Clip
+  if (fused_distance > 0.0f) {
+    fused_distance = fminf(truncation_distance_m, fused_distance);
+  } else {
+    fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+  }
+  const float weight =
+      fminf(measurement_weight + voxel_weight_current, max_weight);
+  // Write NEW voxel values (to global GPU memory)
+  voxel_ptr->distance = fused_distance;
+  voxel_ptr->weight = weight;
+  return true;
+}
+
+// TODO(jjiao): update the voxel according to the traditional TSDF update method
+// TODO(jjiao): we can try different methods based on the probabilitics to
+// improve the voxel update
+__device__ inline bool updateVoxelMultiWeightComp(
+    const float surface_depth_measured, TsdfVoxel* voxel_ptr,
+    const float voxel_depth_m, const float truncation_distance_m,
+    const float max_weight, const int voxel_dis_method) {
+  // Get the MEASURED depth of the VOXEL
+  float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
+
+  // If we're behind the negative truncation distance, just continue.
+  if (voxel_distance_measured < -truncation_distance_m) {
+    return false;
+  }
+
+  // Read CURRENT voxel values (from global GPU memory)
+  const float voxel_distance_current = voxel_ptr->distance;
+  const float voxel_weight_current = voxel_ptr->weight;
+
+  // NOTE(alexmillane): We could try to use CUDA math functions to speed up
+  // below
+  // https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__SINGLE.html#group__CUDA__MATH__SINGLE
+  if (voxel_dis_method == 1) {
     // Fuse
     constexpr float measurement_weight = 1.0f;
     float fused_distance = (voxel_distance_measured * measurement_weight +
@@ -74,7 +104,7 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
     // Write NEW voxel values (to global GPU memory)
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_update_method == 2) {
+  } else if (voxel_dis_method == 2) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight = tsdf_constant_weight(voxel_distance_measured);
@@ -90,7 +120,7 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_update_method == 3) {
+  } else if (voxel_dis_method == 3) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight =
@@ -107,7 +137,7 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_update_method == 4) {
+  } else if (voxel_dis_method == 4) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight =
@@ -124,6 +154,8 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
+  } else if (voxel_dis_method == 5) {
+    //
   }
   return true;
 }
@@ -245,18 +277,10 @@ __device__ inline bool interpolateOSLidarImage(
 
 // NOTE(jjiao):
 __device__ inline Vector3f getNormalVectorOSLidar(const OSLidar& lidar,
-                                                  const Vector2f& u_px,
+                                                  const Index2D& u_C,
                                                   const int rows,
                                                   const int cols) {
-  Vector3f normal_vector;
-  const Index2D u_px_rounded = u_px.array().round().cast<int>();
-  if (u_px_rounded.x() < 0 || u_px_rounded.y() < 0 ||
-      u_px_rounded.x() >= cols || u_px_rounded.y() >= rows) {
-    normal_vector = Vector3f(0.0f, 0.0f, 0.0f);
-  } else {
-    normal_vector = lidar.getNormalVector(u_px_rounded);
-  }
-  return normal_vector;
+  return lidar.getNormalVector(u_C);
 }
 
 // CAMERA
@@ -400,9 +424,17 @@ __global__ void integrateBlocksKernel(
     return;
   }
 
-  Vector3f normal_vector = getNormalVectorOSLidar(lidar, u_px, rows, cols);
-  printf("(%f, %f, %f) ", normal_vector.x(), normal_vector.y(),
-         normal_vector.z());
+  // NOTE(jjiao): retrive the normal vector given u_px
+  Vector3f normal_vector;
+  const Index2D u_px_rounded = u_px.array().round().cast<int>();
+  if (u_px_rounded.x() < 0 || u_px_rounded.y() < 0 ||
+      u_px_rounded.x() >= cols || u_px_rounded.y() >= rows) {
+    normal_vector = Vector3f(0.0f, 0.0f, 0.0f);
+  } else {
+    normal_vector = getNormalVectorOSLidar(lidar, u_px_rounded, rows, cols);
+    // printf("(%f, %f, %f) ", normal_vector.x(), normal_vector.y(),
+    //        normal_vector.z());
+  }
 
   // Get the Voxel we'll update in this thread
   // NOTE(alexmillane): Note that we've reverse the voxel indexing order
@@ -413,8 +445,27 @@ __global__ void integrateBlocksKernel(
 
   // function 3
   // Update the voxel using the update rule for this layer type
-  updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
-              max_weight);
+
+  // NOTE(jjiao):
+  // setting the voxel update method
+  // Projective distance:
+  //  1: constant weight, truncate the fused_distance
+  //  2: constant weight, truncate the voxel_distance_measured
+  //  3: linear weight, truncate the voxel_distance_measured
+  //  4: exponential weight, truncate the voxel_distance_measured
+  // Non-Projective distance:
+  //  5: weight and distance derived from VoxField
+  const int voxel_dis_method = 3;
+  if (voxel_dis_method == 1) {
+    // the original nvblox impelentation
+    updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
+                max_weight);
+  } else {
+    // the improved weight computation
+    updateVoxelMultiWeightComp(image_value, voxel_ptr, voxel_depth_m,
+                               truncation_distance_m, max_weight,
+                               voxel_dis_method);
+  }
 }
 
 ProjectiveTsdfIntegrator::ProjectiveTsdfIntegrator()

@@ -110,5 +110,10 @@ void getNormalImageOSLidar(OSLidar& lidar) {
   lidar.setNormalFrameCUDA(normal_frame_cuda);
 }
 
+void freeNormalImageOSLidar(OSLidar& lidar) {
+  float* normal_image = lidar.getNormalFrameCUDA();
+  checkCudaErrors(cudaFree(normal_image));
+}
+
 }  // namespace cuda
 }  // namespace nvblox

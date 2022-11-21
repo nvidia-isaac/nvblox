@@ -24,8 +24,17 @@ __global__ void computeNormalImageOSLidar(const float* depth_image,
                                           const int h,
                                           const float rads_per_pixel_azimuth,
                                           const float rads_per_pixel_elevation);
-
+/**
+ * Get and compute the normal image with the CUDA
+ * @param  {OSLidar} lidar :
+ */
 void getNormalImageOSLidar(OSLidar& lidar);
+
+/**
+ * Free the CUDA memory allocated
+ * @param  {OSLidar} lidar :
+ */
+void freeNormalImageOSLidar(OSLidar& lidar);
 
 }  // namespace cuda
 }  // namespace nvblox

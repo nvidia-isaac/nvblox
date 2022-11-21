@@ -360,6 +360,8 @@ bool FuserLidar::integrateFrame(const int frame_number) {
     timing::Timer timer_integrate("fuser/integrate_tsdf");
     mapper_->integrateOSLidarDepth(depth_frame, Twb, oslidar);
     timer_integrate.Stop();
+
+    nvblox::cuda::freeNormalImageOSLidar(oslidar);
   }
 
   // TODO(jjiao): please use the optimized camera pose

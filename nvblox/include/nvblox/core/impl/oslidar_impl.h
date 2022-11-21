@@ -60,11 +60,7 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   normal_image_ptr_cuda_ = nullptr;
 }
 
-OSLidar::~OSLidar() {
-  checkCudaErrors(cudaFree(depth_image_ptr_cuda_));
-  checkCudaErrors(cudaFree(height_image_ptr_cuda_));
-  checkCudaErrors(cudaFree(normal_image_ptr_cuda_));
-}
+OSLidar::~OSLidar() {}
 
 void OSLidar::printIntrinsics() const {
   printf("OSLidar intrinsics--------------------\n");
