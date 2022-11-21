@@ -1,6 +1,5 @@
 #include "nvblox/core/cuda/error_check.cuh"
 #include "nvblox/core/cuda/image_operation.h"
-#include "nvblox/core/image.h"
 
 namespace nvblox {
 namespace cuda {
@@ -109,7 +108,6 @@ void getNormalImageOSLidar(OSLidar& lidar) {
       lidar.num_azimuth_divisions(), lidar.num_elevation_divisions(),
       lidar.rads_per_pixel_azimuth(), lidar.rads_per_pixel_elevation());
   lidar.setNormalFrameCUDA(normal_frame_cuda);
-  checkCudaErrors(cudaFree(normal_frame_cuda));
 }
 
 }  // namespace cuda

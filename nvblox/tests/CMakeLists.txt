@@ -153,6 +153,16 @@ set(TEST_OPTIONS DISCOVERY_TIMEOUT 30)
 # target_link_libraries(test_mapper nvblox_test_utils)
 # gtest_discover_tests(test_mapper ${TEST_OPTIONS})
 
-add_executable(test_oslidar test_oslidar.cpp)
-target_link_libraries(test_oslidar nvblox_test_utils)
-gtest_discover_tests(test_oslidar ${TEST_OPTIONS})
+# add_executable(test_oslidar test_oslidar.cpp)
+# target_link_libraries(test_oslidar nvblox_test_utils)
+# gtest_discover_tests(test_oslidar ${TEST_OPTIONS})
+
+############### only for test_normal_image
+find_package(PCL 1.8 REQUIRED)
+find_package(Eigen)
+include_directories(${PCL_INCLUDE_DIRS})
+
+add_executable(test_normal_image 
+    test_normal_image.cu 
+    ../src/core/cuda/image_operation.cu)
+target_link_libraries(test_normal_image nvblox_test_utils ${PCL_LIBRARIES})

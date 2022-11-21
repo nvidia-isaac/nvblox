@@ -8,6 +8,9 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include "../include/nvblox/core/cuda/error_check.cuh"
+#include "../include/nvblox/core/cuda/image_operation.h"
+#include "../include/nvblox/core/image.h"
 
 const float FACTOR = 1000.0f;
 const float OFFSET = 10.0f;
@@ -102,6 +105,7 @@ __global__ void computeNormalImage(float* depth_image, float* height_image,
   int tid = blockDim.x * blockIdx.x + threadIdx.x;
   int u_stride = blockDim.x;
   int v_stride = 1;
+  int cnt = 0;
   for (int u = tid; u < w; u += u_stride) {
     for (int v = 0; v < h; v += v_stride) {
       normal_image[3 * (v * w + u)] = 0.0f;
@@ -125,8 +129,8 @@ __global__ void computeNormalImage(float* depth_image, float* height_image,
       float d = access<float>(v, u, w, depth_image);
       float d1 = access<float>(v, uu, w, depth_image);
       float d2 = access<float>(vv, u, w, depth_image);
-      if (fabs(d - d1) > 1.0 * d) continue;
-      if (fabs(d - d2) > 1.0 * d) continue;
+      if (fabs(d - d1) > 0.9 * d) continue;
+      if (fabs(d - d2) > 0.9 * d) continue;
 
       Eigen::Vector3f p = retrievePoint(v, u, depth_image, height_image, w, h,
                                         lidar_intrinsics);
@@ -134,7 +138,8 @@ __global__ void computeNormalImage(float* depth_image, float* height_image,
                                          lidar_intrinsics);
       Eigen::Vector3f p2 = retrievePoint(vv, u, depth_image, height_image, w, h,
                                          lidar_intrinsics);
-      Eigen::Vector3f n = ((p1 - p).cross(p2 - p)).normalized() * sign;
+      Eigen::Vector3f n = sign * ((p1 - p).cross(p2 - p));
+      n /= n.norm();
       normal_image[3 * (v * w + u)] = n.x();
       normal_image[3 * (v * w + u) + 1] = n.y();
       normal_image[3 * (v * w + u) + 2] = n.z();
@@ -190,11 +195,22 @@ int main(int argc, char** argv) {
   float* normal_image_cuda;
   cudaMalloc((void**)&normal_image_cuda, sizeof(float) * 2048 * 128 * 3);
 
-  int block_size = 512;
+  int block_size = idivup(width, 2);
   int grid_size = 1;
-  computeNormalImage<<<grid_size, block_size>>>(
-      depth_image_cuda, height_image_cuda, normal_image_cuda, width, height,
-      lidar_intrinsics);
+
+  // function 1:
+  if (1) {
+    nvblox::cuda::computeNormalImageOSLidar<<<grid_size, block_size>>>(
+        depth_image_cuda, height_image_cuda, normal_image_cuda, width, height,
+        lidar_intrinsics.rads_per_pixel_azimuth,
+        lidar_intrinsics.rads_per_pixel_elevation);
+  }
+  // function 2:
+  else {
+    computeNormalImage<<<grid_size, block_size>>>(
+        depth_image_cuda, height_image_cuda, normal_image_cuda, width, height,
+        lidar_intrinsics);
+  }
 
   cudaEventRecord(stop, NULL);
   cudaEventSynchronize(stop);

@@ -52,6 +52,9 @@ class OSLidar {
   // Gets the depth of a point
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
+  // Gets the normal vector of a point
+  __host__ __device__ inline Vector3f getNormalVector(const Index2D& u_C) const;
+
   // TODO(jjiao): This function is used to unproject a pixel to a 3D point given
   // the 2D coordinate of an image
   // Back projection (image plane point to 3D point)

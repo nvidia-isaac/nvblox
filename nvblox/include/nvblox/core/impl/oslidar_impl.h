@@ -54,9 +54,17 @@ OSLidar::OSLidar(int num_azimuth_divisions, int num_elevation_divisions,
   azimuth_pixels_per_rad_ = 1.0f / rads_per_pixel_azimuth_;
 
   // printIntrinsics();
+
+  depth_image_ptr_cuda_ = nullptr;
+  height_image_ptr_cuda_ = nullptr;
+  normal_image_ptr_cuda_ = nullptr;
 }
 
-OSLidar::~OSLidar() {}
+OSLidar::~OSLidar() {
+  checkCudaErrors(cudaFree(depth_image_ptr_cuda_));
+  checkCudaErrors(cudaFree(height_image_ptr_cuda_));
+  checkCudaErrors(cudaFree(normal_image_ptr_cuda_));
+}
 
 void OSLidar::printIntrinsics() const {
   printf("OSLidar intrinsics--------------------\n");
@@ -68,6 +76,9 @@ void OSLidar::printIntrinsics() const {
   printf("rads_per_pixel_azimuth: %f\n", rads_per_pixel_azimuth_);
 }
 
+/**********************************************
+ * get the parameters of OSLidar
+ **********************************************/
 int OSLidar::num_azimuth_divisions() const { return num_azimuth_divisions_; }
 
 int OSLidar::num_elevation_divisions() const {
@@ -94,6 +105,28 @@ int OSLidar::cols() const { return num_azimuth_divisions_; }
 
 int OSLidar::rows() const { return num_elevation_divisions_; }
 
+float OSLidar::getDepth(const Vector3f& p_C) const { return p_C.norm(); }
+
+// NOTE(jjiao): this function is added by jjiao
+Vector3f OSLidar::getNormalVector(const Index2D& u_C) const {
+  if (normal_image_ptr_cuda_) {
+    float x = normal_image_ptr_cuda_[3 * (u_C.y() * num_azimuth_divisions_ +
+                                          u_C.x())];
+    float y = normal_image_ptr_cuda_[3 * (u_C.y() * num_azimuth_divisions_ +
+                                          u_C.x()) +
+                                     1];
+    float z = normal_image_ptr_cuda_[3 * (u_C.y() * num_azimuth_divisions_ +
+                                          u_C.x()) +
+                                     2];
+    return Vector3f(x, y, z);
+  } else {
+    return Vector3f(0.0f, 0.0f, 0.0f);
+  }
+}
+
+/**********************************************
+ * Project a 3D point p_C to get the image coordinates u_C
+ **********************************************/
 bool OSLidar::project(const Vector3f& p_C, Vector2f* u_C) const {
   const float r = p_C.norm();
   constexpr float kMinProjectionEps = 0.01;
@@ -130,8 +163,9 @@ bool OSLidar::project(const Vector3f& p_C, Index2D* u_C) const {
   return res;
 }
 
-float OSLidar::getDepth(const Vector3f& p_C) const { return p_C.norm(); }
-
+/**********************************************
+ * transformation between the pixel index (int) and image coordinates (float)
+ **********************************************/
 Vector2f OSLidar::pixelIndexToImagePlaneCoordsOfCenter(
     const Index2D& u_C) const {
   // The index cast to a float is the coordinates of the lower corner of the
@@ -145,7 +179,9 @@ Index2D OSLidar::imagePlaneCoordsToPixelIndex(const Vector2f& u_C) const {
   return u_C.array().round().cast<int>();
 }
 
-// ***************************
+/**********************************************
+ * Unproject a 2D image coordinates u_C to a 3D point p_C
+ **********************************************/
 Vector3f OSLidar::unprojectFromImagePlaneCoordinates(const Vector2f& u_C,
                                                      const float depth) const {
   return depth * vectorFromImagePlaneCoordinates(u_C);
@@ -167,7 +203,6 @@ Vector3f OSLidar::unprojectFromImageIndex(const Index2D& u_C) const {
   return p;
 }
 
-// ***************************
 Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
   float height =
       image::access<float>(round(u_C.y()), round(u_C.x()),
@@ -192,6 +227,9 @@ Vector3f OSLidar::vectorFromPixelIndices(const Index2D& u_C) const {
       pixelIndexToImagePlaneCoordsOfCenter(u_C));
 }
 
+/**********************************************
+ * Project a 3D point p_C to get the image coordinates u_C
+ **********************************************/
 AxisAlignedBoundingBox OSLidar::getViewAABB(const Transform& T_L_C,
                                             const float min_depth,
                                             const float max_depth) const {

@@ -240,8 +240,23 @@ __device__ inline bool interpolateOSLidarImage(
 
   // TODO(alexmillane): We should add clearing rays, even in the case both
   // interpolations fail.
-
   return true;
+}
+
+// NOTE(jjiao):
+__device__ inline Vector3f getNormalVectorOSLidar(const OSLidar& lidar,
+                                                  const Vector2f& u_px,
+                                                  const int rows,
+                                                  const int cols) {
+  Vector3f normal_vector;
+  const Index2D u_px_rounded = u_px.array().round().cast<int>();
+  if (u_px_rounded.x() < 0 || u_px_rounded.y() < 0 ||
+      u_px_rounded.x() >= cols || u_px_rounded.y() >= rows) {
+    normal_vector = Vector3f(0.0f, 0.0f, 0.0f);
+  } else {
+    normal_vector = lidar.getNormalVector(u_px_rounded);
+  }
+  return normal_vector;
 }
 
 // CAMERA
@@ -354,6 +369,7 @@ __global__ void integrateBlocksKernel(
   // Get - the image-space projection of the voxel associated with this
   // thread
   //     - the depth associated with the projection.
+  //     - the projected image coordinate of the voxel
   Eigen::Vector2f u_px;
   float voxel_depth_m;
   Vector3f p_voxel_center_C;
@@ -383,6 +399,10 @@ __global__ void integrateBlocksKernel(
           &image_value)) {
     return;
   }
+
+  Vector3f normal_vector = getNormalVectorOSLidar(lidar, u_px, rows, cols);
+  printf("(%f, %f, %f) ", normal_vector.x(), normal_vector.y(),
+         normal_vector.z());
 
   // Get the Voxel we'll update in this thread
   // NOTE(alexmillane): Note that we've reverse the voxel indexing order

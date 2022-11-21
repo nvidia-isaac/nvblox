@@ -353,7 +353,7 @@ bool FuserLidar::integrateFrame(const int frame_number) {
     oslidar.setDepthFrameCUDA(depth_frame.dataPtr());
     oslidar.setHeightFrameCUDA(height_frame.dataPtr());
 
-    timing::Timer timer_normal("fuser/compute_normal_image");
+    timing::Timer timer_normal("fuser/compute_normal_image");  // 0.7ms
     nvblox::cuda::getNormalImageOSLidar(oslidar);
     timer_normal.Stop();
 

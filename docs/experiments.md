@@ -10,6 +10,7 @@
 
 ##### Computation time (voxel_size = 0.1)
 * Sequence: 20220216_garden_day
+  * Normal computation with a GPU: 0.7ms per frame
   * NVBLox: 14.2ms per frame (total 2000)
   * VDBMapping: 384.062 ms per frame (total 2500)
 
