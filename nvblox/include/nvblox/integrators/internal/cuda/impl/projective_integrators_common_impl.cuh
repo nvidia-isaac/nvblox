@@ -25,7 +25,7 @@ template <typename SensorType>
  whether the voxel is visible or not
  * @param [in] block_indices_device_ptr:
  * @param [in] sensor: the sensor object, like the camera, lidar, etc
- * @param [in] T_C_L: the transformation from the world to the camera
+ * @param [in] T_C_L: the transformation from the camera to the world
  * @param [in] block_size:
  * @param [out] u_px_ptr: the image coordinates projected from the voxel
  * @param [out] u_depth_ptr: the depth of the 3D points

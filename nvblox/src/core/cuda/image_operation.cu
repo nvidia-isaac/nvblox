@@ -75,9 +75,9 @@ __global__ void computeNormalImageOSLidar(
 
       float nx, ny, nz;
       {
-        nx = sign * (py - py1) * (pz - pz2) - (py - py2) * (pz - pz1);
-        ny = sign * (px - px2) * (pz - pz1) - (px - px1) * (pz - pz2);
-        nz = sign * (px - px1) * (py - py2) - (px - px2) * (py - py1);
+        nx = sign * (py - py2) * (pz - pz1) - (py - py1) * (pz - pz2);
+        ny = sign * (px - px1) * (pz - pz2) - (px - px2) * (pz - pz1);
+        nz = sign * (px - px2) * (py - py1) - (px - px1) * (py - py2);
         float l = sqrt(nx * nx + ny * ny + nz * nz);
         if (l == 0.0f) {
           continue;

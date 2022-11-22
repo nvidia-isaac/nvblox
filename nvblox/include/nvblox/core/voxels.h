@@ -28,7 +28,7 @@ struct TsdfVoxel {
   float weight = 0.0f;
   // ADD(jjiao): for the implementation of signed distance gradient, its
   // direction is from the surface toward the sensor // NOLINT
-  Vector3f gradient = Vector3f::Zero();
+  Eigen::Vector3f gradient = Eigen::Vector3f::Zero();
 };
 
 struct EsdfVoxel {

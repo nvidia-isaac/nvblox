@@ -71,10 +71,11 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
 __device__ inline bool updateVoxelMultiWeightComp(
     const float surface_depth_measured, TsdfVoxel* voxel_ptr,
     const float voxel_depth_m, const float truncation_distance_m,
-    const float max_weight, const int voxel_dis_method) {
+    const float max_weight, const int voxel_dis_method,
+    const Vector3f measurement_point, const Vector3f& measurement_normal,
+    const Transform& T_C_L) {
   // Get the MEASURED depth of the VOXEL
   float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
-
   // If we're behind the negative truncation distance, just continue.
   if (voxel_distance_measured < -truncation_distance_m) {
     return false;
@@ -83,6 +84,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
   // Read CURRENT voxel values (from global GPU memory)
   const float voxel_distance_current = voxel_ptr->distance;
   const float voxel_weight_current = voxel_ptr->weight;
+  const Vector3f voxel_gradient_current = voxel_ptr->gradient;
 
   // NOTE(alexmillane): We could try to use CUDA math functions to speed up
   // below
@@ -116,10 +118,10 @@ __device__ inline bool updateVoxelMultiWeightComp(
     } else {
       fused_distance = fmaxf(-truncation_distance_m, fused_distance);
     }
-    const float weight =
+    const float fused_weight =
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
-    voxel_ptr->weight = weight;
+    voxel_ptr->weight = fused_weight;
   } else if (voxel_dis_method == 3) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
@@ -155,7 +157,82 @@ __device__ inline bool updateVoxelMultiWeightComp(
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
   } else if (voxel_dis_method == 5) {
-    //
+    float normal_ratio = 1.0f;
+
+    // case 1: existing gradient, use the gradient to compute the ratio
+    if (voxel_gradient_current.norm() > kFloatEpsilon) {
+      Vector3f gradient_C;
+      // transform the gradient into the camera coordinate system
+      gradient_C = T_C_L.rotation() * voxel_gradient_current;
+
+      // case 1.1: existing gradient, existing normal
+      if (measurement_normal.norm() > kFloatEpsilon) {
+        // alpha: the angle between the normal and gradient
+        float cos_alpha = abs(measurement_normal.dot(gradient_C));
+        float sin_alpha = sqrt(1 - cos_alpha * cos_alpha);
+
+        // theta: the angle between the ray and gradient
+        float cos_theta =
+            abs(measurement_point.dot(gradient_C) / measurement_point.norm());
+        float sin_theta = sqrt(1 - cos_theta * cos_theta);
+
+        // condition 1: flat surface, alpha is approximate to zero
+        if (abs(1.0f - cos_alpha) < kFloatEpsilon) {
+          normal_ratio = cos_theta;
+        }
+        // condition 2: curve surface
+        else {
+          normal_ratio =
+              abs((cos_alpha - 1) * sin_theta / sin_alpha + cos_theta);
+          if (isnan(normal_ratio)) normal_ratio = cos_theta;
+        }
+      }
+      // case 1.2: existing gradient, no normal
+      else {
+        normal_ratio =
+            abs(measurement_point.dot(gradient_C) / measurement_point.norm());
+      }
+    }
+    // case 2:  no gradient
+    else {
+      // case 2.1: no gradient, existing normal
+      if (measurement_normal.norm() > kFloatEpsilon) {
+        normal_ratio = abs(measurement_point.dot(measurement_normal) /
+                           measurement_point.norm());
+      }
+    }
+
+    // ruling out extremely large incidence angle
+    if (normal_ratio < 0.05) return false;
+
+    float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2, 30.0);
+    float weight_dropoff =
+        tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight = weight_sensor * weight_dropoff;
+
+    // NOTE(jjiao): it is possible to have weights very close to zero, due to
+    // the limited precision of floating points dividing by this small value can
+    // cause nans
+    if (measurement_weight < kFloatEpsilon) return false;
+
+    float measurement_distance = normal_ratio * voxel_distance_current;
+    measurement_distance = fminf(measurement_distance, truncation_distance_m);
+    float fused_distance = (measurement_distance * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    const float fused_weight =
+        fminf(voxel_weight_current + measurement_weight, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = fused_weight;
+
+    // existing normal, update the gradient
+    if (measurement_normal.norm() > kFloatEpsilon) {
+      Vector3f fused_gradient = (voxel_weight_current * voxel_gradient_current +
+                                 measurement_weight * measurement_normal) /
+                                (measurement_weight + voxel_weight_current);
+      fused_gradient.normalize();
+      voxel_ptr->gradient = fused_gradient;
+    }
   }
   return true;
 }
@@ -276,11 +353,37 @@ __device__ inline bool interpolateOSLidarImage(
 }
 
 // NOTE(jjiao):
-__device__ inline Vector3f getNormalVectorOSLidar(const OSLidar& lidar,
-                                                  const Index2D& u_C,
-                                                  const int rows,
-                                                  const int cols) {
-  return lidar.getNormalVector(u_C);
+__device__ inline bool getPointVectorOSLidar(const OSLidar& lidar,
+                                             const Index2D& u_C, const int rows,
+                                             const int cols,
+                                             Vector3f& point_vector) {
+  if (u_C.x() < 0 || u_C.y() < 0 || u_C.x() >= cols || u_C.y() >= rows) {
+    return false;
+  } else {
+    point_vector = lidar.unprojectFromImageIndex(u_C);
+    if (point_vector.norm() < kFloatEpsilon) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+}
+
+// NOTE(jjiao):
+__device__ inline bool getNormalVectorOSLidar(const OSLidar& lidar,
+                                              const Index2D& u_C,
+                                              const int rows, const int cols,
+                                              Vector3f& normal_vector) {
+  if (u_C.x() < 0 || u_C.y() < 0 || u_C.x() >= cols || u_C.y() >= rows) {
+    return false;
+  } else {
+    normal_vector = lidar.getNormalVector(u_C);
+    if (normal_vector.norm() < kFloatEpsilon) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 }
 
 // CAMERA
@@ -424,18 +527,6 @@ __global__ void integrateBlocksKernel(
     return;
   }
 
-  // NOTE(jjiao): retrive the normal vector given u_px
-  Vector3f normal_vector;
-  const Index2D u_px_rounded = u_px.array().round().cast<int>();
-  if (u_px_rounded.x() < 0 || u_px_rounded.y() < 0 ||
-      u_px_rounded.x() >= cols || u_px_rounded.y() >= rows) {
-    normal_vector = Vector3f(0.0f, 0.0f, 0.0f);
-  } else {
-    normal_vector = getNormalVectorOSLidar(lidar, u_px_rounded, rows, cols);
-    // printf("(%f, %f, %f) ", normal_vector.x(), normal_vector.y(),
-    //        normal_vector.z());
-  }
-
   // Get the Voxel we'll update in this thread
   // NOTE(alexmillane): Note that we've reverse the voxel indexing order
   // such that adjacent threads (x-major) access adjacent memory locations
@@ -443,9 +534,16 @@ __global__ void integrateBlocksKernel(
   TsdfVoxel* voxel_ptr = &(block_device_ptrs[blockIdx.x]
                                ->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
 
+  // NOTE(jjiao): retrive the normal vector given u_px
+  const Index2D u_C = u_px.array().round().cast<int>();
+  Vector3f point_vector = Vector3f::Zero();
+  Vector3f normal_vector = Vector3f::Zero();
+  if (!getPointVectorOSLidar(lidar, u_C, rows, cols, point_vector)) return;
+  if (!getNormalVectorOSLidar(lidar, u_C, rows, cols, normal_vector)) return;
+  normal_vector = T_C_L.rotation().transpose() * normal_vector;
+
   // function 3
   // Update the voxel using the update rule for this layer type
-
   // NOTE(jjiao):
   // setting the voxel update method
   // Projective distance:
@@ -458,13 +556,15 @@ __global__ void integrateBlocksKernel(
   const int voxel_dis_method = 3;
   if (voxel_dis_method == 1) {
     // the original nvblox impelentation
+    // not use normal vector
     updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
                 max_weight);
   } else {
     // the improved weight computation
-    updateVoxelMultiWeightComp(image_value, voxel_ptr, voxel_depth_m,
-                               truncation_distance_m, max_weight,
-                               voxel_dis_method);
+    // use normal vector
+    updateVoxelMultiWeightComp(
+        image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
+        max_weight, voxel_dis_method, point_vector, normal_vector, T_C_L);
   }
 }
 
