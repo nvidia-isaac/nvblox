@@ -27,6 +27,8 @@
       >   * <code>integrateBlocksKernel</code>: TSDF integration for each block, done in GPU
       >     * <code>projectThreadVoxel</code>: convert blocks' indices into coordinates, retrieve voxels from the block, and project them onto the image to check whether they are visible or not
       >     * <code>interpolateOSLidarImage</code>: linear interpolation of depth images given float coordinates
+      >       * ```const Index2D u_M_rounded = u_px.array().round().cast<int>();```
+      >       * ```u_M_rounded.x() < 0 || u_M_rounded.y() < 0 || u_M_rounded.x() >= cols || u_M_rounded.y() >= rows)```: check bounds
       >     * <code>updateVoxel</code>: update the TSDF values of all visible voxels. 
 
 ### Run an example with the FusionPortable dataset

@@ -1,12 +1,20 @@
 ### Experimental Results
 
 ##### Reconstruction results (voxel_size = 0.1)
-* Sequence: 20220216_garden_day
-  * NVBlox (constant weight, truncate fused_distance): Point cloud distance [m]: 0.0713986; Coverage [%]: 0.648376
-  * NVBlox (constant weight, truncate measured_distance): Point cloud distance [m]: 0.070609; Coverage [%]: 0.716344
-  * NVBlox (linear weight, truncate fused_distance): Point cloud distance [m]: 0.0687769; Coverage [%]: 0.73421
-  * NVBlox (exp weight, truncate fused_distance): Point cloud distance [m]: 0.0690283; Coverage [%]: 0.714388
-  * VDBMapping: Point cloud distance [m]: 0.074576; Coverage [%]: 0.724301
+* Sequence: 20220216_garden_day, *2000* frames
+  * NVBlox (constant weight, truncate fused_distance): 
+  Point cloud distance [m]: 0.0713986; Coverage [%]: 0.648376
+  * NVBlox (constant weight, truncate measured_distance): 
+  Point cloud distance [m]: 0.070609; Coverage [%]: 0.716344
+  * NVBlox (linear weight, truncate fused_distance): 
+  Point cloud distance [m]: 0.0687769; Coverage [%]: 0.73421
+  * NVBlox (exp weight, truncate fused_distance): 
+  Point cloud distance [m]: 0.0690283; Coverage [%]: 0.714388
+  * NVBlox (non-projective distance, truncate fused_distance): 
+  Point cloud distance [m]: 0.0480275; Coverage [%]: 0.388868
+
+  * VDBMapping: 
+  Point cloud distance [m]: 0.074576; Coverage [%]: 0.724301
 
 ##### Computation time (voxel_size = 0.1)
 * Sequence: 20220216_garden_day

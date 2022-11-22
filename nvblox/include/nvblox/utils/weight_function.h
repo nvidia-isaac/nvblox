@@ -33,11 +33,11 @@ __host__ __device__ inline float tsdf_exp_weight(const float& sdf,
 
 __host__ __device__ inline float tsdf_sensor_weight(const float& dis,
                                                     const int m,
-                                                    const float dis_th) {
-  if (dis <= dis_th) {
+                                                    const float dis_near) {
+  if (dis <= dis_near) {
     return 1.0f;
   } else {
-    return 1.0f / pow(dis - dis_th, m);
+    return 1.0f / pow(dis, m);
   }
 }
 
@@ -47,7 +47,7 @@ __host__ __device__ inline float tsdf_dropoff_weight(const float& sdf,
   if (sdf <= -trunc) {
     return 0.0f;
   } else if (sdf > -trunc && sdf < -epsilon) {
-    return (trunc + sdf) / (sdf - epsilon);
+    return (trunc + sdf) / (trunc - epsilon);
   } else {
     return 1.0f;
   }

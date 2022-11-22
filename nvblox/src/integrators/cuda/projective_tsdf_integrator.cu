@@ -72,7 +72,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
     const float surface_depth_measured, TsdfVoxel* voxel_ptr,
     const float voxel_depth_m, const float truncation_distance_m,
     const float max_weight, const int voxel_dis_method,
-    const Vector3f measurement_point, const Vector3f& measurement_normal,
+    const Vector3f& measurement_point, const Vector3f& measurement_normal,
     const Transform& T_C_L) {
   // Get the MEASURED depth of the VOXEL
   float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
@@ -205,19 +205,21 @@ __device__ inline bool updateVoxelMultiWeightComp(
 
     // ruling out extremely large incidence angle
     if (normal_ratio < 0.05) return false;
+    // printf("%f ", normal_ratio);
 
     // NOTE(jjiao): is it proper for the weight design?
-    float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2, 30.0);
+    float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2, 50.0);
     float weight_dropoff =
         tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
     float measurement_weight = weight_sensor * weight_dropoff;
+    // printf("%f ", measurement_weight);
 
-    // NOTE(jjiao): it is possible to have weights very close to zero, due to
-    // the limited precision of floating points dividing by this small value can
-    // cause nans
+    // NOTE(jjiao): it is possible to have weights very close to zero, due
+    // to the limited precision of floating points dividing by this small
+    // value can cause nans
     if (measurement_weight < kFloatEpsilon) return false;
 
-    float measurement_distance = normal_ratio * voxel_distance_current;
+    float measurement_distance = normal_ratio * voxel_distance_measured;
     measurement_distance = fminf(measurement_distance, truncation_distance_m);
     float fused_distance = (measurement_distance * measurement_weight +
                             voxel_distance_current * voxel_weight_current) /
@@ -545,6 +547,9 @@ __global__ void integrateBlocksKernel(
   Vector3f normal_vector = Vector3f::Zero();
   if (!getPointVectorOSLidar(lidar, u_C, rows, cols, point_vector)) return;
   if (!getNormalVectorOSLidar(lidar, u_C, rows, cols, normal_vector)) return;
+  // printf("(%f, %f, %f - %f, %f, %f) ", point_vector.x(), point_vector.y(),
+  //        point_vector.z(), normal_vector.x(), normal_vector.y(),
+  //        normal_vector.z());
 
   // function 3
   // Update the voxel using the update rule for this layer type
@@ -557,7 +562,7 @@ __global__ void integrateBlocksKernel(
   //  4: exponential weight, truncate the voxel_distance_measured
   // Non-Projective distance:
   //  5: weight and distance derived from VoxField
-  const int voxel_dis_method = 3;
+  const int voxel_dis_method = 5;
   if (voxel_dis_method == 1) {
     // the original nvblox impelentation
     // not use normal vector
