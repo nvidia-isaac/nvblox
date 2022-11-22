@@ -24,7 +24,6 @@ limitations under the License.
 #include "nvblox/utils/weight_function.h"
 
 namespace nvblox {
-
 // NOTE(jjiao): the original nvblox implementation
 __device__ inline bool updateVoxel(const float surface_depth_measured,
                                    TsdfVoxel* voxel_ptr,
@@ -74,6 +73,11 @@ __device__ inline bool updateVoxelMultiWeightComp(
     const float max_weight, const int voxel_dis_method,
     const Vector3f& measurement_point, const Vector3f& measurement_normal,
     const Transform& T_C_L) {
+  const float kEpsilon = 1e-6;       // Used for coordinates
+  const float kFloatEpsilon = 1e-8;  // Used for weights
+  const float TSDF_NORMAL_RATIO_TH = 0.05f;
+  const float TSDF_WEIGHT_DISTANCE_TH = 70.0f;
+
   // Get the MEASURED depth of the VOXEL
   float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
   // If we're behind the negative truncation distance, just continue.
@@ -202,17 +206,14 @@ __device__ inline bool updateVoxelMultiWeightComp(
                            measurement_point.norm());
       }
     }
-
     // ruling out extremely large incidence angle
-    if (normal_ratio < 0.05) return false;
-    // printf("%f ", normal_ratio);
+    if (normal_ratio < TSDF_NORMAL_RATIO_TH) return false;
 
-    // NOTE(jjiao): is it proper for the weight design?
-    float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2, 50.0);
+    float weight_sensor =
+        tsdf_sensor_weight(surface_depth_measured, 2, TSDF_WEIGHT_DISTANCE_TH);
     float weight_dropoff =
         tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
     float measurement_weight = weight_sensor * weight_dropoff;
-    // printf("%f ", measurement_weight);
 
     // NOTE(jjiao): it is possible to have weights very close to zero, due
     // to the limited precision of floating points dividing by this small
@@ -364,6 +365,7 @@ __device__ inline bool getPointVectorOSLidar(const OSLidar& lidar,
                                              const Index2D& u_C, const int rows,
                                              const int cols,
                                              Vector3f& point_vector) {
+  const float kFloatEpsilon = 1e-8;  // Used for weights
   if (u_C.x() < 0 || u_C.y() < 0 || u_C.x() >= cols || u_C.y() >= rows) {
     return false;
   } else {
@@ -381,6 +383,7 @@ __device__ inline bool getNormalVectorOSLidar(const OSLidar& lidar,
                                               const Index2D& u_C,
                                               const int rows, const int cols,
                                               Vector3f& normal_vector) {
+  const float kFloatEpsilon = 1e-8;  // Used for weights
   if (u_C.x() < 0 || u_C.y() < 0 || u_C.x() >= cols || u_C.y() >= rows) {
     return false;
   } else {

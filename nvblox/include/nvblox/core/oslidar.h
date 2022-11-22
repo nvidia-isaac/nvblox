@@ -19,10 +19,6 @@ limitations under the License.
 #include "nvblox/core/types.h"
 
 namespace nvblox {
-
-constexpr float kEpsilon = 1e-6f;      // Used for coordinates
-constexpr float kFloatEpsilon = 1e-8;  // Used for weights
-
 // NOTE(jjiao):
 // image coordinates to pixel indices
 // return u_C.array().floor().cast<int>();
