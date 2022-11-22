@@ -39,8 +39,7 @@
 
 #### Demo 
 
-Create a docker container
-
+1. Create a docker container
 ```
 docker pull iidcramlab/nvblox:20221105-ros-noetic-open3d
 xhost local:docker
@@ -50,24 +49,33 @@ docker run -it --net=host --env="DISPLAY" -v $HOME/.Xauthority:/root/.Xauthority
 iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
 ```
 
-Download data
+2. Prepare data
+    * Download data from the FusionPortable_dataset
+    * Run the R3LIVE
+    ```
+    roslaunch r3live r3live_bag_ouster128.launch \
+    use_vio:=true \
+    bag_folder:=/Spy/dataset/FusionPortable_dataset/sensor_data/handheld/20220216_canteen_day \
+    bag_file:=20220216_canteen_day_ref.bag
+    ```
+    * Run the program to save data
+    ```
+    roslaunch ramlab_evaluatioin save_nvblox_data_fp.launch \
+    sequence_name:=20220216_canteen_day
+    ```
 
-1. FusionPortable_20220216_garden_day: http://gofile.me/72EEc/Fa0eMVojB
-
-Navigate to and run the `fuse_fusionportable` binary. From the nvblox base folder run
-
+3. Run the NVBlox
 ```
 cd nvblox/build \
 make \
 ./executables/fuse_fusionportable 20220216_garden_day/ \
-tsdf_integrator_max_integration_distance_m 50 \
--num_frames 300 \
+tsdf_integrator_max_integration_distance_m 70.0 \
+-num_frames 2000 \
 -voxel_size 0.1 \
--mesh_output_path 20220216_garden_day/mesh_0.1.ply
+-mesh_output_path 20220216_garden_day_mesh_test.ply
 ```
 
-Once it's done we can view the output mesh using the Open3D viewer.
-
+4. We can view the output mesh using the Open3D viewer.
 ```
 python3 ../../visualization/visualize_mesh.py 20220216_garden_day_mesh.ply
 ```

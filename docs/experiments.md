@@ -23,11 +23,34 @@
   * VDBMapping: 
   Point cloud distance [m]: 0.074576; Coverage [%]: 0.724301
 
+* Sequence: 20220216_canteen_day, *2600* frames
+  <!-- * Projective distance
+    * NVBlox (constant weight, truncate fused_distance): 
+    Point cloud distance [m]: 0.0713986; Coverage [%]: 0.648376
+    * NVBlox (constant weight, truncate measured_distance): 
+    Point cloud distance [m]: 0.070609; Coverage [%]: 0.716344
+    * NVBlox (linear weight, truncate fused_distance): 
+    Point cloud distance [m]: 0.0687769; Coverage [%]: 0.73421
+    * NVBlox (exp weight, truncate fused_distance): 
+    Point cloud distance [m]: 0.0690283; Coverage [%]: 0.714388 -->
+
+  * Non-Projective distance
+    * NVBlox (non-projective distance, truncate fused_distance): (distance_th = 70.0m)
+    Point cloud distance [m]: 0.102588; Coverage [%]: 0.602803
+
+  <!-- * VDBMapping: 
+  Point cloud distance [m]: 0.074576; Coverage [%]: 0.724301 -->
+
 ##### Computation time (voxel_size = 0.1)
 * Sequence: 20220216_garden_day
   * Normal computation with a GPU: 0.7ms per frame
   * NVBLox: 14.2ms per frame (total 2000)
   * VDBMapping: 384.062 ms per frame (total 2500)
+
+* Sequence: 20220216_canteen_day
+  * Normal computation with a GPU: 0.01ms per frame
+  * NVBLox: 3ms per frame (total 2600)
+  <!-- * VDBMapping: 384.062 ms per frame (total 2500) -->
 
 #### Appendix
 

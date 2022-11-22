@@ -65,14 +65,14 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
 }
 
 // TODO(jjiao): update the voxel according to the traditional TSDF update method
-// TODO(jjiao): we can try different methods based on the probabilitics to
-// improve the voxel update
+// TODO(jjiao): we can try different methods based on the probabilitics
 __device__ inline bool updateVoxelMultiWeightComp(
     const float surface_depth_measured, TsdfVoxel* voxel_ptr,
     const float voxel_depth_m, const float truncation_distance_m,
     const float max_weight, const int voxel_dis_method,
     const Vector3f& measurement_point, const Vector3f& measurement_normal,
     const Transform& T_C_L) {
+  // NOTE(jjiao): need to externally set parameters in both host and device
   const float kEpsilon = 1e-6;       // Used for coordinates
   const float kFloatEpsilon = 1e-8;  // Used for weights
   const float TSDF_NORMAL_RATIO_TH = 0.05f;
@@ -214,7 +214,6 @@ __device__ inline bool updateVoxelMultiWeightComp(
     float weight_dropoff =
         tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
     float measurement_weight = weight_sensor * weight_dropoff;
-
     // NOTE(jjiao): it is possible to have weights very close to zero, due
     // to the limited precision of floating points dividing by this small
     // value can cause nans
