@@ -168,12 +168,13 @@ __device__ inline bool updateVoxelMultiWeightComp(
       // case 1.1: existing gradient, existing normal
       if (measurement_normal.norm() > kFloatEpsilon) {
         // alpha: the angle between the normal and gradient
-        float cos_alpha = abs(measurement_normal.dot(gradient_C));
+        float cos_alpha =
+            abs(gradient_C.dot(measurement_normal) / measurement_normal.norm());
         float sin_alpha = sqrt(1 - cos_alpha * cos_alpha);
 
         // theta: the angle between the ray and gradient
         float cos_theta =
-            abs(measurement_point.dot(gradient_C) / measurement_point.norm());
+            abs(gradient_C.dot(measurement_point) / measurement_point.norm());
         float sin_theta = sqrt(1 - cos_theta * cos_theta);
 
         // condition 1: flat surface, alpha is approximate to zero
@@ -205,6 +206,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
     // ruling out extremely large incidence angle
     if (normal_ratio < 0.05) return false;
 
+    // NOTE(jjiao): is it proper for the weight design?
     float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2, 30.0);
     float weight_dropoff =
         tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
@@ -227,8 +229,11 @@ __device__ inline bool updateVoxelMultiWeightComp(
 
     // existing normal, update the gradient
     if (measurement_normal.norm() > kFloatEpsilon) {
+      // transform the normal into the world coordinate system
+      Vector3f mea_normal_world =
+          T_C_L.rotation().transpose() * measurement_normal;
       Vector3f fused_gradient = (voxel_weight_current * voxel_gradient_current +
-                                 measurement_weight * measurement_normal) /
+                                 measurement_weight * mea_normal_world) /
                                 (measurement_weight + voxel_weight_current);
       fused_gradient.normalize();
       voxel_ptr->gradient = fused_gradient;
@@ -540,7 +545,6 @@ __global__ void integrateBlocksKernel(
   Vector3f normal_vector = Vector3f::Zero();
   if (!getPointVectorOSLidar(lidar, u_C, rows, cols, point_vector)) return;
   if (!getNormalVectorOSLidar(lidar, u_C, rows, cols, normal_vector)) return;
-  normal_vector = T_C_L.rotation().transpose() * normal_vector;
 
   // function 3
   // Update the voxel using the update rule for this layer type
