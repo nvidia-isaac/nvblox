@@ -38,6 +38,12 @@ template <typename VoxelType>
 bool outputVoxelLayerToPly(const VoxelBlockLayer<VoxelType>& layer,
                            const std::string& filename);
 
+/// Without specifying a lambda, this outputs the point with smaller distance.
+template <typename VoxelType>
+bool outputObstacleToPly(
+    const VoxelBlockLayer<VoxelType>& layer, const std::string& filename,
+    std::function<bool(const VoxelType* voxel, float* intensity)> lambda);
+
 /// Specializations for the TSDF type.
 template <>
 bool outputVoxelLayerToPly(const TsdfLayer& layer, const std::string& filename);
@@ -45,6 +51,10 @@ bool outputVoxelLayerToPly(const TsdfLayer& layer, const std::string& filename);
 /// Specialization for the ESDF type.
 template <>
 bool outputVoxelLayerToPly(const EsdfLayer& layer, const std::string& filename);
+
+/// Specialization for the obstacle information.
+// template <>
+bool outputObstacleToPly(const EsdfLayer& layer, const std::string& filename);
 
 }  // namespace io
 }  // namespace nvblox

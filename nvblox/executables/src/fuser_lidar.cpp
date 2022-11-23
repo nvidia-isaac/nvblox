@@ -145,7 +145,7 @@ void FuserLidar::readCommandLineFlags() {
   if (!gflags::GetCommandLineFlagInfoOrDie("obstacle_output_path").is_default) {
     LOG(INFO) << "Command line parameter found: obstacle_output_path = "
               << FLAGS_obstacle_output_path;
-    obstacle_output_path_ = FLAGS_obstacle_output_path;
+    obs_output_path_ = FLAGS_obstacle_output_path;
   }
 
   // Subsampling flags
@@ -299,9 +299,9 @@ int FuserLidar::run() {
   }
 
   // TODO(jjiao): output the obstacle point cloud map to a ply file
-  if (!obstacle_output_path_.empty()) {
+  if (!obs_output_path_.empty()) {
     LOG(INFO) << "Outputting Obstacle based on the ESDF map ply file to "
-              << obstacle_output_path_;
+              << obs_output_path_;
     outputObstaclePointcloudPly();
   }
 
@@ -457,14 +457,11 @@ bool FuserLidar::outputMeshPly() {
   return io::outputMeshLayerToPly(mapper_->mesh_layer(), mesh_output_path_);
 }
 
-// TODO(jjiao): output obstacle pointcloud
 bool FuserLidar::outputObstaclePointcloudPly() {
   timing::Timer timer_write("fuser/obstacle/write");
   LOG(INFO)
       << "[NOTE] The output of the obstacle point cloud is under construction";
-  // return io::outputVoxelLayerToPly(mapper_->esdf_layer(),
-  // obstacle_output_path_);
-  return false;
+  return io::outputObstacleToPly(mapper_->esdf_layer(), obs_output_path_);
 }
 
 bool FuserLidar::outputTimingsToFile() {

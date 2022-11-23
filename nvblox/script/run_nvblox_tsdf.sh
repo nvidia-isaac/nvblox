@@ -10,7 +10,7 @@ make && \
 	-mesh_frame_subsampling 500 \
 	-esdf_output_path /Spy/dataset/mapping_results/nvblox/20220216_garden_day_esdf_test.ply \
 	-esdf_mode 1 \
-	-esdf_zmin -0.5 \
-	-esdf_zmax 0.5 \
+	-esdf_zmin 0.5 \
+	-esdf_zmax 1.0 \
 	-obstacle_output_path /Spy/dataset/mapping_results/nvblox/20220216_garden_day_obs_test.ply \
 

@@ -103,7 +103,7 @@ class FuserLidar {
   std::string esdf_output_path_;
   std::string mesh_output_path_;
   std::string map_output_path_;
-  std::string obstacle_output_path_;
+  std::string obs_output_path_;
 };
 
 }  //  namespace nvblox
