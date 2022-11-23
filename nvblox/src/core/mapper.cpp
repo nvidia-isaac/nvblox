@@ -64,7 +64,8 @@ void RgbdMapper::integrateOSLidarDepth(DepthImage& depth_frame,
   lidar_tsdf_integrator_.integrateFrame(depth_frame, T_L_C, oslidar,
                                         layers_.getPtr<TsdfLayer>(),
                                         &updated_blocks);
-  // LOG(INFO) << "size of updated blocks: " << updated_blocks.size();
+  LOG(INFO) << "size of TSDF blocks to be integrated: "
+            << updated_blocks.size();
 
   // Update all the relevant queues.
   mesh_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());
@@ -82,6 +83,8 @@ std::vector<Index3D> RgbdMapper::updateMesh() {
   // Convert the set of MeshBlocks needing an update to a vector
   std::vector<Index3D> mesh_blocks_to_update_vector(
       mesh_blocks_to_update_.begin(), mesh_blocks_to_update_.end());
+  LOG(INFO) << "Size of mesh blocks to be updated: "
+            << mesh_blocks_to_update_vector.size();
 
   // Call the integrator.
   mesh_integrator_.integrateBlocksGPU(layers_.get<TsdfLayer>(),

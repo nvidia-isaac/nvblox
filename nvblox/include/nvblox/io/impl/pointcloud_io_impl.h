@@ -21,6 +21,7 @@ limitations under the License.
 namespace nvblox {
 namespace io {
 
+// NOTE(jjiao): This function output TSDF and ESDF map to a file
 /// Outputs a voxel layer as a pointcloud with the lambda function deciding the
 /// intensity.
 template <typename VoxelType>
@@ -32,7 +33,7 @@ bool outputVoxelLayerToPly(
 
   // Combine all the voxels in the mesh into a pointcloud.
   std::vector<Vector3f> points;
-  std::vector<float> intensities;
+  std::vector<float> intensities;  // NOTE(jjiao): record the distance
 
   constexpr int kVoxelsPerSide = VoxelBlock<VoxelType>::kVoxelsPerSide;
   const float block_size = layer.block_size();

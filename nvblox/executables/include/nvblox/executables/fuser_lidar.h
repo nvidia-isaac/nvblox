@@ -68,6 +68,8 @@ class FuserLidar {
   bool outputTimingsToFile();
   // Output the serialized map to a file
   bool outputMapToFile();
+  // Output an obstacle pointcloud based on the ESDF map as PLY file.
+  bool outputObstaclePointcloudPly();
 
   // Get the mapper (useful for experiments where we modify mapper settings)
   RgbdMapper& mapper();
@@ -101,6 +103,7 @@ class FuserLidar {
   std::string esdf_output_path_;
   std::string mesh_output_path_;
   std::string map_output_path_;
+  std::string obstacle_output_path_;
 };
 
 }  //  namespace nvblox

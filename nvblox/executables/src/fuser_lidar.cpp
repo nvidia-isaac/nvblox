@@ -39,6 +39,8 @@ DEFINE_string(esdf_output_path, "",
               "File in which to save the ESDF pointcloud.");
 DEFINE_string(mesh_output_path, "", "File in which to save the surface mesh.");
 DEFINE_string(map_output_path, "", "File in which to save the serialize map.");
+DEFINE_string(obstacle_output_path, "",
+              "File in which to save the obstacle pointcloud map.");
 
 // Subsampling
 DEFINE_int32(tsdf_frame_subsampling, 0,
@@ -79,9 +81,12 @@ DEFINE_double(esdf_integrator_max_site_distance_vox, -1.0,
               "The maximum distance at which we consider a TSDF voxel a site.");
 DEFINE_double(esdf_integrator_max_distance_m, -1.0,
               "The maximum distance which we integrate ESDF distances out to.");
+DEFINE_int32(esdf_mode, 0, "The ESDF mode. 0: k3D, 1: k2D, 2: kUnset");
+DEFINE_double(esdf_zmin, 0.5, "zmin of the 2D ESDF map");
+DEFINE_double(esdf_zmax, 1.0, "zmax of the 2D ESDF map");
+DEFINE_double(esdf_z_slice, 0.75, "z_slice of the 2D ESDF map");
 
 namespace nvblox {
-
 FuserLidar::FuserLidar(
     std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
     : data_loader_(std::move(data_loader)) {
@@ -126,7 +131,6 @@ void FuserLidar::readCommandLineFlags() {
     LOG(INFO) << "Command line parameter found: esdf_output_path = "
               << FLAGS_esdf_output_path;
     esdf_output_path_ = FLAGS_esdf_output_path;
-    setEsdfMode(RgbdMapper::EsdfMode::k3D);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie("mesh_output_path").is_default) {
     LOG(INFO) << "Command line parameter found: mesh_output_path = "
@@ -138,6 +142,12 @@ void FuserLidar::readCommandLineFlags() {
               << FLAGS_map_output_path;
     map_output_path_ = FLAGS_map_output_path;
   }
+  if (!gflags::GetCommandLineFlagInfoOrDie("obstacle_output_path").is_default) {
+    LOG(INFO) << "Command line parameter found: obstacle_output_path = "
+              << FLAGS_obstacle_output_path;
+    obstacle_output_path_ = FLAGS_obstacle_output_path;
+  }
+
   // Subsampling flags
   if (!gflags::GetCommandLineFlagInfoOrDie("tsdf_frame_subsampling")
            .is_default) {
@@ -243,8 +253,24 @@ void FuserLidar::readCommandLineFlags() {
     mapper_->esdf_integrator().max_distance_m(
         FLAGS_esdf_integrator_max_distance_m);
   }
+
+  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_mode").is_default) {
+    LOG(INFO) << "Command line parameter found: esdf_mode = "
+              << FLAGS_esdf_mode;
+    if (FLAGS_esdf_mode == 0) {
+      setEsdfMode(RgbdMapper::EsdfMode::k3D);
+    } else if (FLAGS_esdf_mode == 1) {
+      setEsdfMode(RgbdMapper::EsdfMode::k2D);
+      z_min_ = FLAGS_esdf_zmin;
+      z_max_ = FLAGS_esdf_zmax;
+      z_slice_ = FLAGS_esdf_z_slice;
+    } else if (FLAGS_esdf_mode == 2) {
+      setEsdfMode(RgbdMapper::EsdfMode::kUnset);
+    }
+  }
 }
 
+// NOTE(jjiao): the overall procedures running function
 int FuserLidar::run() {
   LOG(INFO) << "Trying to integrate the first frame: ";
   if (!integrateFrames()) {
@@ -272,8 +298,13 @@ int FuserLidar::run() {
     outputMapToFile();
   }
 
-  // std::vector<std::string> keywords = {std::string("fuser"),
-  //                                      std::string("tsdf")};
+  // TODO(jjiao): output the obstacle point cloud map to a ply file
+  if (!obstacle_output_path_.empty()) {
+    LOG(INFO) << "Outputting Obstacle based on the ESDF map ply file to "
+              << obstacle_output_path_;
+    outputObstaclePointcloudPly();
+  }
+
   std::vector<std::string> keywords = {std::string("integrate"),
                                        std::string("normal")};
   LOG(INFO) << nvblox::timing::Timing::Print(keywords);
@@ -312,6 +343,8 @@ void FuserLidar::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
   esdf_mode_ = esdf_mode;
 }
 
+// NOTE(jjiao): this function will run the tsdf, mesh, and esdf integration
+// for each incoming frame
 bool FuserLidar::integrateFrame(const int frame_number) {
   timing::Timer timer_file("fuser/file_loading");
   DepthImage depth_frame;
@@ -371,24 +404,25 @@ bool FuserLidar::integrateFrame(const int frame_number) {
   //   timer_integrate_color.Stop();
   // }
 
-  // if (mesh_frame_subsampling_ > 0) {
-  //   if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
-  //     timing::Timer timer_mesh("fuser/mesh");
-  //     mapper_->updateMesh();
-  //   }
-  // }
+  if (mesh_frame_subsampling_ > 0) {
+    if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
+      timing::Timer timer_mesh("fuser/mesh");
+      mapper_->updateMesh();
+    }
+  }
 
-  // if (esdf_frame_subsampling_ > 0) {
-  //   if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
-  //     timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
-  //     updateEsdf();
-  //     timer_integrate_esdf.Stop();
-  //   }
-  // }
+  if (esdf_frame_subsampling_ > 0) {
+    if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
+      timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
+      updateEsdf();
+      timer_integrate_esdf.Stop();
+    }
+  }
   per_frame_timer.Stop();
   return true;
 }
 
+// NOTE(jjiao): Running all TSDF integrations
 bool FuserLidar::integrateFrames() {
   int frame_number = 0;
   while (frame_number < num_frames_to_integrate_ &&
@@ -421,6 +455,16 @@ bool FuserLidar::outputPointcloudPly() {
 bool FuserLidar::outputMeshPly() {
   timing::Timer timer_write("fuser/mesh/write");
   return io::outputMeshLayerToPly(mapper_->mesh_layer(), mesh_output_path_);
+}
+
+// TODO(jjiao): output obstacle pointcloud
+bool FuserLidar::outputObstaclePointcloudPly() {
+  timing::Timer timer_write("fuser/obstacle/write");
+  LOG(INFO)
+      << "[NOTE] The output of the obstacle point cloud is under construction";
+  // return io::outputVoxelLayerToPly(mapper_->esdf_layer(),
+  // obstacle_output_path_);
+  return false;
 }
 
 bool FuserLidar::outputTimingsToFile() {
