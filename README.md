@@ -31,6 +31,13 @@
       >       * ```u_M_rounded.x() < 0 || u_M_rounded.y() < 0 || u_M_rounded.x() >= cols || u_M_rounded.y() >= rows)```: check bounds
       >     * <code>updateVoxel</code>: update the TSDF values of all visible voxels. 
 
+3. Output data
+    1. Mesh map
+    2. ESDF map
+    3. Obstacle map: points from the ESDF map whose distance is smaller than a threshold
+
+4. Global planning test
+
 ### Run an example with the FusionPortable dataset
 
 [Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
