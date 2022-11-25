@@ -572,7 +572,7 @@ __global__ void integrateBlocksKernel(
   // Non-Projective distance:
   //  5: weight and distance derived from VoxField
   //  6: linear weight, distance derived from VoxField
-  const int voxel_dis_method = 3;
+  const int voxel_dis_method = 6;
   if (voxel_dis_method == 1) {
     // the original nvblox impelentation
     // not use normal vector
