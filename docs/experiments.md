@@ -34,6 +34,17 @@
     * NVBlox (non-projective distance, truncate fused_distance): (distance_th = 70.0m)
       Point cloud distance [m]: 0.0704632; Coverage [%]: 0.574235
 
+* Sequence: 20220216_escalator_day, *3200* frames
+  * Projective distance
+    * NVBlox (linear weight, truncate fused_distance): 
+    Point cloud distance [m]: 0.615201; Coverage [%]: 0.649969
+
+  * Non-Projective distance
+    * NVBlox (non-projective distance, truncate fused_distance): (distance_th = 70.0m)
+      Point cloud distance [m]: 0.0526527; Coverage [%]: 0.629851
+    * NVBlox (non-projective distance, linear weight, truncate fused_distance): (distance_th = 70.0m)
+      Point cloud distance [m]: 0.0602039; Coverage [%]: 0.641247
+
 ##### Computation time (voxel_size = 0.1)
 * Sequence: 20220216_garden_day
   * Normal computation with a GPU: 0.7ms per frame
@@ -43,6 +54,9 @@
 * Sequence: 20220216_canteen_day
   * Normal computation with a GPU: 0.01ms per frame
   * NVBLox: 3ms per frame (total 2600)
+
+* Sequence: 20220226_campus_road_day
+  * NVBLox: 5ms per frame (total 2000)
 
 #### Appendix
 

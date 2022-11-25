@@ -160,7 +160,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_dis_method == 5) {
+  } else if (voxel_dis_method == 5 || voxel_dis_method == 6) {
     float normal_ratio = 1.0f;
 
     // case 1: existing gradient, use the gradient to compute the ratio
@@ -209,18 +209,25 @@ __device__ inline bool updateVoxelMultiWeightComp(
     // ruling out extremely large incidence angle
     if (normal_ratio < TSDF_NORMAL_RATIO_TH) return false;
 
-    float weight_sensor =
-        tsdf_sensor_weight(surface_depth_measured, 2, TSDF_WEIGHT_DISTANCE_TH);
-    float weight_dropoff =
-        tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
-    float measurement_weight = weight_sensor * weight_dropoff;
+    float measurement_distance = normal_ratio * voxel_distance_measured;
+    measurement_distance = fminf(measurement_distance, truncation_distance_m);
+
+    float measurement_weight;
+    if (voxel_dis_method == 5) {
+      float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2,
+                                               TSDF_WEIGHT_DISTANCE_TH);
+      float weight_dropoff =
+          tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
+      measurement_weight = weight_sensor * weight_dropoff;
+    } else if (voxel_dis_method == 6) {
+      measurement_weight = tsdf_constant_weight(measurement_distance);
+    }
+
     // NOTE(jjiao): it is possible to have weights very close to zero, due
     // to the limited precision of floating points dividing by this small
     // value can cause nans
     if (measurement_weight < kFloatEpsilon) return false;
 
-    float measurement_distance = normal_ratio * voxel_distance_measured;
-    measurement_distance = fminf(measurement_distance, truncation_distance_m);
     float fused_distance = (measurement_distance * measurement_weight +
                             voxel_distance_current * voxel_weight_current) /
                            (measurement_weight + voxel_weight_current);
@@ -564,7 +571,8 @@ __global__ void integrateBlocksKernel(
   //  4: exponential weight, truncate the voxel_distance_measured
   // Non-Projective distance:
   //  5: weight and distance derived from VoxField
-  const int voxel_dis_method = 5;
+  //  6: linear weight, distance derived from VoxField
+  const int voxel_dis_method = 3;
   if (voxel_dis_method == 1) {
     // the original nvblox impelentation
     // not use normal vector
