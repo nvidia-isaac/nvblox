@@ -42,7 +42,9 @@
 
 [Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
 
-[Experiments on NVBlox and VDBMapping](docs/experiments.md)
+[Experiments on NVBlox and VDBMapping](docs/experiments_fusionportable.md)
+
+[Experiments on NVBlox with the KITTI dataset](docs/experiments_kitti.md)
 
 #### Demo 
 

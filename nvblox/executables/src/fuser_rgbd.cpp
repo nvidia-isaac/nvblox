@@ -13,12 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/executables/fuser.h"
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 #include "nvblox/io/mesh_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/io/pointcloud_io.h"
@@ -81,7 +80,8 @@ DEFINE_double(esdf_integrator_max_distance_m, -1.0,
 
 namespace nvblox {
 
-Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
+FuserRGBD::FuserRGBD(
+    std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
     : data_loader_(std::move(data_loader)) {
   // NOTE(alexmillane): We require the voxel size before we construct the
   // mapper, so we grab this parameter first and separately.
@@ -106,7 +106,7 @@ Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
   readCommandLineFlags();
 };
 
-void Fuser::readCommandLineFlags() {
+void FuserRGBD::readCommandLineFlags() {
   // Dataset flags
   if (!gflags::GetCommandLineFlagInfoOrDie("num_frames").is_default) {
     LOG(INFO) << "Command line parameter found: num_frames = "
@@ -241,7 +241,7 @@ void Fuser::readCommandLineFlags() {
   }
 }
 
-int Fuser::run() {
+int FuserRGBD::run() {
   LOG(INFO) << "Trying to integrate the first frame: ";
   if (!integrateFrames()) {
     LOG(FATAL)
@@ -276,27 +276,27 @@ int Fuser::run() {
   return 0;
 }
 
-RgbdMapper& Fuser::mapper() { return *mapper_; }
+RgbdMapper& FuserRGBD::mapper() { return *mapper_; }
 
-void Fuser::setVoxelSize(float voxel_size) { voxel_size_m_ = voxel_size; }
+void FuserRGBD::setVoxelSize(float voxel_size) { voxel_size_m_ = voxel_size; }
 
-void Fuser::setTsdfFrameSubsampling(int subsample) {
+void FuserRGBD::setTsdfFrameSubsampling(int subsample) {
   tsdf_frame_subsampling_ = subsample;
 }
 
-void Fuser::setColorFrameSubsampling(int subsample) {
+void FuserRGBD::setColorFrameSubsampling(int subsample) {
   color_frame_subsampling_ = subsample;
 }
 
-void Fuser::setMeshFrameSubsampling(int subsample) {
+void FuserRGBD::setMeshFrameSubsampling(int subsample) {
   mesh_frame_subsampling_ = subsample;
 }
 
-void Fuser::setEsdfFrameSubsampling(int subsample) {
+void FuserRGBD::setEsdfFrameSubsampling(int subsample) {
   esdf_frame_subsampling_ = subsample;
 }
 
-void Fuser::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
+void FuserRGBD::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
   if (esdf_mode_ != RgbdMapper::EsdfMode::kUnset) {
     LOG(WARNING) << "EsdfMode already set. Cannot change once set once. Not "
                     "doing anything.";
@@ -304,8 +304,8 @@ void Fuser::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
   esdf_mode_ = esdf_mode;
 }
 
-bool Fuser::integrateFrame(const int frame_number) {
-  timing::Timer timer_file("fuser/file_loading");
+bool FuserRGBD::integrateFrame(const int frame_number) {
+  timing::Timer timer_file("FuserRGBD/file_loading");
   DepthImage depth_frame;
   ColorImage color_frame;
   Transform T_L_C;
@@ -321,29 +321,29 @@ bool Fuser::integrateFrame(const int frame_number) {
     return false;  // Shows over folks
   }
 
-  timing::Timer per_frame_timer("fuser/time_per_frame");
+  timing::Timer per_frame_timer("FuserRGBD/time_per_frame");
   if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate("fuser/integrate_tsdf");
+    timing::Timer timer_integrate("FuserRGBD/integrate_tsdf");
     mapper_->integrateDepth(depth_frame, T_L_C, camera);
     timer_integrate.Stop();
   }
 
   if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate_color("fuser/integrate_color");
+    timing::Timer timer_integrate_color("FuserRGBD/integrate_color");
     mapper_->integrateColor(color_frame, T_L_C, camera);
     timer_integrate_color.Stop();
   }
 
   if (mesh_frame_subsampling_ > 0) {
     if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {
-      timing::Timer timer_mesh("fuser/mesh");
+      timing::Timer timer_mesh("FuserRGBD/mesh");
       mapper_->updateMesh();
     }
   }
 
   if (esdf_frame_subsampling_ > 0) {
     if ((frame_number + 1) % esdf_frame_subsampling_ == 0) {
-      timing::Timer timer_integrate_esdf("fuser/integrate_esdf");
+      timing::Timer timer_integrate_esdf("FuserRGBD/integrate_esdf");
       updateEsdf();
       timer_integrate_esdf.Stop();
     }
@@ -352,7 +352,7 @@ bool Fuser::integrateFrame(const int frame_number) {
   return true;
 }  // namespace nvblox
 
-bool Fuser::integrateFrames() {
+bool FuserRGBD::integrateFrames() {
   int frame_number = 0;
   while (frame_number < num_frames_to_integrate_ &&
          integrateFrame(frame_number++)) {
@@ -364,7 +364,7 @@ bool Fuser::integrateFrames() {
   return true;
 }
 
-void Fuser::updateEsdf() {
+void FuserRGBD::updateEsdf() {
   switch (esdf_mode_) {
     case RgbdMapper::EsdfMode::kUnset:
       break;
@@ -377,17 +377,17 @@ void Fuser::updateEsdf() {
   }
 }
 
-bool Fuser::outputPointcloudPly() {
-  timing::Timer timer_write("fuser/esdf/write");
+bool FuserRGBD::outputPointcloudPly() {
+  timing::Timer timer_write("FuserRGBD/esdf/write");
   return io::outputVoxelLayerToPly(mapper_->esdf_layer(), esdf_output_path_);
 }
 
-bool Fuser::outputMeshPly() {
-  timing::Timer timer_write("fuser/mesh/write");
+bool FuserRGBD::outputMeshPly() {
+  timing::Timer timer_write("FuserRGBD/mesh/write");
   return io::outputMeshLayerToPly(mapper_->mesh_layer(), mesh_output_path_);
 }
 
-bool Fuser::outputTimingsToFile() {
+bool FuserRGBD::outputTimingsToFile() {
   LOG(INFO) << "Writing timing to: " << timing_output_path_;
   std::ofstream timing_file(timing_output_path_);
   timing_file << nvblox::timing::Timing::Print();
@@ -395,8 +395,8 @@ bool Fuser::outputTimingsToFile() {
   return true;
 }
 
-bool Fuser::outputMapToFile() {
-  timing::Timer timer_serialize("fuser/map/write");
+bool FuserRGBD::outputMapToFile() {
+  timing::Timer timer_serialize("FuserRGBD/map/write");
   return mapper_->saveMap(map_output_path_);
 }
 

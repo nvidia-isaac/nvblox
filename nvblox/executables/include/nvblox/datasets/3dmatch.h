@@ -21,15 +21,15 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/data_loader.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 
 namespace nvblox {
 namespace datasets {
 namespace threedmatch {
 
 // Build a Fuser for the 3DMatch dataset
-std::unique_ptr<Fuser> createFuser(const std::string base_path,
-                                   const int seq_id);
+std::unique_ptr<FuserRGBD> createFuser(const std::string base_path,
+                                       const int seq_id);
 
 ///@brief A class for loading 3DMatch data
 class DataLoader : public RgbdDataLoaderInterface {

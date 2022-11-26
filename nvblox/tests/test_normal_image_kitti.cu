@@ -14,16 +14,18 @@
 
 const float FACTOR = 1000.0f;
 const float OFFSET = 10.0f;
+const int WIDTH = 2048;
+const int HEIGHT = 64;
 
 struct LidarIntrinsics {
-  int width = 2048;
-  int height = 128;
+  int width = WIDTH;
+  int height = HEIGHT;
   float horizontal_fov = 6.28319;
-  float vertical_fov = 0.73584;
+  float vertical_fov = 0.49238;
   float start_azimuth = 0.0;
   float end_azimuth = 6.28319;
-  float start_elevation = 1.19763;
-  float end_elevation = 1.93347;
+  float start_elevation = 1.49255;
+  float end_elevation = 1.98493;
   float rads_per_pixel_azimuth = horizontal_fov * 1.0 / (width - 1);
   float rads_per_pixel_elevation = vertical_fov * 1.0 / (height - 1);
 };
@@ -90,7 +92,7 @@ __global__ void computeNormalImage(float* depth_image, float* height_image,
   // method 2:
   // int tid = threadIdx.x;
   // int u_stride = blockDim.x;
-  // int v_stride = 128 / 16;
+  // int v_stride = HEIGHT / 16;
   // for (int u = tid; u < w; u += u_stride) {
   //   for (int v = blockIdx.x * v_stride; v < (blockIdx.x + 1) * v_stride; v++)
   //   {
@@ -148,23 +150,19 @@ __global__ void computeNormalImage(float* depth_image, float* height_image,
 }
 
 int main(int argc, char** argv) {
-  int width = 2048;
-  int height = 128;
+  int width = WIDTH;
+  int height = HEIGHT;
+  std::string path(
+      "/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync/");
 
   // start: read the image
   std::vector<float> depth_image = load16BitImage(
-      std::string(
-          "/Spy/dataset/mapping_results/nvblox/20220216_garden_day/seq-01/"
-          "frame-000000.depth.png"),
-      FACTOR, 0.0f);
+      path + std::string("seq-01/frame-000000.depth.png"), FACTOR, 0.0f);
   std::vector<float> height_image = load16BitImage(
-      std::string(
-          "/Spy/dataset/mapping_results/nvblox/20220216_garden_day/seq-01/"
-          "frame-000000.height.png"),
-      FACTOR, OFFSET);
+      path + std::string("seq-01/frame-000000.height.png"), FACTOR, OFFSET);
 
   LidarIntrinsics lidar_intrinsics;
-  printf("OSLidar intrinsics--------------------\n");
+  printf("KITTILidar intrinsics--------------------\n");
   printf("width: %d\n", lidar_intrinsics.width);
   printf("height: %d\n", lidar_intrinsics.height);
   printf("horizontal_fov_rad: %f\n", lidar_intrinsics.horizontal_fov);
@@ -185,15 +183,15 @@ int main(int argc, char** argv) {
 
   float* depth_image_cuda;
   float* height_image_cuda;
-  cudaMalloc((void**)&depth_image_cuda, sizeof(float) * 2048 * 128);
-  cudaMemcpy(depth_image_cuda, depth_image.data(), sizeof(float) * 2048 * 128,
-             cudaMemcpyHostToDevice);
-  cudaMalloc((void**)&height_image_cuda, sizeof(float) * 2048 * 128);
-  cudaMemcpy(height_image_cuda, height_image.data(), sizeof(float) * 2048 * 128,
-             cudaMemcpyHostToDevice);
+  cudaMalloc((void**)&depth_image_cuda, sizeof(float) * WIDTH * HEIGHT);
+  cudaMemcpy(depth_image_cuda, depth_image.data(),
+             sizeof(float) * WIDTH * HEIGHT, cudaMemcpyHostToDevice);
+  cudaMalloc((void**)&height_image_cuda, sizeof(float) * WIDTH * HEIGHT);
+  cudaMemcpy(height_image_cuda, height_image.data(),
+             sizeof(float) * WIDTH * HEIGHT, cudaMemcpyHostToDevice);
 
   float* normal_image_cuda;
-  cudaMalloc((void**)&normal_image_cuda, sizeof(float) * 2048 * 128 * 3);
+  cudaMalloc((void**)&normal_image_cuda, sizeof(float) * WIDTH * HEIGHT * 3);
 
   int block_size = idivup(width, 2);
   int grid_size = 1;
@@ -219,9 +217,9 @@ int main(int argc, char** argv) {
   std::cout << "runtime: " << msecTotal << "ms" << std::endl;
 
   float* normal_image;
-  normal_image = (float*)malloc(sizeof(float) * 2048 * 128 * 3);
-  cudaMemcpy(normal_image, normal_image_cuda, sizeof(float) * 2048 * 128 * 3,
-             cudaMemcpyDeviceToHost);
+  normal_image = (float*)malloc(sizeof(float) * WIDTH * HEIGHT * 3);
+  cudaMemcpy(normal_image, normal_image_cuda,
+             sizeof(float) * WIDTH * HEIGHT * 3, cudaMemcpyDeviceToHost);
 
   // end: free the memory
   cudaFree(depth_image_cuda);
@@ -253,10 +251,7 @@ int main(int argc, char** argv) {
     }
   }
   pcl::PCDWriter pcd_writer;
-  pcd_writer.write(
-      "/Spy/dataset/mapping_results/nvblox/20220216_garden_day/"
-      "test_xyz_normal.pcd",
-      cloud);
+  pcd_writer.write(path + "test_xyz_normal.pcd", cloud);
 
   return 0;
 }

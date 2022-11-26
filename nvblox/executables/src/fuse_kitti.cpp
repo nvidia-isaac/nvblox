@@ -55,14 +55,12 @@ int main(int argc, char* argv[]) {
   }
 
   // NOTE(jjiao): set extrinsics from the base_link to the camera
-  Eigen::Quaternionf Qcb(0.500292, 0.490181, -0.508467, 0.500889);
-  Eigen::Vector3f tcb(0.067436, -0.022029, -0.078333);
-  Eigen::Quaternionf Qbc = Qcb.inverse();
-  Eigen::Vector3f tbc = -(Qbc * tcb);
+  Eigen::Quaternionf Qbc(-0.497129, 0.506724, -0.495407, 0.500665);
+  Eigen::Vector3f tbc(1.1439, -0.312718, 0.726546);
   fuser_lidar->Tbc_.block<3, 3>(0, 0) = Qbc.toRotationMatrix();
   fuser_lidar->Tbc_.block<3, 1>(0, 3) = tbc;
 
-  fuser_lidar->dataset_type_ = nvblox::DatasetType::FUSION_PORTABLE;
+  fuser_lidar->dataset_type_ = nvblox::DatasetType::KITTI;
 
   // Make sure the layers are the correct resolution.
   return fuser_lidar->run();

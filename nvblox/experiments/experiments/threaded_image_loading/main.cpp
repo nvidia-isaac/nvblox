@@ -25,7 +25,7 @@ limitations under the License.
 #include "nvblox/datasets/3dmatch.h"
 
 #include "nvblox/datasets/3dmatch.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 
 DEFINE_bool(single_thread, false, "Load images using a single thread.");
 DEFINE_bool(multi_thread, false, "Load images using multiple threads");
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   }
 
   constexpr int seq_id = 1;
-  std::unique_ptr<Fuser> fuser =
+  std::unique_ptr<FuserRGBD> fuser =
       datasets::threedmatch::createFuser(base_path, seq_id);
 
   // Replacing the image loader with the one we are asked to test.

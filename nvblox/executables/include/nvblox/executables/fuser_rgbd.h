@@ -36,10 +36,10 @@ limitations under the License.
 
 namespace nvblox {
 
-class Fuser {
+class FuserRGBD {
  public:
-  Fuser() = default;
-  Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader);
+  FuserRGBD() = default;
+  FuserRGBD(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader);
 
   // Loads parameters from command line flags
   void readCommandLineFlags();

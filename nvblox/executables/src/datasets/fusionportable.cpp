@@ -65,7 +65,7 @@ bool parseCameraFromFile(const std::string& filename,
     return true;
   }
   return false;
-}
+}  // namespace internal
 
 bool parseLidarFromFile(const std::string& filename,
                         Eigen::Matrix<double, 8, 1>* intrinsics) {

@@ -162,7 +162,12 @@ find_package(PCL 1.8 REQUIRED)
 find_package(Eigen)
 include_directories(${PCL_INCLUDE_DIRS})
 
-add_executable(test_normal_image 
-    test_normal_image.cu 
+add_executable(test_normal_image_fp 
+    test_normal_image_fp.cu 
     ../src/core/cuda/image_operation.cu)
-target_link_libraries(test_normal_image nvblox_test_utils ${PCL_LIBRARIES})
+target_link_libraries(test_normal_image_fp nvblox_test_utils ${PCL_LIBRARIES})
+
+add_executable(test_normal_image_kitti 
+    test_normal_image_kitti.cu 
+    ../src/core/cuda/image_operation.cu)
+target_link_libraries(test_normal_image_kitti nvblox_test_utils ${PCL_LIBRARIES})

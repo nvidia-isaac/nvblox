@@ -357,14 +357,7 @@ bool FuserLidar::integrateFrame(const int frame_number) {
       &depth_frame, &Twb, &camera, &oslidar, &height_frame, &color_frame);
   timer_file.Stop();
 
-  Eigen::Quaternionf Qcb(0.500292, 0.490181, -0.508467, 0.500889);
-  Eigen::Vector3f tcb(0.067436, -0.022029, -0.078333);
-  Eigen::Quaternionf Qbc = Qcb.inverse();
-  Eigen::Vector3f tbc = -(Qbc * tcb);
-
-  Transform Tbc = Transform::Identity();
-  Tbc.translate(tbc);
-  Tbc.rotate(Qbc);
+  Transform Tbc(Tbc_);
   Transform Twc = Twb * Tbc;
   // std::cout << "Twb: " << std::endl << Twb.matrix() << std::endl;
   // std::cout << "Tbc: " << std::endl << Tbc.matrix() << std::endl;

@@ -141,11 +141,11 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
 
 }  // namespace internal
 
-std::unique_ptr<Fuser> createFuser(const std::string base_path) {
+std::unique_ptr<FuserRGBD> createFuser(const std::string base_path) {
   // Object to load 3DMatch data
   auto data_loader = std::make_unique<DataLoader>(base_path);
-  // Fuser
-  return std::make_unique<Fuser>(std::move(data_loader));
+  // FuserRGBD
+  return std::make_unique<FuserRGBD>(std::move(data_loader));
 }
 
 DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
