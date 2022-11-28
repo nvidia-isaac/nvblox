@@ -1,11 +1,11 @@
-# Develop nvblox
-### Development
+# Nvblox-modify
+#### Development
 1. Nvblox offers API to integrate LiDAR frames, but users need to write the specific API to use the KITTI and FusionPortable dataset
     1. [std::move](https://en.cppreference.com/w/cpp/utility/move): an efficient way to move resources from A to B 
 
 2. (solved) ROS1 interface: users need to create the nvblox_ros to use ROS
 
-### Code Pipeline
+#### Code Pipeline
 
 1. Data loader
 
@@ -38,15 +38,28 @@
 
 4. Global planning test
 
-### Run an example with the FusionPortable dataset
+--------------------------
+### KITTI dataset
 
-[Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
+##### Demo 
 
-[Experiments on NVBlox and VDBMapping](docs/experiments_fusionportable.md)
+1. Prepare data: 
+* Option 1: Generate test data from the semanticKITTI or KITTI
 
+* Option 2: Directly download test data
+    * [2011_09_30_drive_0027_sync](http://gofile.me/72EEc/NGdCJrzA5 )
+
+2. Run the NVBlox
+    ```../script/run_fuse_kitti.sh```
+
+##### Note 
+[Code review of Voxfield and Panmap](docs/code_review_panmap.md)
 [Experiments on NVBlox with the KITTI dataset](docs/experiments_kitti.md)
 
-#### Demo 
+--------------------------
+### FusionPortable dataset
+
+##### Demo 
 
 1. Create a docker container
 ```
@@ -59,7 +72,9 @@ iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
 ```
 
 2. Prepare data
+* Option 1: Generate test data
     * Download data from the FusionPortable_dataset
+    
     * Run the R3LIVE
     ```
     roslaunch r3live r3live_bag_ouster128.launch \
@@ -67,28 +82,27 @@ iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
     bag_folder:=/Spy/dataset/FusionPortable_dataset/sensor_data/handheld/20220216_canteen_day \
     bag_file:=20220216_canteen_day_ref.bag
     ```
+    
     * Run the program to save data
-    ```
-    roslaunch ramlab_evaluatioin save_nvblox_data_fp.launch \
-    sequence_name:=20220216_canteen_day
-    ```
+    ```roslaunch ramlab_evaluatioin save_nvblox_data_fp.launch sequence_name:=20220216_canteen_day```
+
+* Option 2: Directly download test data
+    * [20220226_campus_road_day](http://gofile.me/72EEc/MDghPwECu)
 
 3. Run the NVBlox
-```
-cd nvblox/build \
-make \
-./executables/fuse_fusionportable 20220216_garden_day/ \
-tsdf_integrator_max_integration_distance_m 70.0 \
--num_frames 2000 \
--voxel_size 0.1 \
--mesh_output_path 20220216_garden_day_mesh_test.ply
-```
+    ```../script/run_fuse_fusionportable.sh```
 
 4. We can view the output mesh using the Open3D viewer.
-```
-python3 ../../visualization/visualize_mesh.py 20220216_garden_day_mesh.ply
-```
+    ```python3 ../../visualization/visualize_mesh.py 20220216_garden_day_mesh.ply```
 
+##### Note
+[Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
+
+[Experiments on NVBlox and VDBMapping](docs/experiments_fusionportable.md)
+
+
+--------------------------
+--------------------------
 --------------------------
 # nvblox
 Signed Distance Functions (SDFs) on NVIDIA GPUs.
