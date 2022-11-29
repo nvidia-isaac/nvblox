@@ -16,6 +16,7 @@
    2. RgbdMapper::integrateOSLidarDepth -> ProjectiveTsdfIntegrator::integrateFrame -> ProjectiveTsdfIntegrator::integrateFrameTemplate 
 
       > * set <code>voxel_size</code> and <code>truncation_distance</code>
+      > * set <code>truncation_distance_m = truncation_distance_vox * voxel_size</code>
       > * Identify blocks given the camera view: <code>view_calculator_.getBlocksInImageViewRaycast</code>
       >   * <code>getBlocksByRaycastingPixels</code>: Raycasts through (possibly subsampled) pixels in the image, use the kernal function
       >   * <code>*void* combinedBlockIndicesInImageKernel</code>: retrieve visiable block by raycasting voxels, done in GPU
@@ -30,6 +31,18 @@
       >       * ```const Index2D u_M_rounded = u_px.array().round().cast<int>();```
       >       * ```u_M_rounded.x() < 0 || u_M_rounded.y() < 0 || u_M_rounded.x() >= cols || u_M_rounded.y() >= rows)```: check bounds
       >     * <code>updateVoxel</code>: update the TSDF values of all visible voxels. 
+
+3. Weight averaging methods
+    ```
+    Projective distance:
+        1: constant weight, truncate the fused_distance
+        2: constant weight, truncate the voxel_distance_measured
+        3: linear weight, truncate the voxel_distance_measured
+        4: exponential weight, truncate the voxel_distance_measured
+    Non-Projective distance:
+        5: weight and distance derived from VoxField
+        6: linear weight, distance derived from VoxField
+    ```
 
 3. Output data
     1. Mesh map
@@ -53,8 +66,8 @@
     ```../script/run_fuse_kitti.sh```
 
 ##### Note 
-[Code review of Voxfield and Panmap](docs/code_review_panmap.md)
-[Experiments on NVBlox with the KITTI dataset](docs/experiments_kitti.md)
+* [Code review of Voxfield and Panmap](docs/code_review_panmap.md)
+* [Experiments on NVBlox with the KITTI dataset](docs/experiments_kitti.md)
 
 --------------------------
 ### FusionPortable dataset
@@ -62,14 +75,14 @@
 ##### Demo 
 
 1. Create a docker container
-```
-docker pull iidcramlab/nvblox:20221105-ros-noetic-open3d
-xhost local:docker
-docker run -it --net=host --env="DISPLAY" -v $HOME/.Xauthority:/root/.Xauthority:rw \
--v /tmp/.X11-unix:/tmp/.X11-unix:rw \
---name nvblox \
-iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
-```
+    ```
+    docker pull iidcramlab/nvblox:20221105-ros-noetic-open3d
+    xhost local:docker
+    docker run -it --net=host --env="DISPLAY" -v $HOME/.Xauthority:/root/.Xauthority:rw \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    --name nvblox \
+    iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
+    ```
 
 2. Prepare data
 * Option 1: Generate test data
@@ -87,18 +100,21 @@ iidcramlab/nvblox:20221105-ros-noetic-open3d /bin/bash
     ```roslaunch ramlab_evaluatioin save_nvblox_data_fp.launch sequence_name:=20220216_canteen_day```
 
 * Option 2: Directly download test data
+
     * [20220226_campus_road_day](http://gofile.me/72EEc/MDghPwECu)
 
-3. Run the NVBlox
+3. Run the NVBlox: 
+
     ```../script/run_fuse_fusionportable.sh```
 
 4. We can view the output mesh using the Open3D viewer.
+    
     ```python3 ../../visualization/visualize_mesh.py 20220216_garden_day_mesh.ply```
 
 ##### Note
-[Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
+* [Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
 
-[Experiments on NVBlox and VDBMapping](docs/experiments_fusionportable.md)
+* [Experiments on NVBlox and VDBMapping](docs/experiments_fusionportable.md)
 
 
 --------------------------

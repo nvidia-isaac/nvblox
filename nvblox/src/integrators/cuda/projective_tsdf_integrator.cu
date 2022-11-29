@@ -64,8 +64,6 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
   return true;
 }
 
-// TODO(jjiao): update the voxel according to the traditional TSDF update method
-// TODO(jjiao): we can try different methods based on the probabilitics
 __device__ inline bool updateVoxelMultiWeightComp(
     const float surface_depth_measured, TsdfVoxel* voxel_ptr,
     const float voxel_depth_m, const float truncation_distance_m,
@@ -76,7 +74,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
   const float kEpsilon = 1e-6;       // Used for coordinates
   const float kFloatEpsilon = 1e-8;  // Used for weights
   const float TSDF_NORMAL_RATIO_TH = 0.05f;
-  const float TSDF_WEIGHT_DISTANCE_TH = 70.0f;
+  const float TSDF_WEIGHT_DISTANCE_TH = 50.0f;
 
   // Get the MEASURED depth of the VOXEL
   float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
@@ -220,7 +218,8 @@ __device__ inline bool updateVoxelMultiWeightComp(
           tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
       measurement_weight = weight_sensor * weight_dropoff;
     } else if (voxel_dis_method == 6) {
-      measurement_weight = tsdf_constant_weight(measurement_distance);
+      measurement_weight =
+          tsdf_linear_weight(measurement_distance, truncation_distance_m);
     }
 
     // NOTE(jjiao): it is possible to have weights very close to zero, due
@@ -572,7 +571,7 @@ __global__ void integrateBlocksKernel(
   // Non-Projective distance:
   //  5: weight and distance derived from VoxField
   //  6: linear weight, distance derived from VoxField
-  const int voxel_dis_method = 3;
+  const int voxel_dis_method = 6;
   if (voxel_dis_method == 1) {
     // the original nvblox impelentation
     // not use normal vector
@@ -776,6 +775,7 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
   // Metric truncation distance for this layer
   const float voxel_size =
       layer_ptr->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
+  // default: 4.0 * 0.1
   const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
 
   // Metric params
