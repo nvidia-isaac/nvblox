@@ -19,8 +19,15 @@ limitations under the License.
 
 namespace nvblox {
 
+/// NOTE(jjiao): define template function
+template std::vector<Index3D> ViewCalculator::getBlocksInImageViewPlanes(
+    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
+    const float block_size, const float truncation_distance_m,
+    const float max_integration_distance_m);
+
+template <typename CameraType>
 std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
-    const Transform& T_L_C, const Camera& camera, const float block_size,
+    const Transform& T_L_C, const CameraType& camera, const float block_size,
     const float max_distance) {
   CHECK_GT(max_distance, 0.0f);
 
@@ -46,10 +53,11 @@ std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
   return block_indices_in_frustum;
 }
 
+template <typename CameraType>
 std::vector<Index3D> ViewCalculator::getBlocksInImageViewPlanes(
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float block_size, const float truncation_distance_m,
-    const float max_integration_distance_m) {
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraType& camera, const float block_size,
+    const float truncation_distance_m, const float max_integration_distance_m) {
   float min_depth, max_depth;
   std::tie(min_depth, max_depth) = image::minmaxGPU(depth_frame);
   float max_depth_plus_trunc = max_depth + truncation_distance_m;

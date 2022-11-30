@@ -21,6 +21,13 @@ limitations under the License.
 
 namespace nvblox {
 
+/// NOTE(jjiao): Define the template class
+template void ProjectiveColorIntegrator::integrateFrame(
+    const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
+    const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
+    std::vector<Index3D>* updated_blocks);
+
+///////////////////////////////////
 ProjectiveColorIntegrator::ProjectiveColorIntegrator()
     : ProjectiveIntegratorBase() {
   sphere_tracer_.maximum_ray_length_m(max_integration_distance_m_);
@@ -37,10 +44,11 @@ void ProjectiveColorIntegrator::finish() const {
 }
 
 // NOTE(jjiao): the API function
+template <typename CameraType>
 void ProjectiveColorIntegrator::integrateFrame(
-    const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
-    const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
-    std::vector<Index3D>* updated_blocks) {
+    const ColorImage& color_frame, const Transform& T_L_C,
+    const CameraType& camera, const TsdfLayer& tsdf_layer,
+    ColorLayer* color_layer, std::vector<Index3D>* updated_blocks) {
   timing::Timer color_timer("color/integrate");
   CHECK_NOTNULL(color_layer);
   CHECK_EQ(tsdf_layer.block_size(), color_layer->block_size());
@@ -154,8 +162,9 @@ __device__ inline bool updateVoxel(const Color color_measured,
   return true;
 }
 
+template <typename CameraType>
 __global__ void integrateBlocks(
-    const Index3D* block_indices_device_ptr, const Camera camera,
+    const Index3D* block_indices_device_ptr, const CameraType camera,
     const Color* color_image, const int color_rows, const int color_cols,
     const float* depth_image, const int depth_rows, const int depth_cols,
     const Transform T_C_L, const float block_size,
@@ -215,10 +224,12 @@ __global__ void integrateBlocks(
               max_weight);
 }
 
+template <typename CameraType>
 void ProjectiveColorIntegrator::updateBlocks(
     const std::vector<Index3D>& block_indices, const ColorImage& color_frame,
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float truncation_distance_m, ColorLayer* layer_ptr) {
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraType& camera, const float truncation_distance_m,
+    ColorLayer* layer_ptr) {
   CHECK_NOTNULL(layer_ptr);
   CHECK_EQ(color_frame.rows() % depth_frame.rows(), 0);
   CHECK_EQ(color_frame.cols() % depth_frame.cols(), 0);

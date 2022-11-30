@@ -24,6 +24,13 @@ limitations under the License.
 
 namespace nvblox {
 
+/// NOTE(jjiao): define template function
+template std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
+    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
+    const float block_size, const float truncation_distance_m,
+    const float max_integration_distance_m);
+
+///////////////////////////////////////////////////////////////
 ViewCalculator::ViewCalculator() { cudaStreamCreate(&cuda_stream_); }
 ViewCalculator::~ViewCalculator() { cudaStreamDestroy(cuda_stream_); }
 
@@ -282,10 +289,11 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
 }
 
 // Camera
+template <typename CameraType>
 std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float block_size, const float truncation_distance_m,
-    const float max_integration_distance_m) {
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraType& camera, const float block_size,
+    const float truncation_distance_m, const float max_integration_distance_m) {
   return getBlocksInImageViewRaycastTemplate(depth_frame, T_L_C, camera,
                                              block_size, truncation_distance_m,
                                              max_integration_distance_m);

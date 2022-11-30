@@ -95,8 +95,9 @@ class RgbdMapper : public MapperBase {
   ///@param T_L_C Pose of the camera, specified as a transform from Camera-frame
   ///             to Layer-frame transform.
   ///@param camera Intrinsics model of the camera.
+  template <typename CameraType>
   void integrateColor(const ColorImage& color_frame, const Transform& T_L_C,
-                      const Camera& camera);
+                      const CameraType& camera);
 
   /// Integrates a 3D LiDAR scan into the reconstruction.
   ///@param depth_frame Depth image representing the LiDAR scan. To convert a

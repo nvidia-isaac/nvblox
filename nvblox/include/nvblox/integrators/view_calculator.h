@@ -44,8 +44,9 @@ class ViewCalculator {
   /// @param block_size The size of the blocks in the layer.
   /// @param max_distance The maximum distance of blocks considered.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename CameraType>
   static std::vector<Index3D> getBlocksInViewPlanes(const Transform& T_L_C,
-                                                    const Camera& camera,
+                                                    const CameraType& camera,
                                                     const float block_size,
                                                     const float max_distance);
 
@@ -62,9 +63,10 @@ class ViewCalculator {
   /// @param truncation_distance_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename CameraType>
   static std::vector<Index3D> getBlocksInImageViewPlanes(
       const DepthImage& depth_frame, const Transform& T_L_C,
-      const Camera& camera, const float block_size,
+      const CameraType& camera, const float block_size,
       const float truncation_distance_m,
       const float max_integration_distance_m);
 
@@ -81,9 +83,10 @@ class ViewCalculator {
   /// @param truncation_distance_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename CameraType>
   std::vector<Index3D> getBlocksInImageViewRaycast(
       const DepthImage& depth_frame, const Transform& T_L_C,
-      const Camera& camera, const float block_size,
+      const CameraType& camera, const float block_size,
       const float truncation_distance_m,
       const float max_integration_distance_m);
 

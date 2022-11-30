@@ -20,6 +20,12 @@ limitations under the License.
 
 namespace nvblox {
 
+// NOTE(jjiao): Define the template function
+template void RgbdMapper::integrateColor(const ColorImage& color_frame,
+                                         const Transform& T_L_C,
+                                         const Camera& camera);
+
+//////////////////////////////////////////////////
 RgbdMapper::RgbdMapper(float voxel_size_m, MemoryType memory_type)
     : voxel_size_m_(voxel_size_m), memory_type_(memory_type) {
   layers_ = LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, MeshLayer>(
@@ -72,8 +78,10 @@ void RgbdMapper::integrateOSLidarDepth(DepthImage& depth_frame,
   esdf_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());
 }
 
+template <typename CameraType>
 void RgbdMapper::integrateColor(const ColorImage& color_frame,
-                                const Transform& T_L_C, const Camera& camera) {
+                                const Transform& T_L_C,
+                                const CameraType& camera) {
   color_integrator_.integrateFrame(color_frame, T_L_C, camera,
                                    layers_.get<TsdfLayer>(),
                                    layers_.getPtr<ColorLayer>());
