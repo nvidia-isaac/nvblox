@@ -411,6 +411,7 @@ bool FuserLidar::integrateFrame(const int frame_number) {
       timer_integrate_esdf.Stop();
     }
   }
+
   per_frame_timer.Stop();
   return true;
 }

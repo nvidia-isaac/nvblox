@@ -36,6 +36,7 @@ void ProjectiveColorIntegrator::finish() const {
   cudaStreamSynchronize(integration_stream_);
 }
 
+// NOTE(jjiao): the API function
 void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
     const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
@@ -126,6 +127,7 @@ __device__ inline Color blendTwoColors(const Color& first_color,
   return new_color;
 }
 
+// TODO(jjiao): implement different voxel_dis_method
 __device__ inline bool updateVoxel(const Color color_measured,
                                    ColorVoxel* voxel_ptr,
                                    const float voxel_depth_m,
