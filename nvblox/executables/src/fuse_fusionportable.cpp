@@ -60,18 +60,15 @@ int main(int argc, char* argv[]) {
   Eigen::Quaternionf Qbc = Qcb.inverse();
   Eigen::Vector3f tbc = -(Qbc * tcb);
 
-  fuser_lidar->T_B_C_.rotate(Qbc.toRotationMatrix());
-  fuser_lidar->T_B_C_.translate(tbc);
-
   Eigen::Matrix4f Tbc = Eigen::Matrix4f::Identity();
   Tbc.block<3, 3>(0, 0) = Qbc.toRotationMatrix();
   Tbc.block<3, 1>(0, 3) = tbc;
+  fuser_lidar->T_B_C_ = Transform(Tbc);
 
-  std::cout << fuser_lidar->T_B_C_.matrix() << std::endl;
-  std::cout << std::endl;
-  std::cout << Tbc << std::endl;
+  // std::cout << fuser_lidar->T_B_C_.matrix() << std::endl;
+  // std::cout << std::endl;
+  // std::cout << Tbc << std::endl;
 
   // Make sure the layers are the correct resolution.
-  // return fuser_lidar->run();
-  return true;
+  return fuser_lidar->run();
 }

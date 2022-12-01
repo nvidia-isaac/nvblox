@@ -101,4 +101,10 @@ CameraPinhole CameraPinhole::fromIntrinsicsMatrix(const Eigen::Matrix3f& mat,
   return CameraPinhole(mat, width, height);
 }
 
+CameraPinhole CameraPinhole::fromIntrinsicsMatrix(const Matrix3x4f& P,
+                                                  const Matrix3f& rect,
+                                                  int width, int height) {
+  return CameraPinhole(P, rect, width, height);
+}
+
 }  // namespace nvblox

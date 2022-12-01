@@ -38,8 +38,8 @@ set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 # FusionPortable executable
 add_executable(fuse_fusionportable
     src/fuse_fusionportable.cpp
-    src/fuser_lidar.cpp
     src/datasets/fusionportable.cpp
+    src/fuser_lidar.cpp
 )
 target_link_libraries(fuse_fusionportable
     nvblox_lib nvblox_datasets
@@ -47,12 +47,12 @@ target_link_libraries(fuse_fusionportable
 set_target_properties(fuse_fusionportable PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # KITTI executable
-# add_executable(fuse_kitti
-#     src/fuse_kitti.cpp
-#     src/fuser_lidar.cpp
-#     src/datasets/fusionportable.cpp
-# )
-# target_link_libraries(fuse_kitti
-#     nvblox_lib nvblox_datasets
-# )
-# set_target_properties(fuse_kitti PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+add_executable(fuse_kitti
+    src/fuse_kitti.cpp
+    src/datasets/kitti.cpp
+    src/fuser_lidar.cpp
+)
+target_link_libraries(fuse_kitti
+    nvblox_lib nvblox_datasets
+)
+set_target_properties(fuse_kitti PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

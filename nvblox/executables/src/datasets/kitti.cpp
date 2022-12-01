@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/datasets/fusionportable.h"
+#include "nvblox/datasets/kitti.h"
 
 #include <glog/logging.h>
 
@@ -26,7 +26,7 @@ limitations under the License.
 
 namespace nvblox {
 namespace datasets {
-namespace fusionportable {
+namespace kitti {
 namespace internal {
 
 bool parsePoseFromFile(const std::string& filename, Transform* transform) {
@@ -47,18 +47,26 @@ bool parsePoseFromFile(const std::string& filename, Transform* transform) {
   return false;
 }
 
-bool parseCameraFromFile(const std::string& filename,
-                         Eigen::Matrix3f* intrinsics) {
-  CHECK_NOTNULL(intrinsics);
-  constexpr int kDimension = 3;
+// TODO(jjiao): read P_rect_0x and R_rect_00
+bool parseCameraFromFile(const std::string& filename, Matrix3x4f* P_rect,
+                         Matrix3f* R_rect) {
+  CHECK_NOTNULL(P_rect);
+  CHECK_NOTNULL(R_rect);
 
   std::ifstream fin(filename);
   if (fin.is_open()) {
-    for (int row = 0; row < kDimension; row++)
-      for (int col = 0; col < kDimension; col++) {
+    for (int row = 0; row < 3; row++)
+      for (int col = 0; col < 4; col++) {
         float item = 0.0;
         fin >> item;
-        (*intrinsics)(row, col) = item;
+        (*P_rect)(row, col) = item;
+      }
+
+    for (int row = 0; row < 3; row++)
+      for (int col = 0; col < 3; col++) {
+        float item = 0.0;
+        fin >> item;
+        (*R_rect)(row, col) = item;
       }
     fin.close();
 
@@ -144,7 +152,6 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
       multithreaded);
 }
 
-// TODO: we need a more proper way to set kDefaultUintDepthScaleOffset
 std::unique_ptr<ImageLoader<DepthImage>> createHeightImageLoader(
     const std::string& base_path, const int seq_id, const bool multithreaded) {
   return createImageLoader<DepthImage>(
@@ -168,13 +175,12 @@ std::unique_ptr<FuserLidar> createFuser(const std::string base_path,
 
 DataLoader::DataLoader(const std::string& base_path, const int seq_id,
                        bool multithreaded)
-    : RgbdDataLoaderInterface(fusionportable::internal::createDepthImageLoader(
+    : RgbdDataLoaderInterface(kitti::internal::createDepthImageLoader(
                                   base_path, seq_id, multithreaded),
-                              fusionportable::internal::createColorImageLoader(
+                              kitti::internal::createColorImageLoader(
                                   base_path, seq_id, multithreaded)),
-      height_image_loader_(
-          std::move(fusionportable::internal::createHeightImageLoader(
-              base_path, seq_id, multithreaded))),
+      height_image_loader_(std::move(kitti::internal::createHeightImageLoader(
+          base_path, seq_id, multithreaded))),
       base_path_(base_path),
       seq_id_(seq_id) {
   //
@@ -182,7 +188,7 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
 
 /// Interface for a function that loads the next frames in a dataset
 ///@param[out] depth_frame_ptr The loaded depth frame.
-///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
+///@param[out] T_L_C_ptr Transform from the Base camera to the Layer frame.
 ///@param[out] camera_ptr The intrinsic camera model.
 ///@param[out] height_frame_ptr The loaded z frame.
 ///@param[out] color_frame_ptr Optional, load color frame.
@@ -235,9 +241,9 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   //  end_elevation_angle_rad
   timing::Timer timer_file_camera("file_loading/lidar");
   Eigen::Matrix<double, 8, 1> lidar_intrinsics;
-  if (!fusionportable::internal::parseLidarFromFile(
-          fusionportable::internal::getPathForLidarIntrinsics(
-              base_path_, seq_id_, frame_number),
+  if (!kitti::internal::parseLidarFromFile(
+          kitti::internal::getPathForLidarIntrinsics(base_path_, seq_id_,
+                                                     frame_number),
           &lidar_intrinsics)) {
     return DataLoadResult::kNoMoreData;
   }
@@ -266,22 +272,27 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   // Get the camera for this frame.
   if (color_frame_ptr) {
     timing::Timer timer_file_camera("file_loading/camera");
-    Eigen::Matrix3f K;
-    if (!fusionportable::internal::parseCameraFromFile(
-            fusionportable::internal::getPathForCameraIntrinsics(base_path_),
-            &K)) {
+    Matrix3f R_rect;
+    Matrix3x4f P_rect;
+    if (!kitti::internal::parseCameraFromFile(
+            kitti::internal::getPathForCameraIntrinsics(base_path_), &P_rect,
+            &R_rect)) {
       return DataLoadResult::kNoMoreData;
     }
 
     // Create a camera object.
     const int image_width = color_frame_ptr->cols();
     const int image_height = color_frame_ptr->rows();
-    *camera_ptr =
-        CameraPinhole::fromIntrinsicsMatrix(K, image_width, image_height);
+    *camera_ptr = CameraPinhole::fromIntrinsicsMatrix(
+        P_rect, R_rect, image_width, image_height);
     timer_file_camera.Stop();
 
-    if (!K.allFinite()) {
-      LOG(WARNING) << "Bad CSV data.";
+    if (!P_rect.allFinite()) {
+      LOG(WARNING) << "[P_rect] Bad CSV data.";
+      return DataLoadResult::kBadFrame;  // Bad data, but keep going.
+    }
+    if (!R_rect.allFinite()) {
+      LOG(WARNING) << "[R_rect] Bad CSV data.";
       return DataLoadResult::kBadFrame;  // Bad data, but keep going.
     }
   }
@@ -292,9 +303,9 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   // Get the transform.
   timing::Timer timer_file_pose("file_loading/pose");
   Transform T_O_C;
-  if (!fusionportable::internal::parsePoseFromFile(
-          fusionportable::internal::getPathForFramePose(base_path_, seq_id_,
-                                                        frame_number),
+  if (!kitti::internal::parsePoseFromFile(
+          kitti::internal::getPathForFramePose(base_path_, seq_id_,
+                                               frame_number),
           &T_O_C)) {
     return DataLoadResult::kNoMoreData;
   }
@@ -328,6 +339,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   return DataLoadResult::kNoMoreData;
 }
 
-}  // namespace fusionportable
+}  // namespace kitti
 }  // namespace datasets
 }  // namespace nvblox

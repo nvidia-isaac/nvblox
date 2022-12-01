@@ -27,17 +27,14 @@ namespace nvblox {
 namespace datasets {
 
 enum class DataLoadResult { kSuccess, kBadFrame, kNoMoreData };
-enum class SensorType { RGBD, LIDAR, OSLIDAR };
 
 class RgbdDataLoaderInterface {
  public:
   RgbdDataLoaderInterface(
       std::unique_ptr<ImageLoader<DepthImage>>&& depth_image_loader,
-      std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader,
-      SensorType sensor_type = SensorType::RGBD)
+      std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader)
       : depth_image_loader_(std::move(depth_image_loader)),
-        color_image_loader_(std::move(color_image_loader)),
-        sensor_type_(sensor_type) {}
+        color_image_loader_(std::move(color_image_loader)) {}
 
   virtual ~RgbdDataLoaderInterface() = default;
 
@@ -68,14 +65,10 @@ class RgbdDataLoaderInterface {
       DepthImage* height_frame_ptr = nullptr,  // NOLINT
       ColorImage* color_frame_ptr = nullptr) = 0;
 
-  SensorType getSensorType() const { return sensor_type_; }
-
  protected:
   // Objects which do (multithreaded) image loading.
   std::unique_ptr<ImageLoader<DepthImage>> depth_image_loader_;
   std::unique_ptr<ImageLoader<ColorImage>> color_image_loader_;
-  // sensor type
-  SensorType sensor_type_;
 };
 
 }  // namespace datasets

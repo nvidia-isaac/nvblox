@@ -127,8 +127,7 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
     : RgbdDataLoaderInterface(threedmatch::internal::createDepthImageLoader(
                                   base_path, seq_id, multithreaded),
                               threedmatch::internal::createColorImageLoader(
-                                  base_path, seq_id, multithreaded),
-                              SensorType::RGBD),
+                                  base_path, seq_id, multithreaded)),
       base_path_(base_path),
       seq_id_(seq_id) {
   //
