@@ -18,6 +18,7 @@ limitations under the License.
 #include <memory>
 
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/image.h"
 #include "nvblox/core/lidar.h"
 #include "nvblox/core/oslidar.h"

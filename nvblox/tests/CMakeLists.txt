@@ -40,9 +40,9 @@ set_target_properties(nvblox_test_utils PROPERTIES CUDA_SEPARABLE_COMPILATION ON
 set(TEST_OPTIONS DISCOVERY_TIMEOUT 30)
 
 # The tests
-# add_executable(test_camera test_camera.cpp)
-# target_link_libraries(test_camera nvblox_test_utils)
-# gtest_discover_tests(test_camera ${TEST_OPTIONS})
+add_executable(test_camera test_camera.cpp)
+target_link_libraries(test_camera nvblox_test_utils)
+gtest_discover_tests(test_camera ${TEST_OPTIONS})
 
 # add_executable(test_indexing test_indexing.cpp)
 # target_link_libraries(test_indexing nvblox_test_utils)
@@ -153,11 +153,18 @@ set(TEST_OPTIONS DISCOVERY_TIMEOUT 30)
 # target_link_libraries(test_mapper nvblox_test_utils)
 # gtest_discover_tests(test_mapper ${TEST_OPTIONS})
 
+############### NOTE(jjiao): test new files
+#### oslidar
 # add_executable(test_oslidar test_oslidar.cpp)
 # target_link_libraries(test_oslidar nvblox_test_utils)
 # gtest_discover_tests(test_oslidar ${TEST_OPTIONS})
 
-############### only for test_normal_image
+#### camera_pinhole
+add_executable(test_camera_pinhole test_camera_pinhole.cpp)
+target_link_libraries(test_camera_pinhole nvblox_test_utils)
+gtest_discover_tests(test_camera_pinhole ${TEST_OPTIONS})
+
+#### normal image computation
 find_package(PCL 1.8 REQUIRED)
 find_package(Eigen)
 include_directories(${PCL_INCLUDE_DIRS})

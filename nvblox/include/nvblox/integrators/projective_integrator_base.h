@@ -18,6 +18,7 @@ limitations under the License.
 #include <vector>
 
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/image.h"
 #include "nvblox/core/types.h"
 #include "nvblox/integrators/view_calculator.h"

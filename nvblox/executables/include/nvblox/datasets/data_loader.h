@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/image.h"
 #include "nvblox/core/lidar.h"
 #include "nvblox/core/oslidar.h"
@@ -62,7 +63,7 @@ class RgbdDataLoaderInterface {
   virtual DataLoadResult loadNext(
       DepthImage* depth_frame_ptr,             // NOLINT
       Transform* T_L_C_ptr,                    // NOLINT
-      Camera* camera_ptr,                      // NOLINT
+      CameraPinhole* camera_ptr,               // NOLINT
       OSLidar* lidar_ptr,                      // NOLINT
       DepthImage* height_frame_ptr = nullptr,  // NOLINT
       ColorImage* color_frame_ptr = nullptr) = 0;

@@ -13,23 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 
 namespace nvblox {
 
-std::ostream& operator<<(std::ostream& os, const Camera& camera) {
-  os << "camera with intrinsics:\n\tfu: " << camera.fu() << "\n"
-     << "\tfv: " << camera.fv() << "\n"
-     << "\tcu: " << camera.cu() << "\n"
-     << "\tcv: " << camera.cv() << "\n"
-     << "\twidith: " << camera.width() << "\n"
-     << "\theight: " << camera.height() << "\n";
+std::ostream& operator<<(std::ostream& os, const CameraPinhole& camera) {
+  if (camera.isRectified()) {
+    os << "camera with intrinsics:\n\t"
+       << "\trectified: " << camera.isRectified() << "\n"
+       << "\tP: " << camera.P() << "\n"
+       << "\tRect: " << camera.Rect() << "\n"
+       << "\twidith: " << camera.width() << "\n"
+       << "\theight: " << camera.height() << "\n";
+  } else {
+    os << "camera with intrinsics:\n\t"
+       << "\trectified: " << camera.isRectified() << "\n"
+       << "\tK: " << camera.K() << "\n"
+       << "\twidith: " << camera.width() << "\n"
+       << "\theight: " << camera.height() << "\n";
+  }
   return os;
 }
 
-AxisAlignedBoundingBox Camera::getViewAABB(const Transform& T_L_C,
-                                           const float min_depth,
-                                           const float max_depth) const {
+AxisAlignedBoundingBox CameraPinhole::getViewAABB(const Transform& T_L_C,
+                                                  const float min_depth,
+                                                  const float max_depth) const {
   // Get the bounding corners of this view.
   Eigen::Matrix<float, 8, 3> corners_C = getViewCorners(min_depth, max_depth);
 
@@ -50,13 +58,14 @@ AxisAlignedBoundingBox Camera::getViewAABB(const Transform& T_L_C,
   return AxisAlignedBoundingBox(aabb_min, aabb_max);
 }
 
-Frustum Camera::getViewFrustum(const Transform& T_L_C, const float min_depth,
-                               const float max_depth) const {
+Frustum CameraPinhole::getViewFrustum(const Transform& T_L_C,
+                                      const float min_depth,
+                                      const float max_depth) const {
   return Frustum(*this, T_L_C, min_depth, max_depth);
 }
 
-Eigen::Matrix<float, 8, 3> Camera::getViewCorners(const float min_depth,
-                                                  const float max_depth) const {
+Eigen::Matrix<float, 8, 3> CameraPinhole::getViewCorners(
+    const float min_depth, const float max_depth) const {
   // Rays through the corners of the image plane
   // Clockwise from the top left corner of the image.
   const Vector3f ray_0_C =
@@ -80,4 +89,5 @@ Eigen::Matrix<float, 8, 3> Camera::getViewCorners(const float min_depth,
   corners_C.row(7) = max_depth * ray_3_C;
   return corners_C;
 }
+
 }  // namespace nvblox

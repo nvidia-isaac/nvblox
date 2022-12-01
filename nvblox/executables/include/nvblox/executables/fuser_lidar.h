@@ -36,8 +36,6 @@ limitations under the License.
 
 namespace nvblox {
 
-enum DatasetType { FUSION_PORTABLE, KITTI };
-
 class FuserLidar {
  public:
   FuserLidar() = default;
@@ -108,8 +106,7 @@ class FuserLidar {
   std::string obs_output_path_;
 
   // NOTE(jjiao): setting parameters for different datasets
-  Eigen::Matrix4f Tbc_ = Eigen::Matrix4f::Identity();
-  DatasetType dataset_type_;
+  Transform T_B_C_;
 };
 
 }  //  namespace nvblox

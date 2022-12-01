@@ -57,7 +57,7 @@ class DataLoader : public RgbdDataLoaderInterface {
   ///@return Whether loading succeeded.
   DataLoadResult loadNext(DepthImage* depth_frame_ptr,             // NOLINT
                           Transform* T_L_C_ptr,                    // NOLINT
-                          Camera* camera_ptr,                      // NOLINT
+                          CameraPinhole* camera_ptr,               // NOLINT
                           OSLidar* lidar_ptr,                      // NOLINT
                           DepthImage* height_frame_ptr = nullptr,  // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;

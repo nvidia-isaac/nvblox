@@ -100,6 +100,8 @@ add_library(nvblox_lib SHARED
     src/core/bounding_boxes.cpp
     src/core/bounding_spheres.cpp
     src/core/camera.cpp
+    src/core/camera_pinhole.cpp
+    src/core/frustum.cpp
     src/core/color.cpp
     src/core/cuda/blox.cu
     src/core/cuda/image_cuda.cu

@@ -19,6 +19,7 @@ limitations under the License.
 #include <utility>
 
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/common_names.h"
 #include "nvblox/core/image.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
@@ -49,9 +50,10 @@ class SphereTracer {
   /// 100x100 pixels, we trace 50x50 pixels and return a syntheric depth image
   /// of that size.
   /// @returns A pointer to the internal (GPU) buffer where the image is stored.
+  template <typename CameraType>
   std::shared_ptr<const DepthImage> renderImageOnGPU(
-      const Camera& camera, const Transform& T_L_C, const TsdfLayer& tsdf_layer,
-      const float truncation_distance_m,
+      const CameraType& camera, const Transform& T_L_C,
+      const TsdfLayer& tsdf_layer, const float truncation_distance_m,
       const MemoryType output_image_memory_type = MemoryType::kDevice,
       const int ray_subsampling_factor = 1);
 

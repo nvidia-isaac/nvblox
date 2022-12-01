@@ -350,18 +350,12 @@ bool FuserLidar::integrateFrame(const int frame_number) {
   DepthImage depth_frame;
   DepthImage height_frame;
   ColorImage color_frame;
-  Transform Twb;
-  Camera camera;
+  Transform T_W_B;
+  CameraPinhole camera;
   OSLidar oslidar;
   const datasets::DataLoadResult load_result = data_loader_->loadNext(
-      &depth_frame, &Twb, &camera, &oslidar, &height_frame, &color_frame);
+      &depth_frame, &T_W_B, &camera, &oslidar, &height_frame, &color_frame);
   timer_file.Stop();
-
-  Transform Tbc(Tbc_);
-  Transform Twc = Twb * Tbc;
-  // std::cout << "Twb: " << std::endl << Twb.matrix() << std::endl;
-  // std::cout << "Tbc: " << std::endl << Tbc.matrix() << std::endl;
-  // std::cout << "Twc: " << std::endl << Twc.matrix() << std::endl;
 
   if (load_result == datasets::DataLoadResult::kBadFrame) {
     LOG(INFO) << "Bad frame: wrong parameters of intrinsics or extrinsics";
@@ -384,18 +378,24 @@ bool FuserLidar::integrateFrame(const int frame_number) {
     timer_normal.Stop();
 
     timing::Timer timer_integrate("fuser/integrate_tsdf");
-    mapper_->integrateOSLidarDepth(depth_frame, Twb, oslidar);
+    mapper_->integrateOSLidarDepth(depth_frame, T_W_B, oslidar);
     timer_integrate.Stop();
 
     nvblox::cuda::freeNormalImageOSLidar(oslidar);
   }
 
   // TODO(jjiao): please use the optimized camera pose
-  // if ((frame_number + 1) % color_frame_subsampling_ == 0) {
-  //   timing::Timer timer_integrate_color("fuser/integrate_color");
-  //   mapper_->integrateColor(color_frame, Twc, camera);
-  //   timer_integrate_color.Stop();
-  // }
+  Transform T_W_C = T_W_B * T_B_C_;
+  // std::cout << "T_W_B: " << std::endl << T_W_B.matrix() << std::endl;
+  // std::cout << "T_B_C: " << std::endl << T_B_C_.matrix() << std::endl;
+  // std::cout << "T_W_C: " << std::endl << T_W_C.matrix() << std::endl;
+  if (color_frame_subsampling_ > 0) {
+    if ((frame_number + 1) % color_frame_subsampling_ == 0) {
+      timing::Timer timer_integrate_color("fuser/integrate_color");
+      mapper_->integrateColor(color_frame, T_W_C, camera);
+      timer_integrate_color.Stop();
+    }
+  }
 
   if (mesh_frame_subsampling_ > 0) {
     if ((frame_number + 1) % mesh_frame_subsampling_ == 0) {

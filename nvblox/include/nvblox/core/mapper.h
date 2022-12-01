@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "nvblox/core/blox.h"
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/common_names.h"
 #include "nvblox/core/hash.h"
 #include "nvblox/core/layer.h"

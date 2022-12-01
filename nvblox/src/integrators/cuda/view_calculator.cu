@@ -30,6 +30,11 @@ template std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
     const float block_size, const float truncation_distance_m,
     const float max_integration_distance_m);
 
+template std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraPinhole& camera, const float block_size,
+    const float truncation_distance_m, const float max_integration_distance_m);
+
 ///////////////////////////////////////////////////////////////
 ViewCalculator::ViewCalculator() { cudaStreamCreate(&cuda_stream_); }
 ViewCalculator::~ViewCalculator() { cudaStreamDestroy(cuda_stream_); }

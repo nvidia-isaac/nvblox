@@ -189,7 +189,8 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
 ///@param[out] color_frame_ptr Optional, load color frame.
 ///@return Whether loading succeeded.
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
-                                    Transform* T_L_C_ptr, Camera* camera_ptr,
+                                    Transform* T_L_C_ptr,
+                                    CameraPinhole* camera_ptr,
                                     OSLidar* lidar_ptr,
                                     DepthImage* height_frame_ptr,
                                     ColorImage* color_frame_ptr) {
@@ -266,21 +267,21 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   // Get the camera for this frame.
   if (color_frame_ptr) {
     timing::Timer timer_file_camera("file_loading/camera");
-    Eigen::Matrix3f camera_intrinsics;
+    Eigen::Matrix3f K;
     if (!fusionportable::internal::parseCameraFromFile(
             fusionportable::internal::getPathForCameraIntrinsics(base_path_),
-            &camera_intrinsics)) {
+            &K)) {
       return DataLoadResult::kNoMoreData;
     }
 
     // Create a camera object.
     const int image_width = color_frame_ptr->cols();
     const int image_height = color_frame_ptr->rows();
-    *camera_ptr = Camera::fromIntrinsicsMatrix(camera_intrinsics, image_width,
-                                               image_height);
+    *camera_ptr =
+        CameraPinhole::fromIntrinsicsMatrix(K, image_width, image_height);
     timer_file_camera.Stop();
 
-    if (!camera_intrinsics.allFinite()) {
+    if (!K.allFinite()) {
       LOG(WARNING) << "Bad CSV data.";
       return DataLoadResult::kBadFrame;  // Bad data, but keep going.
     }
@@ -299,9 +300,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     return DataLoadResult::kNoMoreData;
   }
   *T_L_C_ptr = T_O_C;
-  // std::cout << "T_L_C: \n" << T_L_C_ptr->matrix() << std::endl;
-
-  // TODO(jjiao): load lidar-camera extrinsics
 
   // Check that the loaded data doesn't contain NaNs or a faulty rotation
   // matrix. This does occur. If we find one, skip that frame and move to the

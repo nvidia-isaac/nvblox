@@ -25,6 +25,12 @@ template std::vector<Index3D> ViewCalculator::getBlocksInImageViewPlanes(
     const float block_size, const float truncation_distance_m,
     const float max_integration_distance_m);
 
+template std::vector<Index3D> ViewCalculator::getBlocksInImageViewPlanes(
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraPinhole& camera, const float block_size,
+    const float truncation_distance_m, const float max_integration_distance_m);
+
+//////////////////////////////////////////////////////////////////
 template <typename CameraType>
 std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
     const Transform& T_L_C, const CameraType& camera, const float block_size,

@@ -24,8 +24,11 @@ namespace nvblox {
 template void RgbdMapper::integrateColor(const ColorImage& color_frame,
                                          const Transform& T_L_C,
                                          const Camera& camera);
+template void RgbdMapper::integrateColor(const ColorImage& color_frame,
+                                         const Transform& T_L_C,
+                                         const CameraPinhole& camera);
 
-//////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 RgbdMapper::RgbdMapper(float voxel_size_m, MemoryType memory_type)
     : voxel_size_m_(voxel_size_m), memory_type_(memory_type) {
   layers_ = LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, MeshLayer>(

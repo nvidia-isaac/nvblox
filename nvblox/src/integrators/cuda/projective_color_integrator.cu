@@ -26,8 +26,12 @@ template void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
     const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
     std::vector<Index3D>* updated_blocks);
+template void ProjectiveColorIntegrator::integrateFrame(
+    const ColorImage& color_frame, const Transform& T_L_C,
+    const CameraPinhole& camera, const TsdfLayer& tsdf_layer,
+    ColorLayer* color_layer, std::vector<Index3D>* updated_blocks);
 
-///////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 ProjectiveColorIntegrator::ProjectiveColorIntegrator()
     : ProjectiveIntegratorBase() {
   sphere_tracer_.maximum_ray_length_m(max_integration_distance_m_);
@@ -176,9 +180,8 @@ __global__ void integrateBlocks(
   Eigen::Vector2f u_px;
   float voxel_depth_m;
   Vector3f p_voxel_center_C;
-  if (!projectThreadVoxel<Camera>(block_indices_device_ptr, camera, T_C_L,
-                                  block_size, &u_px, &voxel_depth_m,
-                                  &p_voxel_center_C)) {
+  if (!projectThreadVoxel(block_indices_device_ptr, camera, T_C_L, block_size,
+                          &u_px, &voxel_depth_m, &p_voxel_center_C)) {
     return;
   }
 
