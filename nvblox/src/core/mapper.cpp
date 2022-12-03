@@ -73,8 +73,7 @@ void RgbdMapper::integrateOSLidarDepth(DepthImage& depth_frame,
   lidar_tsdf_integrator_.integrateFrame(depth_frame, T_L_C, oslidar,
                                         layers_.getPtr<TsdfLayer>(),
                                         &updated_blocks);
-  LOG(INFO) << "size of TSDF blocks to be integrated: "
-            << updated_blocks.size();
+  LOG(INFO) << "Integrated TSDF block: " << updated_blocks.size();
 
   // Update all the relevant queues.
   mesh_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());

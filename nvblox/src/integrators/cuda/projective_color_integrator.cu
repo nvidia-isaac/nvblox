@@ -18,6 +18,7 @@ limitations under the License.
 #include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/utils/timing.h"
+#include "nvblox/utils/weight_function.h"
 
 namespace nvblox {
 
@@ -62,6 +63,7 @@ void ProjectiveColorIntegrator::integrateFrame(
       color_layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
   const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
 
+  // Get visible blocks
   timing::Timer blocks_in_view_timer("color/integrate/get_blocks_in_view");
   std::vector<Index3D> block_indices = view_calculator_.getBlocksInViewPlanes(
       T_L_C, camera, color_layer->block_size(),
@@ -139,7 +141,92 @@ __device__ inline Color blendTwoColors(const Color& first_color,
   return new_color;
 }
 
-// TODO(jjiao): implement different voxel_dis_method
+/// NOTE(jjiao): This function implement different weighting functions to update
+/// the color of a voxel
+__device__ inline bool updateVoxelMultiWeightComp(
+    const Color color_measured, ColorVoxel* voxel_ptr,
+    const float voxel_depth_m, const float voxel_distance_measured,
+    const float truncation_distance_m, const float max_weight,
+    const int voxel_weight_method) {
+  // NOTE(alexmillane): We integrate all voxels passed to this function, We
+  // should probably not do this. We should no update some based on occlusion
+  // and their distance in the distance field....
+  // TODO(alexmillane): The above.
+
+  if (voxel_weight_method == 1) {
+    // Read CURRENT voxel values (from global GPU memory)
+    const Color voxel_color_current = voxel_ptr->color;
+    const float voxel_weight_current = voxel_ptr->weight;
+
+    // Fuse
+    constexpr float measurement_weight = 1.0f;
+    const Color fused_color =
+        blendTwoColors(voxel_color_current, voxel_weight_current,
+                       color_measured, measurement_weight);
+    const float weight =
+        fmin(measurement_weight + voxel_weight_current, max_weight);
+    // Write NEW voxel values (to global GPU memory)
+    voxel_ptr->color = fused_color;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 2) {
+    const Color voxel_color_current = voxel_ptr->color;
+    const float voxel_weight_current = voxel_ptr->weight;
+
+    const float measurement_weight =
+        tsdf_linear_weight(voxel_distance_measured, truncation_distance_m);
+    Color fused_color =
+        blendTwoColors(voxel_color_current, voxel_weight_current,
+                       color_measured, measurement_weight);
+    const float weight =
+        fmin(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->color = fused_color;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 3) {
+    const Color voxel_color_current = voxel_ptr->color;
+    const float voxel_weight_current = voxel_ptr->weight;
+
+    const float measurement_weight =
+        tsdf_exp_weight(voxel_distance_measured, truncation_distance_m);
+    Color fused_color =
+        blendTwoColors(voxel_color_current, voxel_weight_current,
+                       color_measured, measurement_weight);
+    const float weight =
+        fmin(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->color = fused_color;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 4) {
+    const Color voxel_color_current = voxel_ptr->color;
+    const float voxel_weight_current = voxel_ptr->weight;
+
+    const float COLOR_WEIGHT_DISTANCE_TH = 10.0f;
+    const float measurement_weight =
+        tsdf_sensor_weight(voxel_depth_m, 2, COLOR_WEIGHT_DISTANCE_TH);
+    Color fused_color =
+        blendTwoColors(voxel_color_current, voxel_weight_current,
+                       color_measured, measurement_weight);
+    const float weight =
+        fmin(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->color = fused_color;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 5) {
+    const Color voxel_color_current = voxel_ptr->color;
+    const float voxel_weight_current = voxel_ptr->weight;
+
+    const float COLOR_WEIGHT_DISTANCE_TH = 10.0f;
+    const float measurement_weight =
+        tsdf_linear_weight(voxel_distance_measured, truncation_distance_m) *
+        tsdf_sensor_weight(voxel_depth_m, 2, COLOR_WEIGHT_DISTANCE_TH);
+    Color fused_color =
+        blendTwoColors(voxel_color_current, voxel_weight_current,
+                       color_measured, measurement_weight);
+    const float weight =
+        fmin(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->color = fused_color;
+    voxel_ptr->weight = weight;
+  }
+  return true;
+}
+
 __device__ inline bool updateVoxel(const Color color_measured,
                                    ColorVoxel* voxel_ptr,
                                    const float voxel_depth_m,
@@ -215,16 +302,29 @@ __global__ void integrateBlocks(
   }
 
   // Get the Voxel we'll update in this thread
-  // NOTE(alexmillane): Note that we've reverse the voxel indexing order such
-  // that adjacent threads (x-major) access adjacent memory locations in the
-  // block (z-major).
+  // NOTE(alexmillane): Note that we've reverse the voxel indexing order
+  // such that adjacent threads (x-major) access adjacent memory locations
+  // in the block (z-major).
   ColorVoxel* voxel_ptr =
       &(block_device_ptrs[blockIdx.x]
             ->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
 
   // Update the voxel using the update rule for this layer type
-  updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
-              max_weight);
+  // Weight method
+  //  1: constant weight, truncate the voxel_distance_measured
+  //  2: linear weight, truncate the voxel_distance_measured
+  //  3: exponential weight, truncate the voxel_distance_measured
+  //  4: sensor distance weight
+  //  5: linear weight * sensor distance weight
+  const int voxel_weight_method = 5;
+  if (voxel_weight_method == 1) {
+    updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
+                max_weight);
+  } else {
+    updateVoxelMultiWeightComp(
+        image_value, voxel_ptr, voxel_depth_m, voxel_distance_from_surface,
+        truncation_distance_m, max_weight, voxel_weight_method);
+  }
 }
 
 template <typename CameraType>
@@ -236,6 +336,8 @@ void ProjectiveColorIntegrator::updateBlocks(
   CHECK_NOTNULL(layer_ptr);
   CHECK_EQ(color_frame.rows() % depth_frame.rows(), 0);
   CHECK_EQ(color_frame.cols() % depth_frame.cols(), 0);
+  std::cout << "[updateBlocks]: update " << block_indices.size() << " blocks"
+            << std::endl;
 
   if (block_indices.empty()) {
     return;

@@ -67,7 +67,7 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
 __device__ inline bool updateVoxelMultiWeightComp(
     const float surface_depth_measured, TsdfVoxel* voxel_ptr,
     const float voxel_depth_m, const float truncation_distance_m,
-    const float max_weight, const int voxel_dis_method,
+    const float max_weight, const int voxel_weight_method,
     const Vector3f& measurement_point, const Vector3f& measurement_normal,
     const Transform& T_C_L) {
   // NOTE(jjiao): need to externally set parameters in both host and device
@@ -91,7 +91,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
   // NOTE(alexmillane): We could try to use CUDA math functions to speed up
   // below
   // https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__SINGLE.html#group__CUDA__MATH__SINGLE
-  if (voxel_dis_method == 1) {
+  if (voxel_weight_method == 1) {
     // Fuse
     constexpr float measurement_weight = 1.0f;
     float fused_distance = (voxel_distance_measured * measurement_weight +
@@ -108,7 +108,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
     // Write NEW voxel values (to global GPU memory)
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_dis_method == 2) {
+  } else if (voxel_weight_method == 2) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight = tsdf_constant_weight(voxel_distance_measured);
@@ -124,7 +124,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = fused_weight;
-  } else if (voxel_dis_method == 3) {
+  } else if (voxel_weight_method == 3) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight =
@@ -141,7 +141,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_dis_method == 4) {
+  } else if (voxel_weight_method == 4) {
     voxel_distance_measured =
         fminf(voxel_distance_measured, truncation_distance_m);
     float measurement_weight =
@@ -158,7 +158,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
         fminf(measurement_weight + voxel_weight_current, max_weight);
     voxel_ptr->distance = fused_distance;
     voxel_ptr->weight = weight;
-  } else if (voxel_dis_method == 5 || voxel_dis_method == 6) {
+  } else if (voxel_weight_method == 5 || voxel_weight_method == 6) {
     float normal_ratio = 1.0f;
 
     // case 1: existing gradient, use the gradient to compute the ratio
@@ -211,13 +211,13 @@ __device__ inline bool updateVoxelMultiWeightComp(
     measurement_distance = fminf(measurement_distance, truncation_distance_m);
 
     float measurement_weight;
-    if (voxel_dis_method == 5) {
+    if (voxel_weight_method == 5) {
       float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2,
                                                TSDF_WEIGHT_DISTANCE_TH);
       float weight_dropoff =
           tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
       measurement_weight = weight_sensor * weight_dropoff;
-    } else if (voxel_dis_method == 6) {
+    } else if (voxel_weight_method == 6) {
       measurement_weight =
           tsdf_linear_weight(measurement_distance, truncation_distance_m);
     }
@@ -571,8 +571,8 @@ __global__ void integrateBlocksKernel(
   // Non-Projective distance:
   //  5: weight and distance derived from VoxField
   //  6: linear weight, distance derived from VoxField
-  const int voxel_dis_method = 6;
-  if (voxel_dis_method == 1) {
+  const int voxel_weight_method = 6;
+  if (voxel_weight_method == 1) {
     // the original nvblox impelentation
     // not use normal vector
     updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
@@ -582,7 +582,7 @@ __global__ void integrateBlocksKernel(
     // use normal vector
     updateVoxelMultiWeightComp(
         image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
-        max_weight, voxel_dis_method, point_vector, normal_vector, T_C_L);
+        max_weight, voxel_weight_method, point_vector, normal_vector, T_C_L);
   }
 }
 

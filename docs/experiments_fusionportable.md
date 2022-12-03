@@ -2,16 +2,25 @@
 
 ### Reconstruction results
 
-###### Weight averaging methods:
+###### Weight averaging methods (TSDF integration):
 ```
 Projective distance:
-    1: constant weight, truncate the fused_distance
-    2: constant weight, truncate the voxel_distance_measured
-    3: linear weight, truncate the voxel_distance_measured
-    4: exponential weight, truncate the voxel_distance_measured
+  1: constant weight, truncate the fused_distance
+  2: constant weight, truncate the voxel_distance_measured
+  3: linear weight, truncate the voxel_distance_measured
+  4: exponential weight, truncate the voxel_distance_measured
 Non-Projective distance:
-    5: weight and distance derived from VoxField
-    6: linear weight, distance derived from VoxField
+  5: weight and distance derived from VoxField
+  6: linear weight, distance derived from VoxField
+```
+
+###### Weight averaging methods (Color integration):
+```
+  1: constant weight, truncate the voxel_distance_measured
+  2: linear weight, truncate the voxel_distance_measured
+  3: exponential weight, truncate the voxel_distance_measured
+  4: sensor distance weight
+  5: linear weight * sensor distance weight
 ```
 
 ###### Scene reconstruction results (voxel_size = 0.1)

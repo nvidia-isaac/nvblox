@@ -305,8 +305,10 @@ int FuserLidar::run() {
     outputObstaclePointcloudPly();
   }
 
-  std::vector<std::string> keywords = {
-      std::string("integrate"), std::string("normal"), std::string("write")};
+  // std::vector<std::string> keywords = {
+  //     std::string("integrate"), std::string("normal"), std::string("write")};
+  std::vector<std::string> keywords = {std::string("fuser"),
+                                       std::string("write")};
   LOG(INFO) << nvblox::timing::Timing::Print(keywords);
 
   LOG(INFO) << "Writing timings to file.";

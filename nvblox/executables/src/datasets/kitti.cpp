@@ -47,29 +47,34 @@ bool parsePoseFromFile(const std::string& filename, Transform* transform) {
   return false;
 }
 
-// TODO(jjiao): read P_rect_0x and R_rect_00
 bool parseCameraFromFile(const std::string& filename, Matrix3x4f* P_rect,
-                         Matrix3f* R_rect) {
+                         Matrix3f* R_rect, int* height, int* width) {
   CHECK_NOTNULL(P_rect);
   CHECK_NOTNULL(R_rect);
+  CHECK_NOTNULL(height);
+  CHECK_NOTNULL(width);
 
   std::ifstream fin(filename);
   if (fin.is_open()) {
-    for (int row = 0; row < 3; row++)
+    fin >> *height >> *width;
+
+    for (int row = 0; row < 3; row++) {
       for (int col = 0; col < 4; col++) {
         float item = 0.0;
         fin >> item;
         (*P_rect)(row, col) = item;
       }
+    }
 
-    for (int row = 0; row < 3; row++)
+    for (int row = 0; row < 3; row++) {
       for (int col = 0; col < 3; col++) {
         float item = 0.0;
         fin >> item;
         (*R_rect)(row, col) = item;
       }
-    fin.close();
+    }
 
+    fin.close();
     return true;
   }
   return false;
@@ -274,15 +279,18 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     timing::Timer timer_file_camera("file_loading/camera");
     Matrix3f R_rect;
     Matrix3x4f P_rect;
+    int image_width;
+    int image_height;
     if (!kitti::internal::parseCameraFromFile(
             kitti::internal::getPathForCameraIntrinsics(base_path_), &P_rect,
-            &R_rect)) {
+            &R_rect, &image_height, &image_width)) {
       return DataLoadResult::kNoMoreData;
     }
+    // std::cout << image_height << " " << image_width << std::endl
+    //           << P_rect << std::endl
+    //           << R_rect << std::endl;
 
     // Create a camera object.
-    const int image_width = color_frame_ptr->cols();
-    const int image_height = color_frame_ptr->rows();
     *camera_ptr = CameraPinhole::fromIntrinsicsMatrix(
         P_rect, R_rect, image_width, image_height);
     timer_file_camera.Stop();
