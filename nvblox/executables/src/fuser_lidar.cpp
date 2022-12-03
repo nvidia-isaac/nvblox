@@ -388,9 +388,6 @@ bool FuserLidar::integrateFrame(const int frame_number) {
 
   // TODO(jjiao): please use the optimized camera pose
   Transform T_W_C = T_W_B * T_B_C_;
-  // std::cout << "T_W_B: " << std::endl << T_W_B.matrix() << std::endl;
-  // std::cout << "T_B_C: " << std::endl << T_B_C_.matrix() << std::endl;
-  // std::cout << "T_W_C: " << std::endl << T_W_C.matrix() << std::endl;
   if (color_frame_subsampling_ > 0) {
     if ((frame_number + 1) % color_frame_subsampling_ == 0) {
       timing::Timer timer_integrate_color("fuser/integrate_color");

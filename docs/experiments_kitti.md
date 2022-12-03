@@ -8,6 +8,8 @@
   <br>
 	<center><img src="images/2011_09_30_drive_0027_sync_mesh.png" width="450" /></center>
   <br>
-	<center><img src="images/kitti_global_path.png" width="450" /></center>         
+	<center><img src="images/kitti_global_path.png" width="450" /></center>
+  <br>
+	<center><img src="images/kitti_color_mesh.png" width="450" /></center>
 </p>
 
