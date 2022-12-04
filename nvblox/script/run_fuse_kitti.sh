@@ -16,7 +16,7 @@ make && \
 	--mesh_output_path \
 	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_mesh_100_weightmethod6.ply \
 	--esdf_output_path \
-	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_mesh_100_weightmethod6.ply \
+	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_esdf_100_weightmethod6.ply \
 	--obstacle_output_path \
-	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_mesh_100_weightmethod6.ply \
+	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_obs_100_weightmethod6.ply \
 
