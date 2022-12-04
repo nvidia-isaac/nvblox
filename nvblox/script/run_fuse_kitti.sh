@@ -6,10 +6,10 @@ make && \
 	--tsdf_integrator_max_integration_distance_m 70.0 \
 	--color_integrator_max_integration_distance_m 30.0 \
 	--num_frames 1000 \
-	--voxel_size 0.1 \
+	--voxel_size 0.2 \
 	--mesh_frame_subsampling 20 \
 	--mesh_output_path \
-	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_mesh_1000_weightmethod6.ply \
+	/Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_mesh_1000_weightmethod6_0.2.ply \
 	--color_frame_subsampling 1
 	# -esdf_output_path \
 	# /Spy/dataset/mapping_results/nvblox/2011_09_30_drive_0027_sync_esdf_1000_weightmethod1_0.1.ply \
