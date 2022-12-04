@@ -19,7 +19,7 @@ limitations under the License.
 #include "nvblox/core/types.h"
 
 namespace nvblox {
-// NOTE(jjiao):
+// NOTE(gogojjh):
 // image coordinates to pixel indices
 // return u_C.array().floor().cast<int>();
 // image angle order:
@@ -38,7 +38,7 @@ class OSLidar {
   // __host__ __device__ inline void setIntrinsics();
   __host__ __device__ inline void printIntrinsics() const;
 
-  // TODO(jjiao): This function is used to check whether p_C (in the camera
+  // NOTE(gogojjh): This function is used to check whether p_C (in the camera
   // coordinate) is projected on the the image plane, or outside the
   // OSLidar's FOV Projects a 3D point to the (floating-point) image plane
   __host__ __device__ inline bool project(const Vector3f& p_C,
@@ -54,10 +54,9 @@ class OSLidar {
   // Gets the normal vector of a point
   __host__ __device__ inline Vector3f getNormalVector(const Index2D& u_C) const;
 
-  // TODO(jjiao): This function is used to unproject a pixel to a 3D point given
-  // the 2D coordinate of an image
-  // Back projection (image plane point to 3D point)
-  // represented in the lidar coordinate system
+  // NOTE(gogojjh): This function is used to unproject a pixel to a 3D point
+  // given the 2D coordinate of an image Back projection (image plane point to
+  // 3D point) represented in the lidar coordinate system
   __host__ __device__ inline Vector3f unprojectFromImagePlaneCoordinates(
       const Vector2f& u_C, const float depth) const;
   __host__ __device__ inline Vector3f unprojectFromPixelIndices(

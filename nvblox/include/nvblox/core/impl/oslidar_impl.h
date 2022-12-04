@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-NOTE(jjiao):
+NOTE(gogojjh):
 This implements the operation that project OSLidar points onto a depth image
 */
 
@@ -103,7 +103,7 @@ int OSLidar::rows() const { return num_elevation_divisions_; }
 
 float OSLidar::getDepth(const Vector3f& p_C) const { return p_C.norm(); }
 
-// NOTE(jjiao): this function is added by jjiao
+// NOTE(gogojjh): this function is added by gogojjh
 Vector3f OSLidar::getNormalVector(const Index2D& u_C) const {
   if (normal_image_ptr_cuda_) {
     float x = normal_image_ptr_cuda_[3 * (u_C.y() * num_azimuth_divisions_ +
@@ -209,12 +209,6 @@ Vector3f OSLidar::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
   float r = sqrt(depth * depth - height * height);
   float azimuth_angle_rad = M_PI - u_C.x() * rads_per_pixel_azimuth_;
   Vector3f p(r * cos(azimuth_angle_rad), r * sin(azimuth_angle_rad), height);
-  // printf(
-  //     "ux: %.1f, uy: %.1f, height: %.1f, r: %.1f, depth: %.1f, azimth: %.1f,
-  //     " "x: %.1f, y: "
-  //     "%.1f, z: %.1f\n",
-  //     u_C.x(), u_C.y(), height, r, depth, azimuth_angle_rad / M_PI * 180.0,
-  //     p.x(), p.y(), p.z());
   return p / depth;
 }
 
@@ -238,16 +232,10 @@ AxisAlignedBoundingBox OSLidar::getViewAABB(const Transform& T_L_C,
                -max_depth * sin(vertical_fov_rad_ / 2.0f)),
       Vector3f(max_depth, max_depth,
                max_depth * sin(vertical_fov_rad_ / 2.0f)));
-  // LOG(INFO) << "max_depth: " << max_depth << ", " << vertical_fov_rad_ / 2.0
-  //           << ", " << max_depth * sin(vertical_fov_rad_ / 2.0);
-  // LOG(INFO) << "box_min: " << box.min().transpose()
-  //           << ", box_max: " << box.max().transpose();
 
   // Translate the box to the sensor's location (note that orientation doesn't
   // matter as the OSLidar sees in the circle)
   box.translate(T_L_C.translation());
-  // LOG(INFO) << "box_min: " << box.min().transpose()
-  //           << ", box_max: " << box.max().transpose();
   return box;
 }
 

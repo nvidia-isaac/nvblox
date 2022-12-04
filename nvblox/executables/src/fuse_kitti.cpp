@@ -54,8 +54,7 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "Mesh location:" << fuser_lidar->mesh_output_path_;
   }
 
-  // TODO(jjiao): given correct extrinsics
-  // NOTE(jjiao): set extrinsics from the base_link to the camera
+  // NOTE(gogojjh): set extrinsics from the base_link to the camera
   Eigen::Quaternionf Qcb(0.500292, 0.490181, -0.508467, 0.500889);
   Eigen::Vector3f tcb(0.067436, -0.022029, -0.078333);
   Eigen::Quaternionf Qbc = Qcb.inverse();

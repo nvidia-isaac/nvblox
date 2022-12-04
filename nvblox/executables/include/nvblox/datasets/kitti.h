@@ -27,7 +27,7 @@ namespace nvblox {
 namespace datasets {
 namespace kitti {
 
-// TODO(jjiao): the default settings of preprocess height_image offset
+// NOTE(gogojjh): the default settings of preprocess height_image offset
 constexpr float kDefaultUintDepthScaleFactor = 1.0f / 1000.0f;
 constexpr float kDefaultUintDepthScaleOffset = 10.0f;
 

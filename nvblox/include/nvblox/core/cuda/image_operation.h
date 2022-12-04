@@ -13,7 +13,7 @@ __host__ __device__ inline int idivup(int a, int b) {
   return ((a % b) != 0) ? (a / b + 1) : (a / b);
 }
 
-// NOTE(jjiao): we cannot directly give the value from CPU and avoid
+// NOTE(gogojjh): we cannot directly give the value from CPU and avoid
 // dangerous operations, like bug1: int w_ = lidar.num_azimuth_divisions();
 // bug2: int h_ = lidar.num_elevation_divisions();
 // bug3: cannot print in the loop

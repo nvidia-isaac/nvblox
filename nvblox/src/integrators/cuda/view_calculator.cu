@@ -24,7 +24,7 @@ limitations under the License.
 
 namespace nvblox {
 
-/// NOTE(jjiao): define template function
+/// NOTE(gogojjh): define template function
 template std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
     const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
     const float block_size, const float truncation_distance_m,
@@ -179,7 +179,6 @@ __global__ void combinedBlockIndicesInImageKernel(
   int pixel_row = ray_idx_row * raycast_subsampling_factor;
   int pixel_col = ray_idx_col * raycast_subsampling_factor;
 
-  // TODO(jjiao): accelerate this sentence
   // Hooray we do nothing.
   if (pixel_row >= (rows + raycast_subsampling_factor - 1) ||
       pixel_col >= (cols + raycast_subsampling_factor - 1)) {

@@ -18,8 +18,8 @@ limitations under the License.
 namespace nvblox {
 
 template <typename SensorType>
-// NOTE(jjiao): this function project a voxel in the world onto the camera plane
-// to check whether the voxel is visible or not
+// NOTE(gogojjh): this function project a voxel in the world onto the camera
+// plane to check whether the voxel is visible or not
 /*
  * This function projects a voxel in the world onto the camera plane to check
  whether the voxel is visible or not

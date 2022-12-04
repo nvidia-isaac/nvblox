@@ -116,7 +116,7 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
   float lidar_linear_interpolation_max_allowable_difference_vox_ = 2.0f;
   float lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ = 0.5f;
 
-  // TODO(jjiao): the main function to implement the GPU-based integration
+  // NOTE(gogojjh): the main function to implement the GPU-based integration
   // Given a set of blocks in view (block_indices) perform TSDF updates on all
   // voxels within these blocks on the GPU.
   void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,

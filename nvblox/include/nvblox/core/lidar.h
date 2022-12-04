@@ -24,8 +24,8 @@ class Lidar {
   Lidar() = delete;
   __host__ __device__ inline Lidar(int num_azimuth_divisions,
                                    int num_elevation_divisions,
-                                   float horizontal_fov_deg,
-                                   float vertical_fov_deg);
+                                   float horizontal_fov_rad,
+                                   float vertical_fov_rad);
   __host__ __device__ inline ~Lidar() = default;
 
   // Projects a 3D point to the (floating-point) image plane

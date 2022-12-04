@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace nvblox {
 
-/// NOTE(jjiao): define template function
+/// NOTE(gogojjh): define template function
 template std::vector<Index3D> ViewCalculator::getBlocksInImageViewPlanes(
     const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
     const float block_size, const float truncation_distance_m,

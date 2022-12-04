@@ -253,7 +253,7 @@ std::string Timing::Print() {
   return ss.str();
 }
 
-// NOTE(jjiao): added to only print timeing of key steps (given keywords)
+// NOTE(gogojjh): added to only print timeing of key steps (given keywords)
 void Timing::Print(std::ostream& out,
                    std::vector<std::string> const& keywords) {
   map_t& tagMap = Instance().tagMap_;  // std::map<std::string, size_t>

@@ -50,7 +50,8 @@ TEST_P(ParameterizedoslidarTest, Extremes) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_deg, vertical_fov_deg);
+                  horizontal_fov_rad, vertical_fov_rad, 1.1781f, 1.9635f, 0.0f,
+                  2.0f * M_PI);
 
   //-------------------
   // Elevation extremes
@@ -134,7 +135,8 @@ TEST_P(ParameterizedoslidarTest, SphereTest) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_deg, vertical_fov_deg);
+                  horizontal_fov_rad, vertical_fov_rad, 1.1781f, 1.9635f, 0.0f,
+                  2.0f * M_PI);
 
   // Pointcloud
   Eigen::MatrixX3f pointcloud(num_azimuth_divisions * num_elevation_divisions,
@@ -150,15 +152,9 @@ TEST_P(ParameterizedoslidarTest, SphereTest) {
   int point_idx = 0;
   for (int az_idx = 0; az_idx < num_azimuth_divisions; az_idx++) {
     for (int el_idx = 0; el_idx < num_elevation_divisions; el_idx++) {
-      // const float azimuth_rad = az_idx * azimuth_increments_rad - M_PI;
-      // const float polar_rad =
-      //     el_idx * polar_increments_rad + (M_PI / 2.0 -
-      //     half_vertical_fov_rad);
       const float azimuth_rad = M_PI - az_idx * azimuth_increments_rad;
       const float polar_rad =
           el_idx * polar_increments_rad - half_vertical_fov_rad;
-      // 0.0 <= el_idx * polar_increments_rad <= vertical_fov_rad
-      // -half_vertical_fov_rad <= polar_rad <= half_vertical_fov_rad
 
       constexpr float max_depth = 10.0;
       constexpr float min_depth = 1.0;
@@ -220,7 +216,8 @@ TEST_P(ParameterizedoslidarTest, OutOfBoundsTest) {
   DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
   DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
   OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_deg, vertical_fov_deg);
+                  horizontal_fov_rad, vertical_fov_rad, 1.1781f, 1.9635f, 0.0f,
+                  2.0f * M_PI);
 
   // Outside on top and bottom
   const float rads_per_pixel_elevation =
@@ -249,138 +246,11 @@ TEST_P(ParameterizedoslidarTest, OutOfBoundsTest) {
   }
 }
 
-TEST_P(ParameterizedoslidarTest, PixelToRayExtremes) {
-  //   // oslidar params
-  //   const auto params = GetParam();
-  //   const int num_azimuth_divisions = std::get<0>(params);
-  //   const int num_elevation_divisions = std::get<1>(params);
-  //   const float vertical_fov_deg = std::get<2>(params);
-  //   const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
-  //   const float half_vertical_fov_rad = vertical_fov_rad / 2.0;
-
-  //   DepthImageheight_image(epthImage(num_elevation_divisions,
-  //   num_azimuth_divisions); OSLidar oslidar(num_azimuth_divisions,
-  //   num_elevation_divisions,
-  //                    height_image);vertical_fov, **
-  //   // Special pixels to use
-  //   const float middle_elevation_pixel = (num_elevation_divisions - 1) /
-  // 2;
-  //   const float middle_azimuth_pixel = num_azimuth_divisions / 2;
-  //   const float right_azimuth_pixel = num_azimuth_divisions / 4;
-  //   const float left_azimuth_pixel = 3 * num_azimuth_divisions / 4;
-
-  //   const float middle_elevation_coords = middle_elevation_pixel + 0.5f;
-  //   const float middle_azimuth_coords = middle_azimuth_pixel + 0.5f;
-  //   const float right_azimuth_coords = right_azimuth_pixel + 0.5f;
-  //   const float left_azimuth_coords = left_azimuth_pixel + 0.5f;
-
-  //   //-----------------
-  //   // Azimuth extremes
-  //   //-----------------
-
-  //   // NOTE(alexmillane): We get larger than I would expect errors on some
-  // of
-  //   the
-  //   // components. I had to turn up the allowable error a bit.
-  //   constexpr float kAllowableVectorError = 0.02;
-
-  //   // Backwards
-  //   Vector3f v_C = oslidar.vectorFromImagePlaneCoordinates(
-  //       Vector2f(0.5, middle_elevation_coords));
-  //   EXPECT_NEAR(v_C.x(), -1.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.y(), 0.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.z(), 0.0f, kAllowableVectorError);
-
-  //   // Forwards
-  //   v_C = oslidar.vectorFromImagePlaneCoordinates(
-  //       Vector2f(middle_azimuth_coords, middle_elevation_coords));
-  //   EXPECT_NEAR(v_C.x(), 1.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.y(), 0.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.z(), 0.0f, kAllowableVectorError);
-
-  //   // Right
-  //   v_C = oslidar.vectorFromImagePlaneCoordinates(
-  //       Vector2f(right_azimuth_coords, middle_elevation_coords));
-  //   EXPECT_NEAR(v_C.x(), 0.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.y(), -1.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.z(), 0.0f, kAllowableVectorError);
-
-  //   // Left
-  //   v_C = oslidar.vectorFromImagePlaneCoordinates(
-  //       Vector2f(left_azimuth_coords, middle_elevation_coords));
-  //   EXPECT_NEAR(v_C.x(), 0.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.y(), 1.0f, kAllowableVectorError);
-  //   EXPECT_NEAR(v_C.z(), 0.0f, kAllowableVectorError);
-
-  //   //-----------------
-  //   // Elevation extremes
-  //   //-----------------
-  //   const Vector3f top_of_elevation_forward_vector(
-  //       cos(half_vertical_fov_rad), 0.0f, sin(half_vertical_fov_rad));
-  //   const Vector3f bottom_of_elevation_forward_vector(
-  //       cos(half_vertical_fov_rad), 0.0f, -sin(half_vertical_fov_rad));
-
-  //   v_C = oslidar.vectorFromImagePlaneCoordinates(
-  //       Vector2f(middle_azimuth_coords, 0.5));
-  //   EXPECT_NEAR(v_C.dot(top_of_elevation_forward_vector), 1.0f,
-  //   kFloatEpsilon);
-
-  //   v_C = oslidar.vectorFromImagePlaneCoordinates(
-  //       Vector2f(middle_azimuth_coords, num_elevation_divisions - 1 +
-  // 0.5));
-  //   EXPECT_NEAR(v_C.dot(bottom_of_elevation_forward_vector), 1.0f,
-  //   kFloatEpsilon);
-}
-
 // clang-format off
 INSTANTIATE_TEST_CASE_P(
     ParameterizedoslidarTests, ParameterizedoslidarTest, ::testing::Values(
       std::tuple<int, int, float, float>(2048, 128, 360.0f, 45.0f)));
 // clang-format on
-
-TEST_P(ParameterizedoslidarTest, RandomPixelRoundTrips) {
-  // Make sure this is deterministic.
-  std::srand(0);
-
-  const auto params = GetParam();
-  const int num_azimuth_divisions = std::get<0>(params);
-  const int num_elevation_divisions = std::get<1>(params);
-  const float vertical_fov_deg = std::get<2>(params);
-  const float vertical_fov_rad = vertical_fov_deg / 180.0 * M_PI;
-  const float horizontal_fov_deg = std::get<3>(params);
-  const float horizontal_fov_rad = horizontal_fov_deg / 180.0 * M_PI;
-
-  DepthImage depth_image(num_elevation_divisions, num_azimuth_divisions);
-  DepthImage height_image(num_elevation_divisions, num_azimuth_divisions);
-  OSLidar oslidar(num_azimuth_divisions, num_elevation_divisions,
-                  horizontal_fov_deg, vertical_fov_deg);
-
-  // TODO(jjiao): The projection and unprojection of points of OS lidar is
-  // uninvertible
-  // Test a large number of points const int kNumberOfPointsToTest
-  // = 10000; for (int i = 0; i < kNumberOfPointsToTest; i++) {
-  //   // Random point on the image plane
-  //   const Vector2f u_C(test_utils::randomFloatInRange(
-  //                          0.0f,
-  // static_cast<float>(num_azimuth_divisions)),
-  //                      test_utils::randomFloatInRange(
-  //                          0.0f,
-  //                          static_cast<float>(num_elevation_divisions)));
-  //   // Pixel -> Ray
-  //   const Vector3f v_C = oslidar.vectorFromImagePlaneCoordinates(u_C);
-  //   // Randomly scale ray
-  //   const Vector3f p_C = v_C *
-  // test_utils::randomFloatInRange(0.1f, 10.0f);
-
-  //   // Project back to image plane
-  //   Vector2f u_C_reprojected;
-  //   EXPECT_TRUE(oslidar.project(p_C, &u_C_reprojected));
-  //   // Check we get back to where we started
-  //   constexpr float kAllowableReprojectionError = 0.001;
-  //   EXPECT_NEAR((u_C_reprojected - u_C).maxCoeff(), 0.0f,
-  //               kAllowableReprojectionError);
-  // }
-}
 
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;

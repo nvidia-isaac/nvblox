@@ -22,7 +22,7 @@ limitations under the License.
 
 namespace nvblox {
 
-/// NOTE(jjiao): Define the template class
+/// NOTE(gogojjh): Define the template class
 template void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
     const TsdfLayer& tsdf_layer, ColorLayer* color_layer,
@@ -48,7 +48,7 @@ void ProjectiveColorIntegrator::finish() const {
   cudaStreamSynchronize(integration_stream_);
 }
 
-// NOTE(jjiao): the API function
+// NOTE(gogojjh): the API function
 template <typename CameraType>
 void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C,
@@ -141,8 +141,8 @@ __device__ inline Color blendTwoColors(const Color& first_color,
   return new_color;
 }
 
-/// NOTE(jjiao): This function implement different weighting functions to update
-/// the color of a voxel
+/// NOTE(gogojjh): This function implement different weighting functions to
+/// update the color of a voxel
 __device__ inline bool updateVoxelMultiWeightComp(
     const Color color_measured, ColorVoxel* voxel_ptr,
     const float voxel_depth_m, const float voxel_distance_measured,

@@ -20,7 +20,7 @@ limitations under the License.
 
 namespace nvblox {
 
-// NOTE(jjiao): Define the template function
+// NOTE(gogojjh): Define the template function
 template void RgbdMapper::integrateColor(const ColorImage& color_frame,
                                          const Transform& T_L_C,
                                          const Camera& camera);

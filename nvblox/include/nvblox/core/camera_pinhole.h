@@ -83,7 +83,7 @@ class CameraPinhole {
 
  private:
   Matrix3f K_;
-  /// NOTE(jjiao):
+  /// NOTE(gogojjh):
   /// KITTI dataset: P_ = P_rect_00, we first transform the point into a camera
   /// P_(0:2, 3) = 0, P_(3, 3) = 1
   Matrix3x4f P_;

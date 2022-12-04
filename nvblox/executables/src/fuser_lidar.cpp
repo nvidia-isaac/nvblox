@@ -270,7 +270,7 @@ void FuserLidar::readCommandLineFlags() {
   }
 }
 
-// NOTE(jjiao): the overall procedures running function
+// NOTE(gogojjh): the overall procedures running function
 int FuserLidar::run() {
   LOG(INFO) << "Trying to integrate the first frame: ";
   if (!integrateFrames()) {
@@ -298,7 +298,6 @@ int FuserLidar::run() {
     outputMapToFile();
   }
 
-  // TODO(jjiao): output the obstacle point cloud map to a ply file
   if (!obs_output_path_.empty()) {
     LOG(INFO) << "Outputting Obstacle based on the ESDF map ply file to "
               << obs_output_path_;
@@ -345,7 +344,7 @@ void FuserLidar::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
   esdf_mode_ = esdf_mode;
 }
 
-// NOTE(jjiao): this function will run the tsdf, mesh, and esdf integration
+// NOTE(gogojjh): this function will run the tsdf, mesh, and esdf integration
 // for each incoming frame
 bool FuserLidar::integrateFrame(const int frame_number) {
   timing::Timer timer_file("fuser/file_loading");
@@ -386,7 +385,6 @@ bool FuserLidar::integrateFrame(const int frame_number) {
     nvblox::cuda::freeNormalImageOSLidar(oslidar);
   }
 
-  // TODO(jjiao): please use the optimized camera pose
   Transform T_W_C = T_W_B * T_B_C_;
   if (color_frame_subsampling_ > 0) {
     if ((frame_number + 1) % color_frame_subsampling_ == 0) {
@@ -415,7 +413,7 @@ bool FuserLidar::integrateFrame(const int frame_number) {
   return true;
 }
 
-// NOTE(jjiao): Running all TSDF integrations
+// NOTE(gogojjh): Running all TSDF integrations
 bool FuserLidar::integrateFrames() {
   int frame_number = 0;
   while (frame_number < num_frames_to_integrate_ &&

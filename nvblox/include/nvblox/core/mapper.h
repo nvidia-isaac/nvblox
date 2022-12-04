@@ -263,7 +263,7 @@ class RgbdMapper : public MapperBase {
   /// updateEsdfSlice(). This member tracks which mode we're in.
   EsdfMode esdf_mode_ = EsdfMode::kUnset;
 
-  /// TODO(jjiao): how to modify these integrators for large-scale mapping?
+  /// TODO(gogojjh): how to modify these integrators for large-scale mapping?
   /// Integrators
   ProjectiveTsdfIntegrator tsdf_integrator_;
   ProjectiveTsdfIntegrator lidar_tsdf_integrator_;

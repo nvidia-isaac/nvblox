@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-NOTE(jjiao):
+NOTE(gogojjh):
 This implements the operation that project lidar points onto a depth image
 This implementation is only valid for lidars that have average elevation angle
   i.e., VLP16, otherwise, the lidar_impl.h should be rewritten for a specific
@@ -31,11 +31,11 @@ This implementation is only valid for lidars that have average elevation angle
 namespace nvblox {
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
-             float horizontal_fov_deg, float vertical_fov_deg)
+             float horizontal_fov_rad, float vertical_fov_rad)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
-      horizontal_fov_rad_(horizontal_fov_deg / 180.0f * M_PI),
-      vertical_fov_rad_(vertical_fov_deg / 180.0f * M_PI) {
+      horizontal_fov_rad_(horizontal_fov_rad),
+      vertical_fov_rad_(vertical_fov_rad) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
 

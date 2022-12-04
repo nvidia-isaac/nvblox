@@ -21,7 +21,7 @@ limitations under the License.
 namespace nvblox {
 namespace io {
 
-/// NOTE(jjiao): This function outputs TSDF and ESDF map to a file
+/// NOTE(gogojjh): This function outputs TSDF and ESDF map to a file
 /// Outputs a voxel layer as a pointcloud with the lambda function deciding the
 /// intensity.
 template <typename VoxelType>
@@ -33,7 +33,7 @@ bool outputVoxelLayerToPly(
 
   // Combine all the voxels in the mesh into a pointcloud.
   std::vector<Vector3f> points;
-  std::vector<float> intensities;  // NOTE(jjiao): record the distance
+  std::vector<float> intensities;  // NOTE(gogojjh): record the distance
 
   constexpr int kVoxelsPerSide = VoxelBlock<VoxelType>::kVoxelsPerSide;
   const float block_size = layer.block_size();
@@ -88,7 +88,7 @@ bool outputVoxelLayerToPly(const EsdfLayer& layer,
   return outputVoxelLayerToPly<EsdfVoxel>(layer, filename, lambda);
 }
 
-/// NOTE(jjiao): This function outputs obstance information to a file
+/// NOTE(gogojjh): This function outputs obstance information to a file
 template <typename VoxelType>
 bool outputObstacleToPly(
     const VoxelBlockLayer<VoxelType>& layer, const std::string& filename,

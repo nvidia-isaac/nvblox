@@ -105,7 +105,7 @@ class FuserLidar {
   std::string map_output_path_;
   std::string obs_output_path_;
 
-  // NOTE(jjiao): setting parameters for different datasets
+  // NOTE(gogojjh): setting parameters for different datasets
   Transform T_B_C_;
 };
 

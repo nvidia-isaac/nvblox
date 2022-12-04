@@ -56,7 +56,7 @@ typedef Eigen::AlignedBox3f AxisAlignedBoundingBox;
 
 typedef Eigen::Isometry3f Transform;
 
-// NOTE(jjiao): add other types of vectors/matrices
+// NOTE(gogojjh): add other types of vectors/matrices
 typedef Eigen::Matrix<float, 4, 1> Vector4f;
 typedef Eigen::Matrix3f Matrix3f;
 typedef Eigen::Matrix4f Matrix4f;

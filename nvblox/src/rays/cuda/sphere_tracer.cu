@@ -25,7 +25,7 @@ limitations under the License.
 
 namespace nvblox {
 
-/// NOTE(jjiao): define the template functions
+/// NOTE(gogojjh): define the template functions
 template std::shared_ptr<const DepthImage> SphereTracer::renderImageOnGPU(
     const Camera& camera, const Transform& T_L_C, const TsdfLayer& tsdf_layer,
     const float truncation_distance_m,

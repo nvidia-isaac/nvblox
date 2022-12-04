@@ -24,7 +24,7 @@ limitations under the License.
 #include "nvblox/utils/weight_function.h"
 
 namespace nvblox {
-// NOTE(jjiao): the original nvblox implementation
+// NOTE(gogojjh): the original nvblox implementation
 __device__ inline bool updateVoxel(const float surface_depth_measured,
                                    TsdfVoxel* voxel_ptr,
                                    const float voxel_depth_m,
@@ -70,7 +70,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
     const float max_weight, const int voxel_weight_method,
     const Vector3f& measurement_point, const Vector3f& measurement_normal,
     const Transform& T_C_L) {
-  // NOTE(jjiao): need to externally set parameters in both host and device
+  // NOTE(gogojjh): need to externally set parameters in both host and device
   const float kEpsilon = 1e-6;       // Used for coordinates
   const float kFloatEpsilon = 1e-8;  // Used for weights
   const float TSDF_NORMAL_RATIO_TH = 0.05f;
@@ -222,7 +222,7 @@ __device__ inline bool updateVoxelMultiWeightComp(
           tsdf_linear_weight(measurement_distance, truncation_distance_m);
     }
 
-    // NOTE(jjiao): it is possible to have weights very close to zero, due
+    // NOTE(gogojjh): it is possible to have weights very close to zero, due
     // to the limited precision of floating points dividing by this small
     // value can cause nans
     if (measurement_weight < kFloatEpsilon) return false;
@@ -365,7 +365,7 @@ __device__ inline bool interpolateOSLidarImage(
   return true;
 }
 
-// NOTE(jjiao):
+// NOTE(gogojjh):
 __device__ inline bool getPointVectorOSLidar(const OSLidar& lidar,
                                              const Index2D& u_C, const int rows,
                                              const int cols,
@@ -383,7 +383,7 @@ __device__ inline bool getPointVectorOSLidar(const OSLidar& lidar,
   }
 }
 
-// NOTE(jjiao):
+// NOTE(gogojjh):
 __device__ inline bool getNormalVectorOSLidar(const OSLidar& lidar,
                                               const Index2D& u_C,
                                               const int rows, const int cols,
@@ -498,7 +498,7 @@ __global__ void integrateBlocksKernel(
 }
 
 // OSLiDAR
-// TODO(jjiao): main function to integrate blocks in GPU
+// NOTE(gogojjh): main function to integrate blocks in GPU
 __global__ void integrateBlocksKernel(
     const Index3D* block_indices_device_ptr, const OSLidar lidar,
     const float* image, int rows, int cols, const Transform T_C_L,
@@ -517,10 +517,6 @@ __global__ void integrateBlocksKernel(
   Vector3f p_voxel_center_C;
   if (!projectThreadVoxel(block_indices_device_ptr, lidar, T_C_L, block_size,
                           &u_px, &voxel_depth_m, &p_voxel_center_C)) {
-    // TODO(jjiao): please remove these sentences after debugging
-    // printf("u(%.2f, %.2f), p(%.2f, %.2f, %.2f), dep(%.2f)\n", u_px.x(),
-    //        u_px.y(), p_voxel_center_C.x(), p_voxel_center_C.y(),
-    //        p_voxel_center_C.z(), voxel_depth_m);
     return;  // false: the voxel is not visible
   }
 
@@ -549,7 +545,7 @@ __global__ void integrateBlocksKernel(
   TsdfVoxel* voxel_ptr = &(block_device_ptrs[blockIdx.x]
                                ->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
 
-  // NOTE(jjiao): retrive the normal vector given u_px
+  // NOTE(gogojjh): retrive the normal vector given u_px
   const Index2D u_C = u_px.array().round().cast<int>();
   Vector3f point_vector = Vector3f::Zero();
   Vector3f normal_vector = Vector3f::Zero();
@@ -561,7 +557,7 @@ __global__ void integrateBlocksKernel(
 
   // function 3
   // Update the voxel using the update rule for this layer type
-  // NOTE(jjiao):
+  // NOTE(gogojjh):
   // setting the voxel update method
   // Projective distance:
   //  1: constant weight, truncate the fused_distance
@@ -769,7 +765,7 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
   // Kernel call - One ThreadBlock launched per VoxelBlock
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
-  // NOTE(jjiao): the number of visible blocks
+  // NOTE(gogojjh): the number of visible blocks
   const int num_thread_blocks = block_indices_device_.size();
 
   // Metric truncation distance for this layer

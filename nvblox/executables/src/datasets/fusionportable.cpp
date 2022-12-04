@@ -224,7 +224,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   }
   timer_file_coord.Stop();
 
-  // NOTE(jjiao): Load lidar intrinsics:
+  // NOTE(gogojjh): Load lidar intrinsics:
   //  num_azimuth_divisions
   //  num_elevation_divisions
   //  horizontal_fov_rad
@@ -315,7 +315,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   return DataLoadResult::kSuccess;
 }
 
-// NOTE(jjiao): need to define the virutal function (not used) here
+// NOTE(gogojjh): need to define the virutal function (not used) here
 /// Interface for a function that loads the next frames in a dataset
 ///@param[out] depth_frame_ptr The loaded depth frame.
 ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.

@@ -35,8 +35,8 @@ constexpr float kFloatEpsilon = 1e-4;
 class LidarIntegrationTest : public ::testing::Test {
  protected:
   LidarIntegrationTest()
-      : lidar(num_azimuth_divisions, num_elevation_divisions,
-              vertical_fov_rad) {
+      : lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad,
+              2.0 * M_PI) {
     //
   }
 
