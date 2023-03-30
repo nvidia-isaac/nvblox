@@ -59,7 +59,7 @@ unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets
 ```
 Navigate to and run the `fuse_3dmatch` binary. From the nvblox base folder run
 ```
-cd nvblox/build/experiments
+cd nvblox/build/executables
 ./fuse_3dmatch ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
 ```
 Once it's done we can view the output mesh using the Open3D viewer.
@@ -125,10 +125,10 @@ apt-get update
 apt-get install unzip
 wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
 unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
-cd nvblox/nvblox/build/executables/
+cd nvblox/nvblox/build/executables
 ./fuse_3dmatch ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2/ --esdf_frame_subsampling 3000 --mesh_output_path mesh.ply
 ```
-Now let's visualize. From the same experiments folder run:
+Now let's visualize. From the same executable folder run:
 ```
 apt-get install python3-pip libgl1-mesa-glx
 pip3 install open3d
