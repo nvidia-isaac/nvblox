@@ -19,38 +19,21 @@ limitations under the License.
 #include "nvblox/core/common_names.h"
 #include "nvblox/core/layer.h"
 #include "nvblox/core/voxels.h"
+#include "nvblox/tests/blox.h"
 
 using namespace nvblox;
-
-struct NewVoxel {
- float voxel_data = 0.0f;
-};
-
-struct NewBlock {
-  typedef unified_ptr<NewBlock> Ptr;
-  typedef unified_ptr<const NewBlock> ConstPtr;
-
-  static Ptr allocate(MemoryType memory_type) {
-    return make_unified<NewBlock>();
-  };
-
-  float block_data = 0.0f;
-};
-
-using NewVoxelLayer = VoxelBlockLayer<NewVoxel>;
-using NewBlockLayer = BlockLayer<NewBlock>;
 
 TEST(TraitsTest, LayerTraits) {
   // Existing layer types
   EXPECT_TRUE(traits::is_voxel_layer<TsdfLayer>());
   EXPECT_FALSE(traits::is_voxel_layer<MeshLayer>());
-  EXPECT_TRUE(traits::is_voxel_layer<NewVoxelLayer>());
-  EXPECT_FALSE(traits::is_voxel_layer<NewBlockLayer>());
+  EXPECT_TRUE(traits::is_voxel_layer<FloatVoxelLayer>());
+  EXPECT_FALSE(traits::is_voxel_layer<FloatBlockLayer>());
   // New layer types
   static_assert(traits::is_voxel_layer<TsdfLayer>());
   static_assert(!traits::is_voxel_layer<MeshLayer>());
-  static_assert(traits::is_voxel_layer<NewVoxelLayer>());
-  static_assert(!traits::is_voxel_layer<NewBlockLayer>());
+  static_assert(traits::is_voxel_layer<FloatVoxelLayer>());
+  static_assert(!traits::is_voxel_layer<FloatBlockLayer>());
 }
 
 int main(int argc, char** argv) {

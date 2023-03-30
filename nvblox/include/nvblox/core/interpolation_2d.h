@@ -23,12 +23,16 @@ namespace interpolation {
 
 namespace checkers {
 
-// A checker that always returns that a pixel is valid (the default below)
+/// A checker that always returns that a pixel is valid (the default below)
 template <typename ElementType>
 struct PixelAlwaysValid;
 
-// A checker that returns true if a float pixel is greater than 0.0f.
+/// A checker that returns true if a float pixel is greater than 0.0f.
 struct FloatPixelGreaterThanZero;
+
+/// A checker that returns true if the alpha channel of a color pixel is greater
+/// than 0.
+struct ColorPixelAlphaGreaterThanZero;
 
 }  // namespace checkers
 

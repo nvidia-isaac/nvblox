@@ -15,6 +15,7 @@ limitations under the License.
 */
 #include "nvblox/core/bounding_boxes.h"
 #include "nvblox/core/bounding_spheres.h"
+#include "nvblox/core/cuda/atomic_float.cuh"
 #include "nvblox/gpu_hash/cuda/gpu_hash_interface.cuh"
 #include "nvblox/gpu_hash/cuda/gpu_indexing.cuh"
 #include "nvblox/gpu_hash/cuda/gpu_set.cuh"
@@ -189,7 +190,7 @@ __global__ void markAllSitesCombinedKernel(
   }
 
   __syncthreads();
-  
+
   if (threadIdx.x == 1 && threadIdx.y == 1 && threadIdx.z == 1) {
     if (updated) {
       updated_vec[atomicAdd(updated_vec_size, 1)] = block_indices[block_idx];
@@ -198,18 +199,6 @@ __global__ void markAllSitesCombinedKernel(
       to_clear_vec[atomicAdd(to_clear_vec_size, 1)] = block_indices[block_idx];
     }
   }
-}
-
-// From:
-// https://stackoverflow.com/questions/17399119/how-do-i-use-atomicmax-on-floating-point-values-in-cuda
-__device__ __forceinline__ float atomicMinFloat(float* addr, float value) {
-  float old;
-  old = (value >= 0)
-            ? __int_as_float(atomicMin((int*)addr, __float_as_int(value)))
-            : __uint_as_float(
-                  atomicMax((unsigned int*)addr, __float_as_uint(value)));
-
-  return old;
 }
 
 /// Thread size MUST be 8x8x8, block size can be anything.
@@ -665,6 +654,14 @@ void EsdfIntegrator::markSitesInSliceCombined(
       cleared_counter_device_.get());
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
   checkCudaErrors(cudaPeekAtLastError());
+
+  timing::Timer pack_out_timer("esdf/integrate/mark_sites/pack_out");
+  updated_counter_device_.copyTo(updated_counter_host_);
+  cleared_counter_device_.copyTo(cleared_counter_host_);
+
+  updated_blocks->resize(*updated_counter_host_);
+  cleared_blocks->resize(*cleared_counter_host_);
+  pack_out_timer.Stop();
 }
 
 __host__ __device__ void getDirectionAndVoxelIndicesFromThread(

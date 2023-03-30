@@ -92,6 +92,7 @@ def evaluate_esdf(reconstructed_esdf_path: Path,
     print('Calculating ESDF errors')
     sdf_abs_diff = esdf_evaluation.get_sdf_abs_error_grid(
         reconstructed_sdf, gt_sdf)
+    sdf_abs_diff.writeToPly(output_dir / 'error_esdf.ply')
     abs_errors = sdf_abs_diff.get_valid_voxel_values()
 
     # Statistics
@@ -117,7 +118,9 @@ def evaluate_esdf(reconstructed_esdf_path: Path,
         json.dump(statistics_dict, statistics_file, indent=4)
 
     # Error histogram.
-    fig = px.histogram(sdf_abs_diff.get_valid_voxel_values())
+    sdf_diff_abs_np = sdf_abs_diff.get_valid_voxel_values()
+    np.savetxt(output_dir / 'esdf_errors.txt', sdf_diff_abs_np)
+    fig = px.histogram(sdf_diff_abs_np)
     fig.write_image(output_dir / 'esdf_error_histogram.png')
     fig.show()
 

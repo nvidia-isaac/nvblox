@@ -22,6 +22,7 @@ limitations under the License.
 
 namespace nvblox {
 
+/// A block that contains 8x8x8 voxels of a given type.
 template <typename VoxelType>
 struct VoxelBlock {
   typedef unified_ptr<VoxelBlock> Ptr;
@@ -30,13 +31,18 @@ struct VoxelBlock {
   static constexpr size_t kVoxelsPerSide = 8;
   VoxelType voxels[kVoxelsPerSide][kVoxelsPerSide][kVoxelsPerSide];
 
+  /// Allocate a voxel block of a given memory type.
   static Ptr allocate(MemoryType memory_type);
+  /// Initializes all the memory of the voxels to 0 by default, can be
+  /// specialized by voxel type.
   static void initOnGPU(VoxelBlock* block_ptr);
 };
 
 // Initialization Utility Functions
+/// Set all the memory of the block to 0 on the GPU.
 template <typename BlockType>
 void setBlockBytesZeroOnGPU(BlockType* block_device_ptr);
+/// Set all of the default colors to gray on a GPU.
 void setColorBlockGrayOnGPU(VoxelBlock<ColorVoxel>* block_device_ptr);
 
 }  // namespace nvblox

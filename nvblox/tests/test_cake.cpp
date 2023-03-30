@@ -49,18 +49,18 @@ TEST(LayerCakeTest, addAndRetrieve) {
 
 TEST(LayerCakeTest, create) {
   // Bring in a custom test layer
-  using DummyLayer = BlockLayer<DummyBlock>;
+  using BooleanLayer = BlockLayer<BooleanBlock>;
 
   // Create
   const float voxel_size = 0.1f;
-  auto cake = LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, DummyLayer>(
+  auto cake = LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, BooleanLayer>(
       voxel_size, MemoryType::kUnified);
 
   // Checks
   EXPECT_TRUE(cake.exists<TsdfLayer>());
   EXPECT_TRUE(cake.exists<ColorLayer>());
   EXPECT_TRUE(cake.exists<EsdfLayer>());
-  EXPECT_TRUE(cake.exists<DummyLayer>());
+  EXPECT_TRUE(cake.exists<BooleanLayer>());
 
   EXPECT_FALSE(cake.exists<MeshLayer>());
 }

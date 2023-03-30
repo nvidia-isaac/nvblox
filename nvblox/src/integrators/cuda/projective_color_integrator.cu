@@ -15,6 +15,7 @@ limitations under the License.
 */
 #include "nvblox/integrators/projective_color_integrator.h"
 
+#include "nvblox/core/interpolation_2d.h"
 #include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/utils/timing.h"
@@ -195,8 +196,9 @@ __global__ void integrateBlocks(
   }
 
   Color image_value;
-  if (!interpolation::interpolate2DLinear<Color>(color_image, u_px, color_rows,
-                                                 color_cols, &image_value)) {
+  if (!interpolation::interpolate2DLinear<
+          Color, interpolation::checkers::ColorPixelAlphaGreaterThanZero>(
+          color_image, u_px, color_rows, color_cols, &image_value)) {
     return;
   }
 

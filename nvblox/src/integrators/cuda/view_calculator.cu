@@ -213,7 +213,8 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
     const DepthImage& depth_frame, const Transform& T_L_C,
     const SensorType& camera, const float block_size,
     const float truncation_distance_m, const float max_integration_distance_m) {
-  timing::Timer setup_timer("in_view/setup");
+  timing::Timer total_timer("view_calculator/raycast");
+  timing::Timer setup_timer("view_calculator/raycast/setup");
 
   // Aight so first we have to get the AABB of this guy.
   const AxisAlignedBoundingBox aabb_L =
@@ -257,7 +258,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   }
 
   // Output vector.
-  timing::Timer output_timer("in_view/output");
+  timing::Timer output_timer("view_calculator/raycast/output");
   cudaMemcpyAsync(aabb_host_buffer_.data(), aabb_device_buffer_.data(),
                   sizeof(bool) * aabb_linear_size, cudaMemcpyDeviceToHost,
                   cuda_stream_);
@@ -270,9 +271,6 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
       &output_vector);
   output_timer.Stop();
 
-  // We have to manually destruct this. :(
-  timing::Timer destory_timer("in_view/destroy");
-  destory_timer.Stop();
   return output_vector;
 }
 
@@ -314,7 +312,7 @@ void ViewCalculator::getBlocksByRaycastingCorners(
   dim3 block_dim(rounded_rows, rounded_cols);
   dim3 thread_dim(kThreadDim, kThreadDim);
 
-  timing::Timer image_blocks_timer("in_view/get_image_blocks");
+  timing::Timer image_blocks_timer("view_calculator/raycast/get_image_blocks");
   getBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, cuda_stream_>>>(
       T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,
@@ -324,7 +322,7 @@ void ViewCalculator::getBlocksByRaycastingCorners(
 
   image_blocks_timer.Stop();
 
-  timing::Timer image_blocks_copy_timer("in_view/image_blocks_copy");
+  timing::Timer image_blocks_copy_timer("view_calculator/raycast/image_blocks_copy");
 
   unified_vector<Index3D> initial_vector;
   const size_t aabb_linear_size = aabb_size.x() * aabb_size.y() * aabb_size.z();
@@ -335,7 +333,7 @@ void ViewCalculator::getBlocksByRaycastingCorners(
   image_blocks_copy_timer.Stop();
 
   // Call the kernel to do raycasting.
-  timing::Timer raycast_blocks_timer("in_view/raycast_blocks");
+  timing::Timer raycast_blocks_timer("view_calculator/raycast/raycast_kernel");
 
   int num_initial_blocks = initial_vector.size();
   constexpr int kNumCorners = 9;
@@ -359,6 +357,7 @@ void ViewCalculator::getBlocksByRaycastingPixels(
     const float truncation_distance_m, const float max_integration_distance_m,
     const Index3D& min_index, const Index3D& aabb_size,
     bool* aabb_updated_cuda) {
+  timing::Timer combined_kernel_timer("view_calculator/raycast/raycast_pixels_kernel");
   // Number of rays per dimension. Depth frame size / subsampling rate.
   const int num_subsampled_rows =
       std::ceil(static_cast<float>(depth_frame.rows() + 1) /
@@ -377,7 +376,6 @@ void ViewCalculator::getBlocksByRaycastingPixels(
   dim3 block_dim(rounded_rows, rounded_cols);
   dim3 thread_dim(kThreadDim, kThreadDim);
 
-  timing::Timer combined_kernel_timer("in_view/combined_kernel");
   combinedBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, cuda_stream_>>>(
       T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,

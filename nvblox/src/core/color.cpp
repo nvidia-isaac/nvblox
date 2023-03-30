@@ -31,6 +31,8 @@ Color Color::blendTwoColors(const Color& first_color, float first_weight,
       first_color.g * first_weight + second_color.g * second_weight));
   new_color.b = static_cast<uint8_t>(std::round(
       first_color.b * first_weight + second_color.b * second_weight));
+  new_color.a = static_cast<uint8_t>(std::round(
+      first_color.a * first_weight + second_color.a * second_weight));
 
   return new_color;
 }

@@ -300,12 +300,11 @@ void MeshIntegrator::getMeshableBlocksGPU(
   meshable_device_.resize(block_indices.size());
   meshable_device_.setZero();
 
-  checkCudaErrors(cudaPeekAtLastError());
   isBlockMeshableKernel<<<dim_block, dim_threads, 0, cuda_stream_>>>(
       block_indices.size(), block_ptrs_device_.data(), cutoff_distance,
       min_weight_, meshable_device_.data());
-  checkCudaErrors(cudaPeekAtLastError());
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  checkCudaErrors(cudaPeekAtLastError());
 
   meshable_host_ = meshable_device_;
 

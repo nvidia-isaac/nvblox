@@ -23,11 +23,13 @@ limitations under the License.
 #include "nvblox/core/cuda/warmup.h"
 #include "nvblox/core/layer.h"
 #include "nvblox/core/voxels.h"
+#include "nvblox/core/interpolation_2d.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/rays/sphere_tracer.h"
 #include "nvblox/utils/timing.h"
+#include "nvblox/io/csv.h"
 
 #include "nvblox/tests/gpu_image_routines.h"
 #include "nvblox/tests/utils.h"

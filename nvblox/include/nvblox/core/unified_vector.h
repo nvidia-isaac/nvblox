@@ -34,7 +34,7 @@ class unified_vector {
 
   static constexpr MemoryType kDefaultMemoryType = MemoryType::kUnified;
 
-  // Static asserts on the type.
+  /// Static asserts on the type.
   static_assert(
       std::is_default_constructible<T>::value,
       "Objects stored in unified vector should be default constructible.");
@@ -43,50 +43,50 @@ class unified_vector {
   unified_vector(size_t size, MemoryType memory_type = kDefaultMemoryType);
   unified_vector(size_t size, const T& initial,
                  MemoryType memory_type = kDefaultMemoryType);
-  // Copy constructor.
+  /// Copy constructor.
   unified_vector(const unified_vector<T>& other,
                  MemoryType memory_type = kDefaultMemoryType);
   unified_vector(const std::vector<T>& other,
                  MemoryType memory_type = kDefaultMemoryType);
 
-  // Move constructor.
+  /// Move constructor.
   unified_vector(unified_vector<T>&& other);
 
-  // Destructor
+  /// Destructor
   virtual ~unified_vector();
 
-  // Operators.
+  /// Operators.
   T& operator[](size_t index);
   const T& operator[](size_t index) const;
   unified_vector<T>& operator=(const unified_vector<T>& other);
   unified_vector<T>& operator=(unified_vector<T>&& other);
   unified_vector<T>& operator=(const std::vector<T>& other);
 
-  // Convert to an std::vector. Creates a copy.
+  /// Convert to an std::vector. Creates a copy.
   std::vector<T> toVector() const;
 
-  // Get raw pointers. This is also for GPU pointers.
+  /// Get raw pointers. This is also for GPU pointers.
   T* data();
   const T* data() const;
 
-  // Hint to move the memory to the GPU or CPU.
+  /// Hint to move the memory to the GPU or CPU.
   void toGPU();
   void toCPU();
 
-  // Access information.
+  /// Access information.
   size_t capacity() const;
   size_t size() const;
   bool empty() const;
 
-  // Changing the size.
+  /// Changing the size.
   void reserve(size_t capacity);
   void resize(size_t size);
   void clear();
 
-  // Adding elements.
+  /// Adding elements.
   void push_back(const T& value);
 
-  // Iterator access.
+  /// Iterator access.
   iterator begin();
   iterator end();
   const_iterator begin() const { return cbegin(); }
@@ -94,10 +94,10 @@ class unified_vector {
   const_iterator cbegin() const;
   const_iterator cend() const;
 
-  // Get the memory type.
+  /// Get the memory type.
   MemoryType memory_type() const { return memory_type_; }
 
-  // Set the entire *memory* of the vector to zero.
+  /// Set the entire *memory* of the vector to zero.
   void setZero();
 
  private:
@@ -108,6 +108,7 @@ class unified_vector {
   size_t buffer_capacity_;
 };
 
+/// Specialization for unified_vector on device memory only.
 template <typename T>
 class device_vector : public unified_vector<T> {
  public:
@@ -140,6 +141,7 @@ class device_vector : public unified_vector<T> {
   }
 };
 
+/// Specialization for unified_vector on host memory only.
 template <typename T>
 class host_vector : public unified_vector<T> {
  public:

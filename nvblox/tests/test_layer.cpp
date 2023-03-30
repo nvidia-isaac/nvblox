@@ -90,7 +90,7 @@ TEST(LayerTest, MinCornerBasedIndexing) {
   // spanning block_size. E.g. from [0,0,0], [1,1,1], exclusive on the top side.
 
   constexpr float KTestBlockSize = 0.1;
-  BlockLayer<DummyBlock> layer(KTestBlockSize, MemoryType::kUnified);
+  BlockLayer<BooleanBlock> layer(KTestBlockSize, MemoryType::kUnified);
 
   const Vector3f kPostion3DEpsilson(0.001f, 0.001f, 0.001f);
   Vector3f position_low(0, 0, 0);
@@ -98,24 +98,26 @@ TEST(LayerTest, MinCornerBasedIndexing) {
       KTestBlockSize * Vector3f::Ones() - kPostion3DEpsilson;
 
   // Put something in on the low side of the block's range
-  DummyBlock::Ptr block_low_ptr = layer.allocateBlockAtPosition(position_low);
+  BooleanBlock::Ptr block_low_ptr = layer.allocateBlockAtPosition(position_low);
   block_low_ptr->data = true;
 
   // Check we get the same block back on the high side.
-  DummyBlock::ConstPtr block_high_ptr =
+  BooleanBlock::ConstPtr block_high_ptr =
       layer.allocateBlockAtPosition(position_high);
   EXPECT_NE(block_high_ptr, nullptr);
   EXPECT_EQ(block_low_ptr, block_high_ptr);
   EXPECT_TRUE(block_high_ptr->data);
 }
 
-TEST(VoxelLayerTest, CopyVoxelsToHost) {
+TsdfLayer generateTsdfLayer() {
   constexpr float voxel_size_m = 1.0;
   TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kDevice);
   auto block_ptr = tsdf_layer.allocateBlockAtIndex(Index3D(0, 0, 0));
-
   test_utils::setTsdfBlockVoxelsInSequence(block_ptr);
+  return tsdf_layer;
+}
 
+std::vector<Vector3f> generateQueryPositions() {
   // Generating the voxel center positions
   std::vector<Vector3f> positions_L;
   for (int x = 0; x < TsdfBlock::kVoxelsPerSide; x++) {
@@ -126,17 +128,27 @@ TEST(VoxelLayerTest, CopyVoxelsToHost) {
       }
     }
   }
+  return positions_L;
+}
 
-  std::vector<TsdfVoxel> voxels;
-  std::vector<bool> flags;
-  tsdf_layer.getVoxels(positions_L, &voxels, &flags);
-
+void checkSequentialTsdfTest(const std::vector<TsdfVoxel>& voxels,
+                             const std::vector<bool>& flags) {
   for (int i = 0; i < voxels.size(); i++) {
     EXPECT_TRUE(flags[i]);
-
     EXPECT_EQ(voxels[i].distance, static_cast<float>(i));
     EXPECT_EQ(voxels[i].weight, static_cast<float>(i));
   }
+}
+
+TEST(VoxelLayerTest, CopyVoxelsToHost) {
+  TsdfLayer tsdf_layer = generateTsdfLayer();
+
+  // Check voxel center positions
+  std::vector<Vector3f> positions_L = generateQueryPositions();
+  std::vector<TsdfVoxel> voxels;
+  std::vector<bool> flags;
+  tsdf_layer.getVoxels(positions_L, &voxels, &flags);
+  checkSequentialTsdfTest(voxels, flags);
 
   // Now try some edge cases
 
@@ -163,6 +175,78 @@ TEST(VoxelLayerTest, CopyVoxelsToHost) {
   // Just outside the block from it's far boundary {8.0f, 8.0f, 8.0f}
   tsdf_layer.getVoxels({Vector3f(8.0f, 8.0f, 8.0f) + kVecEps}, &voxels, &flags);
   EXPECT_FALSE(flags[0]);
+}
+
+TEST(VoxelLayerTest, GetTsdfVoxelsOnDevice) {
+  TsdfLayer tsdf_layer = generateTsdfLayer();
+
+  // Check voxel center positions
+  device_vector<Vector3f> query_device = generateQueryPositions();
+  device_vector<TsdfVoxel> voxels;
+  device_vector<bool> flags;
+  tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
+  unified_vector<TsdfVoxel> voxels_host = voxels;
+  unified_vector<bool> flags_host = flags;
+  checkSequentialTsdfTest(voxels_host.toVector(), flags_host.toVector());
+
+  // Now try some edge cases
+
+  // Just inside the block from {0.0f, 0.0f, 0.0f}
+  Vector3f kVecEps = 1e-5 * Vector3f::Ones();
+  std::vector<Vector3f> query = {kVecEps};
+  query_device = query;
+  tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
+  voxels_host = voxels;
+  flags_host = flags;
+  EXPECT_EQ(flags_host.size(), 1);
+  EXPECT_EQ(voxels_host.size(), 1);
+  EXPECT_TRUE(flags_host[0]);
+  EXPECT_EQ(voxels_host[0].distance, 0.0f);
+  EXPECT_EQ(voxels_host[0].weight, 0.0f);
+
+  // Just inside the block from it's far boundary {8.0f, 8.0f, 8.0f}
+  query = {Vector3f(8.0f, 8.0f, 8.0f) - kVecEps};
+  query_device = query;
+  tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
+  voxels_host = voxels;
+  flags_host = flags;
+  EXPECT_TRUE(flags_host[0]);
+  EXPECT_EQ(voxels_host[0].distance, 511.0f);
+  EXPECT_EQ(voxels_host[0].weight, 511.0f);
+
+  // Just outside the block from {0.0f, 0.0f, 0.0f}
+  query = {-kVecEps};
+  query_device = query;
+  tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
+  flags_host = flags;
+  EXPECT_FALSE(flags_host[0]);
+
+  // Just outside the block from it's far boundary {8.0f, 8.0f, 8.0f}
+  query = {Vector3f(8.0f, 8.0f, 8.0f) + kVecEps};
+  query_device = query;
+  tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
+  flags_host = flags;
+  EXPECT_FALSE(flags_host[0]);
+}
+
+TEST(VoxelLayerTest, GetCustomVoxelsOnDevice) {
+  // Generate FloatingVoxelLayer
+  constexpr float voxel_size_m = 1.0;
+  FloatVoxelLayer voxel_layer(voxel_size_m, MemoryType::kDevice);
+  auto block_ptr = voxel_layer.allocateBlockAtIndex(Index3D(0, 0, 0));
+  test_utils::setFloatingBlockVoxelsInSequence(block_ptr);
+
+  // Check voxel center positions
+  device_vector<Vector3f> query_device = generateQueryPositions();
+  device_vector<FloatVoxel> voxels;
+  device_vector<bool> flags;
+  voxel_layer.getVoxelsGPU(query_device, &voxels, &flags);
+  unified_vector<FloatVoxel> voxels_host = voxels;
+  unified_vector<bool> flags_host = flags;
+  for (int i = 0; i < voxels.size(); i++) {
+    EXPECT_TRUE(flags_host[i]);
+    EXPECT_EQ(voxels_host[i].voxel_data, static_cast<float>(i));
+  }
 }
 
 TEST(LayerTest, MoveOperations) {

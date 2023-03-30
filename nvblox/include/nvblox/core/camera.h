@@ -30,6 +30,10 @@ class Camera {
                                     int width, int height);
   __host__ __device__ inline Camera(float fu, float fv, int width, int height);
 
+  /// Project a 3D point in camera image space to a 2D pixel coordinate.
+  /// @param p_C Input 3D point coordinate in image space.
+  /// @param u_C Output 2D pixel coordinate.
+  /// @return Whether the pixel is on the image.
   __host__ __device__ inline bool project(const Vector3f& p_C,
                                           Vector2f* u_C) const;
 

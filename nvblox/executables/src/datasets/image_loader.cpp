@@ -64,16 +64,17 @@ bool load8BitColorImage(const std::string& filename,
   timing::Timer stbi_timer("file_loading/color_image/stbi");
   int width, height, num_channels;
   uint8_t* image_data =
-      stbi_load(filename.c_str(), &width, &height, &num_channels, 0);
+      stbi_load(filename.c_str(), &width, &height, &num_channels, 4);
   stbi_timer.Stop();
 
   if (image_data == nullptr) {
     return false;
   }
-  CHECK_EQ(num_channels, 3);
+  // Currently we only support loading 3 channel (rgb) or 4 channel (rgba) images.
+  CHECK(num_channels == 3 || num_channels == 4);
 
-  CHECK_EQ(sizeof(Color), 3 * sizeof(uint8_t))
-      << "Color is padded so image loading wont work.";
+  CHECK_EQ(sizeof(Color), 4 * sizeof(uint8_t))
+      << "Color struct was padded by the compiler so image loading wont work.";
 
   *color_image_ptr = ColorImage::fromBuffer(
       height, width, reinterpret_cast<Color*>(image_data), memory_type);

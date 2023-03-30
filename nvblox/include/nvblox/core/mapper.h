@@ -29,6 +29,7 @@ limitations under the License.
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/mesh/mesh_integrator.h"
+#include "nvblox/semantics/image_masker.h"
 
 namespace nvblox {
 
@@ -38,6 +39,7 @@ namespace nvblox {
 class MapperBase {
  public:
   MapperBase() = default;
+  virtual ~MapperBase() = default;
 
   /// Move
   MapperBase(MapperBase&& other) = default;
@@ -68,7 +70,7 @@ class RgbdMapper : public MapperBase {
   /// @param voxel_size_m The voxel size in meters for the contained layers.
   /// @param memory_type In which type of memory the layers should be stored.
   RgbdMapper(float voxel_size_m, MemoryType memory_type = MemoryType::kDevice);
-  virtual ~RgbdMapper() {}
+  virtual ~RgbdMapper() = default;
 
   /// Constructor which initializes from a saved map.
   /// @param map_filepath Path to the serialized map to be loaded.
@@ -264,6 +266,67 @@ class RgbdMapper : public MapperBase {
   /// calls to integrateDepth() and integrateLidarDepth().
   Index3DSet mesh_blocks_to_update_;
   Index3DSet esdf_blocks_to_update_;
+};
+
+/// Sub-class of the RgbdMapper which extends it to deal with humans in the
+/// scene.
+class HumanMapper : public RgbdMapper {
+ public:
+  HumanMapper(float voxel_size_m, MemoryType memory_type = MemoryType::kDevice);
+  ~HumanMapper() = default;
+
+  /// Integrates a depth frame into the tsdf reconstruction
+  /// assuming identity transformation between depth and mask frame and
+  /// identical intrinsics.
+  ///@param depth_frame Depth frame to integrate. Depth in the image is
+  ///                   specified as a float representing meters.
+  ///@param mask Human mask. Interpreted as 0=non-human, >0=human.
+  ///@param T_L_C Pose of the camera, specified as a transform from Camera-frame
+  ///             to Layer-frame transform.
+  ///@param camera Intrinsics model of the camera.
+  void integrateDepth(const DepthImage& depth_frame, const MonoImage& mask,
+                      const Transform& T_L_C, const Camera& camera);
+
+  /// Integrates a depth frame into the tsdf reconstruction
+  /// using the transformation between depth and mask frame and their
+  /// intrinsics.
+  ///@param depth_frame Depth frame to integrate. Depth in the image is
+  ///                   specified as a float representing meters.
+  ///@param mask Human mask. Interpreted as 0=non-human, >0=human.
+  ///@param T_L_CD Pose of the depth camera, specified as a transform from
+  ///              Camera-frame to Layer-frame transform.
+  ///@param T_CM_CD Transform from depth camera to mask camera frame.
+  ///@param depth_camera Intrinsics model of the depth camera.
+  ///@param mask_camera Intrinsics model of the mask camera.
+  void integrateDepth(const DepthImage& depth_frame, const MonoImage& mask,
+                      const Transform& T_L_CD, const Transform& T_CM_CD,
+                      const Camera& depth_camera, const Camera& mask_camera);
+
+  /// Integrates a color frame into the reconstruction.
+  ///@param color_frame Color image to integrate.
+  ///@param mask Human mask. Interpreted as 0=non-human, >0=human.
+  ///@param T_L_C Pose of the camera, specified as a transform from Camera-frame
+  ///             to Layer-frame transform.
+  ///@param camera Intrinsics model of the camera.
+  void integrateColor(const ColorImage& color_frame, const MonoImage& mask,
+                      const Transform& T_L_C, const Camera& camera);
+
+  // These functions return a reference to the masked images generated during
+  // the preceeding calls to integrateColor() and integrateDepth().
+  const DepthImage& getLastDepthFrameWithoutHumans();
+  const DepthImage& getLastDepthFrameOnlyHumans();
+  const ColorImage& getLastColorFrameWithoutHumans();
+  const ColorImage& getLastColorFrameOnlyHumans();
+
+ protected:
+  // Split depth images based on a mask.
+  // Note that we internally pre-allocate space for the split images on the
+  // first call.
+  ImageMasker image_masker_;
+  DepthImage depth_frame_no_humans_;
+  DepthImage depth_frame_only_humans_;
+  ColorImage color_frame_no_humans_;
+  ColorImage color_frame_only_humans_;
 };
 
 }  // namespace nvblox

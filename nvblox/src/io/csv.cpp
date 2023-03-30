@@ -29,7 +29,7 @@ void writeToCsv(const std::string& filepath, const DepthImage& frame) {
   const DepthImage* write_frame_ptr;
   std::unique_ptr<DepthImage> tmp;
   if (frame.memory_type() == MemoryType::kDevice) {
-    tmp = std::make_unique<DepthImage>(frame, MemoryType::kUnified);
+  tmp = std::make_unique<DepthImage>(frame, MemoryType::kHost);
     write_frame_ptr = tmp.get();
   } else {
     write_frame_ptr = &frame;
@@ -53,7 +53,7 @@ void writeToCsv(const std::string& filepath, const ColorImage& frame) {
   const ColorImage* write_frame_ptr;
   std::unique_ptr<ColorImage> tmp;
   if (frame.memory_type() == MemoryType::kDevice) {
-    tmp = std::make_unique<ColorImage>(frame, MemoryType::kUnified);
+    tmp = std::make_unique<ColorImage>(frame, MemoryType::kHost);
     write_frame_ptr = tmp.get();
   } else {
     write_frame_ptr = &frame;
@@ -67,10 +67,36 @@ void writeToCsv(const std::string& filepath, const ColorImage& frame) {
                   << std::to_string((*write_frame_ptr)(row_idx, col_idx).g)
                   << " "
                   << std::to_string((*write_frame_ptr)(row_idx, col_idx).b)
+                  << " "
+                  << std::to_string((*write_frame_ptr)(row_idx, col_idx).a)
                   << " ";
     }
-    file_stream
-        << "\n";  // just write a big long line and sort it out in the loader
+    file_stream << "\n";
+  }
+  file_stream.close();
+}
+
+void writeToCsv(const std::string& filepath, const MonoImage& frame) {
+  LOG(INFO) << "Writing MonoImage to: " << filepath;
+
+  // Create a temporary image in unified memory if the image resides in device
+  // memory.
+  const MonoImage* write_frame_ptr;
+  std::unique_ptr<MonoImage> tmp;
+  if (frame.memory_type() == MemoryType::kDevice) {
+    tmp = std::make_unique<MonoImage>(frame, MemoryType::kHost);
+    write_frame_ptr = tmp.get();
+  } else {
+    write_frame_ptr = &frame;
+  }
+
+  std::ofstream file_stream(filepath, std::ofstream::out);
+  for (int row_idx = 0; row_idx < write_frame_ptr->rows(); row_idx++) {
+    for (int col_idx = 0; col_idx < write_frame_ptr->cols(); col_idx++) {
+      file_stream << static_cast<int>((*write_frame_ptr)(row_idx, col_idx))
+                  << " ";
+    }
+    file_stream << "\n";
   }
   file_stream.close();
 }

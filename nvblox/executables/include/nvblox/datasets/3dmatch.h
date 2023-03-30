@@ -36,6 +36,7 @@ class DataLoader : public RgbdDataLoaderInterface {
  public:
   DataLoader(const std::string& base_path, const int seq_id,
                         bool multithreaded = true);
+  virtual ~DataLoader() = default;
 
   /// Interface for a function that loads the next frames in a dataset
   ///@param[out] depth_frame_ptr The loaded depth frame.

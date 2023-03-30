@@ -21,31 +21,35 @@ limitations under the License.
 
 namespace nvblox {
 
+/// A voxel storing TSDF (truncated signed distance field) values.
 struct TsdfVoxel {
-  // Signed projective distance of the voxel from a surface.
+  /// Signed projective distance of the voxel from a surface.
   float distance = 0.0f;
-  // How many observations/how confident we are in this observation.
+  /// How many observations/how confident we are in this observation.
   float weight = 0.0f;
 };
 
+/// Voxels that stores the distance and full direction to the nearest surface.
 struct EsdfVoxel {
   // TODO(helen): optimize the memory layout here.
-  // Cached squared distance towards the parent.
+  /// Cached squared distance towards the parent.
   float squared_distance_vox = 0.0f;
-  // Direction towards the parent, *in units of voxels*.
+  /// Direction towards the parent, *in units of voxels*.
   Eigen::Vector3i parent_direction = Eigen::Vector3i::Zero();
-  // Whether this voxel is inside the surface or not.
+  /// Whether this voxel is inside the surface or not.
   bool is_inside = false;
-  // Whether this voxel has been observed.
+  /// Whether this voxel has been observed.
   bool observed = false;
-  // Whether this voxel is a "site": i.e., near the zero-crossing and is
-  // eligible to be considered a parent.
+  /// Whether this voxel is a "site": i.e., near the zero-crossing and is
+  /// eligible to be considered a parent.
   bool is_site = false;
 };
 
+/// Voxel that stores the color near the surface.
 struct ColorVoxel {
+  /// The color!
   Color color = Color::Gray();
-  // How many observations/how confident we are in this observation.
+  /// How many observations/how confident we are in this observation.
   float weight = 0.0f;
 };
 

@@ -50,16 +50,17 @@ __host__ __device__ inline ElementType& access(int linear_idx,
 
 }  // namespace image
 
-// Row-major image.
-// - Note that in a row-major image, rows follow one another in linear memory,
-// which means the column index varied between subsequent elements.
-// - Images use corner based indexing such that the pixel with index (0,0) is
-// centered at (0.5px,0.5px) and spans (0.0px,0.0px) to (1.0px,1.0px).
-// - Points on the image plane are defined as: u_px = (u_px.x(), u_px.y()) =
-// (col_idx, row_idx) in pixels.
+
 
 constexpr MemoryType kDefaultImageMemoryType = MemoryType::kDevice;
 
+/// Row-major image.
+/// - Note that in a row-major image, rows follow one another in linear memory,
+/// which means the column index varied between subsequent elements.
+/// - Images use corner based indexing such that the pixel with index (0,0) is
+/// centered at (0.5px,0.5px) and spans (0.0px,0.0px) to (1.0px,1.0px).
+/// - Points on the image plane are defined as: u_px = (u_px.x(), u_px.y()) =
+/// (col_idx, row_idx) in pixels.
 template <typename _ElementType>
 class Image {
  public:
@@ -77,12 +78,12 @@ class Image {
   Image(Image&& other);
   Image& operator=(Image&& other);
 
-  // Deep copy constructor (second can be used to transition memory type)
+  /// Deep copy constructor (second can be used to transition memory type)
   explicit Image(const Image& other);
   Image(const Image& other, MemoryType memory_type);
   Image& operator=(const Image& other);
 
-  // Prefetch the data to the gpu (only makes sense for kUnified images)
+  /// Prefetch the data to the gpu (only makes sense for kUnified images)
   void toGPU() const;
 
   // Attributes
@@ -93,9 +94,9 @@ class Image {
   inline int height() const { return rows_; }
   inline MemoryType memory_type() const { return memory_type_; }
 
-  // Access
-  // NOTE(alexmillane): The guard-rails are off here. If you declare a kDevice
-  // Image and try to access its data, you will get undefined behaviour.
+  /// Access
+  /// NOTE(alexmillane): The guard-rails are off here. If you declare a kDevice
+  /// Image and try to access its data, you will get undefined behaviour.
   inline ElementType operator()(const int row_idx, const int col_idx) const {
     return image::access(row_idx, col_idx, cols_, data_.get());
   }
@@ -109,18 +110,18 @@ class Image {
     return image::access(linear_idx, data_.get());
   }
 
-  // Raw pointer access
+  /// Raw pointer access
   inline ElementType* dataPtr() { return data_.get(); }
   inline const ElementType* dataConstPtr() const { return data_.get(); }
 
-  // Reset the contents of the image. Reallocate if the image got larger.
+  /// Reset the contents of the image. Reallocate if the image got larger.
   void populateFromBuffer(int rows, int cols, const ElementType* buffer,
                           MemoryType memory_type = kDefaultImageMemoryType);
 
-  // Set the image to 0.
+  /// Set the image to 0.
   void setZero();
 
-  // Factories
+  /// Factories
   static inline Image fromBuffer(
       int rows, int cols, const ElementType* buffer,
       MemoryType memory_type = kDefaultImageMemoryType);
@@ -134,8 +135,9 @@ class Image {
 
 using DepthImage = Image<float>;
 using ColorImage = Image<Color>;
+using MonoImage = Image<uint8_t>;
 
-// Image Reductions
+// Image Operations
 namespace image {
 
 float max(const DepthImage& image);

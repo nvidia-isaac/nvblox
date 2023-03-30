@@ -66,6 +66,7 @@ GPULayerView<BlockType>& GPULayerView<BlockType>::operator=(
 template <typename BlockType>
 void GPULayerView<BlockType>::reset(LayerType* layer_ptr) {
   CHECK_NOTNULL(layer_ptr);
+   timing::Timer timer("gpu_hash/transfer");
 
   // Allocate gpu hash if not allocated already
   if (!gpu_hash_ptr_) {
@@ -87,8 +88,6 @@ void GPULayerView<BlockType>::reset(LayerType* layer_ptr) {
     reset(new_max_num_blocks);
     CHECK_LT(layer_ptr->numAllocatedBlocks(), gpu_hash_ptr_->max_num_blocks_);
   }
-
-  timing::Timer timer("gpu_hash/transfer");
 
   gpu_hash_ptr_->impl_.clear();
 
@@ -131,7 +130,7 @@ void GPULayerView<BlockType>::reset(LayerType* layer_ptr) {
 
 template <typename BlockType>
 void GPULayerView<BlockType>::reset(size_t new_max_num_blocks) {
-  timing::Timer timer("gpu_hash/reallocation");
+  timing::Timer timer("gpu_hash/transfer/reallocation");
   gpu_hash_ptr_ = std::make_shared<GPUHashImpl<BlockType>>(new_max_num_blocks);
 }
 

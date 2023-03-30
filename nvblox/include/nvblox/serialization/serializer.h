@@ -25,6 +25,7 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Class to serialize and read a layer cake from an SQLite database.
 class Serializer {
  public:
   /// Default constructor for invalid file. Must call open before using.
@@ -44,26 +45,29 @@ class Serializer {
   bool open(const std::string& filename,
             std::ios_base::openmode openmode = std::ios::in);
 
+  /// Load a layer cake from the opened file of a given memory type. 
   LayerCake loadLayerCake(MemoryType memory_type);
+
+  /// Write out a layer cake to the opened file, return success. 
   bool writeLayerCake(const LayerCake& cake);
 
   /// Close the file.
   bool close();
 
-  // Below use only if you know WTF you're doing!
+  // ======= Below use only if you know WTF you're doing! =====================
 
-  // Create a layer table & metadata table.
+  /// Create a layer table & metadata table.
   bool createLayerTables(const std::string& layer_name);
 
-  // Serialize layer parameters.
+  /// Serialize layer parameters.
   bool setLayerParameters(const std::string& layer_name,
                           const LayerParameterStruct& layer_params);
 
-  // Deserialize layer parameters.
+  /// Deserialize layer parameters.
   bool getLayerParameters(const std::string& layer_name,
                           LayerParameterStruct* layer_params);
 
-  // Write a new data parameter to the table.
+  /// Write a new data parameter to the table.
   bool addLayerData(const std::string& layer_name, const Index3D& index,
                     const std::vector<Byte>& data);
 

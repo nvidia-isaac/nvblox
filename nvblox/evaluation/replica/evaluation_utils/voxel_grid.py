@@ -20,7 +20,7 @@ from typing import Tuple
 import numpy as np
 
 import open3d as o3d
-from plyfile import PlyData
+from plyfile import PlyData, PlyElement
 from matplotlib import pyplot as plt
 from moviepy.editor import ImageSequenceClip
 
@@ -80,7 +80,7 @@ class VoxelGrid:
         """Get the centers of all valid voxels as an Nx3 numpy array
 
         Returns:
-            np.ndarray: Nx3 numpy array containing the center locations of valid voxels.
+            np.ndarray: Nx1 numpy array containing the center locations of valid voxels.
         """
         return self.voxels[self.voxels != VoxelGrid.unobserved_sentinal]
 
@@ -101,6 +101,20 @@ class VoxelGrid:
         sdf_pointcloud_values = np.array(PlyData.read(
             str(ply_path)).elements[0]['intensity'])
         return VoxelGrid.createFromSparseVoxels(sdf_pointcloud_xyz, sdf_pointcloud_values)
+
+    def writeToPly(self, ply_path: Path) -> None:
+        """Writes the ESDF as a pointcloud ply to file.
+
+        Args:
+            ply_path (Path): Path to the ply file to write
+        """
+        xyz = self.get_valid_voxel_centers()
+        distances = self.get_valid_voxel_values()
+        xyzi = np.hstack([xyz, distances.reshape((-1, 1))])
+        xyzi_structured = np.array([tuple(row) for row in xyzi], dtype=[(
+            'x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('intensity', 'f4')])
+        point_elements = PlyElement.describe(xyzi_structured, 'vertex')
+        PlyData([point_elements], text=True).write(str(ply_path))
 
     @staticmethod
     def createFromSparseVoxels(voxels_xyz: np.ndarray, voxel_values: np.ndarray) -> 'VoxelGrid':
@@ -135,6 +149,8 @@ class VoxelGrid:
         Args:
             slice_level_ratio (float): Where to slice.
             axis (str, optional): The axis to slice along. Defaults to 'x'.
+            cube_size (float, optional): Size of the mesh cube that will be used to
+                represent voxels. Given as a fraction of voxel size (i.e between 0.0 and 1.0).
 
         Returns:
             o3d.geometry.TriangleMesh: Mesh representing the slice.
@@ -156,6 +172,8 @@ class VoxelGrid:
         Args:
             slice_level_idx (int): The index to slice at.
             axis (str, optional): The axis to slice along. Defaults to 'x'.
+            cube_size (float, optional): Size of the mesh cube that will be used to
+                represent voxels. Given as a fraction of voxel size (i.e between 0.0 and 1.0).
 
         Returns:
             o3d.geometry.TriangleMesh: Mesh representing the slice.
@@ -228,11 +246,12 @@ class VoxelGrid:
         return "VoxelGrid of voxels with shape: " + str(self.voxels.shape) \
             + " and " + str(self.num_valid_voxels()) + " valid voxels."
 
-    def get_z_slice_animation_clip(self, mesh: o3d.geometry.TriangleMesh = None) -> ImageSequenceClip:
+    def get_z_slice_animation_clip(self, mesh: o3d.geometry.TriangleMesh = None, viewpoint: o3d.camera.PinholeCameraParameters = None) -> ImageSequenceClip:
         """Creates a image sequence containing horizontal slices moving through the z dimension of the VoxelGrid
 
         Args:
             mesh (o3d.geometry.TriangleMesh, optional): Additional mesh to add to the animation. Defaults to None.
+            viewpoint (o3d.camera.PinholeCameraParameters, optional): Viewpoint to record the slice from. Defaults to None.
 
         Returns:
             ImageSequenceClip: sequence of images of the slicing results
@@ -240,6 +259,9 @@ class VoxelGrid:
         images = []
         vis = o3d.visualization.Visualizer()
         vis.create_window()
+        if viewpoint is not None:
+            ctr = vis.get_view_control()
+            ctr.convert_from_pinhole_camera_parameters(viewpoint)
         if mesh is not None:
             vis.add_geometry(mesh)
         slice_mesh = o3d.geometry.TriangleMesh()
@@ -255,6 +277,8 @@ class VoxelGrid:
                 first = False
             else:
                 vis.add_geometry(slice_mesh, reset_bounding_box=False)
+            if viewpoint is not None:
+                ctr.convert_from_pinhole_camera_parameters(viewpoint)
             vis.poll_events()
             vis.update_renderer()
             image_float = np.asarray(vis.capture_screen_float_buffer())

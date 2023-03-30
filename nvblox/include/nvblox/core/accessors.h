@@ -24,47 +24,51 @@ limitations under the License.
 
 namespace nvblox {
 
-// Get Block
+/// Get Block
 template <typename BlockType>
 bool getBlockAtPosition(const BlockLayer<BlockType>& layer,
                         const Eigen::Vector3f& position,
                         const BlockType** data);
 
-// Get Voxel
+/// Get Voxel
 template <typename VoxelType>
 bool getVoxelAtPosition(const BlockLayer<VoxelBlock<VoxelType>>& layer,
                         const Eigen::Vector3f& position,
                         const VoxelType** data);
 
-// Accessors for voxelized types
+/// Accessors for voxelized types
 template <typename VoxelType>
 const VoxelType* getVoxelAtBlockAndVoxelIndex(
     const BlockLayer<VoxelBlock<VoxelType>>& layer, const Index3D& block_index,
     const Index3D& voxel_index);
 
-// Accessors for calling a function on all voxels in a layer
+/// Accessors for calling a function on all voxels in a layer (const).
 template <typename VoxelType>
 using ConstVoxelCallbackFunction =
     std::function<void(const Index3D& block_index, const Index3D& voxel_index,
                        const VoxelType* voxel)>;
 
+/// Accessors for calling a function on all voxels in a layer (non-const).
 template <typename VoxelType>
 using VoxelCallbackFunction = std::function<void(
     const Index3D& block_index, const Index3D& voxel_index, VoxelType* voxel)>;
 
+/// Call function on all voxels in a layer (const).
 template <typename VoxelType>
 void callFunctionOnAllVoxels(const BlockLayer<VoxelBlock<VoxelType>>& layer,
                              ConstVoxelCallbackFunction<VoxelType> callback);
 
+/// Call function on all voxels in a layer (non-const).
 template <typename VoxelType>
 void callFunctionOnAllVoxels(BlockLayer<VoxelBlock<VoxelType>>* layer,
                              VoxelCallbackFunction<VoxelType> callback);
 
-// Accessors for calling a function on all voxels in a block
+/// Accessors for calling a function on all voxels in a block (const).
 template <typename VoxelType>
 using ConstBlockCallbackFunction =
     std::function<void(const Index3D& voxel_index, const VoxelType* voxel)>;
 
+/// Accessors for calling a function on all voxels in a block (non-const).
 template <typename VoxelType>
 using BlockCallbackFunction =
     std::function<void(const Index3D& voxel_index, VoxelType* voxel)>;
@@ -77,7 +81,7 @@ template <typename VoxelType>
 void callFunctionOnAllVoxels(VoxelBlock<VoxelType>* block,
                              BlockCallbackFunction<VoxelType> callback);
 
-// Accessors for calling a function on all blocks in a layer
+/// Accessors for calling a function on all blocks in a layer
 template <typename BlockType>
 using ConstBlockCallbackFunction =
     std::function<void(const Index3D& block_index, const BlockType* block)>;

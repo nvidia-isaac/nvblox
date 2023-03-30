@@ -24,6 +24,8 @@ limitations under the License.
 namespace nvblox {
 namespace timing {
 
+/// Instrument our timers with NvtxRanges, which can be visualized in Nsight
+/// Systems to aid with debugging and profiling.
 class NvtxRange {
  public:
   NvtxRange(const std::string& message, const Color& color,

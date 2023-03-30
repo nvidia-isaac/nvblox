@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <memory>
 #include <string>
+#include <fstream>
 
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/data_loader.h"
@@ -34,6 +35,7 @@ std::unique_ptr<Fuser> createFuser(const std::string base_path);
 class DataLoader : public RgbdDataLoaderInterface {
  public:
   DataLoader(const std::string& base_path, bool multithreaded = true);
+  virtual ~DataLoader() = default;
 
   /// Interface for a function that loads the next frames in a dataset
   ///@param[out] depth_frame_ptr The loaded depth frame.

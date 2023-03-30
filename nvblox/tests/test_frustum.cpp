@@ -28,6 +28,7 @@ limitations under the License.
 #include "nvblox/primitives/scene.h"
 #include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
+#include "nvblox/io/csv.h"
 
 #include "nvblox/tests/utils.h"
 
