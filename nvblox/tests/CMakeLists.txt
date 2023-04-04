@@ -61,7 +61,7 @@ target_link_libraries(test_tsdf_integrator nvblox_test_utils)
 gtest_discover_tests(test_tsdf_integrator ${TEST_OPTIONS})
 
 add_executable(test_3dmatch test_3dmatch.cpp)
-target_link_libraries(test_3dmatch nvblox_test_utils nvblox_lib)
+target_link_libraries(test_3dmatch nvblox_test_utils nvblox_lib nvblox_datasets_3dmatch)
 gtest_discover_tests(test_3dmatch ${TEST_OPTIONS})
 set_target_properties(test_3dmatch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
@@ -70,7 +70,7 @@ target_link_libraries(test_unified_ptr nvblox_test_utils)
 gtest_discover_tests(test_unified_ptr ${TEST_OPTIONS})
 
 add_executable(test_mesh test_mesh.cpp)
-target_link_libraries(test_mesh nvblox_test_utils)
+target_link_libraries(test_mesh nvblox_test_utils nvblox_datasets_3dmatch)
 gtest_discover_tests(test_mesh ${TEST_OPTIONS})
 
 add_executable(test_scene test_scene.cpp)
@@ -94,7 +94,7 @@ target_link_libraries(test_esdf_integrator nvblox_test_utils)
 gtest_discover_tests(test_esdf_integrator ${TEST_OPTIONS})
 
 add_executable(test_color_image test_color_image.cpp)
-target_link_libraries(test_color_image nvblox_test_utils)
+target_link_libraries(test_color_image nvblox_test_utils nvblox_datasets_3dmatch)
 gtest_discover_tests(test_color_image ${TEST_OPTIONS})
 
 add_executable(test_color_integrator test_color_integrator.cpp)
@@ -102,15 +102,15 @@ target_link_libraries(test_color_integrator nvblox_test_utils)
 gtest_discover_tests(test_color_integrator ${TEST_OPTIONS})
 
 add_executable(test_mesh_coloring test_mesh_coloring.cpp)
-target_link_libraries(test_mesh_coloring nvblox_test_utils)
+target_link_libraries(test_mesh_coloring nvblox_test_utils nvblox_datasets_3dmatch)
 gtest_discover_tests(test_mesh_coloring ${TEST_OPTIONS})
 
 add_executable(test_for_memory_leaks test_for_memory_leaks.cpp)
-target_link_libraries(test_for_memory_leaks nvblox_test_utils)
+target_link_libraries(test_for_memory_leaks nvblox_test_utils nvblox_datasets_3dmatch)
 gtest_discover_tests(test_for_memory_leaks ${TEST_OPTIONS})
 
 add_executable(test_frustum test_frustum.cpp)
-target_link_libraries(test_frustum nvblox_test_utils)
+target_link_libraries(test_frustum nvblox_test_utils nvblox_datasets_3dmatch)
 gtest_discover_tests(test_frustum ${TEST_OPTIONS})
 
 add_executable(test_gpu_layer_view test_gpu_layer_view.cpp)
@@ -141,9 +141,14 @@ add_executable(test_lidar_integration test_lidar_integration.cpp)
 target_link_libraries(test_lidar_integration nvblox_test_utils)
 gtest_discover_tests(test_lidar_integration ${TEST_OPTIONS})
 
-add_executable(test_fuser test_fuser.cpp)
-target_link_libraries(test_fuser nvblox_test_utils)
-gtest_discover_tests(test_fuser ${TEST_OPTIONS})
+### NOTE(gogojjh): fuser is already replaced by the fuser_rgbd, no need to test_fuser
+# add_executable(test_fuser test_fuser.cpp)
+# target_link_libraries(test_fuser nvblox_test_utils)
+# gtest_discover_tests(test_fuser ${TEST_OPTIONS})
+
+add_executable(test_fuser_rgbd test_fuser_rgbd.cpp)
+target_link_libraries(test_fuser_rgbd nvblox_test_utils nvblox_datasets_3dmatch)
+gtest_discover_tests(test_fuser_rgbd ${TEST_OPTIONS})
 
 add_executable(test_bounding_spheres test_bounding_spheres.cpp)
 target_link_libraries(test_bounding_spheres nvblox_test_utils)
@@ -152,3 +157,13 @@ gtest_discover_tests(test_bounding_spheres ${TEST_OPTIONS})
 add_executable(test_mapper test_mapper.cpp)
 target_link_libraries(test_mapper nvblox_test_utils)
 gtest_discover_tests(test_mapper ${TEST_OPTIONS})
+
+### NOTE(gogojjh): need to rewrite the test_oslidar to adjust the new oslidar model
+# add_executable(test_oslidar test_oslidar.cpp)
+# target_link_libraries(test_oslidar nvblox_test_utils)
+# gtest_discover_tests(test_oslidar ${TEST_OPTIONS})
+
+#### camera_pinhole
+add_executable(test_camera_pinhole test_camera_pinhole.cpp)
+target_link_libraries(test_camera_pinhole nvblox_test_utils)
+gtest_discover_tests(test_camera_pinhole ${TEST_OPTIONS})

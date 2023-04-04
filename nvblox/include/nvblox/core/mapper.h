@@ -19,11 +19,13 @@ limitations under the License.
 
 #include "nvblox/core/blox.h"
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/common_names.h"
 #include "nvblox/core/hash.h"
 #include "nvblox/core/layer.h"
 #include "nvblox/core/layer_cake.h"
 #include "nvblox/core/lidar.h"
+#include "nvblox/core/oslidar.h"
 #include "nvblox/core/voxels.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/projective_color_integrator.h"
@@ -94,8 +96,9 @@ class RgbdMapper : public MapperBase {
   ///@param T_L_C Pose of the camera, specified as a transform from Camera-frame
   ///             to Layer-frame transform.
   ///@param camera Intrinsics model of the camera.
+  template <typename CameraType>
   void integrateColor(const ColorImage& color_frame, const Transform& T_L_C,
-                      const Camera& camera);
+                      const CameraType& camera);
 
   /// Integrates a 3D LiDAR scan into the reconstruction.
   ///@param depth_frame Depth image representing the LiDAR scan. To convert a
@@ -105,6 +108,15 @@ class RgbdMapper : public MapperBase {
   ///@param lidar Intrinsics model of the LiDAR.
   void integrateLidarDepth(const DepthImage& depth_frame,
                            const Transform& T_L_C, const Lidar& lidar);
+
+  /// Integrates a 3D LiDAR scan into the reconstruction.
+  ///@param depth_frame Depth image representing the LiDAR scan. To convert a
+  ///                   lidar scan to a DepthImage see TODOOO.
+  ///@param T_L_C Pose of the LiDAR, specified as a transform from LiDAR-frame
+  ///             to Layer-frame transform.
+  ///@param lidar Intrinsics model of the Ouster LiDAR.
+  void integrateOSLidarDepth(DepthImage& depth_frame, const Transform& T_L_C,
+                             OSLidar& oslidar);
 
   /// Updates the mesh blocks which require an update
   /// @return The indices of the blocks that were updated in this call.
@@ -251,6 +263,7 @@ class RgbdMapper : public MapperBase {
   /// updateEsdfSlice(). This member tracks which mode we're in.
   EsdfMode esdf_mode_ = EsdfMode::kUnset;
 
+  /// TODO(gogojjh): how to modify these integrators for large-scale mapping?
   /// Integrators
   ProjectiveTsdfIntegrator tsdf_integrator_;
   ProjectiveTsdfIntegrator lidar_tsdf_integrator_;

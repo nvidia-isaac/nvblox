@@ -20,6 +20,15 @@ limitations under the License.
 
 namespace nvblox {
 
+// NOTE(gogojjh): Define the template function
+template void RgbdMapper::integrateColor(const ColorImage& color_frame,
+                                         const Transform& T_L_C,
+                                         const Camera& camera);
+template void RgbdMapper::integrateColor(const ColorImage& color_frame,
+                                         const Transform& T_L_C,
+                                         const CameraPinhole& camera);
+
+//////////////////////////////////////////////////////////////////////
 RgbdMapper::RgbdMapper(float voxel_size_m, MemoryType memory_type)
     : voxel_size_m_(voxel_size_m), memory_type_(memory_type) {
   layers_ = LayerCake::create<TsdfLayer, ColorLayer, EsdfLayer, MeshLayer>(
@@ -56,8 +65,25 @@ void RgbdMapper::integrateLidarDepth(const DepthImage& depth_frame,
   esdf_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());
 }
 
+void RgbdMapper::integrateOSLidarDepth(DepthImage& depth_frame,
+                                       const Transform& T_L_C,
+                                       OSLidar& oslidar) {
+  // Call the integrator.
+  std::vector<Index3D> updated_blocks;
+  lidar_tsdf_integrator_.integrateFrame(depth_frame, T_L_C, oslidar,
+                                        layers_.getPtr<TsdfLayer>(),
+                                        &updated_blocks);
+  LOG(INFO) << "Integrated TSDF block: " << updated_blocks.size();
+
+  // Update all the relevant queues.
+  mesh_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());
+  esdf_blocks_to_update_.insert(updated_blocks.begin(), updated_blocks.end());
+}
+
+template <typename CameraType>
 void RgbdMapper::integrateColor(const ColorImage& color_frame,
-                                const Transform& T_L_C, const Camera& camera) {
+                                const Transform& T_L_C,
+                                const CameraType& camera) {
   color_integrator_.integrateFrame(color_frame, T_L_C, camera,
                                    layers_.get<TsdfLayer>(),
                                    layers_.getPtr<ColorLayer>());
@@ -67,6 +93,8 @@ std::vector<Index3D> RgbdMapper::updateMesh() {
   // Convert the set of MeshBlocks needing an update to a vector
   std::vector<Index3D> mesh_blocks_to_update_vector(
       mesh_blocks_to_update_.begin(), mesh_blocks_to_update_.end());
+  LOG(INFO) << "Size of mesh blocks to be updated: "
+            << mesh_blocks_to_update_vector.size();
 
   // Call the integrator.
   mesh_integrator_.integrateBlocksGPU(layers_.get<TsdfLayer>(),

@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <cuda_runtime.h>
 
+#include <iostream>
 #include "nvblox/core/color.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
@@ -133,7 +134,9 @@ class Image {
 };
 
 using DepthImage = Image<float>;
+using NormalImage = Image<Vector3f>;
 using ColorImage = Image<Color>;
+using CoorImage = Image<Vector3f>;
 
 // Image Reductions
 namespace image {

@@ -21,14 +21,14 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/data_loader.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 
 namespace nvblox {
 namespace datasets {
 namespace replica {
 
-// Build a Fuser for the Replica dataset
-std::unique_ptr<Fuser> createFuser(const std::string base_path);
+// Build a FuserRGBD for the Replica dataset
+std::unique_ptr<FuserRGBD> createFuser(const std::string base_path);
 
 ///@brief A class for loading Replica data
 class DataLoader : public RgbdDataLoaderInterface {
@@ -44,6 +44,13 @@ class DataLoader : public RgbdDataLoaderInterface {
   DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
                           Transform* T_L_C_ptr,         // NOLINT
                           Camera* camera_ptr,           // NOLINT
+                          ColorImage* color_frame_ptr = nullptr) override;
+
+  DataLoadResult loadNext(DepthImage* depth_frame_ptr,             // NOLINT
+                          Transform* T_L_C_ptr,                    // NOLINT
+                          CameraPinhole* camera_ptr,               // NOLINT
+                          OSLidar* lidar_ptr,                      // NOLINT
+                          DepthImage* height_frame_ptr = nullptr,  // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
  protected:

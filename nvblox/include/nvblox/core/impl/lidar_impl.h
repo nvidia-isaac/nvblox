@@ -14,6 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+NOTE(gogojjh):
+This implements the operation that project lidar points onto a depth image
+This implementation is only valid for lidars that have average elevation angle
+  i.e., VLP16, otherwise, the lidar_impl.h should be rewritten for a specific
+  lidar type
+*/
+
 #pragma once
 
 #include "math.h"
@@ -23,9 +31,10 @@ limitations under the License.
 namespace nvblox {
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
-             float vertical_fov_rad)
+             float horizontal_fov_rad, float vertical_fov_rad)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
+      horizontal_fov_rad_(horizontal_fov_rad),
       vertical_fov_rad_(vertical_fov_rad) {
   // Even numbers of beams allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
@@ -35,9 +44,9 @@ Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
   // This is because in the azimuth direction there's a wrapping around. The
   // point at pi/-pi is not double sampled, generating this difference.
   rads_per_pixel_elevation_ =
-      vertical_fov_rad / static_cast<float>(num_elevation_divisions_ - 1);
+      vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
   rads_per_pixel_azimuth_ =
-      2.0f * M_PI / static_cast<float>(num_azimuth_divisions_);
+      horizontal_fov_rad_ / static_cast<float>(num_azimuth_divisions_);
 
   // Inverse of the above
   elevation_pixels_per_rad_ = 1.0f / rads_per_pixel_elevation_;
@@ -49,7 +58,13 @@ Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
   // below this.
   // Note(alexmillane): Note that we use polar angle here, not elevation.
   // Polar is from the top of the sphere down, elevation, the middle up.
-  start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad / 2.0f +
+  // ********************* polar_angle
+  // ****** the start polar_angle indicate the direction: x=0, +z
+  // ****** the end polar_angle indicate the direction: x=0, -z
+  // ********************* azimuth_angle
+  // ****** the start and end azimuth_angle: counterclockwise
+  // -x, y=0 -> +x, y=0
+  start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad_ / 2.0f +
                                           rads_per_pixel_elevation_ / 2.0f);
   start_azimuth_angle_rad_ = -M_PI - rads_per_pixel_azimuth_ / 2.0f;
 }

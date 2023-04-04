@@ -28,9 +28,11 @@ bool ImageLoader<ImageType>::getNextImage(ImageType* image_ptr) {
 template <typename ImageType>
 MultiThreadedImageLoader<ImageType>::MultiThreadedImageLoader(
     IndexToFilepathFunction index_to_filepath, int num_threads,
-    MemoryType memory_type, float depth_image_scaling_factor)
+    MemoryType memory_type, float depth_image_scaling_factor,
+    float depth_image_scaling_offset)
     : ImageLoader<ImageType>(index_to_filepath, memory_type,
-                             depth_image_scaling_factor),
+                             depth_image_scaling_factor,
+                             depth_image_scaling_offset),
       num_threads_(num_threads) {
   initLoadQueue();
 }
@@ -89,7 +91,8 @@ MultiThreadedImageLoader<ImageType>::getImageAsOptional(int image_idx) {
 template <typename ImageType>
 std::unique_ptr<ImageLoader<ImageType>> createImageLoader(
     IndexToFilepathFunction index_to_path_function, const bool multithreaded,
-    const float depth_image_scaling_factor) {
+    const float depth_image_scaling_factor,
+    const float depth_image_scaling_offset) {
   if (multithreaded) {
     // NOTE(alexmillane): On my desktop the performance of threaded image
     // loading seems to saturate at around 6 threads. On machines with less
@@ -103,10 +106,11 @@ std::unique_ptr<ImageLoader<ImageType>> createImageLoader(
               << " threads for loading images.";
     return std::make_unique<MultiThreadedImageLoader<ImageType>>(
         index_to_path_function, kMaxLoadingThreads, MemoryType::kDevice,
-        depth_image_scaling_factor);
+        depth_image_scaling_factor, depth_image_scaling_offset);
   }
   return std::make_unique<ImageLoader<ImageType>>(
-      index_to_path_function, MemoryType::kDevice, depth_image_scaling_factor);
+      index_to_path_function, MemoryType::kDevice, depth_image_scaling_factor,
+      depth_image_scaling_offset);
 }
 
 }  // namespace datasets

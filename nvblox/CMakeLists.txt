@@ -100,10 +100,13 @@ add_library(nvblox_lib SHARED
     src/core/bounding_boxes.cpp
     src/core/bounding_spheres.cpp
     src/core/camera.cpp
+    src/core/camera_pinhole.cpp
+    src/core/frustum.cpp
     src/core/color.cpp
     src/core/cuda/blox.cu
     src/core/cuda/image_cuda.cu
     src/core/cuda/warmup.cu
+    src/core/cuda/image_operation.cu
     src/core/image.cpp
     src/core/interpolation_3d.cpp
     src/core/mapper.cpp
@@ -201,6 +204,7 @@ target_link_libraries(nvblox_interface INTERFACE
     nvblox_lib
     nvblox_gpu_hash
     nvblox_cuda_check
+    nvblox_datasets
     ${GLOG_LIBRARIES}
     ${CUDA_LIBRARIES}
     Eigen3::Eigen

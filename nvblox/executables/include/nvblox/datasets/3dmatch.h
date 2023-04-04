@@ -21,21 +21,21 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/data_loader.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 
 namespace nvblox {
 namespace datasets {
 namespace threedmatch {
 
 // Build a Fuser for the 3DMatch dataset
-std::unique_ptr<Fuser> createFuser(const std::string base_path,
-                                   const int seq_id);
+std::unique_ptr<FuserRGBD> createFuser(const std::string base_path,
+                                       const int seq_id);
 
 ///@brief A class for loading 3DMatch data
 class DataLoader : public RgbdDataLoaderInterface {
  public:
   DataLoader(const std::string& base_path, const int seq_id,
-                        bool multithreaded = true);
+             bool multithreaded = true);
 
   /// Interface for a function that loads the next frames in a dataset
   ///@param[out] depth_frame_ptr The loaded depth frame.
@@ -46,6 +46,21 @@ class DataLoader : public RgbdDataLoaderInterface {
   DataLoadResult loadNext(DepthImage* depth_frame_ptr,  // NOLINT
                           Transform* T_L_C_ptr,         // NOLINT
                           Camera* camera_ptr,           // NOLINT
+                          ColorImage* color_frame_ptr = nullptr) override;
+
+  /// Interface for a function that loads the next frames in a dataset
+  ///@param[out] depth_frame_ptr The loaded depth frame.
+  ///@param[out] T_L_C_ptr Transform from Camera to the Layer frame.
+  ///@param[out] camera_ptr The intrinsic camera model.
+  ///@param[out] lidar_ptr The intrinsic oslidar model.
+  ///@param[out] height_frame_ptr The loaded z frame.
+  ///@param[out] color_frame_ptr Optional, load color frame.
+  ///@return Whether loading succeeded.
+  DataLoadResult loadNext(DepthImage* depth_frame_ptr,   // NOLINT
+                          Transform* T_L_C_ptr,          // NOLINT
+                          CameraPinhole* camera_ptr,     // NOLINT
+                          OSLidar* lidar_ptr,            // NOLINT
+                          DepthImage* height_frame_ptr,  // NOLINT
                           ColorImage* color_frame_ptr = nullptr) override;
 
  protected:

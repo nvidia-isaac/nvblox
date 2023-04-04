@@ -1,3 +1,87 @@
+# Nvblox-modify
+
+#### Code Pipeline of NVBlox
+
+1. Data loader
+
+2. Frame integration
+
+   1. After loading data (the code API): Fuser::integrateFrame(const int frame_number)
+
+   2. RgbdMapper::integrateOSLidarDepth -> ProjectiveTsdfIntegrator::integrateFrame -> ProjectiveTsdfIntegrator::integrateFrameTemplate 
+
+      > * set <code>voxel_size</code> and <code>truncation_distance</code>
+      > * set <code>truncation_distance_m = truncation_distance_vox * voxel_size</code>
+      > * Identify blocks given the camera view: <code>view_calculator_.getBlocksInImageViewRaycast</code>
+      >   * <code>getBlocksByRaycastingPixels</code>: Raycasts through (possibly subsampled) pixels in the image, use the kernal function
+      >   * <code>*void* combinedBlockIndicesInImageKernel</code>: retrieve visiable block by raycasting voxels, done in GPU
+      >
+      >
+      > * TSDF integration given block indices: <code>integrateBlocksTemplate</code>
+      >
+      >   * <code>ProjectiveTsdfIntegrator::integrateBlocks</code>: block integration for the OSLidar, use the kernal function
+      >   * <code>integrateBlocksKernel</code>: TSDF integration for each block, done in GPU
+      >     * <code>projectThreadVoxel</code>: convert blocks' indices into coordinates, retrieve voxels from the block, and project them onto the image to check whether they are visible or not
+      >     * <code>interpolateOSLidarImage</code>: linear interpolation of depth images given float coordinates
+      >       * ```const Index2D u_M_rounded = u_px.array().round().cast<int>();```
+      >       * ```u_M_rounded.x() < 0 || u_M_rounded.y() < 0 || u_M_rounded.x() >= cols || u_M_rounded.y() >= rows)```: check bounds
+      >     * <code>updateVoxel</code>: update the TSDF values of all visible voxels. 
+
+3. Weight averaging methods
+    ```
+    Projective distance:
+        1: constant weight, truncate the fused_distance
+        2: constant weight, truncate the voxel_distance_measured
+        3: linear weight, truncate the voxel_distance_measured
+        4: exponential weight, truncate the voxel_distance_measured
+    Non-Projective distance:
+        5: weight and distance derived from VoxField
+        6: linear weight, distance derived from VoxField
+    ```
+
+3. Output data
+    1. Mesh map
+    2. ESDF map
+    3. Obstacle map: points from the ESDF map whose distance is smaller than a threshold
+
+4. Global planning test
+
+--------------------------
+### Demo with [KITTI](https://www.cvlibs.net/datasets/kitti) dataset
+
+1. Prepare data: 
+* Download test data
+
+    * [2011_09_30_drive_0027_sync](http://gofile.me/72EEc/NGdCJrzA5)
+
+2. Run the NVBlox
+
+    ```../script/run_fuse_kitti.sh```
+
+* [Experiments on NVBlox with the KITTI dataset](docs/experiments_kitti.md)
+
+--------------------------
+### Demo with the [FusionPortable](https://ram-lab.com/file/site/multi-sensor-dataset) dataset
+
+##### Demo 
+
+1. Download test data
+
+    * [20220226_campus_road_day](http://gofile.me/72EEc/MDghPwECu)
+
+3. Run the NVBlox: 
+
+    ```../script/run_fuse_fusionportable.sh```
+
+4. We can view the output mesh using the Open3D viewer.
+  
+    ```python3 ../../visualization/visualize_mesh.py 20220216_garden_day_mesh.ply```
+
+* [Tricks to preprocess OSLiDAR points](docs/preprocess_OSLiDAR.md)
+* [Experiments on NVBlox and VDBMapping](docs/experiments_fusionportable.md)
+
+--------------------------
+--------------------------
 # nvblox
 Signed Distance Functions (SDFs) on NVIDIA GPUs.
 
@@ -49,6 +133,7 @@ cmake .. && make && cd tests && ctest
 ```
 
 ## Run an example
+
 In this example we fuse data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
 ```
 wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
@@ -158,3 +243,7 @@ export OPENBLAS_CORETYPE=ARMV8
 
 # License
 This code is under an [open-source license](LICENSE) (Apache 2.0). :)
+
+# Reference
+[1] Parallel Banding Algorithm to Compute Exact Distance Transform with the GPU
+> compute EDT with the GPU

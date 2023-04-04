@@ -24,6 +24,18 @@ limitations under the License.
 
 namespace nvblox {
 
+/// NOTE(gogojjh): define template function
+template std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
+    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
+    const float block_size, const float truncation_distance_m,
+    const float max_integration_distance_m);
+
+template std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraPinhole& camera, const float block_size,
+    const float truncation_distance_m, const float max_integration_distance_m);
+
+///////////////////////////////////////////////////////////////
 ViewCalculator::ViewCalculator() { cudaStreamCreate(&cuda_stream_); }
 ViewCalculator::~ViewCalculator() { cudaStreamDestroy(cuda_stream_); }
 
@@ -191,6 +203,7 @@ __global__ void combinedBlockIndicesInImageKernel(
   }
 
   // Ok now project this thing into space.
+  // in the camera coordinate
   Vector3f p_C = (depth + truncation_distance_m) *
                  camera.vectorFromPixelIndices(Index2D(pixel_col, pixel_row));
   Vector3f p_L = T_L_C * p_C;
@@ -227,8 +240,9 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   const Index3D aabb_size = max_index - min_index + Index3D::Ones();
   const size_t aabb_linear_size = aabb_size.x() * aabb_size.y() * aabb_size.z();
 
-  // A 3D grid of bools, one for each block in the AABB, which indicates if it
-  // is in the view. The 3D grid is represented as a flat vector.
+  // A 3D grid of bools, one for each block in the
+  // AABB, which indicates if it is in the view. The 3D grid is represented
+  // as a flat vector.
   if (aabb_linear_size > aabb_device_buffer_.size()) {
     constexpr float kBufferExpansionFactor = 1.5f;
     const int new_size =
@@ -236,6 +250,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
     aabb_device_buffer_.reserve(new_size);
     aabb_host_buffer_.reserve(new_size);
   }
+
   checkCudaErrors(cudaMemsetAsync(aabb_device_buffer_.data(), 0,
                                   sizeof(bool) * aabb_linear_size));
   aabb_device_buffer_.resize(aabb_linear_size);
@@ -244,6 +259,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   setup_timer.Stop();
 
   // Raycast
+  // default: true
   if (raycast_to_pixels_) {
     getBlocksByRaycastingPixels(T_L_C, camera, depth_frame, block_size,
                                 truncation_distance_m,
@@ -277,10 +293,11 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
 }
 
 // Camera
+template <typename CameraType>
 std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float block_size, const float truncation_distance_m,
-    const float max_integration_distance_m) {
+    const DepthImage& depth_frame, const Transform& T_L_C,
+    const CameraType& camera, const float block_size,
+    const float truncation_distance_m, const float max_integration_distance_m) {
   return getBlocksInImageViewRaycastTemplate(depth_frame, T_L_C, camera,
                                              block_size, truncation_distance_m,
                                              max_integration_distance_m);
@@ -289,6 +306,16 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
 // Lidar
 std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
     const DepthImage& depth_frame, const Transform& T_L_C, const Lidar& lidar,
+    const float block_size, const float truncation_distance_m,
+    const float max_integration_distance_m) {
+  return getBlocksInImageViewRaycastTemplate(depth_frame, T_L_C, lidar,
+                                             block_size, truncation_distance_m,
+                                             max_integration_distance_m);
+}
+
+// OSLidar
+std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
+    const DepthImage& depth_frame, const Transform& T_L_C, const OSLidar& lidar,
     const float block_size, const float truncation_distance_m,
     const float max_integration_distance_m) {
   return getBlocksInImageViewRaycastTemplate(depth_frame, T_L_C, lidar,
@@ -383,9 +410,13 @@ void ViewCalculator::getBlocksByRaycastingPixels(
       depth_frame.cols(), block_size, max_integration_distance_m,
       truncation_distance_m, raycast_subsampling_factor_, min_index, aabb_size,
       aabb_updated_cuda);
+
   checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
   checkCudaErrors(cudaPeekAtLastError());
   combined_kernel_timer.Stop();
 }
 
 }  // namespace nvblox
+
+// .cpp
+// lidar.depth_frame_ptr[i] -> segmentation fault

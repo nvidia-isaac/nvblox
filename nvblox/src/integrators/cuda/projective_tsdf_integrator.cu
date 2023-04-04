@@ -21,16 +21,17 @@ limitations under the License.
 #include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/utils/timing.h"
+#include "nvblox/utils/weight_function.h"
 
 namespace nvblox {
-
+// NOTE(gogojjh): the original nvblox implementation
 __device__ inline bool updateVoxel(const float surface_depth_measured,
                                    TsdfVoxel* voxel_ptr,
                                    const float voxel_depth_m,
                                    const float truncation_distance_m,
                                    const float max_weight) {
   // Get the MEASURED depth of the VOXEL
-  const float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
+  float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
 
   // If we're behind the negative truncation distance, just continue.
   if (voxel_distance_measured < -truncation_distance_m) {
@@ -44,25 +45,208 @@ __device__ inline bool updateVoxel(const float surface_depth_measured,
   // NOTE(alexmillane): We could try to use CUDA math functions to speed up
   // below
   // https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__SINGLE.html#group__CUDA__MATH__SINGLE
-
   // Fuse
   constexpr float measurement_weight = 1.0f;
   float fused_distance = (voxel_distance_measured * measurement_weight +
                           voxel_distance_current * voxel_weight_current) /
                          (measurement_weight + voxel_weight_current);
-
   // Clip
   if (fused_distance > 0.0f) {
-    fused_distance = fmin(truncation_distance_m, fused_distance);
+    fused_distance = fminf(truncation_distance_m, fused_distance);
   } else {
-    fused_distance = fmax(-truncation_distance_m, fused_distance);
+    fused_distance = fmaxf(-truncation_distance_m, fused_distance);
   }
   const float weight =
-      fmin(measurement_weight + voxel_weight_current, max_weight);
-
+      fminf(measurement_weight + voxel_weight_current, max_weight);
   // Write NEW voxel values (to global GPU memory)
   voxel_ptr->distance = fused_distance;
   voxel_ptr->weight = weight;
+  return true;
+}
+
+__device__ inline bool updateVoxelMultiWeightComp(
+    const float surface_depth_measured, TsdfVoxel* voxel_ptr,
+    const float voxel_depth_m, const float truncation_distance_m,
+    const float max_weight, const int voxel_weight_method,
+    const Vector3f& measurement_point, const Vector3f& measurement_normal,
+    const Transform& T_C_L) {
+  // NOTE(gogojjh): need to externally set parameters in both host and device
+  const float kEpsilon = 1e-6;       // Used for coordinates
+  const float kFloatEpsilon = 1e-8;  // Used for weights
+  const float TSDF_NORMAL_RATIO_TH = 0.05f;
+  const float TSDF_WEIGHT_DISTANCE_TH = 50.0f;
+
+  // Get the MEASURED depth of the VOXEL
+  float voxel_distance_measured = surface_depth_measured - voxel_depth_m;
+  // If we're behind the negative truncation distance, just continue.
+  if (voxel_distance_measured < -truncation_distance_m) {
+    return false;
+  }
+
+  // Read CURRENT voxel values (from global GPU memory)
+  const float voxel_distance_current = voxel_ptr->distance;
+  const float voxel_weight_current = voxel_ptr->weight;
+  const Vector3f voxel_gradient_current = voxel_ptr->gradient;
+
+  // NOTE(alexmillane): We could try to use CUDA math functions to speed up
+  // below
+  // https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__SINGLE.html#group__CUDA__MATH__SINGLE
+  if (voxel_weight_method == 1) {
+    // Fuse
+    constexpr float measurement_weight = 1.0f;
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    // Clip
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    // Write NEW voxel values (to global GPU memory)
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 2) {
+    voxel_distance_measured =
+        fminf(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight = tsdf_constant_weight(voxel_distance_measured);
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float fused_weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = fused_weight;
+  } else if (voxel_weight_method == 3) {
+    voxel_distance_measured =
+        fminf(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight =
+        tsdf_linear_weight(voxel_distance_measured, truncation_distance_m);
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 4) {
+    voxel_distance_measured =
+        fminf(voxel_distance_measured, truncation_distance_m);
+    float measurement_weight =
+        tsdf_exp_weight(voxel_distance_measured, truncation_distance_m);
+    float fused_distance = (voxel_distance_measured * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    if (fused_distance > 0.0f) {
+      fused_distance = fminf(truncation_distance_m, fused_distance);
+    } else {
+      fused_distance = fmaxf(-truncation_distance_m, fused_distance);
+    }
+    const float weight =
+        fminf(measurement_weight + voxel_weight_current, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = weight;
+  } else if (voxel_weight_method == 5 || voxel_weight_method == 6) {
+    float normal_ratio = 1.0f;
+
+    // case 1: existing gradient, use the gradient to compute the ratio
+    if (voxel_gradient_current.norm() > kFloatEpsilon) {
+      Vector3f gradient_C;
+      // transform the gradient into the camera coordinate system
+      gradient_C = T_C_L.rotation() * voxel_gradient_current;
+
+      // case 1.1: existing gradient, existing normal
+      if (measurement_normal.norm() > kFloatEpsilon) {
+        // alpha: the angle between the normal and gradient
+        float cos_alpha =
+            abs(gradient_C.dot(measurement_normal) / measurement_normal.norm());
+        float sin_alpha = sqrt(1 - cos_alpha * cos_alpha);
+
+        // theta: the angle between the ray and gradient
+        float cos_theta =
+            abs(gradient_C.dot(measurement_point) / measurement_point.norm());
+        float sin_theta = sqrt(1 - cos_theta * cos_theta);
+
+        // condition 1: flat surface, alpha is approximate to zero
+        if (abs(1.0f - cos_alpha) < kFloatEpsilon) {
+          normal_ratio = cos_theta;
+        }
+        // condition 2: curve surface
+        else {
+          normal_ratio =
+              abs((cos_alpha - 1) * sin_theta / sin_alpha + cos_theta);
+          if (isnan(normal_ratio)) normal_ratio = cos_theta;
+        }
+      }
+      // case 1.2: existing gradient, no normal
+      else {
+        normal_ratio =
+            abs(measurement_point.dot(gradient_C) / measurement_point.norm());
+      }
+    }
+    // case 2:  no gradient
+    else {
+      // case 2.1: no gradient, existing normal
+      if (measurement_normal.norm() > kFloatEpsilon) {
+        normal_ratio = abs(measurement_point.dot(measurement_normal) /
+                           measurement_point.norm());
+      }
+    }
+    // ruling out extremely large incidence angle
+    if (normal_ratio < TSDF_NORMAL_RATIO_TH) return false;
+
+    float measurement_distance = normal_ratio * voxel_distance_measured;
+    measurement_distance = fminf(measurement_distance, truncation_distance_m);
+
+    float measurement_weight;
+    if (voxel_weight_method == 5) {
+      float weight_sensor = tsdf_sensor_weight(surface_depth_measured, 2,
+                                               TSDF_WEIGHT_DISTANCE_TH);
+      float weight_dropoff =
+          tsdf_dropoff_weight(voxel_distance_measured, truncation_distance_m);
+      measurement_weight = weight_sensor * weight_dropoff;
+    } else if (voxel_weight_method == 6) {
+      measurement_weight =
+          tsdf_linear_weight(measurement_distance, truncation_distance_m);
+    }
+
+    // NOTE(gogojjh): it is possible to have weights very close to zero, due
+    // to the limited precision of floating points dividing by this small
+    // value can cause nans
+    if (measurement_weight < kFloatEpsilon) return false;
+
+    float fused_distance = (measurement_distance * measurement_weight +
+                            voxel_distance_current * voxel_weight_current) /
+                           (measurement_weight + voxel_weight_current);
+    const float fused_weight =
+        fminf(voxel_weight_current + measurement_weight, max_weight);
+    voxel_ptr->distance = fused_distance;
+    voxel_ptr->weight = fused_weight;
+
+    // existing normal, update the gradient
+    if (measurement_normal.norm() > kFloatEpsilon) {
+      // transform the normal into the world coordinate system
+      Vector3f mea_normal_world =
+          T_C_L.rotation().transpose() * measurement_normal;
+      Vector3f fused_gradient = (voxel_weight_current * voxel_gradient_current +
+                                 measurement_weight * mea_normal_world) /
+                                (measurement_weight + voxel_weight_current);
+      fused_gradient.normalize();
+      voxel_ptr->gradient = fused_gradient;
+    }
+  }
   return true;
 }
 
@@ -123,6 +307,100 @@ __device__ inline bool interpolateLidarImage(
   return true;
 }
 
+// nearest_interpolation_max_allowable_squared_dist_to_ray_m, default: 0.125**2
+__device__ inline bool interpolateOSLidarImage(
+    const OSLidar& lidar, const Vector3f& p_voxel_center_C, const float* image,
+    const Vector2f& u_px, const int rows, const int cols,
+    const float linear_interpolation_max_allowable_difference_m,
+    const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
+    float* image_value) {
+  // Try linear interpolation first
+  interpolation::Interpolation2DNeighbours<float> neighbours;
+  bool linear_interpolation_success = interpolation::interpolate2DLinear<
+      float, interpolation::checkers::FloatPixelGreaterThanZero>(
+      image, u_px, rows, cols, image_value, &neighbours);
+
+  // Additional check
+  // Check that we're not interpolating over a discontinuity
+  // NOTE(alexmillane): This prevents smearing are object edges.
+  if (linear_interpolation_success) {
+    const float d00 = fabsf(neighbours.p00 - *image_value);
+    const float d01 = fabsf(neighbours.p01 - *image_value);
+    const float d10 = fabsf(neighbours.p10 - *image_value);
+    const float d11 = fabsf(neighbours.p11 - *image_value);
+    float maximum_depth_difference_to_neighbours =
+        fmax(fmax(d00, d01), fmax(d10, d11));
+    if (maximum_depth_difference_to_neighbours >
+        linear_interpolation_max_allowable_difference_m) {
+      linear_interpolation_success = false;
+    }
+  }
+
+  // If linear didn't work - try nearest neighbour interpolation
+  if (!linear_interpolation_success) {
+    Index2D u_neighbour_px;
+    if (!interpolation::interpolate2DClosest<
+            float, interpolation::checkers::FloatPixelGreaterThanZero>(
+            image, u_px, rows, cols, image_value, &u_neighbour_px)) {
+      // If we can't successfully do closest, fail to intgrate this voxel.
+      return false;
+    }
+
+    // Additional check
+    // Check that this voxel is close to the ray passing through the pixel.
+    // Note(alexmillane): This is to prevent large numbers of voxels
+    // being integrated by a single pixel at long ranges.
+    const Vector3f closest_ray = lidar.vectorFromPixelIndices(u_neighbour_px);
+    const float off_ray_squared_distance =
+        (p_voxel_center_C - p_voxel_center_C.dot(closest_ray) * closest_ray)
+            .squaredNorm();
+    if (off_ray_squared_distance >
+        nearest_interpolation_max_allowable_squared_dist_to_ray_m) {
+      return false;
+    }
+  }
+
+  // TODO(alexmillane): We should add clearing rays, even in the case both
+  // interpolations fail.
+  return true;
+}
+
+// NOTE(gogojjh):
+__device__ inline bool getPointVectorOSLidar(const OSLidar& lidar,
+                                             const Index2D& u_C, const int rows,
+                                             const int cols,
+                                             Vector3f& point_vector) {
+  const float kFloatEpsilon = 1e-8;  // Used for weights
+  if (u_C.x() < 0 || u_C.y() < 0 || u_C.x() >= cols || u_C.y() >= rows) {
+    return false;
+  } else {
+    point_vector = lidar.unprojectFromImageIndex(u_C);
+    if (point_vector.norm() < kFloatEpsilon) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+}
+
+// NOTE(gogojjh):
+__device__ inline bool getNormalVectorOSLidar(const OSLidar& lidar,
+                                              const Index2D& u_C,
+                                              const int rows, const int cols,
+                                              Vector3f& normal_vector) {
+  const float kFloatEpsilon = 1e-8;  // Used for weights
+  if (u_C.x() < 0 || u_C.y() < 0 || u_C.x() >= cols || u_C.y() >= rows) {
+    return false;
+  } else {
+    normal_vector = lidar.getNormalVector(u_C);
+    if (normal_vector.norm() < kFloatEpsilon) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+}
+
 // CAMERA
 __global__ void integrateBlocksKernel(const Index3D* block_indices_device_ptr,
                                       const Camera camera, const float* image,
@@ -132,7 +410,8 @@ __global__ void integrateBlocksKernel(const Index3D* block_indices_device_ptr,
                                       const float max_weight,
                                       const float max_integration_distance,
                                       TsdfBlock** block_device_ptrs) {
-  // Get - the image-space projection of the voxel associated with this thread
+  // Get - the image-space projection of the voxel associated with this
+  // thread
   //     - the depth associated with the projection.
   Eigen::Vector2f u_px;
   float voxel_depth_m;
@@ -178,7 +457,8 @@ __global__ void integrateBlocksKernel(
     const float linear_interpolation_max_allowable_difference_m,
     const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
     TsdfBlock** block_device_ptrs) {
-  // Get - the image-space projection of the voxel associated with this thread
+  // Get - the image-space projection of the voxel associated with this
+  // thread
   //     - the depth associated with the projection.
   Eigen::Vector2f u_px;
   float voxel_depth_m;
@@ -215,6 +495,91 @@ __global__ void integrateBlocksKernel(
   // Update the voxel using the update rule for this layer type
   updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
               max_weight);
+}
+
+// OSLiDAR
+// NOTE(gogojjh): main function to integrate blocks in GPU
+__global__ void integrateBlocksKernel(
+    const Index3D* block_indices_device_ptr, const OSLidar lidar,
+    const float* image, int rows, int cols, const Transform T_C_L,
+    const float block_size, const float truncation_distance_m,
+    const float max_weight, const float max_integration_distance,
+    const float linear_interpolation_max_allowable_difference_m,
+    const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
+    TsdfBlock** block_device_ptrs) {
+  // function 1
+  // Get - the image-space projection of the voxel associated with this
+  // thread
+  //     - the depth associated with the projection.
+  //     - the projected image coordinate of the voxel
+  Eigen::Vector2f u_px;
+  float voxel_depth_m;
+  Vector3f p_voxel_center_C;
+  if (!projectThreadVoxel(block_indices_device_ptr, lidar, T_C_L, block_size,
+                          &u_px, &voxel_depth_m, &p_voxel_center_C)) {
+    return;  // false: the voxel is not visible
+  }
+
+  // If voxel further away than the limit, skip this voxel
+  if (max_integration_distance > 0.0f) {
+    if (voxel_depth_m > max_integration_distance) {
+      return;
+    }
+  }
+
+  // function 2
+  // Interpolate on the image plane
+  float image_value;
+  if (!interpolateOSLidarImage(
+          lidar, p_voxel_center_C, image, u_px, rows, cols,
+          linear_interpolation_max_allowable_difference_m,
+          nearest_interpolation_max_allowable_squared_dist_to_ray_m,
+          &image_value)) {
+    return;
+  }
+
+  // Get the Voxel we'll update in this thread
+  // NOTE(alexmillane): Note that we've reverse the voxel indexing order
+  // such that adjacent threads (x-major) access adjacent memory locations
+  // in the block (z-major).
+  TsdfVoxel* voxel_ptr = &(block_device_ptrs[blockIdx.x]
+                               ->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
+
+  // NOTE(gogojjh): retrive the normal vector given u_px
+  const Index2D u_C = u_px.array().round().cast<int>();
+  Vector3f point_vector = Vector3f::Zero();
+  Vector3f normal_vector = Vector3f::Zero();
+  if (!getPointVectorOSLidar(lidar, u_C, rows, cols, point_vector)) return;
+  if (!getNormalVectorOSLidar(lidar, u_C, rows, cols, normal_vector)) return;
+  // printf("(%f, %f, %f - %f, %f, %f) ", point_vector.x(), point_vector.y(),
+  //        point_vector.z(), normal_vector.x(), normal_vector.y(),
+  //        normal_vector.z());
+
+  // function 3
+  // Update the voxel using the update rule for this layer type
+  // NOTE(gogojjh):
+  // setting the voxel update method
+  // Projective distance:
+  //  1: constant weight, truncate the fused_distance
+  //  2: constant weight, truncate the voxel_distance_measured
+  //  3: linear weight, truncate the voxel_distance_measured
+  //  4: exponential weight, truncate the voxel_distance_measured
+  // Non-Projective distance:
+  //  5: weight and distance derived from VoxField
+  //  6: linear weight, distance derived from VoxField
+  const int voxel_weight_method = 6;
+  if (voxel_weight_method == 1) {
+    // the original nvblox impelentation
+    // not use normal vector
+    updateVoxel(image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
+                max_weight);
+  } else {
+    // the improved weight computation
+    // use normal vector
+    updateVoxelMultiWeightComp(
+        image_value, voxel_ptr, voxel_depth_m, truncation_distance_m,
+        max_weight, voxel_weight_method, point_vector, normal_vector, T_C_L);
+  }
 }
 
 ProjectiveTsdfIntegrator::ProjectiveTsdfIntegrator()
@@ -260,6 +625,7 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
     std::vector<Index3D>* updated_blocks) {
   CHECK_NOTNULL(layer);
   timing::Timer tsdf_timer("tsdf/integrate");
+
   // Metric truncation distance for this layer
   const float voxel_size =
       layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
@@ -271,6 +637,7 @@ void ProjectiveTsdfIntegrator::integrateFrameTemplate(
       view_calculator_.getBlocksInImageViewRaycast(
           depth_frame, T_L_C, sensor, layer->block_size(),
           truncation_distance_m, max_integration_distance_m_);
+  // LOG(INFO) << "block_indices size: " << block_indices.size();
   blocks_in_view_timer.Stop();
 
   // Allocate blocks (CPU)
@@ -301,6 +668,13 @@ void ProjectiveTsdfIntegrator::integrateFrame(
     const DepthImage& depth_frame, const Transform& T_L_C, const Lidar& lidar,
     TsdfLayer* layer, std::vector<Index3D>* updated_blocks) {
   integrateFrameTemplate(depth_frame, T_L_C, lidar, layer, updated_blocks);
+}
+
+// OSLidar
+void ProjectiveTsdfIntegrator::integrateFrame(
+    DepthImage& depth_frame, const Transform& T_L_C, OSLidar& oslidar,
+    TsdfLayer* layer, std::vector<Index3D>* updated_blocks) {
+  integrateFrameTemplate(depth_frame, T_L_C, oslidar, layer, updated_blocks);
 }
 
 // Camera
@@ -362,6 +736,55 @@ void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
                2);
 
   // Kernel
+  integrateBlocksKernel<<<num_thread_blocks, kThreadsPerBlock, 0,
+                          integration_stream_>>>(
+      block_indices_device_.data(),                               // NOLINT
+      lidar,                                                      // NOLINT
+      depth_frame.dataConstPtr(),                                 // NOLINT
+      depth_frame.rows(),                                         // NOLINT
+      depth_frame.cols(),                                         // NOLINT
+      T_C_L,                                                      // NOLINT
+      layer_ptr->block_size(),                                    // NOLINT
+      truncation_distance_m,                                      // NOLINT
+      max_weight_,                                                // NOLINT
+      max_integration_distance_m_,                                // NOLINT
+      linear_interpolation_max_allowable_difference_m,            // NOLINT
+      nearest_interpolation_max_allowable_squared_dist_to_ray_m,  // NOLINT
+      block_ptrs_device_.data());                                 // NOLINT
+
+  // Finish processing of the frame before returning control
+  finish();
+  checkCudaErrors(cudaPeekAtLastError());
+}
+
+// OSLidar
+void ProjectiveTsdfIntegrator::integrateBlocks(const DepthImage& depth_frame,
+                                               const Transform& T_C_L,
+                                               const OSLidar& lidar,
+                                               TsdfLayer* layer_ptr) {
+  // Kernel call - One ThreadBlock launched per VoxelBlock
+  constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
+  const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
+  // NOTE(gogojjh): the number of visible blocks
+  const int num_thread_blocks = block_indices_device_.size();
+
+  // Metric truncation distance for this layer
+  const float voxel_size =
+      layer_ptr->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
+  // default: 4.0 * 0.1
+  const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
+
+  // Metric params
+  const float linear_interpolation_max_allowable_difference_m =
+      lidar_linear_interpolation_max_allowable_difference_vox_ * voxel_size;
+  const float nearest_interpolation_max_allowable_squared_dist_to_ray_m =
+      std::pow(lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ *
+                   voxel_size,
+               2);
+
+  // Kernel
+  // std::cout << "num_thread_blocks: " << num_thread_blocks << std::endl;
+  // std::cout << "kVoxelsPerSide: " << kVoxelsPerSide << std::endl;
   integrateBlocksKernel<<<num_thread_blocks, kThreadsPerBlock, 0,
                           integration_stream_>>>(
       block_indices_device_.data(),                               // NOLINT

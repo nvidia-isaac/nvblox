@@ -18,8 +18,10 @@ limitations under the License.
 #include <memory>
 
 #include "nvblox/core/camera.h"
+#include "nvblox/core/camera_pinhole.h"
 #include "nvblox/core/image.h"
 #include "nvblox/core/lidar.h"
+#include "nvblox/core/oslidar.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
 
@@ -43,8 +45,9 @@ class ViewCalculator {
   /// @param block_size The size of the blocks in the layer.
   /// @param max_distance The maximum distance of blocks considered.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename CameraType>
   static std::vector<Index3D> getBlocksInViewPlanes(const Transform& T_L_C,
-                                                    const Camera& camera,
+                                                    const CameraType& camera,
                                                     const float block_size,
                                                     const float max_distance);
 
@@ -61,9 +64,10 @@ class ViewCalculator {
   /// @param truncation_distance_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename CameraType>
   static std::vector<Index3D> getBlocksInImageViewPlanes(
       const DepthImage& depth_frame, const Transform& T_L_C,
-      const Camera& camera, const float block_size,
+      const CameraType& camera, const float block_size,
       const float truncation_distance_m,
       const float max_integration_distance_m);
 
@@ -80,9 +84,10 @@ class ViewCalculator {
   /// @param truncation_distance_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename CameraType>
   std::vector<Index3D> getBlocksInImageViewRaycast(
       const DepthImage& depth_frame, const Transform& T_L_C,
-      const Camera& camera, const float block_size,
+      const CameraType& camera, const float block_size,
       const float truncation_distance_m,
       const float max_integration_distance_m);
 
@@ -102,6 +107,25 @@ class ViewCalculator {
   std::vector<Index3D> getBlocksInImageViewRaycast(
       const DepthImage& depth_frame, const Transform& T_L_C, const Lidar& lidar,
       const float block_size, const float truncation_distance_m,
+      const float max_integration_distance_m);
+
+  /// Gets blocks which fall into the lidar view (using a depth image)
+  /// Performs ray casting to get the blocks in view
+  /// Operates by ray through the grid returning the blocks traversed in the ray
+  /// casting process. The number of pixels on the image plane raycast is
+  /// determined by the class parameter raycast_subsampling_factor.
+  /// @param depth_frame the depth image.
+  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
+  /// points in the camera frame (C) to the layer frame (L).
+  /// @param Lidar The Ouster lidar (intrinsics) model.
+  /// @param block_size The size of the blocks in the layer.
+  /// @param truncation_distance_m The truncation distance.
+  /// @param max_integration_distance_m The max integration distance.
+  /// @return a vector of the 3D indices of the blocks in view.
+  std::vector<Index3D> getBlocksInImageViewRaycast(
+      const DepthImage& depth_frame, const Transform& T_L_C,
+      const OSLidar& lidar, const float block_size,
+      const float truncation_distance_m,
       const float max_integration_distance_m);
 
   /// A parameter getter
@@ -145,6 +169,7 @@ class ViewCalculator {
       bool* aabb_updated_cuda);
 
   // Raycasts through (possibly subsampled) pixels in the image.
+  // aabb_updated_cuda is the updated variables
   template <typename SensorType>
   void getBlocksByRaycastingPixels(
       const Transform& T_L_C,                  // NOLINT

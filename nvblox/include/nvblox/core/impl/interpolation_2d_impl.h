@@ -119,7 +119,8 @@ bool interpolate2DLinear(const Image<ElementType>& frame, const Vector2f& u_px,
 template <typename ElementType, typename PixelValidityChecker>
 bool interpolate2DClosest(const ElementType* frame, const Vector2f& u_px,
                           const int rows, const int cols,
-                          ElementType* value_interpolated_ptr, Index2D* u_px_closest_ptr) {
+                          ElementType* value_interpolated_ptr,
+                          Index2D* u_px_closest_ptr) {
   // Closest pixel
   const Index2D u_M_rounded = u_px.array().round().cast<int>();
   // Check bounds:
@@ -135,17 +136,18 @@ bool interpolate2DClosest(const ElementType* frame, const Vector2f& u_px,
     return false;
   }
   *value_interpolated_ptr = pixel_value;
-  if(u_px_closest_ptr) {
+  if (u_px_closest_ptr) {
     *u_px_closest_ptr = u_M_rounded;
   }
   return true;
 }
 
+/// @brief interpolate the pixel value given float coordinates
 template <typename ElementType, typename PixelValidityChecker>
-bool interpolate2DLinear(const ElementType* frame, const Vector2f& u_px,
-                         const int rows, const int cols,
-                         ElementType* value_interpolated_ptr,
-                         Interpolation2DNeighbours<ElementType>* neighbours_ptr) {
+bool interpolate2DLinear(
+    const ElementType* frame, const Vector2f& u_px, const int rows,
+    const int cols, ElementType* value_interpolated_ptr,
+    Interpolation2DNeighbours<ElementType>* neighbours_ptr) {
   // Subtraction of Vector2f(0.5, 0.5) takes our coordinates from
   // corner-referenced to center-referenced.
   const Vector2f u_center_referenced_px = u_px - Vector2f(0.5, 0.5);

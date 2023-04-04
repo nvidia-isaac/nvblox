@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -29,7 +28,7 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/replica.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 
 using namespace nvblox;
 
@@ -48,7 +47,7 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Loading Replica files from " << base_path;
 
   // Fuser
-  std::unique_ptr<Fuser> fuser = datasets::replica::createFuser(base_path);
+  std::unique_ptr<FuserRGBD> fuser = datasets::replica::createFuser(base_path);
 
   // Mesh location (optional)
   if (argc >= 3) {

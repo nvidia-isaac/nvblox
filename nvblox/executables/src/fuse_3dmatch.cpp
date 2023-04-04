@@ -17,7 +17,7 @@ limitations under the License.
 #include <glog/logging.h>
 
 #include "nvblox/datasets/3dmatch.h"
-#include "nvblox/executables/fuser.h"
+#include "nvblox/executables/fuser_rgbd.h"
 
 DECLARE_bool(alsologtostderr);
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   // Fuser
   // NOTE(alexmillane): Hardcode the sequence ID.
   constexpr int seq_id = 1;
-  std::unique_ptr<Fuser> fuser =
+  std::unique_ptr<FuserRGBD> fuser =
       datasets::threedmatch::createFuser(base_path, seq_id);
 
   // Mesh location (optional)

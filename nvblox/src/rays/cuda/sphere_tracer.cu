@@ -25,6 +25,20 @@ limitations under the License.
 
 namespace nvblox {
 
+/// NOTE(gogojjh): define the template functions
+template std::shared_ptr<const DepthImage> SphereTracer::renderImageOnGPU(
+    const Camera& camera, const Transform& T_L_C, const TsdfLayer& tsdf_layer,
+    const float truncation_distance_m,
+    const MemoryType output_image_memory_type,
+    const int ray_subsampling_factor);
+
+template std::shared_ptr<const DepthImage> SphereTracer::renderImageOnGPU(
+    const CameraPinhole& camera, const Transform& T_L_C,
+    const TsdfLayer& tsdf_layer, const float truncation_distance_m,
+    const MemoryType output_image_memory_type,
+    const int ray_subsampling_factor);
+
+/////////////////////////////////////////////////////
 __device__ inline bool isTsdfVoxelValid(const TsdfVoxel& voxel) {
   constexpr float kMinWeight = 1e-4;
   return voxel.weight > kMinWeight;
@@ -190,8 +204,9 @@ __global__ void sphereTracingKernel(
   success_flags[ray_idx] = result.second;
 }
 
+template <typename CameraType>
 __global__ void sphereTracingKernel(
-    const Camera camera,                             // NOLINT
+    const CameraType camera,                         // NOLINT
     const Transform T_L_C,                           // NOLINT
     Index3DDeviceHashMapType<TsdfBlock> block_hash,  // NOLINT
     float* image,                                    // NOLINT
@@ -318,9 +333,10 @@ bool SphereTracer::castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
   return success_flag;
 }
 
+template <typename CameraType>
 std::shared_ptr<const DepthImage> SphereTracer::renderImageOnGPU(
-    const Camera& camera, const Transform& T_L_C, const TsdfLayer& tsdf_layer,
-    const float truncation_distance_m,
+    const CameraType& camera, const Transform& T_L_C,
+    const TsdfLayer& tsdf_layer, const float truncation_distance_m,
     const MemoryType output_image_memory_type,
     const int ray_subsampling_factor) {
   CHECK_EQ(camera.width() % ray_subsampling_factor, 0);

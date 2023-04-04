@@ -23,8 +23,7 @@ limitations under the License.
 using namespace nvblox;
 
 constexpr float kFloatEpsilon = 1e-4;
-class LidarTest
-    : public ::testing::Test {
+class LidarTest : public ::testing::Test {
  protected:
   LidarTest() {}
 };
@@ -44,7 +43,8 @@ TEST_P(ParameterizedLidarTest, Extremes) {
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
 
-  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad);
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, 2.0f * M_PI,
+              vertical_fov_rad);
 
   //-------------------
   // Elevation extremes
@@ -123,7 +123,8 @@ TEST_P(ParameterizedLidarTest, SphereTest) {
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
 
-  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad);
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, 2.0f * M_PI,
+              vertical_fov_rad);
 
   // Pointcloud
   Eigen::MatrixX3f pointcloud(num_azimuth_divisions * num_elevation_divisions,
@@ -196,7 +197,8 @@ TEST_P(ParameterizedLidarTest, OutOfBoundsTest) {
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
 
-  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad);
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, 2.0f * M_PI,
+              vertical_fov_rad);
 
   // Outside on top and bottom
   const float rads_per_pixel_elevation =
@@ -234,7 +236,8 @@ TEST_P(ParameterizedLidarTest, PixelToRayExtremes) {
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
   const float half_vertical_fov_rad = vertical_fov_rad / 2.0;
 
-  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad);
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, 2.0f * M_PI,
+              vertical_fov_rad);
 
   // Special pixels to use
   const float middle_elevation_pixel = (num_elevation_divisions - 1) / 2;
@@ -316,7 +319,8 @@ TEST_P(ParameterizedLidarTest, RandomPixelRoundTrips) {
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
   const float half_vertical_fov_rad = vertical_fov_rad / 2.0;
 
-  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad);
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, 2.0f * M_PI,
+              vertical_fov_rad);
 
   // Test a large number of points
   const int kNumberOfPointsToTest = 10000;
