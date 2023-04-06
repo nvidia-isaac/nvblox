@@ -41,5 +41,10 @@ bool outputMeshLayerToPly(const BlockLayer<MeshBlock>& layer,
   return writer.write();
 }
 
+bool outputMeshLayerToPly(const BlockLayer<MeshBlock>& layer,
+                          const char* filename) {
+  return outputMeshLayerToPly(layer, std::string(filename));
+}
+
 }  // namespace io
 }  // namespace nvblox

@@ -15,11 +15,11 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/image.h"
-#include "nvblox/core/interpolation_2d.h"
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
-#include "nvblox/io/csv.h"
+#include "nvblox/interpolation/interpolation_2d.h"
+#include "nvblox/io/image_io.h"
+#include "nvblox/sensors/image.h"
 
 #include "nvblox/tests/gpu_image_routines.h"
 #include "nvblox/tests/interpolation_2d_gpu.h"
@@ -65,7 +65,7 @@ TEST(ColorImageTest, NearbyImagesSimilar) {
   image::getDifferenceImageGPU(image_1, image_2, &diff_image);
 
   // Write diff image
-  io::writeToCsv("./color_image_difference.csv", diff_image);
+  io::writeToPng("./color_image_difference.csv", diff_image);
 
   // Check that there's not much difference between the images using the CPU
   // - 50 pixel values means constitutes a "big" difference for this test

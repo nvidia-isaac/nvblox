@@ -18,10 +18,10 @@ limitations under the License.
 #include <memory>
 #include <utility>
 
-#include "nvblox/core/camera.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/image.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 
@@ -32,14 +32,38 @@ class SphereTracer {
   ~SphereTracer();
 
   /// Render an image on the GPU
-  /// Rendering occurs by sphere tracing the passed TsdfLayer. We return a
-  /// pointer to an internal GPU buffer where the image is rendered. Note that
-  /// additional calls to this function will change the contents of the
-  /// internal image buffer and therefore invalidate the returned image.
+  /// Rendering occurs by sphere tracing the passed TsdfLayer. This allocates if
+  /// the passed output image does not have the right size.
   /// @param camera A the camera (intrinsics) model.
   /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
   /// points in the camera frame (C) to the layer frame (L).
   /// @param tsdf_layer The tsdf layer to be sphere traced.
+  /// @param truncation_distance_m The (metric) truncation distance used during
+  /// the construction of tsdf_layer.
+  /// @param depth_ptr A pointer to the output image.
+  /// @param output_image_memory_type The memory type that the image should be
+  /// stored in.
+  /// @param ray_subsampling_factor The subsampling rate applied to the number
+  /// of traced rays. If this parameter is 2 for example and the image is
+  /// 100x100 pixels, we trace 50x50 pixels and return a syntheric depth image
+  /// of that size.
+  void renderImageOnGPU(
+      const Camera& camera, const Transform& T_L_C, const TsdfLayer& tsdf_layer,
+      const float truncation_distance_m, DepthImage* depth_ptr,
+      const MemoryType output_image_memory_type = MemoryType::kDevice,
+      const int ray_subsampling_factor = 1);
+
+  /// Render an image on the GPU into an image view.
+  /// The memory buffer must have enough space to fit a depth image of size
+  /// (camera.height() / ray_subsampling_factor) x
+  ///   (camera.width() / ray_subsampling_factor)
+  /// in a float32 format.
+  /// Rendering occurs by sphere tracing the passed TsdfLayer.
+  /// @param camera A the camera (intrinsics) model.
+  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
+  /// points in the camera frame (C) to the layer frame (L).
+  /// @param tsdf_layer The tsdf layer to be sphere traced.
+  /// @param depth_ptr A pointer to the output image.
   /// @param truncation_distance_m The (metric) truncation distance used during
   /// the construction of tsdf_layer.
   /// @param output_image_memory_type The memory type that the image should be
@@ -48,27 +72,78 @@ class SphereTracer {
   /// of traced rays. If this parameter is 2 for example and the image is
   /// 100x100 pixels, we trace 50x50 pixels and return a syntheric depth image
   /// of that size.
-  /// @returns A pointer to the internal (GPU) buffer where the image is stored.
-  std::shared_ptr<const DepthImage> renderImageOnGPU(
-      const Camera& camera, const Transform& T_L_C, const TsdfLayer& tsdf_layer,
-      const float truncation_distance_m,
-      const MemoryType output_image_memory_type = MemoryType::kDevice,
-      const int ray_subsampling_factor = 1);
+  void renderImageOnGPU(const Camera& camera, const Transform& T_L_C,
+                        const TsdfLayer& tsdf_layer,
+                        const float truncation_distance_m,
+                        DepthImageView* depth_ptr,
+                        const MemoryType output_image_memory_type,
+                        const int ray_subsampling_factor = 1);
 
-  /// Sphere trace a ray-bundle on the GPU
-  /// We leave the results in buffers on the GPU.
-  /// @param rays_L a vector of rays in the Layer frame
-  /// @param tsdf_layer the tsdf layer to sphere traced
+  /// Render a depth and color image on the GPU
+  /// Rendering occurs by sphere tracing the passed TsdfLayer.
+  /// Colors are decided by looking up the Color voxel corresponding to ray
+  /// depth. We return two pointers to internal GPU buffers where the images are
+  /// rendered. Note that additional calls to this function will change the
+  /// contents of the internal image buffers and therefore invalidate the
+  /// returned images.
+  /// @param camera A the camera (intrinsics) model.
+  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
+  /// points in the camera frame (C) to the layer frame (L).
+  /// @param tsdf_layer The tsdf layer to be sphere traced.
+  /// @param color_layer The color layer to look up the color from.
   /// @param truncation_distance_m The (metric) truncation distance used during
   /// the construction of tsdf_layer.
-  std::pair<device_vector<Vector3f>, device_vector<bool>> castOnGPU(
-      std::vector<Ray>& rays_L, const TsdfLayer& tsdf_layer,
-      const float truncation_distance_m);
+  /// @param depth_ptr Pointer to the output depth image.
+  /// @param color_ptr Pointer to the output color image.
+  /// @param output_image_memory_type The memory type that the image should be
+  /// stored in.
+  /// @param ray_subsampling_factor The subsampling rate applied to the number
+  /// of traced rays. If this parameter is 2 for example and the image is
+  /// 100x100 pixels, we trace 50x50 pixels and return a syntheric depth image
+  /// of that size.
+  /// @returns A pair of pointers to internal (GPU) buffers where the depth
+  /// and color image respectively are stored.
+  void renderRgbdImageOnGPU(const Camera& camera, const Transform& T_L_C,
+                            const TsdfLayer& tsdf_layer,
+                            const ColorLayer& color_layer,
+                            const float truncation_distance_m,
+                            DepthImage* depth_ptr, ColorImage* color_ptr,
+                            const MemoryType output_image_memory_type,
+                            const int ray_subsampling_factor = 1);
 
-  // This starts a single threaded kernel to cast a single ray
-  // and is therefore not efficient. This function is intended for unit testing.
-  bool castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
-                 const float truncation_distance_m, float* t) const;
+  /// Render a depth and color image on the GPU
+  /// Rendering occurs by sphere tracing the passed TsdfLayer.
+  /// Colors are decided by looking up the Color voxel corresponding to ray
+  /// depth. We render directly onto the externally allocated memory buffers.
+  /// The depth memory buffer must have enough space to fit a depth image of
+  /// size (camera.height() / ray_subsampling_factor) x
+  ///   (camera.width() / ray_subsampling_factor)
+  /// in a float32 format.
+  /// The color memory buffer must have enough space to fit an image of same
+  /// size in RGB UInt8 format (i.e. 24 bits per pixel).
+  /// @param camera A the camera (intrinsics) model.
+  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
+  /// points in the camera frame (C) to the layer frame (L).
+  /// @param tsdf_layer The tsdf layer to be sphere traced.
+  /// @param color_layer The color layer to look up the color from.
+  /// @param truncation_distance_m The (metric) truncation distance used during
+  /// the construction of tsdf_layer.
+  /// @param depth_ptr Pointer to the output depth image view.
+  /// @param color_ptr Pointer to the output color image view.
+  /// @param output_image_memory_type The memory type that the image should be
+  /// stored in.
+  /// @param ray_subsampling_factor The subsampling rate applied to the number
+  /// of traced rays. If this parameter is 2 for example and the image is
+  /// 100x100 pixels, we trace 50x50 pixels and return a syntheric depth image
+  /// of that size.
+  void renderRgbdImageOnGPU(const Camera& camera, const Transform& T_L_C,
+                            const TsdfLayer& tsdf_layer,
+                            const ColorLayer& color_layer,
+                            const float truncation_distance_m,
+                            DepthImageView* depth_ptr,
+                            ColorImageView* color_ptr,
+                            const MemoryType output_image_memory_type,
+                            const int ray_subsampling_factor = 1);
 
   /// A parameter getter.
   /// The maximum number of steps along a ray allowed before ray casting fails.
@@ -103,8 +178,22 @@ class SphereTracer {
   void surface_distance_epsilon_vox(float surface_distance_epsilon_vox);
 
  protected:
-  // Device working space
-  std::shared_ptr<DepthImage> depth_image_;
+  // NOTE(alex.millane): The functions below are used in the tests.
+
+  // Sphere trace a ray-bundle on the GPU
+  // We leave the results in buffers on the GPU.
+  // @param rays_L a vector of rays in the Layer frame
+  // @param tsdf_layer the tsdf layer to sphere traced
+  // @param truncation_distance_m The (metric) truncation distance used during
+  // the construction of tsdf_layer.
+  std::pair<device_vector<Vector3f>, device_vector<bool>> castOnGPU(
+      std::vector<Ray>& rays_L, const TsdfLayer& tsdf_layer,
+      const float truncation_distance_m);
+
+  // This starts a single threaded kernel to cast a single ray
+  // and is therefore not efficient. This function is intended for unit testing.
+  bool castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
+                 const float truncation_distance_m, float* t) const;
 
   // Params
   int maximum_steps_ = 100;

@@ -17,12 +17,12 @@ limitations under the License.
 
 #include <memory>
 
-#include "nvblox/core/blox.h"
 #include "nvblox/core/color.h"
-#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/core/unified_vector.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/layer.h"
 
 namespace nvblox {
 
@@ -79,8 +79,8 @@ struct MeshBlock {
 };
 
 /// Helper struct for mesh blocks on CUDA.
-/// NOTE: We need this because we can't pass MeshBlock to kernel functions because
-/// of the presence of unified_vector members.
+/// NOTE: We need this because we can't pass MeshBlock to kernel functions
+/// because of the presence of unified_vector members.
 struct CudaMeshBlock {
   CudaMeshBlock() = default;
   CudaMeshBlock(MeshBlock* block);

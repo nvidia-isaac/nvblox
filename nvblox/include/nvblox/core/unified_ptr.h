@@ -16,9 +16,9 @@ limitations under the License.
 #pragma once
 
 #include <cuda_runtime.h>
-#include <glog/logging.h>
 #include <atomic>
 #include <type_traits>
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/core/types.h"
 
@@ -90,6 +90,13 @@ class unified_ptr {
             std::enable_if_t<!std::is_const<T2>::value, bool> = true>
   operator unified_ptr<const T2>() const;
 
+  /// Operator convert to base class.
+  template <typename T2, typename std::enable_if<std::is_base_of<T2, T>{} &&
+                                                     !std::is_const<T2>{} &&
+                                                     !std::is_const<T>{},
+                                                 bool>::type = true>
+  operator unified_ptr<T2>() const;
+
   /// Get the raw pointer.
   T_noextent* get();
   const T_noextent* get() const;
@@ -102,7 +109,8 @@ class unified_ptr {
   unified_ptr<T_nonconst> clone() const;
   unified_ptr<T_nonconst> clone(MemoryType memory_type) const;
 
-  /// Copy memory between two unified ptrs, potentially of different memory locations.
+  /// Copy memory between two unified ptrs, potentially of different memory
+  /// locations.
   void copyTo(unified_ptr<T_nonconst>& ptr) const;
 
   MemoryType memory_type() const { return memory_type_; }
@@ -110,8 +118,11 @@ class unified_ptr {
   /// Helper function to memset all the memory to 0.
   void setZero();
 
+  // Unified pointer has heaps of friends.
   friend class unified_ptr<T_nonconst>;
   friend class unified_ptr<const T>;
+  template <class U>
+  friend class unified_ptr;
 
  private:
   MemoryType memory_type_;
@@ -181,4 +192,4 @@ typename _Unified_if<T>::_Known_bound make_unified(Args&&... args) = delete;
 
 }  // namespace nvblox
 
-#include "nvblox/core/impl/unified_ptr_impl.h"
+#include "nvblox/core/internal/impl/unified_ptr_impl.h"

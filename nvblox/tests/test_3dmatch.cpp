@@ -17,9 +17,9 @@ limitations under the License.
 
 #include <iostream>
 
-#include "nvblox/core/image.h"
-#include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/3dmatch.h"
+#include "nvblox/datasets/image_loader.h"
+#include "nvblox/sensors/image.h"
 
 // DEBUG
 #include <chrono>

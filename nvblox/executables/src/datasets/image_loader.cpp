@@ -70,7 +70,8 @@ bool load8BitColorImage(const std::string& filename,
   if (image_data == nullptr) {
     return false;
   }
-  // Currently we only support loading 3 channel (rgb) or 4 channel (rgba) images.
+  // Currently we only support loading 3 channel (rgb) or 4 channel (rgba)
+  // images.
   CHECK(num_channels == 3 || num_channels == 4);
 
   CHECK_EQ(sizeof(Color), 4 * sizeof(uint8_t))

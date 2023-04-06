@@ -13,8 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/core/cuda/impl/layer_impl.cuh"
-#include "nvblox/core/layer.h"
+#include "nvblox/map/internal/cuda/impl/layer_impl.cuh"
+#include "nvblox/map/layer.h"
 
 #include "nvblox/tests/voxels.h"
 

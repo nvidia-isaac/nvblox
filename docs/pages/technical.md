@@ -2,7 +2,7 @@
 
 ## Input/Outputs
 
-Here we discuss the inputs you have to provide to nvblox, and the outputs it produces for downstream tasks. This is the default setup within ROS2 for 2D navigation, but note that other outputs are possible (such as the full 3D distance map).
+Here we discuss the inputs you have to provide to nvblox, and the outputs it produces for downstream tasks. This is the default setup within ROS 2 for 2D navigation, but note that other outputs are possible (such as the full 3D distance map).
 
 _Inputs_:
 * **Depth Images**: (@ref nvblox::Image) We require input from a sensor supplying depth per pixel. Examples of such sensors are the Intel Realsense series and Kinect cameras.

@@ -15,8 +15,8 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/interpolation_3d.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/interpolation/interpolation_3d.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
 
@@ -251,7 +251,7 @@ TEST(InterpolatorTest, PrimitivesInterpolationTest) {
   constexpr float kVoxelSize_m = 0.2;
   TsdfLayer gt_layer(kVoxelSize_m, MemoryType::kUnified);
   constexpr float kTruncationDistanceMeters = 10;
-  scene.generateSdfFromScene(kTruncationDistanceMeters, &gt_layer);
+  scene.generateLayerFromScene(kTruncationDistanceMeters, &gt_layer);
 
   // Generate some random points in the arena
   constexpr int kNumPointsToTest = 1000;

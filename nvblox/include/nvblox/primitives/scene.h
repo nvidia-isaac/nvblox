@@ -47,11 +47,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/camera.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/primitives/primitives.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace primitives {
@@ -88,8 +88,8 @@ class Scene {
   /// Computes the ground truth SDFs (either TSDF or ESDF depending on template
   /// parameter).
   template <typename VoxelType>
-  void generateSdfFromScene(float max_dist,
-                            VoxelBlockLayer<VoxelType>* layer) const;
+  void generateLayerFromScene(float max_dist,
+                              VoxelBlockLayer<VoxelType>* layer) const;
 
   /// Computes distance to an arbitrary point across all objects.
   /// Positive distance is computed only up to max_dist, though negative
@@ -106,7 +106,11 @@ class Scene {
 
  protected:
   template <typename VoxelType>
-  inline void setVoxel(float dist, VoxelType* voxel) const;
+  inline void setVoxel(float value, VoxelType* voxel) const;
+
+  template <typename VoxelType>
+  inline float getVoxelGroundTruthValue(const Vector3f& coords, float max_dist,
+                                        float voxel_size = 0) const;
 
   /// Vector storing pointers to all the objects in this world.
   std::vector<std::unique_ptr<Primitive>> primitives_;
@@ -119,4 +123,4 @@ class Scene {
 }  // namespace primitives
 }  // namespace nvblox
 
-#include "nvblox/primitives/impl/scene_impl.h"
+#include "nvblox/primitives/internal/impl/scene_impl.h"

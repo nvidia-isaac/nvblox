@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include "nvblox/datasets/replica.h"
 
-#include <glog/logging.h>
+#include "nvblox/utils/logging.h"
 
 #include <fstream>
 #include <functional>
@@ -142,7 +142,10 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
 }  // namespace internal
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path) {
-  auto data_loader = std::make_unique<DataLoader>(base_path);
+  auto data_loader = DataLoader::create(base_path);
+  if (!data_loader) {
+    return std::unique_ptr<Fuser>();
+  }
   return std::make_unique<Fuser>(std::move(data_loader));
 }
 
@@ -157,11 +160,26 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
   // We load the scale from camera file and reset the depth image loader to
   // include it.
   float inv_depth_image_scaling_factor;
-  CHECK(replica::internal::parseCameraFromFile(
-      replica::internal::getPathForCameraIntrinsics(base_path_), &camera_,
-      &inv_depth_image_scaling_factor));
-  depth_image_loader_ = replica::internal::createDepthImageLoader(
-      base_path, 1.0f / inv_depth_image_scaling_factor, multithreaded);
+  if (replica::internal::parseCameraFromFile(
+          replica::internal::getPathForCameraIntrinsics(base_path_), &camera_,
+          &inv_depth_image_scaling_factor)) {
+    depth_image_loader_ = replica::internal::createDepthImageLoader(
+        base_path, 1.0f / inv_depth_image_scaling_factor, multithreaded);
+    setup_success_ = true;
+  } else {
+    setup_success_ = false;
+  }
+}
+
+std::unique_ptr<DataLoader> DataLoader::create(const std::string& base_path,
+                                               bool multithreaded) {
+  // Construct a dataset loader but only return it if everything worked.
+  auto dataset_loader = std::make_unique<DataLoader>(base_path, multithreaded);
+  if (dataset_loader->setup_success_) {
+    return dataset_loader;
+  } else {
+    return std::unique_ptr<DataLoader>();
+  }
 }
 
 /// Interface for a function that loads the next frames in a dataset
@@ -173,6 +191,7 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
                                     ColorImage* color_frame_ptr) {
+  CHECK(setup_success_);
   CHECK_NOTNULL(depth_frame_ptr);
   CHECK_NOTNULL(T_L_C_ptr);
   CHECK_NOTNULL(camera_ptr);
@@ -212,7 +231,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   } else {
     if (!replica::internal::parseCameraFromFile(
             replica::internal::getPathForCameraIntrinsics(base_path_), &camera_,
-            &scale)) { 
+            &scale)) {
       LOG(INFO) << "Couldn't find camera params file";
       return DataLoadResult::kNoMoreData;
     }

@@ -15,12 +15,12 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/camera.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/pointcloud.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/core/unified_vector.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
+#include "nvblox/sensors/pointcloud.h"
 
 namespace nvblox {
 
@@ -35,8 +35,13 @@ class DepthImageBackProjector {
   ///@param camera Pinhole camera intrinsics model
   ///@param pointcloud_C Pointer to the output pointcloud. Must be in either
   /// device or unified memory.
+  ///@param max_back_projection_distance_m the maximum depth that is allowed for
+  /// back projection. Pixel with bigger depth are not included in the outptut
+  /// pointcloud.
   void backProjectOnGPU(const DepthImage& image, const Camera& camera,
-                        Pointcloud* pointcloud_C_ptr);
+                        Pointcloud* pointcloud_C_ptr,
+                        const float max_back_projection_distance_m =
+                            std::numeric_limits<float>::max());
 
   /// Takes a collection of points, and returns the center of the voxels that
   /// contain the points. Note that this function deletes duplicates, that is

@@ -15,13 +15,13 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/camera.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/image.h"
-#include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/3dmatch.h"
+#include "nvblox/datasets/image_loader.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
+#include "nvblox/map/common_names.h"
 #include "nvblox/mesh/mesh_integrator.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 
 #include "nvblox/tests/test_utils_cuda.h"
 

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -23,13 +22,13 @@ limitations under the License.
 #include <iostream>
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
+#include "nvblox/utils/logging.h"
 
-#include "nvblox/core/image.h"
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/image_loader.h"
 #include "nvblox/datasets/redwood.h"
 #include "nvblox/executables/fuser.h"
+#include "nvblox/sensors/image.h"
 
 using namespace nvblox;
 
@@ -49,6 +48,9 @@ int main(int argc, char* argv[]) {
 
   // Fuser
   std::unique_ptr<Fuser> fuser = datasets::redwood::createFuser(base_path);
+  if (!fuser) {
+    LOG(FATAL) << "Creation of the Fuser failed";
+  }
 
   // Mesh location (optional)
   if (argc >= 3) {

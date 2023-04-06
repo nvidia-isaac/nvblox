@@ -16,13 +16,21 @@ limitations under the License.
 
 #include <gtest/gtest.h>
 
-#include "nvblox/io/csv.h"
+#include "nvblox/io/image_io.h"
 #include "nvblox/semantics/image_masker.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
 constexpr float kFloatEpsilon = 1e-6;
+
+Camera getTestCamera(const int cols, const int rows) {
+  float fu = 300;
+  float fv = 300;
+  float cu = static_cast<float>(cols) / 2.0f;
+  float cv = static_cast<float>(rows) / 2.0f;
+  return Camera(fu, fv, cu, cv, cols, rows);
+}
 
 TEST(ImageMaskerTest, RandomMask) {
   std::srand(0);
@@ -31,6 +39,8 @@ TEST(ImageMaskerTest, RandomMask) {
   DepthImage depth(rows, cols, MemoryType::kUnified);
   ColorImage color(rows, cols, MemoryType::kUnified);
   MonoImage mask(rows, cols, MemoryType::kUnified);
+  const Camera depth_camera = getTestCamera(cols, rows);
+  const Camera mask_camera = getTestCamera(cols, rows);
 
   const Color valid_pixel_color(255, 255, 255, 255);
   const Color invalid_pixel_color(0, 0, 0, 0);
@@ -51,8 +61,9 @@ TEST(ImageMaskerTest, RandomMask) {
   ColorImage unmasked_color_output;
   ColorImage masked_color_output;
 
-  image_masker.splitImageOnGPU(depth, mask, &unmasked_depth_output,
-                               &masked_depth_output);
+  Transform T_CM_CD = Transform::Identity();
+  image_masker.splitImageOnGPU(depth, mask, T_CM_CD, depth_camera, mask_camera,
+                               &unmasked_depth_output, &masked_depth_output);
   image_masker.splitImageOnGPU(color, mask, &unmasked_color_output,
                                &masked_color_output);
 
@@ -84,76 +95,8 @@ TEST(ImageMaskerTest, RandomMask) {
   std::cout << "num_invalid_pixels: " << num_invalid_pixels << std::endl;
 
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToCsv("unmasked_output_image.csv", unmasked_depth_output);
-    io::writeToCsv("masked_output_image.csv", masked_depth_output);
-  }
-}
-
-Camera getTestCamera(const int cols, const int rows) {
-  float fu = 300;
-  float fv = 300;
-  float cu = static_cast<float>(cols) / 2.0f;
-  float cv = static_cast<float>(rows) / 2.0f;
-  return Camera(fu, fv, cu, cv, cols, rows);
-}
-
-TEST(ImageMaskerTest, IdentityTransformMask) {
-  const int rows = 480;
-  const int cols = 640;
-  DepthImage depth(rows, cols, MemoryType::kUnified);
-  MonoImage mask(rows, cols, MemoryType::kUnified);
-  const Camera depth_camera = getTestCamera(cols, rows);
-  const Camera mask_camera = getTestCamera(cols, rows);
-
-  // Generate random mask and depth
-  for (int row_idx = 0; row_idx < mask.rows(); row_idx++) {
-    for (int col_idx = 0; col_idx < mask.cols(); col_idx++) {
-      mask(row_idx, col_idx) = std::rand() % 2;
-      depth(row_idx, col_idx) = 1.0;
-    }
-  }
-
-  ImageMasker image_masker;
-  DepthImage unmasked_output_transf(MemoryType::kUnified);
-  DepthImage masked_output_transf(MemoryType::kUnified);
-  DepthImage unmasked_output(MemoryType::kUnified);
-  DepthImage masked_output(MemoryType::kUnified);
-
-  Transform T_CM_CD = Transform::Identity();
-  image_masker.splitImageOnGPU(depth, mask, T_CM_CD, depth_camera, mask_camera,
-                               &unmasked_output_transf, &masked_output_transf);
-  image_masker.splitImageOnGPU(depth, mask, &unmasked_output, &masked_output);
-
-  for (int row_idx = 0; row_idx < mask.rows(); row_idx++) {
-    for (int col_idx = 0; col_idx < mask.cols(); col_idx++) {
-      // Output of splitter without transformation and splitter assuming
-      // identity transformation must be equal
-      EXPECT_EQ(unmasked_output_transf(row_idx, col_idx),
-                unmasked_output(row_idx, col_idx));
-      EXPECT_EQ(masked_output_transf(row_idx, col_idx),
-                masked_output(row_idx, col_idx));
-
-      // Check that output images exist and dont exist in the right places
-      if (mask(row_idx, col_idx)) {
-        EXPECT_NEAR(unmasked_output_transf(row_idx, col_idx), -1.0f,
-                    kFloatEpsilon);
-        EXPECT_NEAR(masked_output_transf(row_idx, col_idx), 1.0f,
-                    kFloatEpsilon);
-      } else {
-        EXPECT_NEAR(unmasked_output_transf(row_idx, col_idx), 1.0f,
-                    kFloatEpsilon);
-        EXPECT_NEAR(masked_output_transf(row_idx, col_idx), -1.0f,
-                    kFloatEpsilon);
-      }
-    }
-  }
-
-  if (FLAGS_nvblox_test_file_output) {
-    io::writeToCsv("input_mask.csv", mask);
-    io::writeToCsv("unmasked_output_identity_transformed.csv",
-                   unmasked_output_transf);
-    io::writeToCsv("masked_output_identity_transformed.csv",
-                   masked_output_transf);
+    io::writeToPng("unmasked_output_image.csv", unmasked_depth_output);
+    io::writeToPng("masked_output_image.csv", masked_depth_output);
   }
 }
 
@@ -177,8 +120,8 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   }
 
   ImageMasker image_masker;
-  DepthImage unmasked_output(MemoryType::kUnified);
-  DepthImage masked_output(MemoryType::kUnified);
+  DepthImage unmasked_output;
+  DepthImage masked_output;
 
   // Generate depth to mask camera transform
   Transform T_CM_CD = Transform::Identity();
@@ -189,7 +132,7 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   T_CM_CD.pretranslate(Vector3f(1, 0, 5));
 
   // Do not mask points occluded on the mask image.
-  image_masker.occlusion_threshold(0);
+  image_masker.occlusion_threshold_m(0);
   image_masker.splitImageOnGPU(depth, mask, T_CM_CD, depth_camera, mask_camera,
                                &unmasked_output, &masked_output);
 
@@ -209,14 +152,14 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   }
 
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToCsv("input_mask.csv", mask);
-    io::writeToCsv("unmasked_output_occlusion.csv", unmasked_output);
-    io::writeToCsv("masked_output_occlusion.csv", masked_output);
+    io::writeToPng("input_mask.csv", mask);
+    io::writeToPng("unmasked_output_occlusion.csv", unmasked_output);
+    io::writeToPng("masked_output_occlusion.csv", masked_output);
   }
 
   // Mask all depth points that project onto the masked pixel on the mask image
   // (not considering occlusion)
-  image_masker.occlusion_threshold(std::numeric_limits<float>::max());
+  image_masker.occlusion_threshold_m(std::numeric_limits<float>::max());
   image_masker.splitImageOnGPU(depth, mask, T_CM_CD, depth_camera, mask_camera,
                                &unmasked_output, &masked_output);
 
@@ -235,8 +178,8 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   }
 
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToCsv("unmasked_output_no_occlusion.csv", unmasked_output);
-    io::writeToCsv("masked_output_no_occlusion.csv", masked_output);
+    io::writeToPng("unmasked_output_no_occlusion.csv", unmasked_output);
+    io::writeToPng("masked_output_no_occlusion.csv", masked_output);
   }
 }
 

@@ -15,21 +15,21 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/accessors.h"
-#include "nvblox/core/blox.h"
-#include "nvblox/core/bounding_boxes.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/interpolation_3d.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/geometry/bounding_boxes.h"
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
+#include "nvblox/interpolation/interpolation_3d.h"
 #include "nvblox/io/mesh_io.h"
+#include "nvblox/map/accessors.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
-
 #include "nvblox/tests/gpu_image_routines.h"
+#include "nvblox/tests/integrator_utils.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -48,18 +48,18 @@ class ColorIntegrationTest : public ::testing::Test {
     constexpr float kDistanceErrorTolerance = truncation_distance_m_;
 
     // Scene is bounded to -5, -5, 0 to 5, 5, 5.
-    scene.aabb() = AxisAlignedBoundingBox(Vector3f(-5.0f, -5.0f, 0.0f),
+    scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-5.0f, -5.0f, 0.0f),
                                           Vector3f(5.0f, 5.0f, 5.0f));
     // Create a scene with a ground plane and a sphere.
-    scene.addGroundLevel(0.0f);
-    scene.addCeiling(5.0f);
-    scene.addPrimitive(
+    scene_.addGroundLevel(0.0f);
+    scene_.addCeiling(5.0f);
+    scene_.addPrimitive(
         std::make_unique<primitives::Sphere>(Vector3f(0.0f, 0.0f, 2.0f), 2.0f));
     // Add bounding planes at 5 meters. Basically makes it sphere in a box.
-    scene.addPlaneBoundaries(-5.0f, 5.0f, -5.0f, 5.0f);
+    scene_.addPlaneBoundaries(-5.0f, 5.0f, -5.0f, 5.0f);
 
     // Get the ground truth SDF for it.
-    scene.generateSdfFromScene(truncation_distance_m_, &gt_layer_);
+    scene_.generateLayerFromScene(truncation_distance_m_, &gt_layer_);
   }
 
   // Scenes
@@ -87,7 +87,7 @@ class ColorIntegrationTest : public ::testing::Test {
   Camera camera_;
 
   // Test Scene
-  primitives::Scene scene;
+  primitives::Scene scene_;
 };
 
 // ProjectiveTsdfIntegrator child that gives the tests access to the internal
@@ -141,7 +141,8 @@ float checkSphereColor(const ColorLayer& color_layer, const Vector3f& center,
                          const ColorVoxel& voxel,
                          const Color& color_2) -> void {
     ++num_tested;
-    if (voxel.weight >= 1.0f) {
+    constexpr float kMinVoxelWeight = 1e-3;
+    if (voxel.weight >= kMinVoxelWeight) {
       EXPECT_TRUE(colorsEqualIgnoreAlpha(voxel.color, color_2));
       ++num_observed;
     }
@@ -160,6 +161,22 @@ float checkSphereColor(const ColorLayer& color_layer, const Vector3f& center,
   return ratio_observed_points;
 }
 
+TEST_F(ColorIntegrationTest, GettersAndSetters) {
+  ProjectiveColorIntegrator color_integrator;
+  color_integrator.truncation_distance_vox(1);
+  EXPECT_EQ(color_integrator.truncation_distance_vox(), 1);
+  color_integrator.sphere_tracing_ray_subsampling_factor(2);
+  EXPECT_EQ(color_integrator.sphere_tracing_ray_subsampling_factor(), 2);
+  color_integrator.max_weight(3.0f);
+  EXPECT_EQ(color_integrator.max_weight(), 3.0f);
+  color_integrator.max_integration_distance_m(4.0f);
+  EXPECT_EQ(color_integrator.max_integration_distance_m(), 4.0f);
+  color_integrator.weighting_function_type(
+      WeightingFunctionType::kInverseSquareWeight);
+  EXPECT_EQ(color_integrator.weighting_function_type(),
+            WeightingFunctionType::kInverseSquareWeight);
+}
+
 TEST_F(ColorIntegrationTest, TruncationBandTest) {
   // Check the GPU version against a hand-rolled CPU implementation.
   TestProjectiveColorIntegratorGPU integrator;
@@ -171,7 +188,6 @@ TEST_F(ColorIntegrationTest, TruncationBandTest) {
   std::vector<Index3D> valid_indices =
       integrator.reduceBlocksToThoseInTruncationBand(all_indices, gt_layer_,
                                                      kTestDistance);
-  integrator.finish();
 
   // Horrible N^2 complexity set_difference implementation. But easy to write :)
   std::vector<Index3D> not_valid_indices;
@@ -321,12 +337,12 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
 
 TEST_F(ColorIntegrationTest, ColoredSpheres) {
   constexpr float kTruncationDistanceVox = 2;
-  constexpr float truncation_distance_m_ =
+  constexpr float truncation_distance_m =
       kTruncationDistanceVox * voxel_size_m_;
 
   primitives::Scene scene_2;
 
-  constexpr float kSphereRadius = 2.0f;
+  constexpr float kSphereRadiusTest = 2.0f;
   const Eigen::Vector3f center_1 = Vector3f(5.0f, 0.0f, 0.0f);
   const Eigen::Vector3f center_2 = Vector3f(5.0f, 5.0f, 0.0f);
   const Eigen::Vector3f center_3 = Vector3f(5.0f, 10.0f, 0.0f);
@@ -336,11 +352,11 @@ TEST_F(ColorIntegrationTest, ColoredSpheres) {
                                           Vector3f(10.0f, 15.0f, 5.0f));
   // Create a scene with a ground plane and a sphere.
   scene_2.addPrimitive(
-      std::make_unique<primitives::Sphere>(center_1, kSphereRadius));
+      std::make_unique<primitives::Sphere>(center_1, kSphereRadiusTest));
   scene_2.addPrimitive(
-      std::make_unique<primitives::Sphere>(center_2, kSphereRadius));
+      std::make_unique<primitives::Sphere>(center_2, kSphereRadiusTest));
   scene_2.addPrimitive(
-      std::make_unique<primitives::Sphere>(center_3, kSphereRadius));
+      std::make_unique<primitives::Sphere>(center_3, kSphereRadiusTest));
 
   // Camera
   // Slightly narrow field of view so each image below sees only a single
@@ -369,7 +385,7 @@ TEST_F(ColorIntegrationTest, ColoredSpheres) {
   T_S_C3.pretranslate(Eigen::Vector3f(0.0f, 10.0f, 0.0f));
 
   // TSDF
-  scene_2.generateSdfFromScene(truncation_distance_m_, &gt_layer_);
+  scene_2.generateLayerFromScene(truncation_distance_m, &gt_layer_);
 
   // Color layer
   ProjectiveColorIntegrator color_integrator;
@@ -430,16 +446,16 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
   // Scene: Two spheres, one occluded by the other.
   scene_3.aabb() = AxisAlignedBoundingBox(Vector3f(-5.0f, -5.0f, -5.0f),
                                           Vector3f(15.0f, 15.0f, 5.0f));
-  constexpr float kSphereRadius = 2.0f;
+  constexpr float kSphereRadiusTest = 2.0f;
 
   const Vector3f center_1(5.0f, 0.0f, 0.0f);
   const Vector3f center_2(10.0f, 0.0f, 0.0f);
 
   scene_3.addPrimitive(
-      std::make_unique<primitives::Sphere>(center_1, kSphereRadius));
+      std::make_unique<primitives::Sphere>(center_1, kSphereRadiusTest));
   scene_3.addPrimitive(
-      std::make_unique<primitives::Sphere>(center_2, kSphereRadius));
-  scene_3.generateSdfFromScene(truncation_distance_m_, &gt_layer_);
+      std::make_unique<primitives::Sphere>(center_2, kSphereRadiusTest));
+  scene_3.generateLayerFromScene(truncation_distance_m_, &gt_layer_);
 
   // Viewpoint
   Transform T_S_C = Transform::Identity();
@@ -488,6 +504,89 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
   if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(mesh_layer, "colored_spheres_occluded.ply");
   }
+}
+
+TEST_F(ColorIntegrationTest, WeightingFunction) {
+  // Integrator
+  ProjectiveColorIntegrator integrator;
+
+  // Change to constant weight
+  EXPECT_EQ(integrator.weighting_function_type(),
+            kDefaultWeightingFunctionType);
+  integrator.weighting_function_type(
+      WeightingFunctionType::kInverseSquareWeight);
+  EXPECT_EQ(integrator.weighting_function_type(),
+            WeightingFunctionType::kInverseSquareWeight);
+
+  // Plane centered at (0,0,depth) with random (slight) slant
+  const float kPlaneDistance = 5.0f;
+  const test_utils::Plane plane = test_utils::Plane(
+      Vector3f(0.0f, 0.0f, kPlaneDistance), Vector3f(0.0f, 0.0f, -1.0f));
+
+  // Scene
+  primitives::Scene scene;
+  scene.aabb() = AxisAlignedBoundingBox(Vector3f(-10.0f, -10.0f, -10.0f),
+                                        Vector3f(10.0f, 10.0f, 10.0f));
+  scene.addPrimitive(std::make_unique<primitives::Plane>(
+      Vector3f(0.0f, 0.0f, 5.0f), Vector3f(0.0f, 0.0f, -1.0f)));
+
+  // Layers
+  constexpr float kMaxDist = 5.0f;
+  constexpr float kVoxelSizeM = 0.1f;
+  TsdfLayer tsdf_layer(kVoxelSizeM, MemoryType::kUnified);
+  ColorLayer color_layer(kVoxelSizeM, MemoryType::kUnified);
+  scene.generateLayerFromScene(kMaxDist, &tsdf_layer);
+
+  // Make a flat red image.
+  ColorImage color_image(camera_.rows(), camera_.cols(), MemoryType::kUnified);
+  for (int i = 0; i < color_image.numel(); i++) {
+    color_image(i) = Color::Red();
+  }
+
+  // Integrate a frame
+  std::vector<Index3D> updated_blocks;
+  integrator.integrateFrame(color_image, Transform::Identity(), camera_,
+                            tsdf_layer, &color_layer, &updated_blocks);
+
+  // Check that something actually happened
+  EXPECT_GT(updated_blocks.size(), 0);
+  EXPECT_GT(color_layer.numAllocatedBlocks(), 0);
+
+  // Go over the voxels and check that they have the constant weight that we
+  // expect.
+  int num_voxels_observed = 0;
+  for (const Index3D& block_idx : color_layer.getAllBlockIndices()) {
+    // Get each voxel and it's position
+    auto block_ptr = color_layer.getBlockAtIndex(block_idx);
+    constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
+    for (int x = 0; x < kVoxelsPerSide; x++) {
+      for (int y = 0; y < kVoxelsPerSide; y++) {
+        for (int z = 0; z < kVoxelsPerSide; z++) {
+          // Get the voxel and check it has weight 1.0
+          const ColorVoxel& voxel = block_ptr->voxels[x][y][z];
+          constexpr float kFloatEps = 1e-4;
+          if (voxel.weight > kFloatEps) {
+            // Get the depth of the voxel
+            const Index3D voxel_idx(x, y, z);
+            const Vector3f voxel_center =
+                getCenterPostionFromBlockIndexAndVoxelIndex(
+                    color_layer.block_size(), block_idx, voxel_idx);
+            const float voxel_depth = voxel_center.z();
+
+            // Hand computing the inverse square weight
+            const float weight_hand_computed =
+                1.0f / (voxel_depth * voxel_depth);
+
+            // Check
+            EXPECT_NEAR(voxel.weight, weight_hand_computed, kFloatEps);
+            ++num_voxels_observed;
+          }
+        }
+      }
+    }
+  }
+  LOG(INFO) << "Number of voxels observed: " << num_voxels_observed;
+  EXPECT_GT(num_voxels_observed, 0);
 }
 
 int main(int argc, char** argv) {

@@ -17,11 +17,11 @@ limitations under the License.
 
 #include <gflags/gflags.h>
 
-#include "nvblox/core/blox.h"
 #include "nvblox/core/color.h"
-#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 
 DECLARE_bool(nvblox_test_file_output);
 

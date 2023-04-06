@@ -15,9 +15,9 @@ limitations under the License.
 */
 #include "nvblox/tests/projective_tsdf_integrator_cuda_components.h"
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/cuda/error_check.cuh"
-#include "nvblox/core/interpolation_2d.h"
+#include "nvblox/core/internal/error_check.h"
+#include "nvblox/interpolation/interpolation_2d.h"
+#include "nvblox/map/blox.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -131,13 +131,11 @@ void setVoxelBlockOnGPU(TsdfLayer* layer) {
 
   // Move the list to the GPU
   VoxelBlock<TsdfVoxel>** block_device_ptrs;
-  checkCudaErrors(
-      cudaMalloc(&block_device_ptrs,
-                 block_ptrs.size() * sizeof(VoxelBlock<TsdfVoxel>*)));
-  checkCudaErrors(
-      cudaMemcpy(block_device_ptrs, block_ptrs.data(),
-                 block_ptrs.size() * sizeof(VoxelBlock<TsdfVoxel>*),
-                 cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMalloc(
+      &block_device_ptrs, block_ptrs.size() * sizeof(VoxelBlock<TsdfVoxel>*)));
+  checkCudaErrors(cudaMemcpy(block_device_ptrs, block_ptrs.data(),
+                             block_ptrs.size() * sizeof(VoxelBlock<TsdfVoxel>*),
+                             cudaMemcpyHostToDevice));
 
   // Kernal - One thread block per block
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
@@ -176,8 +174,8 @@ Eigen::VectorXf interpolatePointsOnGPU(const DepthImage& depth_frame,
   constexpr int threadsPerBlock = 512;
   const int blocksInGrid = (num_points / threadsPerBlock) + 1;
   interpolate<<<blocksInGrid, threadsPerBlock>>>(
-      depth_frame_device_ptr, u_px_vec_device_ptr, depth_frame.rows(), depth_frame.cols(),
-      u_px_vec.rows(), interpolated_values_device_ptr);
+      depth_frame_device_ptr, u_px_vec_device_ptr, depth_frame.rows(),
+      depth_frame.cols(), u_px_vec.rows(), interpolated_values_device_ptr);
   checkCudaErrors(cudaGetLastError());
   checkCudaErrors(cudaDeviceSynchronize());
 

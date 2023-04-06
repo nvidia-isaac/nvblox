@@ -26,14 +26,17 @@ add_library(nvblox_test_utils SHARED
     lib/cuda/mesh_utils.cu
     lib/cuda/projective_tsdf_integrator_cuda_components.cu
     lib/cuda/test_utils_cuda.cu
+    lib/cuda/weighting_utils.cu
     lib/projective_tsdf_integrator_cpu.cpp
     lib/utils.cpp
+    lib/esdf_integrator_cpu.cpp
+    lib/integrator_utils.cpp
 )
 target_include_directories(nvblox_test_utils PUBLIC
-  include
-  ${GTEST_INCLUDE_DIRS}
+    include
+    ${GTEST_INCLUDE_DIRS}
 )
-target_link_libraries(nvblox_test_utils 
+target_link_libraries(nvblox_test_utils
     nvblox_lib nvblox_datasets ${GTEST_LIBRARIES} ${CUDA_LIBRARIES} pthread
 )
 set_target_properties(nvblox_test_utils PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
@@ -158,9 +161,9 @@ add_executable(test_image_masker test_image_masker.cpp)
 target_link_libraries(test_image_masker nvblox_test_utils)
 gtest_discover_tests(test_image_masker ${TEST_OPTIONS})
 
-add_executable(test_human_mapper test_human_mapper.cpp)
-target_link_libraries(test_human_mapper nvblox_test_utils)
-gtest_discover_tests(test_human_mapper ${TEST_OPTIONS})
+add_executable(test_multi_mapper test_multi_mapper.cpp)
+target_link_libraries(test_multi_mapper nvblox_test_utils)
+gtest_discover_tests(test_multi_mapper ${TEST_OPTIONS})
 
 add_executable(test_image_projector test_image_projector.cpp)
 target_link_libraries(test_image_projector nvblox_test_utils)
@@ -169,3 +172,19 @@ gtest_discover_tests(test_image_projector ${TEST_OPTIONS})
 add_executable(test_pointcloud test_pointcloud.cpp)
 target_link_libraries(test_pointcloud nvblox_test_utils)
 gtest_discover_tests(test_pointcloud ${TEST_OPTIONS})
+
+add_executable(test_occupancy_integrator test_occupancy_integrator.cpp)
+target_link_libraries(test_occupancy_integrator nvblox_test_utils)
+gtest_discover_tests(test_occupancy_integrator ${TEST_OPTIONS})
+
+add_executable(test_occupancy_decay test_occupancy_decay.cpp)
+target_link_libraries(test_occupancy_decay nvblox_test_utils)
+gtest_discover_tests(test_occupancy_decay ${TEST_OPTIONS})
+
+add_executable(test_weighting_function test_weighting_function.cpp)
+target_link_libraries(test_weighting_function nvblox_test_utils)
+gtest_discover_tests(test_weighting_function ${TEST_OPTIONS})
+
+add_executable(test_image_io test_image_io.cpp)
+target_link_libraries(test_image_io nvblox_test_utils)
+gtest_discover_tests(test_image_io ${TEST_OPTIONS})

@@ -44,7 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-#include <glog/logging.h>
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/core/color.h"
 #include "nvblox/core/types.h"

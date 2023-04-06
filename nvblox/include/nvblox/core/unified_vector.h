@@ -15,9 +15,9 @@ limitations under the License.
 */
 #pragma once
 
-#include <glog/logging.h>
 #include <type_traits>
 #include <vector>
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/core/iterator.h"
 #include "nvblox/core/types.h"
@@ -176,4 +176,4 @@ class host_vector : public unified_vector<T> {
 
 }  // namespace nvblox
 
-#include "nvblox/core/impl/unified_vector_impl.h"
+#include "nvblox/core/internal/impl/unified_vector_impl.h"

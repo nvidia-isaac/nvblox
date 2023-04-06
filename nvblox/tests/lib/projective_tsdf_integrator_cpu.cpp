@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include "nvblox/tests/projective_tsdf_integrator_cpu.h"
 
-#include "nvblox/core/interpolation_2d.h"
+#include "nvblox/interpolation/interpolation_2d.h"
 
 namespace nvblox {
 

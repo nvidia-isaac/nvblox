@@ -32,7 +32,7 @@ class RayCaster {
   __host__ __device__ inline bool nextRayPositionScaled(Vector3f* ray_position);
 
   /// Just raycasts over the whole thing and puts them in a vector for you.
-  __host__ void getAllIndices(std::vector<Index3D>* indices);
+  __host__ inline void getAllIndices(std::vector<Index3D>* indices);
 
  private:
   const float scale_ = 1.0f;
@@ -48,4 +48,4 @@ class RayCaster {
 
 }  // namespace nvblox
 
-#include "nvblox/rays/impl/ray_caster_impl.h"
+#include "nvblox/rays/internal/impl/ray_caster_impl.h"

@@ -13,17 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include <iostream>
 #include <gflags/gflags.h>
+#include <iostream>
 
 #include "nvblox/core/indexing.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/mapper.h"
 #include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
-#include "nvblox/gpu_hash/cuda/gpu_indexing.cuh"
+#include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/io/pointcloud_io.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
+#include "nvblox/mapper/mapper.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/utils/timing.h"
 
@@ -40,14 +40,14 @@ class EsdfQueryExample {
   float voxel_size_ = 0.10;
 
   // Mapping class which contains all the relevant layers and integrators.
-  std::unique_ptr<RgbdMapper> mapper_;
+  std::unique_ptr<Mapper> mapper_;
 
   // A simulation scene, used in place of real data.
   primitives::Scene scene_;
 };
 
 void EsdfQueryExample::createMap() {
-  mapper_.reset(new RgbdMapper(voxel_size_, MemoryType::kDevice));
+  mapper_.reset(new Mapper(voxel_size_, MemoryType::kDevice));
 
   // Create a map that's a box with a sphere in the middle.
   scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-5.5f, -5.5f, -0.5f),
@@ -64,7 +64,7 @@ void EsdfQueryExample::createMap() {
   // frames).
   // We need to create a temp layer unfortunately.
   TsdfLayer gt_tsdf(voxel_size_, MemoryType::kHost);
-  scene_.generateSdfFromScene(4 * voxel_size_, &gt_tsdf);
+  scene_.generateLayerFromScene(4 * voxel_size_, &gt_tsdf);
 
   mapper_->tsdf_layer() = std::move(gt_tsdf);
 

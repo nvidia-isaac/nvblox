@@ -50,4 +50,4 @@ __host__ __device__ inline Vector3f getCenterPostionFromBlockIndexAndVoxelIndex(
 
 }  // namespace nvblox
 
-#include "nvblox/core/impl/indexing_impl.h"
+#include "nvblox/core/internal/impl/indexing_impl.h"

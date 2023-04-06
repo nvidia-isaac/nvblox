@@ -15,8 +15,8 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/common_names.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/common_names.h"
 #include "nvblox/tests/blox.h"
 
 namespace nvblox {

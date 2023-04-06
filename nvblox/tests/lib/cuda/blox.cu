@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include "nvblox/tests/blox.h"
 
-#include "nvblox/gpu_hash/cuda/impl/gpu_layer_view_impl.cuh"
+#include "nvblox/gpu_hash/internal/cuda/impl/gpu_layer_view_impl.cuh"
 
 namespace nvblox {
 

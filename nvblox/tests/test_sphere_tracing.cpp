@@ -13,26 +13,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include <numeric>
-
 #include <gtest/gtest.h>
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/camera.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/cuda/warmup.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/voxels.h"
-#include "nvblox/core/interpolation_2d.h"
+#include <numeric>
+
+#include "nvblox/core/internal/warmup_cuda.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
+#include "nvblox/interpolation/interpolation_2d.h"
+#include "nvblox/io/image_io.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/rays/sphere_tracer.h"
-#include "nvblox/utils/timing.h"
-#include "nvblox/io/csv.h"
-
+#include "nvblox/sensors/camera.h"
 #include "nvblox/tests/gpu_image_routines.h"
 #include "nvblox/tests/utils.h"
+#include "nvblox/utils/timing.h"
 
 using namespace nvblox;
 
@@ -146,6 +145,9 @@ class SphereTracingTest : public ::testing::Test {
   }
 };
 
+constexpr float SphereTracingTest::voxel_size_m_;
+constexpr float SphereTracingTest::scene_sphere_radius_;
+
 class SphereTracingInScaledDistanceFieldTest
     : public SphereTracingTest,
       public ::testing::WithParamInterface<float> {
@@ -157,7 +159,14 @@ class SphereTracerTester : public SphereTracer {
  public:
   SphereTracerTester() : SphereTracer() {}
 
-  // Expose the protected method to cast a single ray.
+  // Expose the protected method
+  std::pair<device_vector<Vector3f>, device_vector<bool>> castOnGPU(
+      std::vector<Ray>& rays_L, const TsdfLayer& tsdf_layer,
+      const float truncation_distance_m) {
+    return SphereTracer::castOnGPU(rays_L, tsdf_layer, truncation_distance_m);
+  }
+
+  // Expose the protected method
   bool castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
                  const float truncation_distance_m, float* t) const {
     return SphereTracer::castOnGPU(ray, tsdf_layer, truncation_distance_m, t);
@@ -189,7 +198,7 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
   // Get the ground truth SDF for it.
   const float truncation_distance_m = 5.0;
   TsdfLayer layer_host(voxel_size_m_, MemoryType::kHost);
-  scene.generateSdfFromScene(truncation_distance_m, &layer_host);
+  scene.generateLayerFromScene(truncation_distance_m, &layer_host);
 
   // Scale the distance for all voxels in the layer
   auto scaling_lambda = [distance_scaling](const Index3D&, const Index3D&,
@@ -291,7 +300,7 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
   // Distance field (GT or reconsruction)
   if (field_type == DistanceFieldType::kGroundTruth) {
     std::cout << "Testing on Ground Truth distance field." << std::endl;
-    scene.generateSdfFromScene(truncation_distance_m_, &layer_host);
+    scene.generateLayerFromScene(truncation_distance_m_, &layer_host);
   } else {
     std::cout << "Testing on reconstructed distance field." << std::endl;
     getSphereSceneReconstruction(scene, &layer_host);
@@ -304,7 +313,7 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
   *layer_ = layer_host;
 
   // Declare the images here so we have access to them after the tests
-  std::shared_ptr<const DepthImage> depth_image_sphere_traced_ptr;
+  DepthImage depth_image_sphere_traced;
   DepthImage depth_frame_gt(camera_ptr_->height(), camera_ptr_->width(),
                             MemoryType::kUnified);
   DepthImage diff;
@@ -316,9 +325,9 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
 
     // Generate a sphere traced image
     timing::Timer render_timer("render");
-    depth_image_sphere_traced_ptr = sphere_tracer_gpu.renderImageOnGPU(
+    sphere_tracer_gpu.renderImageOnGPU(
         *camera_ptr_, T_S_C, *layer_, truncation_distance_m_,
-        MemoryType::kUnified);
+        &depth_image_sphere_traced, MemoryType::kUnified);
     render_timer.Stop();
 
     // Generate a GT image
@@ -327,7 +336,7 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
                                       &depth_frame_gt);
 
     // Error image
-    image::getDifferenceImageGPU(*depth_image_sphere_traced_ptr, depth_frame_gt,
+    image::getDifferenceImageGPU(depth_image_sphere_traced, depth_frame_gt,
                                  &diff);
 
     // Count the number of error pixels.
@@ -336,10 +345,10 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
     constexpr float kErrorPixelThreshold = 4.0f * voxel_size_m_;
     int num_error_pixels = 0;
     int num_rays_converged = 0;
-    for (int i = 0; i < diff.numel(); i++) {
-      if ((*depth_image_sphere_traced_ptr)(i) > 0.0f) {
+    for (int pixel_idx = 0; pixel_idx < diff.numel(); pixel_idx++) {
+      if ((depth_image_sphere_traced)(pixel_idx) > 0.0f) {
         ++num_rays_converged;
-        if (diff(i) > kErrorPixelThreshold) {
+        if (diff(pixel_idx) > kErrorPixelThreshold) {
           ++num_error_pixels;
         }
       }
@@ -367,9 +376,9 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
 
   if (FLAGS_nvblox_test_file_output) {
     // Write Images
-    io::writeToCsv("sphere_tracing_image.txt", *depth_image_sphere_traced_ptr);
-    io::writeToCsv("sphere_tracing_gt.txt", depth_frame_gt);
-    io::writeToCsv("sphere_tracing_diff.txt", diff);
+    io::writeToPng("sphere_tracing_image.txt", depth_image_sphere_traced);
+    io::writeToPng("sphere_tracing_gt.txt", depth_frame_gt);
+    io::writeToPng("sphere_tracing_diff.txt", diff);
 
     // Write Scene
     // io::outputVoxelLayerToPly(*layer_, "sphere_tracing_scene.ply");
@@ -447,6 +456,8 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
   DepthImage diff(camera_ptr_->rows(), camera_ptr_->cols(),
                   MemoryType::kUnified);
 
+  depth_image_full = DepthImage(2, 2, MemoryType::kUnified);
+
   constexpr int kNUmImages = 10;
   for (int i = 0; i < kNUmImages; i++) {
     // Random view points
@@ -454,21 +465,21 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
 
     // Generate a sphere traced image
     timing::Timer render_timer_full("render/full");
-    depth_image_full = *sphere_tracer_gpu.renderImageOnGPU(
-        *camera_ptr_, T_S_C, *layer_, truncation_distance_m_,
-        MemoryType::kUnified);
+    sphere_tracer_gpu.renderImageOnGPU(*camera_ptr_, T_S_C, *layer_,
+                                       truncation_distance_m_,
+                                       &depth_image_full, MemoryType::kUnified);
     render_timer_full.Stop();
 
     timing::Timer render_timer_half("render/half");
-    depth_image_half = *sphere_tracer_gpu.renderImageOnGPU(
-        *camera_ptr_, T_S_C, *layer_, truncation_distance_m_,
+    sphere_tracer_gpu.renderImageOnGPU(
+        *camera_ptr_, T_S_C, *layer_, truncation_distance_m_, &depth_image_half,
         MemoryType::kUnified, 2);
     render_timer_half.Stop();
 
     timing::Timer render_timer_quarter("render/quarter");
-    depth_image_quarter = *sphere_tracer_gpu.renderImageOnGPU(
+    sphere_tracer_gpu.renderImageOnGPU(
         *camera_ptr_, T_S_C, *layer_, truncation_distance_m_,
-        MemoryType::kUnified, 4);
+        &depth_image_quarter, MemoryType::kUnified, 4);
     render_timer_quarter.Stop();
 
     // Errors
@@ -496,10 +507,10 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
 
   // Write Images
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToCsv("sphere_tracing_image_full.csv", depth_image_full);
-    io::writeToCsv("sphere_tracing_image_half.csv", depth_image_half);
-    io::writeToCsv("sphere_tracing_image_quarter.csv", depth_image_quarter);
-    io::writeToCsv("sphere_tracing_image_subsampling_diff.csv", diff);
+    io::writeToPng("sphere_tracing_image_full.csv", depth_image_full);
+    io::writeToPng("sphere_tracing_image_half.csv", depth_image_half);
+    io::writeToPng("sphere_tracing_image_quarter.csv", depth_image_quarter);
+    io::writeToPng("sphere_tracing_image_subsampling_diff.csv", diff);
   }
 }
 
@@ -582,10 +593,10 @@ TEST_F(SphereTracingTest, CastingFromPositiveAndNegative) {
       Vector3f(bound_box_2d.max().x(), bound_box_2d.max().y(), 5.0));
 
   TsdfLayer layer_host(voxel_size_m_, MemoryType::kHost);
-  scene.generateSdfFromScene(truncation_distance_m_, &layer_host);
+  scene.generateLayerFromScene(truncation_distance_m_, &layer_host);
 
   // Do some ray casting
-  SphereTracer sphere_tracer;
+  SphereTracerTester sphere_tracer;
 
   // Generate some points on a 2D grid BELOW THE PLANE FOR NOW
   const std::vector<Vector3f> grid_points =

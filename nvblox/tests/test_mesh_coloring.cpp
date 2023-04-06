@@ -15,15 +15,15 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/accessors.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/voxels.h"
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/mesh_io.h"
+#include "nvblox/map/accessors.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/scene.h"
 
@@ -67,7 +67,7 @@ TEST(MeshColoringTests, UniformColorSphere) {
   scene.addPlaneBoundaries(-5.0f, 5.0f, -5.0f, 5.0f);
 
   // Get the ground truth SDF for it.
-  scene.generateSdfFromScene(kTruncationDistanceMeters, &tsdf_layer);
+  scene.generateLayerFromScene(kTruncationDistanceMeters, &tsdf_layer);
 
   // Make a ColorLayer with a solid color
   ColorLayer color_layer(voxel_size_m, MemoryType::kUnified);

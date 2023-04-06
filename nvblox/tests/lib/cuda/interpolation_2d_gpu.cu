@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include "nvblox/tests/interpolation_2d_gpu.h"
 
-#include "nvblox/core/interpolation_2d.h"
+#include "nvblox/interpolation/interpolation_2d.h"
 
 namespace nvblox {
 namespace test_utils {

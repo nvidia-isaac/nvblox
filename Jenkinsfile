@@ -23,6 +23,11 @@ pipeline {
                 sh '''cd nvblox/build && cmake .. -DCMAKE_INSTALL_PREFIX=../install && make clean && make -j8 && make install'''
               }
             }
+            stage('Lint') {
+              steps {
+                sh '''bash nvblox/lint/lint_nvblox_h.sh'''
+              }
+            }
             stage('Test x86') {
               steps {
                 sh '''cd nvblox/build/tests && ctest -T test --no-compress-output'''
@@ -69,10 +74,10 @@ pipeline {
             }
           }
         }
-        stage("Jetson 5.0.2") {
+        stage("Jetson 5.1.1") {
           agent {
             dockerfile {
-                label 'jetson-5.0.2'
+                label 'jp-5.1.1'
                 reuseNode true
                 filename 'docker/Dockerfile.jetson_deps'
                 args '-u root --runtime nvidia --gpus all -v /var/run/docker.sock:/var/run/docker.sock:rw'
@@ -84,6 +89,11 @@ pipeline {
                 sh '''mkdir -p nvblox/build'''
                 sh '''mkdir -p nvblox/install'''
                 sh '''cd nvblox/build && cmake .. -DCMAKE_INSTALL_PREFIX=../install && make clean && make -j8 && make install'''
+              }
+            }
+            stage('Lint') {
+              steps {
+                sh '''bash nvblox/lint/lint_nvblox_h.sh'''
               }
             }
             stage('Test Jetson') {

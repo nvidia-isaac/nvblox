@@ -34,7 +34,7 @@ struct Color {
   uint8_t b;
   uint8_t a;
 
-  /// Check if colors are exactly identical. Also checks alpha. 
+  /// Check if colors are exactly identical. Also checks alpha.
   bool operator==(const Color& other) const {
     return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
   }

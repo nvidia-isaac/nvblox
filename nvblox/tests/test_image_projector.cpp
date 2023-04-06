@@ -1,17 +1,16 @@
 #include <gtest/gtest.h>
 
+#include "nvblox/io/image_io.h"
 #include "nvblox/io/pointcloud_io.h"
 #include "nvblox/primitives/primitives.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/semantics/image_projector.h"
-#include "nvblox/io/csv.h"
 
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
 TEST(ImageProjectorTest, ExtractVoxelCentersOnGPUTest) {
-
   constexpr float kVoxelSize = 0.1;
 
   Pointcloud pointcloud(MemoryType::kUnified);
@@ -30,11 +29,14 @@ TEST(ImageProjectorTest, ExtractVoxelCentersOnGPUTest) {
 
   // Check that points coming out are all close to a voxel center
   for (const Vector3f& p : voxel_centers.points()) {
-    const Vector3f corner_position = (p.array() / kVoxelSize).cast<int>().cast<float>() * kVoxelSize;
+    const Vector3f corner_position =
+        (p.array() / kVoxelSize).cast<int>().cast<float>() * kVoxelSize;
     const Vector3f distance_to_corner = p - corner_position;
-    const Vector3f distance_to_center = distance_to_corner.array() - (kVoxelSize / 2.0f);
+    const Vector3f distance_to_center =
+        distance_to_corner.array() - (kVoxelSize / 2.0f);
     constexpr float kMaximumDistanceToCenter = 1e-3;
-    EXPECT_LT(distance_to_center.cwiseAbs().maxCoeff(), kMaximumDistanceToCenter);
+    EXPECT_LT(distance_to_center.cwiseAbs().maxCoeff(),
+              kMaximumDistanceToCenter);
   }
 }
 
@@ -54,7 +56,7 @@ TEST(ImageProjectorTest, BackProjection) {
   const float kMaxDistance = 2.0f;
   constexpr float kVoxelSize = 0.05;
   TsdfLayer tsdf_layer(kVoxelSize, MemoryType::kUnified);
-  scene.generateSdfFromScene(kMaxDistance, &tsdf_layer);
+  scene.generateLayerFromScene(kMaxDistance, &tsdf_layer);
 
   // Camera
   constexpr float fu = 300;
@@ -104,7 +106,7 @@ TEST(ImageProjectorTest, BackProjection) {
 
   // Debug output
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToCsv("backprojector_depth_image.csv", depth_image);
+    io::writeToPng("backprojector_depth_image.csv", depth_image);
     io::PlyWriter ply_writer("backprojector_pointcloud.ply");
     ply_writer.setPoints(&points_L);
     ply_writer.write();

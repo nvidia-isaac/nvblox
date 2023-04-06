@@ -15,11 +15,11 @@ limitations under the License.
 */
 
 #include "gflags/gflags.h"
-#include "glog/logging.h"
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/nvblox.h"
 
-#include "nvblox/serialization/layer_type_register.h"
+#include "nvblox/serialization/internal/layer_type_register.h"
 
 using namespace nvblox;
 

@@ -15,9 +15,9 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/mesh/marching_cubes.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/mesh/internal/marching_cubes.h"
 #include "nvblox/mesh/mesh_block.h"
 
 namespace nvblox {

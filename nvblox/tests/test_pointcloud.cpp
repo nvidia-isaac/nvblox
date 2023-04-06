@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/pointcloud.h"
+#include "nvblox/sensors/pointcloud.h"
 
 using namespace nvblox;
 

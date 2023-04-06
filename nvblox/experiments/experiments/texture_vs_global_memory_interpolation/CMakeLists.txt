@@ -1,2 +1,0 @@
-add_executable(texture_vs_global_memory_interpolation main.cpp)
-target_link_libraries(texture_vs_global_memory_interpolation nvblox_experiments_common)

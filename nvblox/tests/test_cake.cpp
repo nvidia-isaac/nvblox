@@ -19,11 +19,11 @@ limitations under the License.
 #include <type_traits>
 #include <typeindex>
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/layer_cake.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/layer_cake.h"
+#include "nvblox/map/voxels.h"
 
 #include "nvblox/tests/blox.h"
 

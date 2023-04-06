@@ -17,11 +17,11 @@ limitations under the License.
 
 #include <memory>
 
-#include "nvblox/core/camera.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/lidar.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
+#include "nvblox/sensors/lidar.h"
 
 namespace nvblox {
 
@@ -33,10 +33,8 @@ class ViewCalculator {
   ~ViewCalculator();
 
   /// Gets blocks which fall into the camera view (without using an image)
-  /// Operates by checking if voxel block corners fall inside the pyrimid formed
-  /// by the 4 images sides and the max distance plane. The max distance is the
-  /// smaller of either max_integration_distance_m or the maximum value in the
-  /// depth image + truncation distance.
+  /// Operates by checking if voxel block corners fall inside the pyramid formed
+  /// by the 4 images sides and the max distance plane.
   /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
   /// points in the camera frame (C) to the layer frame (L).
   /// @param camera The camera (intrinsics) model.
@@ -58,13 +56,13 @@ class ViewCalculator {
   /// points in the camera frame (C) to the layer frame (L).
   /// @param camera The camera (intrinsics) model.
   /// @param block_size The size of the blocks in the layer.
-  /// @param truncation_distance_m The truncation distance.
+  /// @param max_integration_distance_behind_surface_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
   static std::vector<Index3D> getBlocksInImageViewPlanes(
       const DepthImage& depth_frame, const Transform& T_L_C,
       const Camera& camera, const float block_size,
-      const float truncation_distance_m,
+      const float max_integration_distance_behind_surface_m,
       const float max_integration_distance_m);
 
   /// Gets blocks which fall into the camera view (using a depth image)
@@ -77,13 +75,13 @@ class ViewCalculator {
   /// points in the camera frame (C) to the layer frame (L).
   /// @param camera The camera (intrinsics) model.
   /// @param block_size The size of the blocks in the layer.
-  /// @param truncation_distance_m The truncation distance.
+  /// @param max_integration_distance_behind_surface_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
   std::vector<Index3D> getBlocksInImageViewRaycast(
       const DepthImage& depth_frame, const Transform& T_L_C,
       const Camera& camera, const float block_size,
-      const float truncation_distance_m,
+      const float max_integration_distance_behind_surface_m,
       const float max_integration_distance_m);
 
   /// Gets blocks which fall into the lidar view (using a depth image)
@@ -96,12 +94,13 @@ class ViewCalculator {
   /// points in the camera frame (C) to the layer frame (L).
   /// @param Lidar The lidar (intrinsics) model.
   /// @param block_size The size of the blocks in the layer.
-  /// @param truncation_distance_m The truncation distance.
+  /// @param max_integration_distance_behind_surface_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
   std::vector<Index3D> getBlocksInImageViewRaycast(
       const DepthImage& depth_frame, const Transform& T_L_C, const Lidar& lidar,
-      const float block_size, const float truncation_distance_m,
+      const float block_size,
+      const float max_integration_distance_behind_surface_m,
       const float max_integration_distance_m);
 
   /// A parameter getter
@@ -134,27 +133,27 @@ class ViewCalculator {
   // rays.
   template <typename SensorType>
   void getBlocksByRaycastingCorners(
-      const Transform& T_L_C,                  // NOLINT
-      const SensorType& camera,                // NOLINT
-      const DepthImage& depth_frame,           // NOLINT
-      float block_size,                        // NOLINT
-      const float truncation_distance_m,       // NOLINT
-      const float max_integration_distance_m,  // NOLINT
-      const Index3D& min_index,                // NOLINT
-      const Index3D& aabb_size,                // NOLINT
+      const Transform& T_L_C,                                 // NOLINT
+      const SensorType& camera,                               // NOLINT
+      const DepthImage& depth_frame,                          // NOLINT
+      float block_size,                                       // NOLINT
+      const float max_integration_distance_behind_surface_m,  // NOLINT
+      const float max_integration_distance_m,                 // NOLINT
+      const Index3D& min_index,                               // NOLINT
+      const Index3D& aabb_size,                               // NOLINT
       bool* aabb_updated_cuda);
 
   // Raycasts through (possibly subsampled) pixels in the image.
   template <typename SensorType>
   void getBlocksByRaycastingPixels(
-      const Transform& T_L_C,                  // NOLINT
-      const SensorType& camera,                // NOLINT
-      const DepthImage& depth_frame,           // NOLINT
-      float block_size,                        // NOLINT
-      const float truncation_distance_m,       // NOLINT
-      const float max_integration_distance_m,  // NOLINT
-      const Index3D& min_index,                // NOLINT
-      const Index3D& aabb_size,                // NOLINT
+      const Transform& T_L_C,                                 // NOLINT
+      const SensorType& camera,                               // NOLINT
+      const DepthImage& depth_frame,                          // NOLINT
+      float block_size,                                       // NOLINT
+      const float max_integration_distance_behind_surface_m,  // NOLINT
+      const float max_integration_distance_m,                 // NOLINT
+      const Index3D& min_index,                               // NOLINT
+      const Index3D& aabb_size,                               // NOLINT
       bool* aabb_updated_cuda);
 
   // Templated version of the public getBlocksInImageViewRaycast() methods.
@@ -164,7 +163,7 @@ class ViewCalculator {
   std::vector<Index3D> getBlocksInImageViewRaycastTemplate(
       const DepthImage& depth_frame, const Transform& T_L_C,
       const SensorType& camera, const float block_size,
-      const float truncation_distance_m,
+      const float max_integration_distance_behind_surface_m,
       const float max_integration_distance_m);
 
   // A 3D grid of bools, one for each block in the AABB, which indicates if it

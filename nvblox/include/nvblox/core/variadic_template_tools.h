@@ -21,6 +21,6 @@ namespace nvblox {
 template <class... Types>
 struct unique_types;
 
-}  // nvblox
+}  // namespace nvblox
 
-#include "nvblox/core/impl/variadic_template_tools_impl.h"
+#include "nvblox/core/internal/impl/variadic_template_tools_impl.h"

@@ -19,34 +19,15 @@ source_parsers = {
 }
 
 extensions = [
-    'sphinx.ext.autosectionlabel', 'myst_parser', #'breathe', 'exhale',
+    'sphinx.ext.autosectionlabel'
 ]
 
 project = name
 master_doc = 'root'
 
-# html_theme_options = {'logo_only': True}
 html_extra_path = ['doxyoutput/html']
 
-
-# # Setup the breathe extension
-# breathe_projects = {"project": "./doxyoutput/xml"}
-# breathe_default_project = "project"
-
-# # Setup the exhale extension
-# exhale_args = {
-#     "verboseBuild": False,
-#     "containmentFolder": "./api",
-#     "rootFileName": "library_root.rst",
-#     "rootFileTitle": "Library API",
-#     "doxygenStripFromPath": "..",
-#     "createTreeView": True,
-#     "exhaleExecutesDoxygen": True, # SWITCH TO TRUE
-#     "exhaleUseDoxyfile": True, # SWITCH TO TRUE
-#     "pageLevelConfigMeta": ":github_url: https://github.com/nvidia-isaac/" + name
-# }
-
-source_suffix = ['.rst', '.md']
+source_suffix = ['.md']
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = 'cpp'

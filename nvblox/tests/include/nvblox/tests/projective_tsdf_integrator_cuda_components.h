@@ -15,12 +15,12 @@ limitations under the License.
 */
 #pragma once
 
-#include <nvblox/core/camera.h>
-#include <nvblox/core/common_names.h>
-#include <nvblox/core/image.h>
-#include <nvblox/core/layer.h>
-#include <nvblox/core/types.h>
-#include <nvblox/core/voxels.h>
+#include "nvblox/core/types.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace test_utils {

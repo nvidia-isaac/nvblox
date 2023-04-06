@@ -15,22 +15,16 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 
 #include "nvblox/tests/blox.h"
 #include "nvblox/tests/blox_utils.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
-
-Index3D getRandomIndex3DInRange(const int min, const int max) {
-  return Index3D(test_utils::randomIntInRange(min, max),
-                 test_utils::randomIntInRange(min, max),
-                 test_utils::randomIntInRange(min, max));
-}
 
 TEST(LayerTest, InsertionAndRetrieval) {
   // Make sure this is deterministic.
@@ -48,8 +42,8 @@ TEST(LayerTest, InsertionAndRetrieval) {
   Index3DSet unique_block_indices;
   for (int i = 0; i < kNumTestItems; i++) {
     while (!unique_block_indices
-                .insert(getRandomIndex3DInRange(kMinimumIndexValue,
-                                                kMaximumIndexValue))
+                .insert(test_utils::getRandomIndex3dInRange(kMinimumIndexValue,
+                                                            kMaximumIndexValue))
                 .second) {
       continue;
     }

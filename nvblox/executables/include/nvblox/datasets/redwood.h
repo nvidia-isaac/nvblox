@@ -34,8 +34,18 @@ std::unique_ptr<Fuser> createFuser(const std::string base_path);
 ///@brief A class for loading Redwood data
 class DataLoader : public RgbdDataLoaderInterface {
  public:
+  /// Constructors not intended to be called directly, use factor
+  /// DataLoader::create();
   DataLoader(const std::string& base_path, bool multithreaded = true);
   virtual ~DataLoader() = default;
+
+  /// Builds a DatasetLoader
+  ///@param base_path Path to the replica dataset sequence base folder.
+  ///@param multithreaded Whether or not to multi-thread image loading
+  ///@return std::unique_ptr<DataLoader> The dataset loader. May be nullptr if
+  /// construction fails.
+  static std::unique_ptr<DataLoader> create(const std::string& base_path,
+                                            bool multithreaded = true);
 
   /// Interface for a function that loads the next frames in a dataset
   ///@param[out] depth_frame_ptr The loaded depth frame.

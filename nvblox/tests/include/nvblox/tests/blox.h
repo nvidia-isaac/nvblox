@@ -15,9 +15,9 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/tests/voxels.h"
 
 namespace nvblox {

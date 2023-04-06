@@ -17,14 +17,10 @@ limitations under the License.
 
 #include <string>
 
-#include "nvblox/core/image.h"
+#include <Eigen/Eigen>
 
 namespace nvblox {
 namespace io {
-
-void writeToCsv(const std::string& filepath, const DepthImage& frame);
-void writeToCsv(const std::string& filepath, const ColorImage& frame);
-void writeToCsv(const std::string& filepath, const MonoImage& frame);
 
 template <typename Derived>
 void writeToCsv(const std::string& filepath,
@@ -33,4 +29,4 @@ void writeToCsv(const std::string& filepath,
 }  // namespace io
 }  // namespace nvblox
 
-#include "nvblox/io/impl/csv_impl.h"
+#include "nvblox/io/internal/impl/csv_impl.h"

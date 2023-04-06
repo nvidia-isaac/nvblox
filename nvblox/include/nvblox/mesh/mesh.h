@@ -15,8 +15,8 @@ limitations under the License.
 */
 #pragma once
 
-#include <nvblox/core/layer.h>
 #include <nvblox/core/types.h>
+#include <nvblox/map/layer.h>
 #include <nvblox/mesh/mesh_block.h>
 
 namespace nvblox {
