@@ -19,8 +19,8 @@ limitations under the License.
 #include <future>
 #include <string>
 
-#include "nvblox/core/image.h"
 #include "nvblox/core/types.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace datasets {
@@ -72,10 +72,10 @@ using ImageOptional = std::pair<bool, ImageType>;
 template <typename ImageType>
 class MultiThreadedImageLoader : public ImageLoader<ImageType> {
  public:
-  MultiThreadedImageLoader(IndexToFilepathFunction index_to_filepath,
-                           int num_threads,
-                           MemoryType memory_type = kDefaultImageMemoryType,
-                           float depth_image_scaling_factor = kDefaultUintDepthScaleFactor);
+  MultiThreadedImageLoader(
+      IndexToFilepathFunction index_to_filepath, int num_threads,
+      MemoryType memory_type = kDefaultImageMemoryType,
+      float depth_image_scaling_factor = kDefaultUintDepthScaleFactor);
   ~MultiThreadedImageLoader();
 
   bool getNextImage(ImageType* image_ptr) override;

@@ -3,6 +3,7 @@ add_library(nvblox_datasets SHARED
     src/datasets/3dmatch.cpp
     src/datasets/image_loader.cpp
     src/datasets/replica.cpp
+    src/datasets/redwood.cpp
     src/fuser.cpp
 )
 target_include_directories(nvblox_datasets PUBLIC 
@@ -31,3 +32,12 @@ target_link_libraries(fuse_replica
     nvblox_lib nvblox_datasets
 )
 set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+# Redwood executable
+add_executable(fuse_redwood
+    src/fuse_redwood.cpp
+)
+target_link_libraries(fuse_redwood
+    nvblox_lib nvblox_datasets
+)
+set_target_properties(fuse_redwood PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

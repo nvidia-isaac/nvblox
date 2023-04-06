@@ -312,15 +312,14 @@ __global__ void combinedSingleBlockKernel(int num_vals, Vector3f* d_in,
     if (block_offset + i < num_vals) {
       if (head_flags[i] == 1) {
         // Get the proper value out.
-        d_out[head_indices[i]-1] = d_in[thread_inds[i]];
+        d_out[head_indices[i] - 1] = d_in[thread_inds[i]];
         atomicMax(&output_index, head_indices[i]);
       }
       // For the key of each initial vertex, we find what index it now has.
-      inds_out[thread_inds[i]] = head_indices[i]-1;
+      inds_out[thread_inds[i]] = head_indices[i] - 1;
     }
   }
   __syncthreads();
-
 
   if (threadIdx.x == 0) {
     *num_out = output_index;

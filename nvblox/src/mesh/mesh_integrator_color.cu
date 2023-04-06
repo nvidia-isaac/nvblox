@@ -15,11 +15,11 @@ limitations under the License.
 */
 #include <cuda_runtime.h>
 
-#include "nvblox/core/accessors.h"
-#include "nvblox/core/common_names.h"
 #include "nvblox/integrators/internal/integrators_common.h"
-#include "nvblox/mesh/impl/marching_cubes_table.h"
-#include "nvblox/mesh/marching_cubes.h"
+#include "nvblox/map/accessors.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/mesh/internal/impl/marching_cubes_table.h"
+#include "nvblox/mesh/internal/marching_cubes.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/utils/timing.h"
 
@@ -62,7 +62,8 @@ __global__ void colorMeshBlockByClosestColorVoxel(
   const Vector3f p_L_B_m = getPositionFromBlockIndex(block_size, block_index);
 
   // Interate through MeshBlock vertices - Stidded access pattern
-  for (int i = threadIdx.x; i < cuda_mesh_block.vertices_size; i += blockDim.x) {
+  for (int i = threadIdx.x; i < cuda_mesh_block.vertices_size;
+       i += blockDim.x) {
     // The position of this vertex in the layer
     const Vector3f p_L_V_m = cuda_mesh_block.vertices[i];
 
@@ -99,7 +100,8 @@ __global__ void colorMeshBlocksConstant(Color color,
   // Each threadBlock operates on a single MeshBlock
   CudaMeshBlock cuda_mesh_block = cuda_mesh_blocks[blockIdx.x];
   // Interate through MeshBlock vertices - Stidded access pattern
-  for (int i = threadIdx.x; i < cuda_mesh_block.vertices_size; i += blockDim.x) {
+  for (int i = threadIdx.x; i < cuda_mesh_block.vertices_size;
+       i += blockDim.x) {
     cuda_mesh_block.colors[i] = color;
   }
 }

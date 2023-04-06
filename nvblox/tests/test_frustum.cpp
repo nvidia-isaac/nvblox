@@ -16,15 +16,16 @@ limitations under the License.
 #include <gtest/gtest.h>
 #include <string>
 
-#include "nvblox/core/cuda/warmup.h"
 #include "nvblox/core/indexing.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/core/internal/warmup_cuda.h"
 #include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
 #include "nvblox/integrators/view_calculator.h"
+#include "nvblox/io/image_io.h"
 #include "nvblox/io/pointcloud_io.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
@@ -264,7 +265,7 @@ TEST_F(FrustumTest, PlaneWithGround) {
       }
     }
 
-    io::writeToCsv("test_frustum_image.csv", depth_frame);
+    io::writeToPng("test_frustum_image.csv", depth_frame);
 
     io::outputVoxelLayerToPly(tsdf_layer, "test_frustum_blocks_image.ply");
     io::outputVoxelLayerToPly(tsdf_layer_cuda, "test_frustum_blocks_cuda.ply");

@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <thrust/device_vector.h>
 
-#include "nvblox/gpu_hash/cuda/gpu_hash_interface.cuh"
-#include "nvblox/gpu_hash/cuda/gpu_indexing.cuh"
+#include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
+#include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
 
 namespace nvblox {
 namespace test_utils {
@@ -32,9 +32,8 @@ __global__ void getContainsFlagsKernel(
   }
 }
 
-std::vector<bool> getContainsFlags(
-    const GPULayerView<TsdfBlock>& gpu_layer,
-    const std::vector<Index3D>& indices) {
+std::vector<bool> getContainsFlags(const GPULayerView<TsdfBlock>& gpu_layer,
+                                   const std::vector<Index3D>& indices) {
   // CPU -> GPU
   thrust::device_vector<Index3D> device_indices(indices);
 

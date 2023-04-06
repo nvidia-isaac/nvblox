@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include "nvblox/tests/blox_utils.h"
+#include "nvblox/tests/voxels.h"
 
 namespace nvblox {
 
@@ -22,6 +23,25 @@ namespace nvblox {
 constexpr uint8_t TestBlockNoAllocation::kCPUInitializationValue;
 
 namespace test_utils {
+
+__global__ void setFloatingBlockVoxelsInSequenceKernel(FloatVoxelBlock* block) {
+  const int lin_idx =
+      threadIdx.x + TsdfBlock::kVoxelsPerSide *
+                        (threadIdx.y + TsdfBlock::kVoxelsPerSide * threadIdx.z);
+  FloatVoxel* voxel_ptr = &block->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
+  voxel_ptr->voxel_data = static_cast<float>(lin_idx);
+}
+
+void setFloatingBlockVoxelsInSequence(FloatVoxelBlock::Ptr block) {
+  CHECK(block.memory_type() != MemoryType::kHost);
+  constexpr int kNumBlocks = 1;
+  constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
+  const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
+  setFloatingBlockVoxelsInSequenceKernel<<<kNumBlocks, kThreadsPerBlock>>>(
+      block.get());
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaPeekAtLastError());
+}
 
 __global__ void setTsdfBlockVoxelsInSequenceKernel(TsdfBlock* block) {
   const int lin_idx =
@@ -43,7 +63,8 @@ void setTsdfBlockVoxelsInSequence(TsdfBlock::Ptr block) {
   checkCudaErrors(cudaPeekAtLastError());
 }
 
-__global__ void setTsdfBlockVoxelsConstantKernel(TsdfBlock* block, float distance) {
+__global__ void setTsdfBlockVoxelsConstantKernel(TsdfBlock* block,
+                                                 float distance) {
   const int lin_idx =
       threadIdx.x + TsdfBlock::kVoxelsPerSide *
                         (threadIdx.y + TsdfBlock::kVoxelsPerSide * threadIdx.z);

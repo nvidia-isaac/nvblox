@@ -15,8 +15,8 @@ limitations under the License.
 */
 #include "nvblox/tests/gpu_image_routines.h"
 
-#include "nvblox/core/cuda/error_check.cuh"
-#include "nvblox/core/image.h"
+#include "nvblox/core/internal/error_check.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace test_utils {

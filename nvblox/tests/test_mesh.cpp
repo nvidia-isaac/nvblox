@@ -16,16 +16,16 @@ limitations under the License.
 #include <gtest/gtest.h>
 #include <string>
 
-#include "nvblox/core/cuda/warmup.h"
 #include "nvblox/core/indexing.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/core/internal/warmup_cuda.h"
 #include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/mesh_io.h"
 #include "nvblox/io/ply_writer.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/scene.h"
@@ -104,7 +104,7 @@ TEST_F(MeshTest, PlaneMesh) {
   scene_.addPrimitive(std::make_unique<primitives::Plane>(
       Vector3f(0.0, 0.0, 0.0), Vector3f(-1, 0, 0)));
 
-  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+  scene_.generateLayerFromScene(4 * voxel_size_, sdf_layer_.get());
 
   EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
       *sdf_layer_, mesh_layer_.get(), DeviceType::kCPU));
@@ -160,7 +160,7 @@ TEST_F(MeshTest, ComplexScene) {
   scene_.addPrimitive(
       std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
 
-  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+  scene_.generateLayerFromScene(4 * voxel_size_, sdf_layer_.get());
 
   EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
       *sdf_layer_, mesh_layer_.get(), DeviceType::kCPU));
@@ -180,7 +180,7 @@ TEST_F(MeshTest, GPUPlaneTest) {
   scene_.addPrimitive(std::make_unique<primitives::Plane>(
       Vector3f(0.00, 0.0, 0.0), Vector3f(-1, 0, 0)));
 
-  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+  scene_.generateLayerFromScene(4 * voxel_size_, sdf_layer_.get());
 
   // Create a second mesh layer for the CPU.
   BlockLayer<MeshBlock> cpu_mesh(block_size_, MemoryType::kUnified);
@@ -416,7 +416,7 @@ TEST_F(MeshTest, WeldingTest) {
   scene_.addPrimitive(
       std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
 
-  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+  scene_.generateLayerFromScene(4 * voxel_size_, sdf_layer_.get());
 
   mesh_integrator_.weld_vertices(false);
   EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
@@ -462,7 +462,7 @@ TEST_F(MeshTest, InPlaceWeldingTest) {
   scene_.addPrimitive(
       std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
 
-  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+  scene_.generateLayerFromScene(4 * voxel_size_, sdf_layer_.get());
 
   EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(
       *sdf_layer_, mesh_layer_.get(), DeviceType::kGPU));
@@ -498,7 +498,7 @@ TEST_F(MeshTest, WeldingPartsTest) {
   scene_.addPrimitive(
       std::make_unique<primitives::Sphere>(Vector3f(-2, -2, 0), 2.0));
 
-  scene_.generateSdfFromScene(4 * voxel_size_, sdf_layer_.get());
+  scene_.generateLayerFromScene(4 * voxel_size_, sdf_layer_.get());
 
   mesh_integrator_.weld_vertices(false);
   EXPECT_TRUE(mesh_integrator_.integrateMeshFromDistanceField(

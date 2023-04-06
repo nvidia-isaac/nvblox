@@ -1,2 +1,0 @@
-add_executable(isolate_tsdf_block_update main.cpp)
-target_link_libraries(isolate_tsdf_block_update nvblox_lib nvblox_datasets)

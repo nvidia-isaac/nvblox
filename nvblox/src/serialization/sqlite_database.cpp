@@ -13,13 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include <glog/logging.h>
 #include <sqlite3.h>
 #include <cstdio>
-#include <vector>
 #include <fstream>
+#include <vector>
+#include "nvblox/utils/logging.h"
 
-#include "nvblox/serialization/sqlite_database.h"
+#include "nvblox/serialization/internal/sqlite_database.h"
 
 namespace nvblox {
 

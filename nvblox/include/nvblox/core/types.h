@@ -25,18 +25,24 @@ limitations under the License.
 
 namespace nvblox {
 
-// Whether the storage or processing is happening on CPU, GPU, or any future
-// amazing hardware- accelerated platform.
+/// Whether the storage or processing is happening on CPU, GPU, or any future
+/// amazing hardware- accelerated platform.
 enum class DeviceType { kCPU, kGPU };
 
-// How GPU data is stored, either in Device-only or unified (both) memory.
-// NOTE(alexmillane): tag: c++17, switch to constexpr when we move to c++17.
+/// How GPU data is stored, either in Device-only or unified (both) memory.
+/// NOTE(alexmillane): tag: c++17, switch to constexpr when we move to c++17.
 enum class MemoryType { kDevice, kUnified, kHost };
 inline std::string toString(MemoryType memory_type) {
   switch (memory_type) {
-    case MemoryType::kDevice: return "kDevice"; break;
-    case MemoryType::kUnified: return "kUnified"; break;
-    default: return "kHost"; break;
+    case MemoryType::kDevice:
+      return "kDevice";
+      break;
+    case MemoryType::kUnified:
+      return "kUnified";
+      break;
+    default:
+      return "kHost";
+      break;
   }
 }
 
@@ -50,14 +56,14 @@ typedef Eigen::AlignedBox3f AxisAlignedBoundingBox;
 
 typedef Eigen::Isometry3f Transform;
 
-// This can be replaced with std::byte once we go to C++17.
-typedef uint8_t Byte; 
+/// This can be replaced with std::byte once we go to C++17.
+typedef uint8_t Byte;
 
-// Aligned Eigen containers
+/// Aligned Eigen containers
 template <typename Type>
 using AlignedVector = std::vector<Type, Eigen::aligned_allocator<Type>>;
 
-enum class InterpolationType { kNearestNeighbor, kLinear};
+enum class InterpolationType { kNearestNeighbor, kLinear };
 
 typedef Eigen::ParametrizedLine<float, 3> Ray;
 

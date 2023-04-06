@@ -1,2 +1,0 @@
-add_executable(ratio_of_freespace main.cpp)
-target_link_libraries(ratio_of_freespace nvblox_lib)

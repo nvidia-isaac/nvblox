@@ -15,17 +15,18 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/lidar.h"
 #include "nvblox/core/types.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/integrators/view_calculator.h"
 #include "nvblox/io/csv.h"
+#include "nvblox/io/image_io.h"
 #include "nvblox/io/mesh_io.h"
 #include "nvblox/io/pointcloud_io.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/mesh/mesh_integrator.h"
+#include "nvblox/sensors/image.h"
+#include "nvblox/sensors/lidar.h"
 
 #include "nvblox/tests/utils.h"
 
@@ -237,7 +238,7 @@ TEST_F(LidarIntegrationTest, SurroundingSphere) {
     io::outputMeshLayerToPly(mesh_layer, mesh_filepath);
     // Output
     const std::string filepath = "sphere_lidar_image.csv";
-    io::writeToCsv(filepath, depth_image);
+    io::writeToPng(filepath, depth_image);
   }
 }
 

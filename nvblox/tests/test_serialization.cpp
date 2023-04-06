@@ -16,12 +16,12 @@ limitations under the License.
 #include <gtest/gtest.h>
 #include <stdio.h>
 
-#include "nvblox/core/layer.h"
 #include "nvblox/io/layer_cake_io.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/primitives/scene.h"
-#include "nvblox/serialization/layer_serialization.h"
-#include "nvblox/serialization/layer_type_register.h"
-#include "nvblox/serialization/serializer.h"
+#include "nvblox/serialization/internal/layer_serialization.h"
+#include "nvblox/serialization/internal/layer_type_register.h"
+#include "nvblox/serialization/internal/serializer.h"
 
 #include "nvblox/tests/utils.h"
 
@@ -66,7 +66,7 @@ TEST_F(SerializationTest, SerializeAndDeserializeTsdfLayer) {
 
   // Create a TSDF layer from the scene.
   cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
-  scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
+  scene_.generateLayerFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
 
   // Make sure we can open a file.
   // REMOVE the file.
@@ -168,7 +168,7 @@ TEST_F(SerializationTest, SerializeLayerParameters) {
 TEST_F(SerializationTest, PopulateLayerParameterStruct) {
   // Create a TSDF layer from the scene.
   cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
-  scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
+  scene_.generateLayerFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
 
   LayerParameterStruct params =
       serializeLayerParameters(*cake_.getConstPtr<TsdfLayer>());
@@ -180,7 +180,7 @@ TEST_F(SerializationTest, PopulateLayerParameterStruct) {
 TEST_F(SerializationTest, LayerBlockSerialization) {
   // Create a TSDF layer from the scene.
   cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
-  scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
+  scene_.generateLayerFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
 
   const TsdfLayer& tsdf_layer = *cake_.getConstPtr<TsdfLayer>();
 
@@ -196,7 +196,7 @@ TEST_F(SerializationTest, LayerBlockSerialization) {
 
 TEST_F(SerializationTest, SerializeDeviceBlock) {
   cake_ = LayerCake::create<TsdfLayer>(voxel_size_m_, MemoryType::kHost);
-  scene_.generateSdfFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
+  scene_.generateLayerFromScene(truncation_distance, cake_.getPtr<TsdfLayer>());
   const TsdfLayer& tsdf_layer = *cake_.getConstPtr<TsdfLayer>();
 
   TsdfLayer::BlockType::ConstPtr block =

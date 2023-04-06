@@ -21,6 +21,8 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Iterator class for unified_vectors that enables us to use thrust and STL
+/// operators on our own vectors.
 template <typename T>
 struct RawIterator {
   using iterator_category = std::forward_iterator_tag;

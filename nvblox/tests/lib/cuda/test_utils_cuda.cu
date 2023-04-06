@@ -92,8 +92,8 @@ void fillWithConstant(float value, size_t num_elems, float* vec_ptr) {
   // kernel
   int num_thread_blocks = 1;
   int num_threads = num_elems;
-  fillVectorWithConstant<<<num_thread_blocks, num_threads>>>(
-      num_elems, value, vec_ptr);
+  fillVectorWithConstant<<<num_thread_blocks, num_threads>>>(num_elems, value,
+                                                             vec_ptr);
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaPeekAtLastError());
 }
@@ -104,8 +104,8 @@ void fillWithConstant(int value, size_t num_elems, int* vec_ptr) {
   // kernel
   int num_thread_blocks = 1;
   int num_threads = num_elems;
-  fillVectorWithConstant<<<num_thread_blocks, num_threads>>>(
-      num_elems, value, vec_ptr);
+  fillVectorWithConstant<<<num_thread_blocks, num_threads>>>(num_elems, value,
+                                                             vec_ptr);
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaPeekAtLastError());
 }
@@ -119,8 +119,8 @@ bool checkVectorAllConstantTemplate(const T* vec, T value, size_t size) {
   // Kernel
   constexpr int kNumThreads = 512;
   const int num_thread_blocks = size / kNumThreads + 1;
-  checkVectorAllConstant<T><<<num_thread_blocks, kNumThreads>>>(
-      size, value, vec, flag_device_ptr);
+  checkVectorAllConstant<T>
+      <<<num_thread_blocks, kNumThreads>>>(size, value, vec, flag_device_ptr);
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaPeekAtLastError());
 
@@ -149,7 +149,6 @@ bool checkAllConstant(const float* vec_ptr, float value, size_t num_elems) {
 bool checkAllConstant(const int* vec_ptr, int value, size_t num_elems) {
   return checkVectorAllConstantTemplate<int>(vec_ptr, value, num_elems);
 }
-
 
 void addOneToAllGPU(unified_vector<int>* vec_ptr) {
   constexpr int kNumThreadsPerBlock = 512;

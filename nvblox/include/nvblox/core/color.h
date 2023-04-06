@@ -21,20 +21,25 @@ limitations under the License.
 
 namespace nvblox {
 
+/// Color, stored as 8-bit RGBA, with helper functions for commonly-used colors.
 struct Color {
-  __host__ __device__ Color() : r(0), g(0), b(0) {}
+  __host__ __device__ Color() : r(0), g(0), b(0), a(0) {}
   __host__ __device__ Color(uint8_t _r, uint8_t _g, uint8_t _b)
-      : r(_r), g(_g), b(_b) {}
+      : r(_r), g(_g), b(_b), a(255) {}
+  __host__ __device__ Color(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a)
+      : r(_r), g(_g), b(_b), a(_a) {}
 
   uint8_t r;
   uint8_t g;
   uint8_t b;
+  uint8_t a;
 
+  /// Check if colors are exactly identical. Also checks alpha.
   bool operator==(const Color& other) const {
-    return (r == other.r) && (g == other.g) && (b == other.b);
+    return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
   }
 
-  // Static functions for working with colors
+  /// Static functions for working with colors
   static Color blendTwoColors(const Color& first_color, float first_weight,
                               const Color& second_color, float second_weight);
 

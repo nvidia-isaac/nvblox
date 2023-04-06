@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <vector>
 
-#include <nvblox/core/common_names.h>
 #include "nvblox/gpu_hash/gpu_layer_view.h"
+#include "nvblox/map/common_names.h"
 
 namespace nvblox {
 namespace test_utils {

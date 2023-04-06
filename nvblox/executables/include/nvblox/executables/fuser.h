@@ -15,24 +15,25 @@ limitations under the License.
 */
 #pragma once
 
+#include <glog/logging.h>
+
 #include <memory>
 #include <string>
 
-#include <glog/logging.h>
-
-#include "nvblox/core/blox.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/layer_cake.h"
-#include "nvblox/core/mapper.h"
-#include "nvblox/core/voxels.h"
 #include "nvblox/datasets/data_loader.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/layer_cake.h"
+#include "nvblox/map/voxels.h"
+#include "nvblox/mapper/mapper.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/rays/sphere_tracer.h"
+#include "nvblox/utils/logging.h"
 
 namespace nvblox {
 
@@ -49,19 +50,23 @@ class Fuser {
 
   // Set various settings.
   void setVoxelSize(float voxel_size);
-  void setTsdfFrameSubsampling(int subsample);
+  void setProjectiveFrameSubsampling(int subsample);
   void setColorFrameSubsampling(int subsample);
   void setMeshFrameSubsampling(int subsample);
   void setEsdfFrameSubsampling(int subsample);
-  void setEsdfMode(RgbdMapper::EsdfMode esdf_mode);
+  void setEsdfMode(Mapper::EsdfMode esdf_mode);
 
   // Integrate certain layers.
   bool integrateFrame(const int frame_number);
   bool integrateFrames();
   void updateEsdf();
 
+  // Output a pointcloud tsdf as PLY file.
+  bool outputTsdfPointcloudPly();
+  // Output a pointcloud occupancy as PLY file.
+  bool outputOccupancyPointcloudPly();
   // Output a pointcloud ESDF as PLY file.
-  bool outputPointcloudPly();
+  bool outputESDFPointcloudPly();
   // Output a file with the mesh.
   bool outputMeshPly();
   // Output timings to a file
@@ -70,7 +75,7 @@ class Fuser {
   bool outputMapToFile();
 
   // Get the mapper (useful for experiments where we modify mapper settings)
-  RgbdMapper& mapper();
+  Mapper& mapper();
 
   // Dataset settings.
   int num_frames_to_integrate_ = std::numeric_limits<int>::max();
@@ -78,9 +83,11 @@ class Fuser {
 
   // Params
   float voxel_size_m_ = 0.05;
-  int tsdf_frame_subsampling_ = 1;
+  ProjectiveLayerType projective_layer_type_ = ProjectiveLayerType::kTsdf;
+  int projective_frame_subsampling_ = 1;
   int color_frame_subsampling_ = 1;
-  // By default we just do the mesh and esdf once at the end (if output paths exist)
+  // By default we just do the mesh and esdf once at the end
+  // (if output paths exist)
   int mesh_frame_subsampling_ = -1;
   int esdf_frame_subsampling_ = -1;
 
@@ -90,14 +97,16 @@ class Fuser {
   float z_slice_ = 0.75f;
 
   // ESDF mode
-  RgbdMapper::EsdfMode esdf_mode_ = RgbdMapper::EsdfMode::k3D;
+  Mapper::EsdfMode esdf_mode_ = Mapper::EsdfMode::k3D;
 
   // Mapper - Contains map layers and integrators
-  std::unique_ptr<RgbdMapper> mapper_;
+  std::unique_ptr<Mapper> mapper_;
 
   // Output paths
   std::string timing_output_path_;
+  std::string tsdf_output_path_;
   std::string esdf_output_path_;
+  std::string occupancy_output_path_;
   std::string mesh_output_path_;
   std::string map_output_path_;
 };

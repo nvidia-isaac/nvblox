@@ -17,9 +17,10 @@ limitations under the License.
 
 #include <string>
 
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/core/log_odds.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 
 namespace nvblox {
 namespace io {
@@ -38,15 +39,7 @@ template <typename VoxelType>
 bool outputVoxelLayerToPly(const VoxelBlockLayer<VoxelType>& layer,
                            const std::string& filename);
 
-/// Specializations for the TSDF type.
-template <>
-bool outputVoxelLayerToPly(const TsdfLayer& layer, const std::string& filename);
-
-/// Specialization for the ESDF type.
-template <>
-bool outputVoxelLayerToPly(const EsdfLayer& layer, const std::string& filename);
-
 }  // namespace io
 }  // namespace nvblox
 
-#include "nvblox/io/impl/pointcloud_io_impl.h"
+#include "nvblox/io/internal/impl/pointcloud_io_impl.h"

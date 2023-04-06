@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include <glog/logging.h>
 #include <stdio.h>
 #include <vector>
+#include "nvblox/utils/logging.h"
 
-#include "nvblox/serialization/serializer.h"
+#include "nvblox/serialization/internal/serializer.h"
 
 namespace nvblox {
 

@@ -15,10 +15,10 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/camera.h"
-#include "nvblox/core/image.h"
 #include "nvblox/core/types.h"
 #include "nvblox/datasets/image_loader.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace datasets {
@@ -27,8 +27,9 @@ enum class DataLoadResult { kSuccess, kBadFrame, kNoMoreData };
 
 class RgbdDataLoaderInterface {
  public:
-  RgbdDataLoaderInterface(std::unique_ptr<ImageLoader<DepthImage>>&& depth_image_loader,
-                 std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader)
+  RgbdDataLoaderInterface(
+      std::unique_ptr<ImageLoader<DepthImage>>&& depth_image_loader,
+      std::unique_ptr<ImageLoader<ColorImage>>&& color_image_loader)
       : depth_image_loader_(std::move(depth_image_loader)),
         color_image_loader_(std::move(color_image_loader)) {}
   virtual ~RgbdDataLoaderInterface() = default;
@@ -48,6 +49,11 @@ class RgbdDataLoaderInterface {
   // Objects which do (multithreaded) image loading.
   std::unique_ptr<ImageLoader<DepthImage>> depth_image_loader_;
   std::unique_ptr<ImageLoader<ColorImage>> color_image_loader_;
+
+  // Indicates if the dataset loader was constructed in a state that was good to
+  // go. Initializes to true, so child class constructors indicate failure by
+  // setting it to false;
+  bool setup_success_ = true;
 };
 
 }  // namespace datasets

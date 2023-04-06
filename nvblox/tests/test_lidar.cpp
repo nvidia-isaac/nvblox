@@ -15,16 +15,14 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/lidar.h"
 #include "nvblox/core/types.h"
-
+#include "nvblox/sensors/lidar.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
 constexpr float kFloatEpsilon = 1e-4;
-class LidarTest
-    : public ::testing::Test {
+class LidarTest : public ::testing::Test {
  protected:
   LidarTest() {}
 };
@@ -164,12 +162,12 @@ TEST_P(ParameterizedLidarTest, SphereTest) {
   // Project the pointcloud to a depth image
   Eigen::MatrixXf reprojected_image(num_elevation_divisions,
                                     num_azimuth_divisions);
-  for (int point_idx = 0; point_idx < pointcloud.rows(); point_idx++) {
+  for (int idx = 0; idx < pointcloud.rows(); idx++) {
     // Projection
     Vector2f u_C_float;
-    EXPECT_TRUE(lidar.project(pointcloud.row(point_idx), &u_C_float));
+    EXPECT_TRUE(lidar.project(pointcloud.row(idx), &u_C_float));
     Index2D u_C_int;
-    EXPECT_TRUE(lidar.project(pointcloud.row(point_idx), &u_C_int));
+    EXPECT_TRUE(lidar.project(pointcloud.row(idx), &u_C_int));
 
     // Check that this is at the center of a pixel
     Vector2f corner_dist = u_C_float - u_C_float.array().floor().matrix();
@@ -178,8 +176,7 @@ TEST_P(ParameterizedLidarTest, SphereTest) {
     EXPECT_NEAR(corner_dist.y(), 0.5f, kReprojectionEpsilon);
 
     // Add to depth image
-    reprojected_image(u_C_int.y(), u_C_int.x()) =
-        pointcloud.row(point_idx).norm();
+    reprojected_image(u_C_int.y(), u_C_int.x()) = pointcloud.row(idx).norm();
   }
 
   const Eigen::MatrixXf error_image =

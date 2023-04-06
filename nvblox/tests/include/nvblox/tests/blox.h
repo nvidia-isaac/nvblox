@@ -17,6 +17,8 @@ limitations under the License.
 
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/tests/voxels.h"
 
 namespace nvblox {
 
@@ -33,15 +35,32 @@ struct IndexBlock {
 };
 
 // Dummy block that stores a single bool
-struct DummyBlock {
-  typedef unified_ptr<DummyBlock> Ptr;
-  typedef unified_ptr<const DummyBlock> ConstPtr;
+struct BooleanBlock {
+  typedef unified_ptr<BooleanBlock> Ptr;
+  typedef unified_ptr<const BooleanBlock> ConstPtr;
 
   bool data = false;
 
   static Ptr allocate(MemoryType memory_type) {
-    return make_unified<DummyBlock>(memory_type);
+    return make_unified<BooleanBlock>(memory_type);
   }
 };
+
+struct FloatBlock {
+  typedef unified_ptr<FloatBlock> Ptr;
+  typedef unified_ptr<const FloatBlock> ConstPtr;
+
+  static Ptr allocate(MemoryType memory_type) {
+    return make_unified<FloatBlock>();
+  };
+
+  float block_data = 0.0f;
+};
+
+using IndexBlockLayer = BlockLayer<IndexBlock>;
+using BooleanBlockLayer = BlockLayer<BooleanBlock>;
+using FloatBlockLayer = BlockLayer<FloatBlock>;
+using FloatVoxelBlock = VoxelBlock<FloatVoxel>;
+using FloatVoxelLayer = VoxelBlockLayer<FloatVoxel>;
 
 }  // namespace nvblox

@@ -15,15 +15,12 @@ limitations under the License.
 */
 #include "nvblox/tests/blox.h"
 
-#include "nvblox/core/layer.h"
-#include "nvblox/gpu_hash/cuda/impl/gpu_layer_view_impl.cuh"
+#include "nvblox/gpu_hash/internal/cuda/impl/gpu_layer_view_impl.cuh"
 
 namespace nvblox {
 
-using IndexBlockLayer = BlockLayer<IndexBlock>;
 template class GPULayerView<IndexBlock>;
+template class GPULayerView<BooleanBlock>;
+template class GPULayerView<FloatVoxelBlock>;
 
-using DummyBlockLayer = BlockLayer<DummyBlock>;
-template class GPULayerView<DummyBlock>;
-
-} // nvblox
+}  // namespace nvblox

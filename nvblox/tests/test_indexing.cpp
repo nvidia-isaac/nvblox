@@ -16,9 +16,9 @@ limitations under the License.
 #include <gtest/gtest.h>
 
 #include "nvblox/core/indexing.h"
-#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 
 #include "nvblox/tests/gpu_indexing.h"
 #include "nvblox/tests/utils.h"

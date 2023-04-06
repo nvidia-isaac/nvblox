@@ -15,27 +15,23 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/integrators/projective_integrator_base.h"
+#include "nvblox/integrators/view_calculator.h"
+#include "nvblox/integrators/weighting_function.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/rays/sphere_tracer.h"
 
 namespace nvblox {
 
 /// A class performing color intregration
 ///
-/// Integrates a depth images into color layers. The "projective" is a describes
+/// Integrates color images into color layers. The "projective" describes
 /// one type of integration. Namely that voxels in view are projected into the
 /// depth image (the alternative being casting rays out from the camera).
-class ProjectiveColorIntegrator : public ProjectiveIntegratorBase {
+class ProjectiveColorIntegrator {
  public:
   ProjectiveColorIntegrator();
   virtual ~ProjectiveColorIntegrator();
-
-  /// Blocks until GPU operations are complete
-  /// Ensure outstanding operations are finished (relevant for integrators
-  /// launching asynchronous work)
-  void finish() const override;
 
   /// Integrates a color image into the passed color layer.
   /// @param color_frame A color image.
@@ -79,6 +75,65 @@ class ProjectiveColorIntegrator : public ProjectiveIntegratorBase {
   void sphere_tracing_ray_subsampling_factor(
       int sphere_tracing_ray_subsampling_factor);
 
+  /// A parameter getter
+  /// The truncation distance parameter associated with this integrator. The
+  /// truncation distance also determines the max. distance behind a surface up
+  /// until which blocks are integrated.
+  /// @returns the truncation distance in voxels
+  float truncation_distance_vox() const;
+
+  /// A parameter getter
+  /// The maximum weight that voxels can have. The integrator clips the
+  /// voxel weight to this value after integration. Note that currently each
+  /// integration to a voxel increases the weight by 1.0 (if not clipped).
+  /// @returns the maximum weight
+  float max_weight() const;
+
+  /// A parameter getter
+  /// The maximum distance at which voxels are updated. Voxels beyond this
+  /// distance from the camera are not affected by integration.
+  /// @returns the maximum intragration distance
+  float max_integration_distance_m() const;
+
+  /// A parameter setter
+  /// See truncation_distance_vox().
+  /// @param truncation_distance_vox the truncation distance in voxels.
+  void truncation_distance_vox(float truncation_distance_vox);
+
+  /// Gets the metric truncation distance which is calculated from truncation
+  /// distance in voxels and the input voxel size.
+  /// @param voxel_size The voxel size of the layer you want the truncation
+  /// distance for.
+  /// @return The truncation distance
+  float get_truncation_distance_m(float voxel_size) const;
+
+  /// A parameter setter
+  /// See max_weight().
+  /// @param max_weight the maximum weight of a voxel.
+  void max_weight(float max_weight);
+
+  /// A parameter setter
+  /// See max_integration_distance_m().
+  /// @param max_integration_distance_m the maximum intragration distance in
+  /// meters.
+  void max_integration_distance_m(float max_integration_distance_m);
+
+  /// A parameter getter
+  /// The type of weighting function used to fuse observations
+  /// @returns The weighting function type used.
+  WeightingFunctionType weighting_function_type() const;
+
+  /// A parameter setter
+  /// The type of weighting function used to fuse observations
+  /// See weighting_function_type().
+  /// @param weighting_function_type The type of weighting function to be used
+  void weighting_function_type(WeightingFunctionType weighting_function_type);
+
+  /// Returns the object used to calculate the blocks in camera views.
+  const ViewCalculator& view_calculator() const;
+  /// Returns the object used to calculate the blocks in camera views.
+  ViewCalculator& view_calculator();
+
  protected:
   // Given a set of blocks in view (block_indices) perform color updates on all
   // voxels within these blocks on the GPU.
@@ -97,9 +152,20 @@ class ProjectiveColorIntegrator : public ProjectiveIntegratorBase {
 
   // Params
   int sphere_tracing_ray_subsampling_factor_ = 4;
+  float truncation_distance_vox_ = 4.0f;
+  float max_weight_ = 100.0f;
+  float max_integration_distance_m_ = 7.0f;
+  WeightingFunctionType weighting_function_type_ =
+      kDefaultWeightingFunctionType;
+
+  // Frustum calculation.
+  mutable ViewCalculator view_calculator_;
 
   // Object to do ray tracing to generate occlusions
   SphereTracer sphere_tracer_;
+
+  // DepthImage to render synthetic images for occlusions
+  DepthImage synthetic_depth_image_;
 
   // Blocks to integrate on the current call and their indices
   // NOTE(alexmillane): We have one pinned host and one device vector and

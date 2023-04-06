@@ -13,10 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include <glog/logging.h>
 #include <gtest/gtest.h>
+#include "nvblox/utils/logging.h"
 
-#include "nvblox/core/cuda/warmup.h"
+#include "nvblox/core/internal/warmup_cuda.h"
 #include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
 
