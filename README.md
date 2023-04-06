@@ -58,7 +58,7 @@ For users who would like to use nvblox in a robotic system or connect easily to 
 The ROS 2 interface includes examples which allow you to:
 * Build a reconstruction from a realsense camera using nvblox and NVIDIA VSLAM [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-nvblox-vslam-realsense.md).
 * Navigate a robot in Isaac Sim [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-isaac-sim.md).
-* Combine 3D reconstruction with image segmentation with [realsense data](https://gitlab-master.nvidia.com/isaac_ros/isaac_ros_nvblox/-/blob/envoy-dev/docs/tutorial-human-reconstruction-realsense.md) and in [simulation](https://gitlab-master.nvidia.com/isaac_ros/isaac_ros_nvblox/-/blob/envoy-dev/docs/tutorial-human-reconstruction-isaac-sim.md).
+* Combine 3D reconstruction with image segmentation with [realsense data](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-human-reconstruction-realsense.md) and in [simulation](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-human-reconstruction-isaac-sim.md).
 
 The ROS 2 interface downloads and builds the library contained in this repository during installation, so you don't need to clone and build this repository at all.
 
