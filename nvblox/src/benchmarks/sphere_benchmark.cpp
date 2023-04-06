@@ -16,20 +16,20 @@ limitations under the License.
 #include <fstream>
 #include <iostream>
 
-#include "nvblox/core/accessors.h"
-#include "nvblox/core/camera.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/cuda/warmup.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/core/internal/warmup_cuda.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/mesh_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/io/pointcloud_io.h"
+#include "nvblox/map/accessors.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
@@ -71,6 +71,15 @@ SphereBenchmark::SphereBenchmark()
       esdf_layer_(kVoxelSize, MemoryType::kUnified),
       mesh_layer_(kBlockSize, MemoryType::kUnified),
       camera_(Camera(fu_, fv_, cu_, cv_, width_, height_)) {}
+
+// C++ <17 requires declaring static constexpr variables
+// In C++17 this is no longer required, as static constexpr also implies inline
+constexpr float SphereBenchmark::kVoxelSize;
+constexpr float SphereBenchmark::kBlockSize;
+constexpr int SphereBenchmark::kNumTrajectoryPoints;
+constexpr float SphereBenchmark::kSphereRadius;
+constexpr float SphereBenchmark::kTrajectoryRadius;
+constexpr float SphereBenchmark::kMaxEnvironmentDimension;
 
 void SphereBenchmark::runBenchmark(const std::string& csv_output_path) {
   // Create an integrator with default settings.
@@ -141,8 +150,8 @@ void SphereBenchmark::runBenchmark(const std::string& csv_output_path) {
     // Integrate the ESDF.
     {
       timing::Timer esdf_timer("benchmark/integrate_esdf");
-      esdf_integrator.integrateBlocksOnGPU(tsdf_layer_, updated_blocks,
-                                           &esdf_layer_);
+      esdf_integrator.integrateBlocks(tsdf_layer_, updated_blocks,
+                                      &esdf_layer_);
     }
   }
 }

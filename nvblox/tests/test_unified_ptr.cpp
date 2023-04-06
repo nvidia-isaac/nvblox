@@ -15,10 +15,10 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/accessors.h"
-#include "nvblox/core/common_names.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
+#include "nvblox/map/accessors.h"
+#include "nvblox/map/common_names.h"
 
 #include "nvblox/tests/increment_on_gpu.h"
 #include "nvblox/tests/test_utils_cuda.h"

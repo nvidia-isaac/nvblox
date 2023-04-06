@@ -15,17 +15,22 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/core/log_odds.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 
 // Forward declaration.
 struct Index3DDeviceSet;
+
+struct OccupancySiteFunctor;
+struct TsdfSiteFunctor;
 
 /// A class performing (incremental) ESDF integration
 ///
@@ -36,39 +41,36 @@ struct Index3DDeviceSet;
 class EsdfIntegrator {
  public:
   EsdfIntegrator() = default;
-  ~EsdfIntegrator();
+  virtual ~EsdfIntegrator();
 
   /// Build an EsdfLayer from a TsdfLayer
   /// @param tsdf_layer The input TsdfLayer
   /// @param[out] esdf_layer The output EsdfLayer
   void integrateLayer(const TsdfLayer& tsdf_layer, EsdfLayer* esdf_layer);
 
-  /// Build an EsdfLayer from a TsdfLayer (incremental)
-  /// @param tsdf_layer The input TsdfLayer
-  /// @param block_indices The indices of the EsdfLayer which should be updated
-  /// (usually because the TSDF at these indices has changed).
+  /// Build an EsdfLayer from a TsdfLayer
+  /// @param occupancy_layer The input OccupancyLayer
   /// @param[out] esdf_layer The output EsdfLayer
-  void integrateBlocks(const TsdfLayer& tsdf_layer,
-                       const std::vector<Index3D>& block_indices,
-                       EsdfLayer* esdf_layer);
-
-  /// Build an EsdfLayer from a TsdfLayer (incremental) (on CPU)
-  /// @param tsdf_layer The input TsdfLayer
-  /// @param block_indices The indices of the EsdfLayer which should be updated
-  /// (usually because the TSDF at these indices has changed).
-  /// @param[out] esdf_layer The output EsdfLayer
-  void integrateBlocksOnCPU(const TsdfLayer& tsdf_layer,
-                            const std::vector<Index3D>& block_indices,
-                            EsdfLayer* esdf_layer);
+  void integrateLayer(const OccupancyLayer& occupancy_layer,
+                      EsdfLayer* esdf_layer);
 
   /// Build an EsdfLayer from a TsdfLayer (incremental) (on GPU)
   /// @param tsdf_layer The input TsdfLayer
   /// @param block_indices The indices of the EsdfLayer which should be updated
   /// (usually because the TSDF at these indices has changed).
   /// @param[out] esdf_layer The output EsdfLayer
-  void integrateBlocksOnGPU(const TsdfLayer& tsdf_layer,
-                            const std::vector<Index3D>& block_indices,
-                            EsdfLayer* esdf_layer);
+  virtual void integrateBlocks(const TsdfLayer& tsdf_layer,
+                               const std::vector<Index3D>& block_indices,
+                               EsdfLayer* esdf_layer);
+
+  /// @brief Build an EsdfLayer from an OccupancyLayer(incremental) (on GPU)
+  /// @param occupancy_layer The input OccupancyLayer
+  /// @param block_indices The indices of the EsdfLayer which should be updated
+  /// (usually because the Occupancy at these indices has changed).
+  /// @param[out] esdf_layer The output EsdfLayer
+  virtual void integrateBlocks(const OccupancyLayer& occupancy_layer,
+                               const std::vector<Index3D>& block_indices,
+                               EsdfLayer* esdf_layer);
 
   /// Build an EsdfLayer slice from a TsdfLayer (incremental) (on GPU)
   /// This function takes the voxels between z_min and z_max in the TsdfLayer.
@@ -85,10 +87,69 @@ class EsdfIntegrator {
   /// @param  z_output The height (in meters) (in the layer frame) where the
   /// ESDF is written to.
   /// @param[out] esdf_layer The output EsdfLayer
-  void integrateSliceOnGPU(const TsdfLayer& tsdf_layer,
-                           const std::vector<Index3D>& block_indices,
-                           float z_min, float z_max, float z_output,
-                           EsdfLayer* esdf_layer);
+  void integrateSlice(const TsdfLayer& tsdf_layer,
+                      const std::vector<Index3D>& block_indices, float z_min,
+                      float z_max, float z_output, EsdfLayer* esdf_layer);
+
+  /// Build an EsdfLayer slice from a OccupancyLayer (incremental) (on GPU)
+  /// This function takes the voxels between z_min and z_max in the
+  /// OccupancyLayer. Any occupied voxel in this z range generates a surface for
+  /// ESDF computation in 2D. The 2D ESDF if written to a voxels with a single z
+  /// index in the output.
+  /// @param occupancy_layer The input OccupancyLayer
+  /// @param block_indices The indices of the EsdfLayer which should be updated
+  /// (usually because the Occupancy at these indices has changed).
+  /// @param z_min The minimum height (in meters) (in the layer frame) at which
+  /// an obstacle is considered.
+  /// @param z_max The maximum height (in meters) (in the layer frame) at which
+  /// an obstacle is considered.
+  /// @param  z_output The height (in meters) (in the layer frame) where the
+  /// ESDF is written to.
+  /// @param[out] esdf_layer The output EsdfLayer
+  void integrateSlice(const OccupancyLayer& occupancy_layer,
+                      const std::vector<Index3D>& block_indices, float z_min,
+                      float z_max, float z_output, EsdfLayer* esdf_layer);
+
+  /// Convert an ESDF layer slice to a distance image. Uses the slice height
+  /// that's set in the integrator and outputs within a custom AABB.
+  /// @param layer Input ESDF layer.
+  /// @param unobserved_value Floating-point value to use for unknown/unobserved
+  /// points.
+  /// @param slice_height The height of the slice to output. When using the 2D
+  /// ESDF, this *must* match the z_output passed in to the slice integrator.
+  /// @param image_coordinates Whether to use image coordinates (true) or matrix
+  /// coordinates (false). Image coordinates have the 0, 0 in the upper left,
+  /// and matrix coordinates have 0, 0 in the lower left.
+  /// @param aabb AABB to generate the distance image in. Used as-is; if it's
+  /// larger than the layer, the rest is just filled in as unknown value.
+  /// @param output_image Output floating point image with the distances at each
+  /// pixel.
+  void convertLayerSliceToDistanceImage(const EsdfLayer& layer,
+                                        float unobserved_value,
+                                        float slice_height,
+                                        bool image_coordinates,
+                                        const AxisAlignedBoundingBox& aabb,
+                                        Image<float>* output_image);
+
+  /// Convert an ESDF layer slice to a distance image for the entire layer. Uses
+  /// the slice height that's set in the integrator.
+  /// @param layer Input ESDF layer.
+  /// @param unobserved_value Floating-point value to use for unknown/unobserved
+  /// points.
+  /// @param slice_height The height of the slice to output. When using the 2D
+  /// ESDF, this *must* match the z_output passed in to the slice integrator.
+  /// @param image_coordinates Whether to use image coordinates (true) or matrix
+  /// coordinates (false). Image coordinates have the 0, 0 in the upper left,
+  /// and matrix coordinates have 0, 0 in the lower left.
+  /// @param output_image Output floating point image with the distances at each
+  /// pixel.
+  /// @param aabb The AABB of the complete slice, as an output.
+  void convertLayerSliceToDistanceImage(const EsdfLayer& layer,
+                                        float unobserved_value,
+                                        float slice_height,
+                                        bool image_coordinates,
+                                        Image<float>* output_image,
+                                        AxisAlignedBoundingBox* aabb);
 
   /// A parameter getter
   /// The maximum distance in meters out to which to calculate the ESDF.
@@ -109,6 +170,12 @@ class EsdfIntegrator {
   /// @returns the minimum weight
   float min_weight() const;
 
+  /// A parameter getter
+  /// The minimum probability (between 0.0 and 1.0) which we consider an
+  /// occupancy voxel occupied.
+  /// @returns the minimum probability
+  float occupied_threshold() const;
+
   /// A parameter setter
   /// See truncation_distance_vox().
   /// @param max_distance_m The maximum distance out to which to calculate the
@@ -125,39 +192,33 @@ class EsdfIntegrator {
   /// @param min_weight the minimum weight at which to consider a voxel a site.
   void min_weight(float min_weight);
 
+  /// A parameter setter
+  /// See occupied_threshold()
+  /// @param occupied_threshold the minimum probability.
+  void occupied_threshold(float occupied_threshold);
+
  protected:
+  /// Templated version of the public functions above, used internally.
+  template <typename LayerType>
+  void integrateBlocks(const LayerType& layer,
+                       const std::vector<Index3D>& block_indices,
+                       EsdfLayer* esdf_layer);
+
+  template <typename LayerType>
+  void integrateSlice(const LayerType& layer,
+                      const std::vector<Index3D>& block_indices, float z_min,
+                      float z_max, float z_output, EsdfLayer* esdf_layer);
+
+  /// Allocate all blocks in the given block indices list.
   void allocateBlocksOnCPU(const std::vector<Index3D>& block_indices,
                            EsdfLayer* esdf_layer);
-  void markAllSitesOnCPU(const TsdfLayer& tsdf_layer,
-                         const std::vector<Index3D>& block_indices,
-                         EsdfLayer* esdf_layer,
-                         std::vector<Index3D>* blocks_with_sites,
-                         std::vector<Index3D>* blocks_to_clear);
-  void computeEsdfOnCPU(const std::vector<Index3D>& blocks_with_sites,
-                        EsdfLayer* esdf_layer);
 
-  // Internal functions for ESDF computation.
-  void sweepBlockBandOnCPU(int axis_to_sweep, float voxel_size,
-                           EsdfBlock* esdf_block);
-  void updateLocalNeighborBandsOnCPU(const Index3D& block_index,
-                                     EsdfLayer* esdf_layer,
-                                     std::vector<Index3D>* updated_blocks);
-  void propagateEdgesOnCPU(int axis_to_sweep, float voxel_size,
-                           EsdfBlock* esdf_block);
+  /// Gets the site-finding functors for a specific layer type.
+  OccupancySiteFunctor getSiteFunctor(const OccupancyLayer& layer);
+  TsdfSiteFunctor getSiteFunctor(const TsdfLayer& layer);
 
-  // CPU-based incremental.
-  void clearInvalidOnCPU(const std::vector<Index3D>& blocks_with_sites,
-                         EsdfLayer* esdf_layer,
-                         std::vector<Index3D>* updated_blocks);
-  void clearNeighborsOnCPU(const Index3D& block_index, EsdfLayer* esdf_layer,
-                           Index3DSet* neighbor_clearing_set);
-  void clearVoxel(EsdfVoxel* voxel, float max_squared_distance_vox);
-
-  // Test function to just clear everything in the whole map.
-  void clearAllInvalidOnCPU(EsdfLayer* esdf_layer,
-                            std::vector<Index3D>* updated_blocks);
-
-  void markAllSitesCombined(const TsdfLayer& tsdf_layer,
+  template <typename LayerType>
+  void markAllSitesCombined(const LayerType& layer,
                             const std::vector<Index3D>& block_indices,
                             EsdfLayer* esdf_layer,
                             device_vector<Index3D>* blocks_with_sites,
@@ -166,7 +227,8 @@ class EsdfIntegrator {
   // Same as the other function but basically makes the whole operation 2D.
   // Considers a min and max z in a bounding box which is compressed down into a
   // single layer.
-  void markSitesInSliceCombined(const TsdfLayer& tsdf_layer,
+  template <typename LayerType>
+  void markSitesInSliceCombined(const LayerType& layer,
                                 const std::vector<Index3D>& block_indices,
                                 float min_z, float max_z, float output_z,
                                 EsdfLayer* esdf_layer,
@@ -174,9 +236,6 @@ class EsdfIntegrator {
                                 device_vector<Index3D>* cleared_blocks);
 
   // Internal helpers for GPU computation.
-
-  // Helper function to figure out which axes to sweep first and second.
-  void getSweepAxes(int axis_to_sweep, int* first_axis, int* second_axis) const;
 
   /// Combined methods using the GPU hash to simplify the ESDF update logic.
   void updateNeighborBandsCombined(
@@ -196,12 +255,28 @@ class EsdfIntegrator {
   // Helper method to de-dupe block indices.
   void sortAndTakeUniqueIndices(device_vector<Index3D>* block_indices);
 
+  // Output helper.
+  void populateSliceFromLayer(const EsdfLayer& layer,
+                              const AxisAlignedBoundingBox& aabb,
+                              float z_slice_height, float resolution,
+                              float unobserved_value, bool image_coordinates,
+                              Image<float>* image);
+
+  /// @brief TsdfLayer related parameter
   /// Maximum distance to compute the ESDF.
-  float max_distance_m_ = 10.0;
+  float max_distance_m_ = 2.0;
+
+  /// @brief TsdfLayer related parameter
   /// Maximum (TSDF) distance at which a voxel is considered a site
-  float max_site_distance_vox_ = 1.0;
+  float tsdf_max_site_distance_vox_ = 1.0;
+
+  /// @brief TsdfLayer related parameterx
   /// Minimum weight to consider a TSDF voxel observed.
-  float min_weight_ = 1e-4;
+  float tsdf_min_weight_ = 1e-4;
+
+  /// @brief OccupancyLayer related parameter
+  /// The log odds value greater than which we consider a voxel occupied
+  float occupied_threshold_log_odds_ = logOddsFromProbability(0.5f);
 
   // State.
   cudaStream_t cuda_stream_ = nullptr;

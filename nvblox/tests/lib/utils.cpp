@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <cstdlib>
 
-#include "nvblox/core/accessors.h"
 #include "nvblox/io/ply_writer.h"
+#include "nvblox/map/accessors.h"
 #include "nvblox/utils/timing.h"
 
 DEFINE_bool(

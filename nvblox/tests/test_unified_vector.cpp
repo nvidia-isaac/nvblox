@@ -19,7 +19,7 @@ limitations under the License.
 
 #include <cuda_runtime.h>
 
-#include "nvblox/core/cuda/warmup.h"
+#include "nvblox/core/internal/warmup_cuda.h"
 #include "nvblox/core/unified_vector.h"
 
 #include "nvblox/tests/increment_on_gpu.h"

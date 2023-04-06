@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include "nvblox/core/color.h"
-#include "nvblox/core/image.h"
 #include "nvblox/core/types.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace test_utils {

@@ -16,27 +16,27 @@ limitations under the License.
 #pragma once
 
 #include <cuda_runtime.h>
-#include <glog/logging.h>
 #include <atomic>
 #include <type_traits>
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/core/types.h"
 
 namespace nvblox {
 
-// shared_ptr for device, unified memory, and pinned host memory
-// Things to be aware of
-// - Single objects
-//   - Constructor and Destructor are not called when memory_type==kDevice
-//     (these are CPU functions). Therefore unified_ptr generates an error if
-//     used in device mode with non-trivially destructible types.
-//   - Both Constructor and Destructor are called when memory_type==kUnified ||
-//     kHost.
-// - Arrays
-//   - Default Constructor called when storing arrays in kUnified || kHost.
-//   - No Constructor called in kDevice mode.
-//   - No destructor called for ANY memory setting so we make a static check
-//     that objects are trivially destructable.
+/// shared_ptr for device, unified memory, and pinned host memory
+/// Things to be aware of
+/// - Single objects
+///   - Constructor and Destructor are not called when memory_type==kDevice
+///     (these are CPU functions). Therefore unified_ptr generates an error if
+///     used in device mode with non-trivially destructible types.
+///   - Both Constructor and Destructor are called when memory_type==kUnified ||
+///     kHost.
+/// - Arrays
+///   - Default Constructor called when storing arrays in kUnified || kHost.
+///   - No Constructor called in kDevice mode.
+///   - No destructor called for ANY memory setting so we make a static check
+///     that objects are trivially destructable.
 template <typename T>
 class unified_ptr {
  public:
@@ -52,24 +52,24 @@ class unified_ptr {
   unified_ptr(unified_ptr<T>&& other);
   ~unified_ptr();
 
-  // Operator =
+  /// Operator =
   unified_ptr<T>& operator=(const unified_ptr<T>& other);
   unified_ptr<T>& operator=(unified_ptr<T>&& other);
 
-  // Operator bool
+  /// Operator bool
   operator bool() const;
-  // Operator comparison
+  /// Operator comparison
   bool operator==(const unified_ptr<T>& other) const;
   bool operator!=(const unified_ptr<T>& other) const;
 
-  // Operator dereference
+  /// Operator dereference
   T_noextent* operator->();
   const T_noextent* operator->() const;
   T& operator*();
   const T& operator*() const;
 
-  // Operator array access
-  // Only enabled if the underlying type is an array
+  /// Operator array access
+  /// Only enabled if the underlying type is an array
   template <typename T1 = T,
             std::enable_if_t<std::is_array<T1>::value, bool> = true>
   T_noextent& operator[](size_t i) {
@@ -83,35 +83,46 @@ class unified_ptr {
     return ptr_[i];
   }
 
-  // Operator convert
-  // Only enabled if the base type is NOT const, otherwise adds a second
-  // trivial converter.
+  /// Operator convert
+  /// Only enabled if the base type is NOT const, otherwise adds a second
+  /// trivial converter.
   template <typename T2,
             std::enable_if_t<!std::is_const<T2>::value, bool> = true>
   operator unified_ptr<const T2>() const;
 
-  // Get the raw pointer.
+  /// Operator convert to base class.
+  template <typename T2, typename std::enable_if<std::is_base_of<T2, T>{} &&
+                                                     !std::is_const<T2>{} &&
+                                                     !std::is_const<T>{},
+                                                 bool>::type = true>
+  operator unified_ptr<T2>() const;
+
+  /// Get the raw pointer.
   T_noextent* get();
   const T_noextent* get() const;
 
-  // Reset the pointer to point to nothing.
+  /// Reset the pointer to point to nothing.
   void reset();
 
-  // Copy the underlying object (potentially to another memory location)
-  // NOTE: This is implemented as a memcpy at the pointed to location.
+  /// Copy the underlying object (potentially to another memory location)
+  /// NOTE: This is implemented as a memcpy at the pointed to location.
   unified_ptr<T_nonconst> clone() const;
   unified_ptr<T_nonconst> clone(MemoryType memory_type) const;
 
-  // Copy memory between two unified ptrs, potentially of different memory locations.
+  /// Copy memory between two unified ptrs, potentially of different memory
+  /// locations.
   void copyTo(unified_ptr<T_nonconst>& ptr) const;
 
   MemoryType memory_type() const { return memory_type_; }
 
-  // Helper function to memset all the memory to 0.
+  /// Helper function to memset all the memory to 0.
   void setZero();
 
+  // Unified pointer has heaps of friends.
   friend class unified_ptr<T_nonconst>;
   friend class unified_ptr<const T>;
+  template <class U>
+  friend class unified_ptr;
 
  private:
   MemoryType memory_type_;
@@ -181,4 +192,4 @@ typename _Unified_if<T>::_Known_bound make_unified(Args&&... args) = delete;
 
 }  // namespace nvblox
 
-#include "nvblox/core/impl/unified_ptr_impl.h"
+#include "nvblox/core/internal/impl/unified_ptr_impl.h"

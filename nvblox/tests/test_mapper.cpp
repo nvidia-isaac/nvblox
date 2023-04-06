@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <gtest/gtest.h>
+#include "nvblox/utils/logging.h"
 
-#include "nvblox/core/bounding_spheres.h"
-#include "nvblox/core/mapper.h"
 #include "nvblox/core/types.h"
+#include "nvblox/geometry/bounding_spheres.h"
+#include "nvblox/io/image_io.h"
 #include "nvblox/io/mesh_io.h"
+#include "nvblox/io/pointcloud_io.h"
+#include "nvblox/mapper/mapper.h"
 #include "nvblox/mesh/mesh.h"
 #include "nvblox/primitives/scene.h"
-
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -60,13 +61,13 @@ TEST(MapperTest, ClearOutsideSphere) {
   primitives::Scene scene = getSphereInABoxScene(sphere_center, sphere_radius);
 
   constexpr float voxel_size_m = 0.1;
-  RgbdMapper mapper(voxel_size_m, MemoryType::kDevice);
+  Mapper mapper(voxel_size_m, MemoryType::kDevice);
 
   TsdfLayer tsdf_layer_host(voxel_size_m, MemoryType::kHost);
 
-  scene.generateSdfFromScene(1.0, &tsdf_layer_host);
+  scene.generateLayerFromScene(1.0, &tsdf_layer_host);
   mapper.tsdf_layer() = tsdf_layer_host;
-  
+
   EXPECT_GT(mapper.tsdf_layer().numAllocatedBlocks(), 0);
 
   mapper.generateMesh();
@@ -100,6 +101,116 @@ TEST(MapperTest, ClearOutsideSphere) {
 
   if (FLAGS_nvblox_test_file_output) {
     io::outputMeshLayerToPly(mapper.mesh_layer(), "mapper_test.ply");
+  }
+}
+
+TEST(MapperTest, GenerateEsdfInFakeObservedAreas) {
+  // Scene
+  primitives::Scene scene;
+  scene.aabb() = AxisAlignedBoundingBox(Vector3f(-5.0f, -5.0f, -5.0f),
+                                        Vector3f(5.0f, 5.0f, 5.0f));
+  scene.addGroundLevel(-4.0f);
+  scene.addCeiling(4.0f);
+  scene.addPlaneBoundaries(-4.0f, 4.0f, -4.0f, 4.0f);
+
+  // Camera
+  constexpr static float fu = 300;
+  constexpr static float fv = 300;
+  constexpr static int width = 640;
+  constexpr static int height = 480;
+  Camera camera(fu, fv, width, height);
+
+  // Looking down the x-axis
+  Eigen::Quaternionf rotation_base(0.5, 0.5, 0.5, 0.5);
+  Eigen::Vector3f translation(0.0, 0.0, 0.0);
+  Transform T_S_C = Transform::Identity();
+  T_S_C.prerotate(rotation_base);
+  T_S_C.pretranslate(translation);
+
+  // Synthetic view of dreams
+  DepthImage depth_image(height, width, MemoryType::kUnified);
+  constexpr float kSyntheticViewMaxDist = 20.0f;
+  scene.generateDepthImageFromScene(camera, T_S_C, kSyntheticViewMaxDist,
+                                    &depth_image);
+
+  // Mapper
+  const float voxel_size_m = 0.1;
+  Mapper mapper(voxel_size_m, MemoryType::kUnified);
+
+  // Integrate a single frame
+  mapper.integrateDepth(depth_image, T_S_C, camera);
+
+  // Produce the ESDF
+  mapper.updateEsdf();
+
+  // Check that TSDF/ESDF is allocated in view, but not allocated behind the
+  // robot
+  EXPECT_TRUE(mapper.tsdf_layer().getBlockAtPosition(Vector3f(1.0, 0.0, 0.0)));
+  EXPECT_FALSE(
+      mapper.tsdf_layer().getBlockAtPosition(Vector3f(-1.0, 0.0, 0.0)));
+  EXPECT_TRUE(mapper.esdf_layer().getBlockAtPosition(Vector3f(1.0, 0.0, 0.0)));
+  EXPECT_FALSE(
+      mapper.esdf_layer().getBlockAtPosition(Vector3f(-1.0, 0.0, 0.0)));
+
+  // Get a voxel in the truncation band BEFORE marking below. Used in a test
+  // later.
+  auto vox_and_flag_before = mapper.tsdf_layer().getVoxel({4.0, 0.0, 0.0});
+  EXPECT_TRUE(vox_and_flag_before.second);
+  const TsdfVoxel voxel_in_band_before = vox_and_flag_before.first;
+
+  // Fake observation
+  const Eigen::Vector3f center(0.0, 0.0, 0.0);
+  const float radius = 5.0;
+  mapper.markUnobservedTsdfFreeInsideRadius(center, radius);
+
+  // Check that:
+  // - TSDF allocated behind robot.
+  // - ESDF not-allocated behind robot.
+  EXPECT_TRUE(mapper.tsdf_layer().getBlockAtPosition(Vector3f(-1.0, 0.0, 0.0)));
+  EXPECT_FALSE(
+      mapper.esdf_layer().getBlockAtPosition(Vector3f(-1.0, 0.0, 0.0)));
+
+  // Update the ESDF
+  mapper.updateEsdf();
+
+  // Check that both TSDF and ESDF allocated behind robot
+  EXPECT_TRUE(mapper.tsdf_layer().getBlockAtPosition(Vector3f(-1.0, 0.0, 0.0)));
+  EXPECT_TRUE(mapper.esdf_layer().getBlockAtPosition(Vector3f(-1.0, 0.0, 0.0)));
+
+  // Check that ESDF voxels in block behind that camera are observed and have
+  // some positive value.
+  auto esdf_block_ptr =
+      mapper.esdf_layer().getBlockAtIndex(Index3D(-1.0, 0.0, 0.0));
+  for (int x = 0; x < TsdfBlock::kVoxelsPerSide; x++) {
+    for (int y = 0; y < TsdfBlock::kVoxelsPerSide; y++) {
+      for (int z = 0; z < TsdfBlock::kVoxelsPerSide; z++) {
+        auto esdf_voxel = esdf_block_ptr->voxels[x][y][y];
+        EXPECT_TRUE(esdf_voxel.observed);
+        EXPECT_GT(esdf_voxel.squared_distance_vox, 0);
+      }
+    }
+  }
+
+  // Check that previously observed voxels in the truncation band are unaffected
+  auto vox_and_flag_after = mapper.tsdf_layer().getVoxel({4.0, 0.0, 0.0});
+  EXPECT_TRUE(vox_and_flag_after.second);
+  auto voxel_in_band_after = vox_and_flag_after.first;
+  constexpr float kEps = 1e-4;
+  // One actual observation
+  // NOTE(alexmillane): This weight of 1.0 is currently hardcoded in the
+  // TsdfIntegrator. This may change at some point which would cause this test
+  // to fail.
+  EXPECT_NEAR(voxel_in_band_before.weight, voxel_in_band_after.weight, kEps);
+  EXPECT_NEAR(voxel_in_band_before.distance, voxel_in_band_after.distance,
+              kEps);
+  // Distance is less than one voxel from the plane at 4m.
+  EXPECT_LT(voxel_in_band_before.distance, voxel_size_m);
+
+  // Save debug files
+  if (FLAGS_nvblox_test_file_output) {
+    io::writeToPng("./mapper_test_depth_image.png", depth_image);
+    mapper.saveMeshAsPly("./mapper_test_plane_mesh.ply");
+    mapper.saveEsdfAsPly("./mapper_test_plane_esdf.ply");
   }
 }
 

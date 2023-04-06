@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <gtest/gtest.h>
+#include "nvblox/utils/logging.h"
 
-#include "nvblox/core/bounding_spheres.h"
 #include "nvblox/core/types.h"
+#include "nvblox/geometry/bounding_spheres.h"
 
 using namespace nvblox;
 
@@ -35,7 +35,7 @@ std::vector<Index3D> get3x3CubeOfBlocks() {
 }
 
 bool isInResult(const std::vector<Index3D>& result_vec,
-                    const Index3D& expected_result) {
+                const Index3D& expected_result) {
   for (const Index3D idx : result_vec) {
     if ((idx.array() == expected_result.array()).all()) {
       return true;
@@ -45,7 +45,7 @@ bool isInResult(const std::vector<Index3D>& result_vec,
 }
 
 bool isNotInResult(const std::vector<Index3D>& result_vec,
-                       const Index3D& expected_non_result) {
+                   const Index3D& expected_non_result) {
   for (const Index3D idx : result_vec) {
     if ((idx.array() == expected_non_result.array()).all()) {
       return false;

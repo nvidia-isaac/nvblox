@@ -66,7 +66,7 @@ class GPULayerView {
   // max loads lower than that.
   const float max_load_factor_ = 0.5;
 
-  // This is the factor by which we overallocate space 
+  // This is the factor by which we overallocate space
   const float size_expansion_factor_ = 2.0f;
 
   // NOTE(alexmillane): To keep GPU code out of the header we use PIMPL to hide
@@ -83,4 +83,4 @@ class GPULayerView {
 // - The problem is that we don't want the GPULayerView implementation, which
 //   contains CUDA calls and stdgpu code, bleeding into into layer.h, one of our
 //   main interace headers.
-//#include "nvblox/gpu_hash/cuda/impl/gpu_layer_view_impl.cuh"
+//#include "nvblox/gpu_hash/internal/cuda/impl/gpu_layer_view_impl.cuh"

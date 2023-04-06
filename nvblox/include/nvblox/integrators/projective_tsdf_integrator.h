@@ -15,26 +15,20 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/camera.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/lidar.h"
-#include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
-#include "nvblox/gpu_hash/gpu_layer_view.h"
-#include "nvblox/integrators/projective_integrator_base.h"
-#include "nvblox/integrators/view_calculator.h"
+#include "nvblox/integrators/internal/projective_integrator.h"
+#include "nvblox/integrators/weighting_function.h"
 
 namespace nvblox {
 
+struct UpdateTsdfVoxelFunctor;
+
 /// A class performing TSDF intregration
 ///
-/// Integrates a depth images into TSDF layers. The "projective" is a describes
-/// one type of integration. Namely that voxels in view are projected into the
-/// depth image (the alternative being casting rays out from the camera).
-class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
+/// Integrates depth images and lidar scans into TSDF layers. The "projective"
+/// describes one type of integration. Namely that voxels in view are projected
+/// into the depth image (the alternative being casting rays out from the
+/// camera).
+class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
  public:
   ProjectiveTsdfIntegrator();
   virtual ~ProjectiveTsdfIntegrator();
@@ -65,73 +59,89 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegratorBase {
                       const Lidar& lidar, TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
 
-  /// Blocks until GPU operations are complete
-  /// Ensure outstanding operations are finished (relevant for integrators
-  /// launching asynchronous work)
-  void finish() const override;
+  /// For voxels with a radius, allocate memory and give a small weight and
+  /// truncation distance, effectively making these voxels free-space. Does not
+  /// affect voxels which are already observed.
+  /// @param center The center of the sphere affected.
+  /// @param radius The radius of the sphere affected.
+  /// @param layer A pointed to the layer which will be affected by the update.
+  /// @param updated_blocks Optional pointer to a list of blocks affected by the
+  /// update.
+  void markUnobservedFreeInsideRadius(
+      const Vector3f& center, float radius, TsdfLayer* layer,
+      std::vector<Index3D>* updated_blocks = nullptr);
 
   /// A parameter getter
-  /// The maximum allowable value for the maximum distance between the linearly
-  /// interpolated image value and its four neighbours. Above this value we
-  /// consider linear interpolation failed. This is to prevent interpolation
-  /// across boundaries in the lidar image, which causing bleeding in the
-  /// reconstructed 3D structure.
-  /// @returns the maximum allowable distance in voxels
-  float lidar_linear_interpolation_max_allowable_difference_vox() const;
+  /// The maximum weight that voxels can have. The integrator clips the
+  /// voxel weight to this value after integration. Note that currently each
+  /// intragration to a voxel increases the weight by 1.0 (if not clipped).
+  /// @returns the maximum weight
+  float max_weight() const;
+
+  /// A parameter setter
+  /// See max_weight().
+  /// @param max_weight the maximum of a voxel.
+  void max_weight(float max_weight);
 
   /// A parameter getter
-  /// The maximum allowable distance between a reprojected voxel's center and
-  /// the ray performing this integration. Above this we consider nearest
-  /// nieghbour interpolation to have failed.
-  /// @returns the maximum allowable distance in voxels
-  float lidar_nearest_interpolation_max_allowable_dist_to_ray_vox() const;
+  /// The type of weighting function used to fuse observations
+  /// @returns The weighting function type used.
+  WeightingFunctionType weighting_function_type() const;
 
   /// A parameter setter
-  /// see lidar_linear_interpolation_max_allowable_difference_vox()
-  /// @param the new parameter value
-  void lidar_linear_interpolation_max_allowable_difference_vox(float value);
+  /// The type of weighting function used to fuse observations
+  /// See weighting_function_type().
+  /// @param weighting_function_type The type of weighting function to be used
+  void weighting_function_type(WeightingFunctionType weighting_function_type);
+
+  /// A parameter getter.
+  /// The distance given to unobserved voxels when
+  /// markUnobservedFreeInsideRadius() is called. Note that a negative value
+  /// means that the truncation distance will be used.
+  /// @return The assigned distance
+  float marked_unobserved_voxels_distance_m() const;
 
   /// A parameter setter
-  /// see lidar_nearest_interpolation_max_allowable_dist_to_ray_vox()
-  /// @param the new parameter value
-  void lidar_nearest_interpolation_max_allowable_dist_to_ray_vox(float value);
+  /// See marked_unobserved_voxels_distance_m()
+  /// @param marked_unobserved_voxels_distance_m The assigned distance
+  void marked_unobserved_voxels_distance_m(
+      float marked_unobserved_voxels_distance_m);
+
+  /// A parameter getter
+  // The weight given to unobserved voxels when markUnobservedFreeInsideRadius()
+  // is called.
+  /// @returns The assigned weight
+  float marked_unobserved_voxels_weight() const;
+
+  /// A parameter setter
+  /// See marked_unobserved_voxels_weight()
+  /// @param marked_unobserved_voxels_weight The assigned weight
+  void marked_unobserved_voxels_weight(float marked_unobserved_voxels_weight);
 
  protected:
-  // Params
-  // NOTE(alexmillane): See the getters above for a description.
-  float lidar_linear_interpolation_max_allowable_difference_vox_ = 2.0f;
-  float lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ = 0.5f;
+  std::string getIntegratorName() const override;
 
-  // Given a set of blocks in view (block_indices) perform TSDF updates on all
-  // voxels within these blocks on the GPU.
-  void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,
-                       const Camera& camera, TsdfLayer* layer_ptr);
-  void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,
-                       const Lidar& lidar, TsdfLayer* layer_ptr);
-  template <typename SensorType>
-  void integrateBlocksTemplate(const std::vector<Index3D>& block_indices,
-                               const DepthImage& depth_frame,
-                               const Transform& T_L_C, const SensorType& sensor,
-                               TsdfLayer* layer);
+  // Internally used to move the VoxelUpdateFunctor to the device
+  unified_ptr<UpdateTsdfVoxelFunctor> getTsdfUpdateFunctorOnDevice(
+      float voxel_size);
 
-  // The internal, templated version of the integrateFrame methods above. Called
-  // internally with either a camera or lidar sensor.
-  template <typename SensorType>
-  void integrateFrameTemplate(const DepthImage& depth_frame,
-                              const Transform& T_L_C, const SensorType& sensor,
-                              TsdfLayer* layer,
-                              std::vector<Index3D>* updated_blocks = nullptr);
+  // Functor which defines the voxel update operation.
+  unified_ptr<UpdateTsdfVoxelFunctor> update_functor_host_ptr_;
 
-  // Blocks to integrate on the current call (indices and pointers)
-  // NOTE(alexmillane): We have one pinned host and one device vector and
-  // transfer between them.
-  device_vector<Index3D> block_indices_device_;
-  device_vector<TsdfBlock*> block_ptrs_device_;
-  host_vector<Index3D> block_indices_host_;
-  host_vector<TsdfBlock*> block_ptrs_host_;
+  // The maximum weight that a TsdfVoxel can accumulate.
+  float max_weight_ = 100.0f;
 
-  // CUDA stream to process ingration on
-  cudaStream_t integration_stream_;
+  // The type of the weighting function to be applied to observations
+  WeightingFunctionType weighting_function_type_ =
+      kDefaultWeightingFunctionType;
+
+  // The distance given to unobserved voxels when
+  // markUnobservedFreeInsideRadius() is called. Note that a negative value
+  // means that the truncation distance will be used.
+  float marked_unobserved_voxels_distance_m_ = -1.0;
+  // The weight given to unobserved voxels when markUnobservedFreeInsideRadius()
+  // is called.
+  float marked_unobserved_voxels_weight_ = 0.1f;
 };
 
 }  // namespace nvblox

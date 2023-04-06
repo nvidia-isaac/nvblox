@@ -15,10 +15,10 @@ limitations under the License.
 */
 #include <vector>
 
-#include <nvblox/core/common_names.h>
-#include <nvblox/core/layer.h>
-#include <nvblox/core/types.h>
-#include <nvblox/mesh/mesh_block.h>
+#include "nvblox/core/types.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/mesh/mesh_block.h"
 
 namespace nvblox {
 

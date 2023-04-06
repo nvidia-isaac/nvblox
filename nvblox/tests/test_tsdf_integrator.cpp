@@ -14,20 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <gtest/gtest.h>
+
 #include <cmath>
 
-#include "nvblox/core/camera.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/interpolation_3d.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/types.h"
-#include "nvblox/core/voxels.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
-#include "nvblox/io/csv.h"
+#include "nvblox/integrators/weighting_function.h"
+#include "nvblox/interpolation/interpolation_3d.h"
+#include "nvblox/io/image_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/io/pointcloud_io.h"
-#include "nvblox/primitives/scene.h"
-
+#include "nvblox/tests/integrator_utils.h"
 #include "nvblox/tests/projective_tsdf_integrator_cpu.h"
 #include "nvblox/tests/utils.h"
 
@@ -86,90 +82,6 @@ class TestProjectiveTsdfIntegrator : public ProjectiveTsdfIntegrator {
   FRIEND_TEST(TsdfIntegratorTest, BlocksInView);
 };
 
-struct Plane {
-  Plane(const Vector3f& _p, const Vector3f& _n) : p(_p), n(_n){};
-
-  static Plane RandomAtPoint(const Vector3f& p) {
-    return Plane(p, Vector3f::Random().normalized());
-  }
-
-  const Vector3f p;
-  const Vector3f n;
-};
-
-DepthImage matrixToDepthImage(const Eigen::MatrixXf& mat) {
-  DepthImage depth_frame(mat.rows(), mat.cols(), MemoryType::kUnified);
-  for (int col_idx = 0; col_idx < mat.cols(); col_idx++) {
-    for (int row_idx = 0; row_idx < mat.rows(); row_idx++) {
-      depth_frame(row_idx, col_idx) = mat(row_idx, col_idx);
-    }
-  }
-  return depth_frame;
-}
-
-Eigen::MatrixX3f backProjectToPlaneVectorized(
-    const Eigen::MatrixX2f& uv_coordinates, const Plane& plane,
-    const Camera& camera) {
-  CHECK((uv_coordinates.col(0).array() >= 0.0f).all() &&
-        (uv_coordinates.col(0).array() < camera.width()).all());
-  CHECK((uv_coordinates.col(1).array() >= 0.0f).all() &&
-        (uv_coordinates.col(1).array() < camera.height()).all());
-  // Plane-ray intersection
-  Eigen::ArrayX3f rays_matrix(uv_coordinates.rows(), 3);
-  rays_matrix.col(0) =
-      (uv_coordinates.col(0).array() - camera.cu()) / camera.fu();
-  rays_matrix.col(1) =
-      (uv_coordinates.col(1).array() - camera.cv()) / camera.fv();
-  rays_matrix.col(2) = 1.0f;
-  const Eigen::ArrayXf t_matrix =
-      plane.p.dot(plane.n) *
-      (rays_matrix.col(0) * plane.n.x() + rays_matrix.col(1) * plane.n.y() +
-       rays_matrix.col(2) * plane.n.z())
-          .inverse();
-  // Each pixel's 3D point
-  return rays_matrix.colwise() * t_matrix;
-}
-
-DepthImage getDepthImage(const Plane& plane, const Camera& camera) {
-  CHECK(plane.p.z() > 0.0f);
-  // Enumerate all pixel locations.
-  Eigen::MatrixX2f uv_coordinates(camera.height() * camera.width(), 2);
-  int linear_idx = 0;
-  for (int u = 0; u < camera.width(); u++) {
-    for (int v = 0; v < camera.height(); v++) {
-      uv_coordinates(linear_idx, 0) = u;
-      uv_coordinates(linear_idx, 1) = v;
-      ++linear_idx;
-    }
-  }
-  // Back project and get depth frame
-  const Eigen::MatrixX3f points_C =
-      backProjectToPlaneVectorized(uv_coordinates, plane, camera);
-  Eigen::MatrixXf depths = (points_C.col(2).array());
-  depths.resize(camera.height(), camera.width());
-  return matrixToDepthImage(depths);
-}
-
-Eigen::MatrixX2f getRandomPixelLocations(const int num_samples,
-                                         const Camera& camera) {
-  // Note: Eigen's Random() generates numbers between -1.0 and 1.0 -> hence the
-  // abs().
-  Eigen::MatrixX2f uv_coordinates =
-      Eigen::MatrixX2f::Random(num_samples, 2).array().abs();
-  constexpr int border_px = 20;
-  uv_coordinates.col(0) =
-      (uv_coordinates.col(0) *
-       static_cast<float>(camera.width() - 1 - 2 * border_px))
-          .array() +
-      border_px;
-  uv_coordinates.col(1) =
-      (uv_coordinates.col(1) *
-       static_cast<float>(camera.height() - 1 - 2 * border_px))
-          .array() +
-      border_px;
-  return uv_coordinates;
-}
-
 TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   // Make sure this is deterministic.
   std::srand(0);
@@ -178,16 +90,18 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   const DeviceType device_type = GetParam();
 
   // Plane centered at (0,0,depth) with random (slight) slant
-  const Plane plane =
-      Plane(Vector3f(0.0f, 0.0f, 5.0f),
-            Vector3f(test_utils::randomFloatInRange(-0.25, 0.25),
-                     test_utils::randomFloatInRange(-0.25, 0.25), -1.0f));
+  const test_utils::Plane plane = test_utils::Plane(
+      Vector3f(0.0f, 0.0f, 5.0f),
+      Vector3f(test_utils::randomFloatInRange(-0.25, 0.25),
+               test_utils::randomFloatInRange(-0.25, 0.25), -1.0f));
 
   // Get a depth map of our view of the plane.
-  const DepthImage depth_frame = getDepthImage(plane, camera_);
+  const DepthImage depth_frame = test_utils::getDepthImage(plane, camera_);
 
-  std::string filepath = "./depth_frame.csv";
-  io::writeToCsv(filepath, depth_frame);
+  if (FLAGS_nvblox_test_file_output) {
+    std::string filepath = "./depth_frame_tsdf_test.png";
+    io::writeToPng(filepath, depth_frame);
+  }
 
   // Integrate into a layer
   std::unique_ptr<ProjectiveTsdfIntegrator> integrator_ptr;
@@ -204,9 +118,9 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   // Sample some points on the plane, within the camera view.
   constexpr int kNumberOfPointsToCheck = 1000;
   const Eigen::MatrixX2f u_random_C =
-      getRandomPixelLocations(kNumberOfPointsToCheck, camera_);
+      test_utils::getRandomPixelLocations(kNumberOfPointsToCheck, camera_);
   const Eigen::MatrixX3f p_check_L =
-      backProjectToPlaneVectorized(u_random_C, plane, camera_);
+      test_utils::backProjectToPlaneVectorized(u_random_C, plane, camera_);
 
   // Get the distance of these surface points
   std::vector<Vector3f> points_L;
@@ -236,6 +150,9 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   int num_bad_flags = 0;
   for (int i = 0; i < distances.size(); i++) {
     EXPECT_TRUE(success_flags[i]);
+    if (!success_flags[i]) {
+      num_bad_flags++;
+    }
     EXPECT_NEAR(distances[i], 0.0f,
                 surface_reconstruction_allowable_distance_error_m_);
     if (std::abs(distances[i]) >
@@ -248,7 +165,6 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
 }
 
 TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
-  constexpr float kSphereRadius = 2.0f;
   constexpr float kTrajectoryRadius = 4.0f;
   constexpr float kTrajectoryHeight = 2.0f;
   constexpr int kNumTrajectoryPoints = 80;
@@ -262,21 +178,10 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
   // Tolerance for error.
   constexpr float kDistanceErrorTolerance = kTruncationDistanceMeters;
 
-  // Scene is bounded to -5, -5, 0 to 5, 5, 5.
-  primitives::Scene scene;
-  scene.aabb() = AxisAlignedBoundingBox(Vector3f(-5.0f, -5.0f, 0.0f),
-                                        Vector3f(5.0f, 5.0f, 5.0f));
-  // Create a scene with a ground plane and a sphere.
-  scene.addGroundLevel(0.0f);
-  scene.addCeiling(5.0f);
-  scene.addPrimitive(
-      std::make_unique<primitives::Sphere>(Vector3f(0.0f, 0.0f, 2.0f), 2.0f));
-  // Add bounding planes at 5 meters. Basically makes it sphere in a box.
-  scene.addPlaneBoundaries(-5.0f, 5.0f, -5.0f, 5.0f);
-
-  // Get the ground truth SDF for it.
+  // Get the ground truth SDF of a sphere in a box.
+  primitives::Scene scene = test_utils::getSphereInBox();
   TsdfLayer gt_layer(voxel_size_m_, MemoryType::kUnified);
-  scene.generateSdfFromScene(kTruncationDistanceMeters, &gt_layer);
+  scene.generateLayerFromScene(kTruncationDistanceMeters, &gt_layer);
 
   // Create an integrator.
   ProjectiveTsdfIntegratorCPU integrator_cpu;
@@ -357,9 +262,11 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
   std::cout << "GPU: total_num_voxels: " << total_num_voxels << std::endl;
   std::cout << "GPU: percent_large_error: " << percent_large_error << std::endl;
 
-  io::outputVoxelLayerToPly(layer_gpu, "test_tsdf_projective_gpu.ply");
-  io::outputVoxelLayerToPly(layer_cpu, "test_tsdf_projective_cpu.ply");
-  io::outputVoxelLayerToPly(gt_layer, "test_tsdf_projective_gt.ply");
+  if (FLAGS_nvblox_test_file_output) {
+    io::outputVoxelLayerToPly(layer_gpu, "test_tsdf_projective_gpu.ply");
+    io::outputVoxelLayerToPly(layer_cpu, "test_tsdf_projective_cpu.ply");
+    io::outputVoxelLayerToPly(gt_layer, "test_tsdf_projective_gt.ply");
+  }
 
   // Compare the layers
   ASSERT_GE(layer_cpu.numAllocatedBlocks(), layer_gpu.numAllocatedBlocks());
@@ -400,6 +307,164 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
 
 INSTANTIATE_TEST_CASE_P(DeviceTests, TsdfIntegratorTestParameterized,
                         ::testing::Values(DeviceType::kCPU, DeviceType::kGPU));
+
+TEST_F(TsdfIntegratorTest, MarkUnobservedFree) {
+  constexpr float voxel_size_m = 0.1;
+  TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kUnified);
+
+  EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 0);
+
+  // Do the observation.
+  const Vector3f center(0.0, 0.0, 0.0);
+  const float radius = 1.0;
+
+  ProjectiveTsdfIntegrator integrator;
+  integrator.markUnobservedFreeInsideRadius(center, radius, &tsdf_layer);
+
+  // Check some blocks got allocated
+  CHECK_GT(tsdf_layer.numAllocatedBlocks(), 0);
+
+  // Check the blocks
+  const float truncation_distance_m =
+      integrator.truncation_distance_vox() * voxel_size_m;
+  callFunctionOnAllVoxels<TsdfVoxel>(
+      tsdf_layer,
+      [truncation_distance_m](const Index3D& block_index,
+                              const Index3D& voxel_index,
+                              const TsdfVoxel* voxel) -> void {
+        constexpr float kEps = 0.001;
+        EXPECT_NEAR(voxel->distance, truncation_distance_m, kEps);
+        EXPECT_GT(voxel->weight, 0.0f);
+      });
+}
+
+TEST_F(TsdfIntegratorTest, GettersAndSetters) {
+  ProjectiveTsdfIntegrator integrator;
+  integrator.max_weight(1.0);
+  EXPECT_EQ(integrator.max_weight(), 1.0);
+  integrator.marked_unobserved_voxels_distance_m(2.0);
+  EXPECT_EQ(integrator.marked_unobserved_voxels_distance_m(), 2.0);
+  integrator.marked_unobserved_voxels_weight(3.0);
+  EXPECT_EQ(integrator.marked_unobserved_voxels_weight(), 3.0);
+  integrator.weighting_function_type(
+      WeightingFunctionType::kInverseSquareWeight);
+  EXPECT_EQ(integrator.weighting_function_type(),
+            WeightingFunctionType::kInverseSquareWeight);
+}
+
+TEST_F(TsdfIntegratorTest, WeightingFunction) {
+  // Integrator
+  ProjectiveTsdfIntegrator integrator;
+
+  // Check that weighting function gets initialized to the default
+  EXPECT_EQ(integrator.weighting_function_type(),
+            kDefaultWeightingFunctionType);
+
+  // Change to constant weight
+  integrator.weighting_function_type(WeightingFunctionType::kConstantWeight);
+
+  // Plane centered at (0,0,depth) with random (slight) slant
+  const float kPlaneDistance = 5.0f;
+  const test_utils::Plane plane = test_utils::Plane(
+      Vector3f(0.0f, 0.0f, kPlaneDistance), Vector3f(0.0f, 0.0f, -1.0f));
+
+  // Get a depth map of our view of the plane.
+  const DepthImage depth_frame = test_utils::getDepthImage(plane, camera_);
+
+  // Integrate a frame
+  std::vector<Index3D> updated_blocks;
+  integrator.integrateFrame(depth_frame, Transform::Identity(), camera_,
+                            &layer_, &updated_blocks);
+  // Check that something actually happened
+  EXPECT_GT(updated_blocks.size(), 0);
+
+  // Go over the voxels and check that they have the constant weight that we
+  // expect.
+  int num_voxels_observed = 0;
+  for (const Index3D& block_idx : layer_.getAllBlockIndices()) {
+    // Get each voxel and it's position
+    auto block_ptr = layer_.getBlockAtIndex(block_idx);
+    constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
+    for (int x = 0; x < kVoxelsPerSide; x++) {
+      for (int y = 0; y < kVoxelsPerSide; y++) {
+        for (int z = 0; z < kVoxelsPerSide; z++) {
+          // Get the voxel and check it has weight 1.0
+          const TsdfVoxel& voxel = block_ptr->voxels[x][y][z];
+          constexpr float kFloatEps = 1e-4;
+          if (voxel.weight > kFloatEps) {
+            ++num_voxels_observed;
+            EXPECT_NEAR(voxel.weight, 1.0f, kFloatEps);
+          }
+        }
+      }
+    }
+  }
+  LOG(INFO) << "Number of voxels observed: " << num_voxels_observed;
+  EXPECT_GT(num_voxels_observed, 0);
+
+  // Integrate using a different weighting function
+  constexpr WeightingFunctionType kTestedWeightFunctionType =
+      WeightingFunctionType::kInverseSquareWeight;
+  integrator.weighting_function_type(kTestedWeightFunctionType);
+  layer_.clear();
+  updated_blocks.clear();
+  EXPECT_EQ(layer_.numAllocatedBlocks(), 0);
+  EXPECT_EQ(updated_blocks.size(), 0);
+  integrator.integrateFrame(depth_frame, Transform::Identity(), camera_,
+                            &layer_, &updated_blocks);
+  // Check that something actually happened
+  EXPECT_GT(updated_blocks.size(), 0);
+  EXPECT_EQ(integrator.weighting_function_type(), kTestedWeightFunctionType);
+
+  // Weighting function to test against
+  auto weighting_function = WeightingFunction(kTestedWeightFunctionType);
+  CHECK_EQ(static_cast<int>(weighting_function.type()),
+           static_cast<int>(kTestedWeightFunctionType));
+
+  num_voxels_observed = 0;
+  for (const Index3D& block_idx : layer_.getAllBlockIndices()) {
+    // Get each voxel and it's position
+    auto block_ptr = layer_.getBlockAtIndex(block_idx);
+    constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
+    for (int x = 0; x < kVoxelsPerSide; x++) {
+      for (int y = 0; y < kVoxelsPerSide; y++) {
+        for (int z = 0; z < kVoxelsPerSide; z++) {
+          // Get the voxel
+          const TsdfVoxel& voxel = block_ptr->voxels[x][y][z];
+          constexpr float kFloatEps = 1e-4;
+          if (voxel.weight > kFloatEps) {
+            ++num_voxels_observed;
+
+            // Get the depth of the voxel
+            const Index3D voxel_idx(x, y, z);
+            const Vector3f voxel_center =
+                getCenterPostionFromBlockIndexAndVoxelIndex(
+                    layer_.block_size(), block_idx, voxel_idx);
+            const float voxel_depth = voxel_center.z();
+
+            // Calculating
+            const float weight = weighting_function(
+                kPlaneDistance, voxel_depth,
+                integrator.get_truncation_distance_m(layer_.voxel_size()));
+
+            // Weight
+            EXPECT_NEAR(voxel.weight, weight, kFloatEps);
+            CHECK_EQ(
+                static_cast<int>(kTestedWeightFunctionType),
+                static_cast<int>(WeightingFunctionType::kInverseSquareWeight));
+
+            // Hand computing the inverse square weight and checking it matches
+            const float weight_hand_computed =
+                1.0f / (voxel_depth * voxel_depth);
+            EXPECT_NEAR(voxel.weight, weight_hand_computed, kFloatEps);
+          }
+        }
+      }
+    }
+  }
+  LOG(INFO) << "Number of voxels observed: " << num_voxels_observed;
+  EXPECT_GT(num_voxels_observed, 0);
+}
 
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;

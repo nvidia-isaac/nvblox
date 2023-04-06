@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/layer.h"
 #include "nvblox/core/types.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 

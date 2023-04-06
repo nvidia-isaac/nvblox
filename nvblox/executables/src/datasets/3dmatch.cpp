@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include "nvblox/datasets/3dmatch.h"
 
-#include <glog/logging.h>
+#include "nvblox/utils/logging.h"
 
 #include <fstream>
 #include <functional>
@@ -116,10 +116,24 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path,
                                    const int seq_id) {
-  // Object to load 3DMatch data
-  auto data_loader = std::make_unique<DataLoader>(base_path, seq_id);
-  // Fuser
+  auto data_loader = DataLoader::create(base_path, seq_id);
+  if (!data_loader) {
+    return std::unique_ptr<Fuser>();
+  }
   return std::make_unique<Fuser>(std::move(data_loader));
+}
+
+std::unique_ptr<DataLoader> DataLoader::create(const std::string& base_path,
+                                               const int seq_id,
+                                               bool multithreaded) {
+  // Construct a dataset loader but only return it if everything worked.
+  auto dataset_loader =
+      std::make_unique<DataLoader>(base_path, seq_id, multithreaded);
+  if (dataset_loader->setup_success_) {
+    return dataset_loader;
+  } else {
+    return std::unique_ptr<DataLoader>();
+  }
 }
 
 DataLoader::DataLoader(const std::string& base_path, const int seq_id,
@@ -142,6 +156,7 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
 DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
                                     Transform* T_L_C_ptr, Camera* camera_ptr,
                                     ColorImage* color_frame_ptr) {
+  CHECK(setup_success_);
   CHECK_NOTNULL(depth_frame_ptr);
   CHECK_NOTNULL(T_L_C_ptr);
   CHECK_NOTNULL(camera_ptr);
@@ -196,7 +211,7 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     return DataLoadResult::kNoMoreData;
   }
 
-  // Rotate the world frame since Y is up in the normal 3D match dasets.
+  // Rotate the world frame since Y is up in the normal 3D match datasets.
   Eigen::Quaternionf q_L_O =
       Eigen::Quaternionf::FromTwoVectors(Vector3f(0, 1, 0), Vector3f(0, 0, 1));
   *T_L_C_ptr = q_L_O * T_O_C;

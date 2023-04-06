@@ -15,10 +15,9 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/bounding_boxes.h"
-#include "nvblox/core/camera.h"
 #include "nvblox/core/types.h"
-
+#include "nvblox/geometry/bounding_boxes.h"
+#include "nvblox/sensors/camera.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -110,6 +109,13 @@ TEST(CameraTest, OutsideImagePlane) {
 
   const Camera camera = getTestCamera();
 
+  // NOTE(alexmillane): My own ray-from-pixel function to not trigger checks
+  // because the pixel is off the image plane.
+  const auto rayFromPixelNoChecks = [camera](const auto& u_C) {
+    return Vector3f((u_C[0] - camera.cu()) / camera.fu(),
+                    (u_C[1] - camera.cv()) / camera.fv(), 1.0f);
+  };
+
   constexpr int kNumPoints = 1000;
   for (int i = 0; i < kNumPoints; i++) {
     //  Random point off image plane
@@ -125,12 +131,6 @@ TEST(CameraTest, OutsideImagePlane) {
                 camera.height() / 2.0, kOffImagePlaneFactor * camera.height()));
     const Vector2f u_C = Vector2f(camera.cu(), camera.cv()) + u_perturbation_C;
 
-    // NOTE(alexmillane): My own ray-from-pixel function to not trigger checks
-    // because the pixel is off the image plane.
-    const auto rayFromPixelNoChecks = [camera](const auto& u_C) {
-      return Vector3f((u_C[0] - camera.cu()) / camera.fu(),
-                      (u_C[1] - camera.cv()) / camera.fv(), 1.0f);
-    };
     const Vector3f ray_C = rayFromPixelNoChecks(u_C);
     const Vector3f p_C = test_utils::randomFloatInRange(1.0, 1000.0) * ray_C;
     Vector2f u_reprojection_C;
@@ -355,10 +355,11 @@ TEST(CameraTest, UnProjectionTest) {
     const float depth = test_utils::randomFloatInRange(0.1f, 10.0f);
 
     // Unproject
-    const Vector3f p_C = camera.unprojectFromImagePlaneCoordinates(u_C_in, depth);
+    const Vector3f p_C =
+        camera.unprojectFromImagePlaneCoordinates(u_C_in, depth);
     EXPECT_NEAR(p_C.z(), depth, kFloatEpsilon);
 
-    // Re-project  
+    // Re-project
     Vector2f u_C_out;
     EXPECT_TRUE(camera.project(p_C, &u_C_out));
 

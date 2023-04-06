@@ -15,16 +15,16 @@ limitations under the License.
 */
 #pragma once
 
-#include <nvblox/core/layer.h>
 #include <nvblox/core/types.h>
+#include <nvblox/map/layer.h>
 #include <nvblox/mesh/mesh_block.h>
 
 namespace nvblox {
 
-// A structure which holds a Mesh.
-// Generally produced as the result of fusing MeshBlocks in a Layer<MeshBlock>
-// into a single mesh.
-// NOTE(alexmillane): Currently only on the CPU.
+/// A structure which holds a combined Mesh for CPU access.
+/// Generally produced as the result of fusing MeshBlocks in a Layer<MeshBlock>
+/// into a single mesh.
+/// NOTE(alexmillane): Currently only on the CPU.
 struct Mesh {
   // Data
   std::vector<Vector3f> vertices;
@@ -32,7 +32,8 @@ struct Mesh {
   std::vector<int> triangles;
   std::vector<Color> colors;
 
-  // Factory
+  /// Create a combined Mesh object from a MeshBlock layer. Useful for mesh
+  /// output.
   static Mesh fromLayer(const BlockLayer<MeshBlock>& layer);
 };
 

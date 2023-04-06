@@ -15,11 +15,11 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
-#include "nvblox/core/accessors.h"
-#include "nvblox/core/blox.h"
-#include "nvblox/core/common_names.h"
-#include "nvblox/core/layer.h"
-#include "nvblox/core/voxels.h"
+#include "nvblox/map/accessors.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/common_names.h"
+#include "nvblox/map/layer.h"
+#include "nvblox/map/voxels.h"
 
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 
@@ -79,7 +79,7 @@ TEST(GpuHashTest, SphereSceneAccessTest) {
 
   // Generate SDF
   constexpr float kMaxDistance = 5.0f;
-  scene.generateSdfFromScene(kMaxDistance, &tsdf_layer);
+  scene.generateLayerFromScene(kMaxDistance, &tsdf_layer);
 
   // Get some random points in the scene
   constexpr int kNumPoints = 1000;

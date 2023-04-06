@@ -35,9 +35,9 @@ limitations under the License.
 
 #include "nvblox/utils/timing.h"
 
-#include <glog/logging.h>
 #include <math.h>
 #include <stdio.h>
+#include "nvblox/utils/logging.h"
 
 #include <algorithm>
 #include <ostream>

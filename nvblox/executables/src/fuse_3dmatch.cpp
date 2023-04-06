@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <gflags/gflags.h>
-#include <glog/logging.h>
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/executables/fuser.h"
@@ -46,6 +46,9 @@ int main(int argc, char* argv[]) {
   constexpr int seq_id = 1;
   std::unique_ptr<Fuser> fuser =
       datasets::threedmatch::createFuser(base_path, seq_id);
+  if (!fuser) {
+    LOG(FATAL) << "Creation of the Fuser failed";
+  }
 
   // Mesh location (optional)
   if (argc >= 3) {

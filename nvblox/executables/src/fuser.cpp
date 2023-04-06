@@ -16,7 +16,7 @@ limitations under the License.
 #include "nvblox/executables/fuser.h"
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
+#include "nvblox/utils/logging.h"
 
 #include "nvblox/executables/fuser.h"
 #include "nvblox/io/mesh_io.h"
@@ -26,6 +26,9 @@ limitations under the License.
 
 // Layer params
 DEFINE_double(voxel_size, 0.0f, "Voxel resolution in meters.");
+DEFINE_bool(use_occupancy_layer, false,
+            "Whether to use an occupancy grid for projective integration. If "
+            "the flag is set to false a tsdf layer is used.");
 
 // Dataset flags
 DEFINE_int32(num_frames, -1,
@@ -34,15 +37,19 @@ DEFINE_int32(num_frames, -1,
 // The output paths
 DEFINE_string(timing_output_path, "",
               "File in which to save the timing results.");
+DEFINE_string(tsdf_output_path, "",
+              "File in which to save the TSDF pointcloud.");
+DEFINE_string(occupancy_output_path, "",
+              "File in which to save the occupancy pointcloud.");
 DEFINE_string(esdf_output_path, "",
               "File in which to save the ESDF pointcloud.");
 DEFINE_string(mesh_output_path, "", "File in which to save the surface mesh.");
 DEFINE_string(map_output_path, "", "File in which to save the serialize map.");
 
 // Subsampling
-DEFINE_int32(tsdf_frame_subsampling, 0,
-             "By what amount to subsample the TSDF frames. A subsample of 3 "
-             "means only every 3rd frame is taken.");
+DEFINE_int32(projective_frame_subsampling, 0,
+             "By what amount to subsample the TSDF or occupancy frames. A "
+             "subsample of 3 means only every 3rd frame is taken.");
 DEFINE_int32(color_frame_subsampling, 0,
              "How much to subsample the color integration by.");
 DEFINE_int32(mesh_frame_subsampling, 0,
@@ -50,15 +57,26 @@ DEFINE_int32(mesh_frame_subsampling, 0,
 DEFINE_int32(esdf_frame_subsampling, 0,
              "How much to subsample the ESDF integration by.");
 
-// TSDF Integrator settings
-DEFINE_double(tsdf_integrator_max_integration_distance_m, -1.0,
+// Projective Integrator settings (TSDF and occupancy)
+DEFINE_double(projective_integrator_max_integration_distance_m, -1.0,
               "Maximum distance (in meters) from the camera at which to "
-              "integrate data into the TSDF.");
-DEFINE_double(tsdf_integrator_truncation_distance_vox, -1.0,
+              "integrate data into the TSDF or occupancy grid.");
+DEFINE_double(projective_integrator_truncation_distance_vox, -1.0,
               "Truncation band (in voxels).");
 DEFINE_double(
     tsdf_integrator_max_weight, -1.0,
     "The maximum weight that a tsdf voxel can accumulate through integration.");
+DEFINE_double(free_region_occupancy_probability, -1.0,
+              "The inverse sensor model occupancy probability for voxels "
+              "observed as free space.");
+DEFINE_double(occupied_region_occupancy_probability, -1.0,
+              "The inverse sensor model occupancy probability for voxels "
+              "observed as occupied.");
+DEFINE_double(
+    unobserved_region_occupancy_probability, -1.0,
+    "The inverse sensor model occupancy probability for unobserved voxels.");
+DEFINE_double(occupied_region_half_width_m, -1.0,
+              "Half the width of the region which is consided as occupied.");
 
 // Mesh integrator settings
 DEFINE_double(mesh_integrator_min_weight, -1.0,
@@ -79,12 +97,36 @@ DEFINE_double(esdf_integrator_max_site_distance_vox, -1.0,
 DEFINE_double(esdf_integrator_max_distance_m, -1.0,
               "The maximum distance which we integrate ESDF distances out to.");
 
+// Integrator weighting scheme
+// NOTE(alexmillane): Only one of these should be true at once (we'll check for
+// that). By default all are false and we use the internal defaults.
+DEFINE_bool(weighting_scheme_constant, false,
+            "Integration weighting scheme: constant");
+DEFINE_bool(weighting_scheme_constant_dropoff, false,
+            "Integration weighting scheme: constant + dropoff");
+DEFINE_bool(weighting_scheme_inverse_square, false,
+            "Integration weighting scheme: square");
+DEFINE_bool(weighting_scheme_inverse_square_dropoff, false,
+            "Integration weighting scheme: square + dropoff");
+
 namespace nvblox {
 
 Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
     : data_loader_(std::move(data_loader)) {
-  // NOTE(alexmillane): We require the voxel size before we construct the
-  // mapper, so we grab this parameter first and separately.
+  // NOTE(alexmillane): We require the voxel size and projective layer variant
+  // before we construct the mapper, so we grab this parameters first and
+  // separately.
+  if (FLAGS_use_occupancy_layer) {
+    projective_layer_type_ = ProjectiveLayerType::kOccupancy;
+    LOG(INFO) << "Projective layer variant = Occupancy\n"
+                 "Attention: ESDF and Mesh integration is not yet implemented "
+                 "for occupancy.";
+  } else {
+    projective_layer_type_ = ProjectiveLayerType::kTsdf;
+    LOG(INFO) << "Projective layer variant = TSDF"
+                 " (for occupancy set the use_occupancy_layer flag)";
+  }
+
   if (!gflags::GetCommandLineFlagInfoOrDie("voxel_size").is_default) {
     LOG(INFO) << "Command line parameter found: voxel_size = "
               << FLAGS_voxel_size;
@@ -92,13 +134,16 @@ Fuser::Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader)
   }
 
   // Initialize the mapper
-  mapper_ = std::make_unique<RgbdMapper>(voxel_size_m_);
+  mapper_ = std::make_unique<Mapper>(voxel_size_m_, MemoryType::kDevice,
+                                     projective_layer_type_);
 
   // Default parameters
-  mapper_->mesh_integrator().min_weight(2.0f);
   mapper_->color_integrator().max_integration_distance_m(5.0f);
   mapper_->tsdf_integrator().max_integration_distance_m(5.0f);
   mapper_->tsdf_integrator().view_calculator().raycast_subsampling_factor(4);
+  mapper_->occupancy_integrator().max_integration_distance_m(5.0f);
+  mapper_->occupancy_integrator().view_calculator().raycast_subsampling_factor(
+      4);
   mapper_->esdf_integrator().max_distance_m(4.0f);
   mapper_->esdf_integrator().min_weight(2.0f);
 
@@ -119,11 +164,22 @@ void Fuser::readCommandLineFlags() {
               << FLAGS_timing_output_path;
     timing_output_path_ = FLAGS_timing_output_path;
   }
+  if (!gflags::GetCommandLineFlagInfoOrDie("tsdf_output_path").is_default) {
+    LOG(INFO) << "Command line parameter found: tsdf_output_path = "
+              << FLAGS_tsdf_output_path;
+    tsdf_output_path_ = FLAGS_tsdf_output_path;
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("occupancy_output_path")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: occupancy_output_path = "
+              << FLAGS_occupancy_output_path;
+    occupancy_output_path_ = FLAGS_occupancy_output_path;
+  }
   if (!gflags::GetCommandLineFlagInfoOrDie("esdf_output_path").is_default) {
     LOG(INFO) << "Command line parameter found: esdf_output_path = "
               << FLAGS_esdf_output_path;
     esdf_output_path_ = FLAGS_esdf_output_path;
-    setEsdfMode(RgbdMapper::EsdfMode::k3D);
+    setEsdfMode(Mapper::EsdfMode::k3D);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie("mesh_output_path").is_default) {
     LOG(INFO) << "Command line parameter found: mesh_output_path = "
@@ -136,11 +192,11 @@ void Fuser::readCommandLineFlags() {
     map_output_path_ = FLAGS_map_output_path;
   }
   // Subsampling flags
-  if (!gflags::GetCommandLineFlagInfoOrDie("tsdf_frame_subsampling")
+  if (!gflags::GetCommandLineFlagInfoOrDie("projective_frame_subsampling")
            .is_default) {
-    LOG(INFO) << "Command line parameter found: tsdf_frame_subsampling = "
-              << FLAGS_tsdf_frame_subsampling;
-    setTsdfFrameSubsampling(FLAGS_tsdf_frame_subsampling);
+    LOG(INFO) << "Command line parameter found: projective_frame_subsampling = "
+              << FLAGS_projective_frame_subsampling;
+    setProjectiveFrameSubsampling(FLAGS_projective_frame_subsampling);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie("color_frame_subsampling")
            .is_default) {
@@ -160,30 +216,67 @@ void Fuser::readCommandLineFlags() {
               << FLAGS_esdf_frame_subsampling;
     setEsdfFrameSubsampling(FLAGS_esdf_frame_subsampling);
   }
-  // TSDF integrator
+  // Projective integrator
   if (!gflags::GetCommandLineFlagInfoOrDie(
-           "tsdf_integrator_max_integration_distance_m")
+           "projective_integrator_max_integration_distance_m")
            .is_default) {
     LOG(INFO) << "Command line parameter found: "
-                 "tsdf_integrator_max_integration_distance_m= "
-              << FLAGS_tsdf_integrator_max_integration_distance_m;
+                 "projective_integrator_max_integration_distance_m= "
+              << FLAGS_projective_integrator_max_integration_distance_m;
     mapper_->tsdf_integrator().max_integration_distance_m(
-        FLAGS_tsdf_integrator_max_integration_distance_m);
+        FLAGS_projective_integrator_max_integration_distance_m);
+    mapper_->occupancy_integrator().max_integration_distance_m(
+        FLAGS_projective_integrator_max_integration_distance_m);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie(
-           "tsdf_integrator_truncation_distance_vox")
+           "projective_integrator_truncation_distance_vox")
            .is_default) {
     LOG(INFO) << "Command line parameter found: "
-                 "tsdf_integrator_truncation_distance_vox = "
-              << FLAGS_tsdf_integrator_truncation_distance_vox;
+                 "projective_integrator_truncation_distance_vox = "
+              << FLAGS_projective_integrator_truncation_distance_vox;
     mapper_->tsdf_integrator().truncation_distance_vox(
-        FLAGS_tsdf_integrator_truncation_distance_vox);
+        FLAGS_projective_integrator_truncation_distance_vox);
+    mapper_->occupancy_integrator().truncation_distance_vox(
+        FLAGS_projective_integrator_truncation_distance_vox);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie("tsdf_integrator_max_weight")
            .is_default) {
     LOG(INFO) << "Command line parameter found: tsdf_integrator_max_weight = "
               << FLAGS_tsdf_integrator_max_weight;
     mapper_->tsdf_integrator().max_weight(FLAGS_tsdf_integrator_max_weight);
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("free_region_occupancy_probability")
+           .is_default) {
+    LOG(INFO)
+        << "Command line parameter found: free_region_occupancy_probability = "
+        << FLAGS_free_region_occupancy_probability;
+    mapper_->occupancy_integrator().free_region_occupancy_probability(
+        FLAGS_free_region_occupancy_probability);
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie(
+           "occupied_region_occupancy_probability")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: "
+                 "occupied_region_occupancy_probability = "
+              << FLAGS_occupied_region_occupancy_probability;
+    mapper_->occupancy_integrator().occupied_region_occupancy_probability(
+        FLAGS_occupied_region_occupancy_probability);
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie(
+           "unobserved_region_occupancy_probability")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: "
+                 "unobserved_region_occupancy_probability = "
+              << FLAGS_unobserved_region_occupancy_probability;
+    mapper_->occupancy_integrator().unobserved_region_occupancy_probability(
+        FLAGS_unobserved_region_occupancy_probability);
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("occupied_region_half_width_m")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: occupied_region_half_width_m = "
+              << FLAGS_occupied_region_half_width_m;
+    mapper_->occupancy_integrator().occupied_region_half_width_m(
+        FLAGS_occupied_region_half_width_m);
   }
   // Mesh integrator
   if (!gflags::GetCommandLineFlagInfoOrDie("mesh_integrator_min_weight")
@@ -234,6 +327,55 @@ void Fuser::readCommandLineFlags() {
     mapper_->esdf_integrator().max_distance_m(
         FLAGS_esdf_integrator_max_distance_m);
   }
+
+  // Weighting scheme
+  int num_weighting_schemes_requested = 0;
+  if (!gflags::GetCommandLineFlagInfoOrDie("weighting_scheme_constant")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: weighting_scheme_constant = "
+              << FLAGS_weighting_scheme_constant;
+    mapper_->tsdf_integrator().weighting_function_type(
+        WeightingFunctionType::kConstantWeight);
+    mapper_->color_integrator().weighting_function_type(
+        WeightingFunctionType::kConstantWeight);
+    ++num_weighting_schemes_requested;
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("weighting_scheme_constant_dropoff")
+           .is_default) {
+    LOG(INFO)
+        << "Command line parameter found: weighting_scheme_constant_dropoff = "
+        << FLAGS_weighting_scheme_constant_dropoff;
+    mapper_->tsdf_integrator().weighting_function_type(
+        WeightingFunctionType::kConstantDropoffWeight);
+    mapper_->color_integrator().weighting_function_type(
+        WeightingFunctionType::kConstantDropoffWeight);
+    ++num_weighting_schemes_requested;
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("weighting_scheme_inverse_square")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: weighting_scheme_square = "
+              << FLAGS_weighting_scheme_inverse_square;
+    mapper_->tsdf_integrator().weighting_function_type(
+        WeightingFunctionType::kInverseSquareWeight);
+    mapper_->color_integrator().weighting_function_type(
+        WeightingFunctionType::kInverseSquareWeight);
+    ++num_weighting_schemes_requested;
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie(
+           "weighting_scheme_inverse_square_dropoff")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: "
+                 "weighting_scheme_inverse_square_dropoff = "
+              << FLAGS_weighting_scheme_inverse_square_dropoff;
+    mapper_->tsdf_integrator().weighting_function_type(
+        WeightingFunctionType::kInverseSquareDropoffWeight);
+    mapper_->color_integrator().weighting_function_type(
+        WeightingFunctionType::kInverseSquareDropoffWeight);
+    ++num_weighting_schemes_requested;
+  }
+  CHECK_LT(num_weighting_schemes_requested, 2)
+      << "You requested two weighting schemes on the command line. Maximum "
+         "one.";
 }
 
 int Fuser::run() {
@@ -242,6 +384,34 @@ int Fuser::run() {
     LOG(FATAL)
         << "Failed to integrate first frame. Please check the file path.";
     return 1;
+  }
+
+  if (!occupancy_output_path_.empty()) {
+    if (projective_layer_type_ == ProjectiveLayerType::kOccupancy) {
+      LOG(INFO) << "Outputting occupancy pointcloud ply file to "
+                << occupancy_output_path_;
+      outputOccupancyPointcloudPly();
+    } else {
+      LOG(ERROR)
+          << "Occupancy pointcloud can not be stored to "
+          << occupancy_output_path_
+          << " because occupancy wasn't selected as projective layer variant.\n"
+             "Please set the use_occupancy_layer flag for an occupancy output.";
+    }
+  }
+
+  if (!tsdf_output_path_.empty()) {
+    if (projective_layer_type_ == ProjectiveLayerType::kTsdf) {
+      LOG(INFO) << "Outputting tsdf pointcloud ply file to "
+                << tsdf_output_path_;
+      outputTsdfPointcloudPly();
+    } else {
+      LOG(ERROR)
+          << "TSDF pointcloud can not be stored to " << tsdf_output_path_
+          << " because tsdf wasn't selected as projective layer variant.\n"
+             "Please leave/set the use_occupancy_layer flag false for an tsdf "
+             "output.";
+    }
   }
 
   if (!mesh_output_path_.empty()) {
@@ -255,7 +425,7 @@ int Fuser::run() {
     LOG(INFO) << "Generating the ESDF.";
     updateEsdf();
     LOG(INFO) << "Outputting ESDF pointcloud ply file to " << esdf_output_path_;
-    outputPointcloudPly();
+    outputESDFPointcloudPly();
   }
 
   if (!map_output_path_.empty()) {
@@ -271,12 +441,12 @@ int Fuser::run() {
   return 0;
 }
 
-RgbdMapper& Fuser::mapper() { return *mapper_; }
+Mapper& Fuser::mapper() { return *mapper_; }
 
 void Fuser::setVoxelSize(float voxel_size) { voxel_size_m_ = voxel_size; }
 
-void Fuser::setTsdfFrameSubsampling(int subsample) {
-  tsdf_frame_subsampling_ = subsample;
+void Fuser::setProjectiveFrameSubsampling(int subsample) {
+  projective_frame_subsampling_ = subsample;
 }
 
 void Fuser::setColorFrameSubsampling(int subsample) {
@@ -291,9 +461,9 @@ void Fuser::setEsdfFrameSubsampling(int subsample) {
   esdf_frame_subsampling_ = subsample;
 }
 
-void Fuser::setEsdfMode(RgbdMapper::EsdfMode esdf_mode) {
-  if (esdf_mode_ != RgbdMapper::EsdfMode::kUnset) {
-    LOG(WARNING) << "EsdfMode already set. Cannot change once set once. Not "
+void Fuser::setEsdfMode(Mapper::EsdfMode esdf_mode) {
+  if (esdf_mode_ != Mapper::EsdfMode::kUnset) {
+    LOG(WARNING) << "EsdfMode already set. Cannot change once set. Not "
                     "doing anything.";
   }
   esdf_mode_ = esdf_mode;
@@ -317,8 +487,8 @@ bool Fuser::integrateFrame(const int frame_number) {
   }
 
   timing::Timer per_frame_timer("fuser/time_per_frame");
-  if ((frame_number + 1) % tsdf_frame_subsampling_ == 0) {
-    timing::Timer timer_integrate("fuser/integrate_tsdf");
+  if ((frame_number + 1) % projective_frame_subsampling_ == 0) {
+    timing::Timer timer_integrate("fuser/projective_integration");
     mapper_->integrateDepth(depth_frame, T_L_C, camera);
     timer_integrate.Stop();
   }
@@ -362,18 +532,29 @@ bool Fuser::integrateFrames() {
 
 void Fuser::updateEsdf() {
   switch (esdf_mode_) {
-    case RgbdMapper::EsdfMode::kUnset:
+    case Mapper::EsdfMode::kUnset:
       break;
-    case RgbdMapper::EsdfMode::k3D:
+    case Mapper::EsdfMode::k3D:
       mapper_->updateEsdf();
       break;
-    case RgbdMapper::EsdfMode::k2D:
+    case Mapper::EsdfMode::k2D:
       mapper_->updateEsdfSlice(z_min_, z_max_, z_slice_);
       break;
   }
 }
 
-bool Fuser::outputPointcloudPly() {
+bool Fuser::outputTsdfPointcloudPly() {
+  timing::Timer timer_write("fuser/tsdf/write");
+  return io::outputVoxelLayerToPly(mapper_->tsdf_layer(), tsdf_output_path_);
+}
+
+bool Fuser::outputOccupancyPointcloudPly() {
+  timing::Timer timer_write("fuser/occupancy/write");
+  return io::outputVoxelLayerToPly(mapper_->occupancy_layer(),
+                                   occupancy_output_path_);
+}
+
+bool Fuser::outputESDFPointcloudPly() {
   timing::Timer timer_write("fuser/esdf/write");
   return io::outputVoxelLayerToPly(mapper_->esdf_layer(), esdf_output_path_);
 }

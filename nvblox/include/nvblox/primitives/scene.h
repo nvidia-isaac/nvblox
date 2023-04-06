@@ -47,11 +47,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
-#include "nvblox/core/blox.h"
-#include "nvblox/core/camera.h"
-#include "nvblox/core/image.h"
-#include "nvblox/core/layer.h"
+#include "nvblox/map/blox.h"
+#include "nvblox/map/layer.h"
 #include "nvblox/primitives/primitives.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace primitives {
@@ -60,11 +60,15 @@ class Scene {
  public:
   Scene();
 
-  /// === Creating an environment ===
+  /// Create an environment by adding primitives, which are then owned by the
+  /// scene.
   void addPrimitive(std::unique_ptr<Primitive> primitive);
 
-  /// Convenience functions for setting up bounded areas.
+  /// @brief  Adds a ground level (normal up) at a given height on the Z axis.
+  /// @param height Height, in meters, of the ground.
   void addGroundLevel(float height);
+  /// @brief  Adds a ceiling at a given height. All heights on the Z axis.
+  /// @param height Height, in meters, of the ceiling.
   void addCeiling(float height);
 
   /// Add 4 walls (infinite planes) bounding the space. In case this is not the
@@ -75,17 +79,17 @@ class Scene {
   /// Deletes all objects!
   void clear();
 
-  /// === Generating synthetic data from environment ===
   /// Generates a synthetic view given camera parameters and a transformation
   /// of the camera to the scene.
   void generateDepthImageFromScene(const Camera& camera, const Transform& T_S_C,
                                    float max_dist,
                                    DepthImage* depth_frame) const;
 
-  /// === Computing ground truth SDFs ===
+  /// Computes the ground truth SDFs (either TSDF or ESDF depending on template
+  /// parameter).
   template <typename VoxelType>
-  void generateSdfFromScene(float max_dist,
-                            VoxelBlockLayer<VoxelType>* layer) const;
+  void generateLayerFromScene(float max_dist,
+                              VoxelBlockLayer<VoxelType>* layer) const;
 
   /// Computes distance to an arbitrary point across all objects.
   /// Positive distance is computed only up to max_dist, though negative
@@ -102,7 +106,11 @@ class Scene {
 
  protected:
   template <typename VoxelType>
-  inline void setVoxel(float dist, VoxelType* voxel) const;
+  inline void setVoxel(float value, VoxelType* voxel) const;
+
+  template <typename VoxelType>
+  inline float getVoxelGroundTruthValue(const Vector3f& coords, float max_dist,
+                                        float voxel_size = 0) const;
 
   /// Vector storing pointers to all the objects in this world.
   std::vector<std::unique_ptr<Primitive>> primitives_;
@@ -115,4 +123,4 @@ class Scene {
 }  // namespace primitives
 }  // namespace nvblox
 
-#include "nvblox/primitives/impl/scene_impl.h"
+#include "nvblox/primitives/internal/impl/scene_impl.h"

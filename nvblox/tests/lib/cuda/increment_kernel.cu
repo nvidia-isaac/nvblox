@@ -28,7 +28,6 @@ __global__ void incrementKernel(int* number, const int num_elelments) {
   }
 }
 
-
 namespace nvblox {
 namespace test_utils {
 

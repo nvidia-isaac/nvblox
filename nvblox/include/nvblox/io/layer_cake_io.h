@@ -15,7 +15,7 @@ limitations under the License.
 */
 #include <string>
 
-#include "nvblox/core/layer_cake.h"
+#include "nvblox/map/layer_cake.h"
 
 namespace nvblox {
 namespace io {

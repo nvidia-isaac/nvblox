@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include "nvblox/core/types.h"
-#include "nvblox/mesh/impl/marching_cubes_table.h"
+#include "nvblox/mesh/internal/impl/marching_cubes_table.h"
 
-#include "nvblox/mesh/marching_cubes.h"
+#include "nvblox/mesh/internal/marching_cubes.h"
 
 namespace nvblox {
 namespace marching_cubes {

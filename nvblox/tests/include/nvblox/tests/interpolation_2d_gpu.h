@@ -15,8 +15,8 @@ limitations under the License.
 */
 #pragma once
 
-#include "nvblox/core/image.h"
 #include "nvblox/core/types.h"
+#include "nvblox/sensors/image.h"
 
 namespace nvblox {
 namespace test_utils {
