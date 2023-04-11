@@ -56,7 +56,7 @@ How use nvblox depends on what you want to do.
 For users who would like to use nvblox in a robotic system or connect easily to a sensor, we suggest using our [ROS 2 interface](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox).
 
 The ROS 2 interface includes examples which allow you to:
-* Build a reconstruction from a realsense camera using nvblox and NVIDIA VSLAM [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-nvblox-vslam-realsense.md).
+* Build a reconstruction from a realsense camera using nvblox and NVIDIA VSLAM [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-realsense.md).
 * Navigate a robot in Isaac Sim [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-isaac-sim.md).
 * Combine 3D reconstruction with image segmentation with [realsense data](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-human-reconstruction-realsense.md) and in [simulation](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-human-reconstruction-isaac-sim.md).
 
@@ -98,7 +98,7 @@ cmake .. && make && cd tests && ctest
 ```
 
 ## Run an example
-In this example we fuse data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/dataset/3dmatch`.
+In this example we fuse data from the [3DMatch dataset](https://3dmatch.cs.princeton.edu/). First let's grab the dataset. Here I'm downloading it to my dataset folder `~/datasets/3dmatch`.
 ```
 wget http://vision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip -P ~/datasets/3dmatch
 unzip ~/datasets/3dmatch/sun3d-mit_76_studyroom-76-1studyroom2.zip -d ~/datasets/3dmatch
@@ -230,7 +230,7 @@ cmake .. -DBUILD_FOR_ALL_ARCHS=True -DCMAKE_INSTALL_PREFIX=../install/ && make -
 ```
 
 # Building redistributable binaries, with static dependencies
-If you want to include nvblox in another CMake project, simply `find_package(nvblox)` should bring in the correct libraries and headers. However, if you want to include it in a different build system such as Bazel, you can see the instructions [here](./docs/pages/redistibutable.md).
+If you want to include nvblox in another CMake project, simply `find_package(nvblox)` should bring in the correct libraries and headers. However, if you want to include it in a different build system such as Bazel, you can see the instructions [here](./docs/redistributable.md).
 
 # License
 This code is under an [open-source license](LICENSE) (Apache 2.0). :)
