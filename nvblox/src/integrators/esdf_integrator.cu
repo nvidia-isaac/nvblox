@@ -13,15 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#include "cub/block/block_radix_sort.cuh"
 #include "nvblox/core/internal/cuda/atomic_float.cuh"
 #include "nvblox/geometry/bounding_boxes.h"
 #include "nvblox/geometry/bounding_spheres.h"
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
 #include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
 #include "nvblox/gpu_hash/internal/cuda/gpu_set.cuh"
-#include "nvblox/utils/timing.h"
-
 #include "nvblox/integrators/esdf_integrator.h"
+#include "nvblox/utils/timing.h"
+#include "thrust/sort.h"
+#include "thrust/unique.h"
 
 namespace nvblox {
 
