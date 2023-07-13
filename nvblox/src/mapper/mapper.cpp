@@ -190,10 +190,16 @@ std::vector<Index3D> Mapper::updateEsdfSlice(float slice_input_z_min,
 
 std::vector<Index3D> Mapper::clearOutsideRadius(const Vector3f& center,
                                                 float radius) {
-  const std::vector<Index3D> block_indices_for_deletion =
-      getBlocksOutsideRadius(layers_.get<TsdfLayer>().getAllBlockIndices(),
-                             layers_.get<TsdfLayer>().block_size(), center,
-                             radius);
+  std::vector<Index3D> block_indices_for_deletion;
+  if (projective_layer_type_ == ProjectiveLayerType::kTsdf) {
+    block_indices_for_deletion = getBlocksOutsideRadius(layers_.get<TsdfLayer>().getAllBlockIndices(),
+                          layers_.get<TsdfLayer>().block_size(), center,
+                          radius);
+  } else if (projective_layer_type_ == ProjectiveLayerType::kOccupancy) {
+    block_indices_for_deletion = getBlocksOutsideRadius(layers_.get<OccupancyLayer>().getAllBlockIndices(),
+                      layers_.get<OccupancyLayer>().block_size(), center,
+                      radius);
+  }
   for (const Index3D& idx : block_indices_for_deletion) {
     mesh_blocks_to_update_.erase(idx);
     esdf_blocks_to_update_.erase(idx);
@@ -202,6 +208,7 @@ std::vector<Index3D> Mapper::clearOutsideRadius(const Vector3f& center,
   layers_.getPtr<ColorLayer>()->clearBlocks(block_indices_for_deletion);
   layers_.getPtr<EsdfLayer>()->clearBlocks(block_indices_for_deletion);
   layers_.getPtr<MeshLayer>()->clearBlocks(block_indices_for_deletion);
+  layers_.getPtr<OccupancyLayer>()->clearBlocks(block_indices_for_deletion);
   return block_indices_for_deletion;
 }
 
