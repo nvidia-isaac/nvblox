@@ -236,7 +236,7 @@ void unified_vector<T>::reserve(size_t capacity) {
       checkCudaErrors(cudaMallocHost(&new_buffer, sizeof(T) * capacity));
     }
 
-    if (buffer_ != nullptr) {
+    if (buffer_ != nullptr && buffer_capacity_ > 0) {
       // Copy the old values to the new buffer.
       checkCudaErrors(cudaMemcpy(new_buffer, buffer_, sizeof(T) * buffer_size_,
                                  cudaMemcpyDefault));
@@ -266,7 +266,7 @@ void unified_vector<T>::resize(size_t size) {
 
 template <typename T>
 void unified_vector<T>::clear() {
-  if (buffer_ != nullptr) {
+  if (buffer_ != nullptr && buffer_capacity_ > 0) {
     if (memory_type_ == MemoryType::kHost) {
       checkCudaErrors(cudaFreeHost(reinterpret_cast<void*>(buffer_)));
     } else {
