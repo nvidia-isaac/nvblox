@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <cstdlib>
 
+#include "nvblox/io/image_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/map/accessors.h"
 #include "nvblox/utils/timing.h"
@@ -68,6 +69,62 @@ Color randomColor() {
   return Color(static_cast<uint8_t>(randomIntInRange(0, 255)),
                static_cast<uint8_t>(randomIntInRange(0, 255)),
                static_cast<uint8_t>(randomIntInRange(0, 255)));
+}
+
+void drawSquare(const int start_row, const int start_col, const int num_rows,
+                const int num_cols, MonoImage* mask) {
+  for (int y = start_row; y < start_row + num_rows; ++y) {
+    for (int x = start_col; x < start_col + num_cols; ++x) {
+      if (x >= 0 && x < mask->cols() && y >= 0 && y < mask->rows()) {
+        (*mask)(y, x) = 255;
+      }
+    }
+  }
+}
+
+void createMaskImage(MonoImage* mask, MaskImageType type) {
+  const int32_t kWidth = 640;
+  const int32_t kHeight = 480;
+  *mask = MonoImage(kHeight, kWidth, MemoryType::kHost);
+  mask->setZero();
+
+  CHECK(mask->memory_type() != MemoryType::kDevice);
+
+  constexpr const char* kPath = "./data/dynamic_mask/mask_21.png";
+
+  switch (type) {
+    case MaskImageType::kFromDisk: {
+      CHECK(io::readFromPng(kPath, mask));
+      break;
+    }
+    case MaskImageType::kEverythingZero: {
+      mask->setZero();
+      break;
+    }
+    case MaskImageType::kEverythingFilled: {
+      for (int i = 0; i < mask->numel(); ++i) {
+        (*mask)(i) = 1;
+      }
+      break;
+    }
+    case MaskImageType::kGrid: {
+      for (int row = 0; row < mask->rows(); row += 2) {
+        for (int col = 0; col < mask->cols(); col += 2) {
+          (*mask)(row, col) = 1;
+        }
+      }
+      break;
+    }
+    case MaskImageType::kTwoSquares: {
+      drawSquare(50, 50, 20, 20, mask);
+      drawSquare(50, 100, 30, 30, mask);
+
+      break;
+    }
+
+    default:
+      CHECK(false);
+  }
 }
 
 }  // namespace test_utils

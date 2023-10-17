@@ -36,12 +36,9 @@ bool writeToPng(const std::string& filepath, const MonoImage& frame);
 bool writeToPng(const std::string& filepath, const ColorImage& frame);
 
 bool readFromPng(const std::string& filepath, DepthImage* frame_ptr,
-                 const MemoryType = MemoryType::kDevice,
                  const float scale_factor = kDefaultUintDepthScaleFactor);
-bool readFromPng(const std::string& filepath, MonoImage* frame_ptr,
-                 const MemoryType = MemoryType::kDevice);
-bool readFromPng(const std::string& filepath, ColorImage* frame_ptr,
-                 const MemoryType = MemoryType::kDevice);
+bool readFromPng(const std::string& filepath, MonoImage* frame_ptr);
+bool readFromPng(const std::string& filepath, ColorImage* frame_ptr);
 
 }  // namespace io
 }  // namespace nvblox

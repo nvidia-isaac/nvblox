@@ -64,7 +64,8 @@ void getBlockAndVoxelIndexFromPositionInLayerOnGPU(const float block_size,
 void getBlockAndVoxelIndexFromPositionInLayerOnGPU(
     const float block_size, const std::vector<Vector3f>& positions,
     std::vector<Index3D>* block_indices, std::vector<Index3D>* voxel_indices) {
-  device_vector<Vector3f> positions_device(positions);
+  device_vector<Vector3f> positions_device;
+  positions_device.copyFrom(positions);
 
   device_vector<Index3D> block_indices_device(positions.size());
   device_vector<Index3D> voxel_indices_device(positions.size());

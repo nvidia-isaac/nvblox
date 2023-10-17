@@ -16,13 +16,28 @@
 # limitations under the License.
 #
 
-from pathlib import Path
-from typing import Dict, Union
+from os import PathLike
+from typing import Union
 import pandas as pd
 import re
+import json
+
+def save_timing_statistics(timing_path: Union[str, PathLike], output_directory: Union[str, PathLike]) -> None:
+    # Extract the means of the timers
+    timings_df = get_timings_as_dataframe(timing_path)
+    means_series = timings_df['mean']
+    means_series.index = ['mean/' + row_name for row_name in means_series.index]
+    total_series = timings_df['total_time']
+    total_series.index = ['total/' + row_name for row_name in total_series.index]
+
+    # Write the results to a JSON
+    output_timings_path = str(output_directory) + '/timing.json'
+    print(f"Writing the timings to: {output_timings_path}")
+    with open(output_timings_path, "w") as timings_file:
+        json.dump(pd.concat([means_series, total_series]).to_dict(), timings_file, indent=4)
 
 
-def get_timings_as_dataframe(filepath: Union[str, Path]) -> pd.DataFrame:
+def get_timings_as_dataframe(filepath: Union[str, PathLike]) -> pd.DataFrame:
     """Opens a file containing a nvblox timer dump and returns the data as a pandas Dataframe
 
     Args:
@@ -40,7 +55,8 @@ def get_timings_as_dataframe(filepath: Union[str, Path]) -> pd.DataFrame:
     maxes = []
     with open(filepath, 'r') as f:
         lines = f.readlines()
-        for line in lines[2:]:
+        lines = lines[:-1]
+        for line in lines[4:]:
             entries = re.split('\s+|,', line)
             entries = [entry.strip('()[]') for entry in entries]
 

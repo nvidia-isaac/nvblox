@@ -79,12 +79,7 @@ __host__ void meshCube(
     const PerVoxelMarchingCubesResults& marching_cubes_results,
     MeshBlock* mesh);
 
-__device__ void calculateOutputIndex(
-    PerVoxelMarchingCubesResults* marching_cubes_results, int* size);
-
-__device__ void calculateVertices(
-    const PerVoxelMarchingCubesResults& marching_cubes_results,
-    CudaMeshBlock* mesh);
-
 }  // namespace marching_cubes
 }  // namespace nvblox
+
+#include "nvblox/mesh/internal/impl/marching_cubes_impl.h"

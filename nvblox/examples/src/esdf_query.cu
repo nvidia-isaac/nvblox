@@ -69,9 +69,9 @@ void EsdfQueryExample::createMap() {
   mapper_->tsdf_layer() = std::move(gt_tsdf);
 
   // Set the max computed distance to 5 meters.
-  mapper_->esdf_integrator().max_distance_m(5.0f);
+  mapper_->esdf_integrator().max_esdf_distance_m(5.0f);
   // Generate the ESDF from everything in the TSDF.
-  mapper_->generateEsdf();
+  mapper_->updateFullEsdf();
 
   // Output a ply pointcloud of all of the distances to compare the query
   // points to.
@@ -126,7 +126,8 @@ void EsdfQueryExample::queryMap(size_t num_queries) {
   }
 
   // Move this vector to the GPU.
-  device_vector<Vector3f> query_points_device = query_points;
+  device_vector<Vector3f> query_points_device;
+  query_points_device.copyFrom(query_points);
   // Create the output vectors which live in device memory.
   device_vector<float> distances_device(num_queries);
   device_vector<Vector3f> nearest_point_device(num_queries);

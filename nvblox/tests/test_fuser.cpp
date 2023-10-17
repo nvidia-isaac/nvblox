@@ -27,7 +27,6 @@ TEST(FuserTest, CommandLineFlags) {
   char* argv[] = {
       (char*)"CommandLineFlags_test",
       (char*)"--voxel_size=1.0",
-      (char*)"--use_occupancy_layer",
       (char*)"--num_frames=2",
       (char*)"--timing_output_path=3",
       (char*)"--esdf_output_path=4",
@@ -39,14 +38,13 @@ TEST(FuserTest, CommandLineFlags) {
       (char*)"--esdf_frame_subsampling=10",
       (char*)"--projective_integrator_max_integration_distance_m=11.0",
       (char*)"--projective_integrator_truncation_distance_vox=12.0",
-      (char*)"--tsdf_integrator_max_weight=13.0",
+      (char*)"--projective_integrator_max_weight=13.0",
       (char*)"--free_region_occupancy_probability=0.2",
       (char*)"--occupied_region_occupancy_probability=0.8",
       (char*)"--unobserved_region_occupancy_probability=0.6",
       (char*)"--occupied_region_half_width_m=1.0",
       (char*)"--mesh_integrator_min_weight=14.0",
       (char*)"--mesh_integrator_weld_vertices=false",
-      (char*)"--color_integrator_max_integration_distance_m=15.0",
       (char*)"--esdf_integrator_min_weight=16.0",
       (char*)"--esdf_integrator_max_site_distance_vox=17.0",
       (char*)"--esdf_integrator_max_distance_m=18.0",
@@ -65,7 +63,7 @@ TEST(FuserTest, CommandLineFlags) {
 
   // Layer params
   EXPECT_NEAR(fuser->voxel_size_m_, 1.0f, kEps);
-  EXPECT_NEAR(fuser->mapper().tsdf_layer().voxel_size(), 1.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper().tsdf_layer().voxel_size(), 1.0f, kEps);
 
   // Dataset
   EXPECT_EQ(fuser->num_frames_to_integrate_, 2);
@@ -83,50 +81,62 @@ TEST(FuserTest, CommandLineFlags) {
   EXPECT_EQ(fuser->esdf_frame_subsampling_, 10);
 
   // Projective integrator
-  EXPECT_NEAR(fuser->mapper().tsdf_integrator().max_weight(), 13.0f, kEps);
-  EXPECT_NEAR(fuser->mapper().tsdf_integrator().max_integration_distance_m(),
+  EXPECT_NEAR(fuser->static_mapper().tsdf_integrator().max_weight(), 13.0f,
+              kEps);
+  EXPECT_NEAR(fuser->static_mapper().lidar_tsdf_integrator().max_weight(),
+              13.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper().color_integrator().max_weight(), 13.0f,
+              kEps);
+  EXPECT_NEAR(
+      fuser->static_mapper().tsdf_integrator().max_integration_distance_m(),
+      11.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper()
+                  .occupancy_integrator()
+                  .max_integration_distance_m(),
               11.0f, kEps);
   EXPECT_NEAR(
-      fuser->mapper().occupancy_integrator().max_integration_distance_m(),
+      fuser->static_mapper().color_integrator().max_integration_distance_m(),
       11.0f, kEps);
-  EXPECT_NEAR(fuser->mapper().tsdf_integrator().truncation_distance_vox(),
-              12.0f, kEps);
-  EXPECT_NEAR(fuser->mapper().occupancy_integrator().truncation_distance_vox(),
-              12.0f, kEps);
-  EXPECT_NEAR(fuser->mapper()
+  EXPECT_NEAR(
+      fuser->static_mapper().tsdf_integrator().truncation_distance_vox(), 12.0f,
+      kEps);
+  EXPECT_NEAR(
+      fuser->static_mapper().occupancy_integrator().truncation_distance_vox(),
+      12.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper()
                   .occupancy_integrator()
                   .free_region_occupancy_probability(),
               0.2, kEps);
-  EXPECT_NEAR(fuser->mapper()
+  EXPECT_NEAR(fuser->static_mapper()
                   .occupancy_integrator()
                   .occupied_region_occupancy_probability(),
               0.8, kEps);
-  EXPECT_NEAR(fuser->mapper()
+  EXPECT_NEAR(fuser->static_mapper()
                   .occupancy_integrator()
                   .unobserved_region_occupancy_probability(),
               0.6, kEps);
-  EXPECT_NEAR(
-      fuser->mapper().occupancy_integrator().occupied_region_half_width_m(),
-      1.0, kEps);
+  EXPECT_NEAR(fuser->static_mapper()
+                  .occupancy_integrator()
+                  .occupied_region_half_width_m(),
+              1.0, kEps);
 
   // Mesh integrator
-  EXPECT_NEAR(fuser->mapper().mesh_integrator().min_weight(), 14.0f, kEps);
-  EXPECT_EQ(fuser->mapper().mesh_integrator().weld_vertices(), false);
-
-  // Color integrator
-  EXPECT_NEAR(fuser->mapper().color_integrator().max_integration_distance_m(),
-              15.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper().mesh_integrator().min_weight(), 14.0f,
+              kEps);
+  EXPECT_EQ(fuser->static_mapper().mesh_integrator().weld_vertices(), false);
 
   // ESDF integrator
-  EXPECT_NEAR(fuser->mapper().esdf_integrator().min_weight(), 16.0f, kEps);
-  EXPECT_NEAR(fuser->mapper().esdf_integrator().max_site_distance_vox(), 17.0f,
+  EXPECT_NEAR(fuser->static_mapper().esdf_integrator().min_weight(), 16.0f,
               kEps);
-  EXPECT_NEAR(fuser->mapper().esdf_integrator().max_distance_m(), 18.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper().esdf_integrator().max_site_distance_vox(),
+              17.0f, kEps);
+  EXPECT_NEAR(fuser->static_mapper().esdf_integrator().max_esdf_distance_m(),
+              18.0f, kEps);
 
   // Weighting scheme
-  EXPECT_EQ(fuser->mapper().tsdf_integrator().weighting_function_type(),
+  EXPECT_EQ(fuser->static_mapper().tsdf_integrator().weighting_function_type(),
             WeightingFunctionType::kConstantDropoffWeight);
-  EXPECT_EQ(fuser->mapper().color_integrator().weighting_function_type(),
+  EXPECT_EQ(fuser->static_mapper().color_integrator().weighting_function_type(),
             WeightingFunctionType::kConstantDropoffWeight);
 }
 

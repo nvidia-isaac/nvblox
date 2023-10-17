@@ -28,8 +28,8 @@ import open3d as o3d
 from nvblox_evaluation.evaluation_utils.voxel_grid import VoxelGrid
 from nvblox_evaluation.evaluation_utils import esdf_evaluation
 from nvblox_evaluation.evaluation_utils import quad_mesh
-from replica_reconstruction import replica_reconstruction
-import replica
+from nvblox_evaluation.replica_reconstruction_evaluation import replica_reconstruction
+from nvblox_evaluation.replica_reconstruction_evaluation import replica
 
 
 def evaluate_esdf(reconstructed_esdf_path: Path,

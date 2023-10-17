@@ -30,17 +30,20 @@ Mesh Mesh::fromLayer(const BlockLayer<MeshBlock>& layer) {
     MeshBlock::ConstPtr block = layer.getBlockAtIndex(index);
 
     // Copy over.
-    const std::vector<Vector3f> vertices = block->getVertexVectorOnCPU();
+    unified_vector<Vector3f> vertices;
+    vertices.copyFrom(block->vertices);
     mesh.vertices.resize(mesh.vertices.size() + vertices.size());
     std::copy(vertices.begin(), vertices.end(),
               mesh.vertices.begin() + next_index);
 
-    const std::vector<Vector3f> normals = block->getNormalVectorOnCPU();
+    unified_vector<Vector3f> normals;
+    normals.copyFrom(block->normals);
     mesh.normals.resize(mesh.normals.size() + normals.size());
     std::copy(normals.begin(), normals.end(),
               mesh.normals.begin() + next_index);
 
-    const std::vector<Color> colors = block->getColorVectorOnCPU();
+    unified_vector<Color> colors;
+    colors.copyFrom(block->colors);
     mesh.colors.resize(mesh.colors.size() + colors.size());
     std::copy(colors.begin(), colors.end(), mesh.colors.begin() + next_index);
 
@@ -51,7 +54,8 @@ Mesh Mesh::fromLayer(const BlockLayer<MeshBlock>& layer) {
     CHECK((vertices.size() == vertices.size()) || (colors.size() == 0));
 
     // Copy over the triangles.
-    const std::vector<int> triangles = block->getTriangleVectorOnCPU();
+    unified_vector<int> triangles;
+    triangles.copyFrom(block->triangles);
     std::vector<int> triangle_indices(triangles.size());
     // Increment all triangle indices.
     std::transform(triangles.begin(), triangles.end(), triangle_indices.begin(),

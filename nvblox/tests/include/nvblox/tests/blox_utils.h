@@ -20,39 +20,6 @@ limitations under the License.
 #include "nvblox/tests/blox.h"
 
 namespace nvblox {
-
-template <typename BlockType>
-void setBlockBytesConstantOnGPU(int value, BlockType* block_device_ptr) {
-  cudaMemset(block_device_ptr, value, sizeof(BlockType));
-}
-
-struct TestVoxel {
-  static constexpr uint8_t kCPUInitializationValue = 0;
-  static constexpr uint8_t kGPUInitializationValue = 1;
-
-  uint8_t data = kCPUInitializationValue;
-};
-
-template <>
-inline void VoxelBlock<TestVoxel>::initOnGPU(
-    VoxelBlock<TestVoxel>* voxel_block_ptr) {
-  setBlockBytesConstantOnGPU(TestVoxel::kGPUInitializationValue,
-                             voxel_block_ptr);
-}
-
-// A custom (non-voxel) block which forgets to define allocate(), and therefore
-// will fail the type_trait has nvblox::traits::has_allocate<T>()
-struct TestBlockNoAllocation {
-  typedef unified_ptr<TestBlockNoAllocation> Ptr;
-  typedef unified_ptr<const TestBlockNoAllocation> ConstPtr;
-
-  static constexpr uint8_t kCPUInitializationValue = 0;
-
-  uint8_t data = kCPUInitializationValue;
-};
-
-using TestBlock = VoxelBlock<TestVoxel>;
-
 namespace test_utils {
 
 // Fills a TsdfBlock such that the voxels distance and weight values are their
@@ -62,7 +29,8 @@ void setFloatingBlockVoxelsInSequence(FloatVoxelBlock::Ptr block);
 void setTsdfBlockVoxelsConstant(const float distance, TsdfBlock::Ptr block);
 
 bool checkBlockAllConstant(const TsdfBlock::Ptr block, TsdfVoxel voxel_cpu);
-bool checkBlockAllConstant(const TestBlock::Ptr block, TestVoxel voxel_cpu);
+bool checkBlockAllConstant(const InitializationTestVoxelBlock::Ptr block,
+                           InitializationTestVoxel voxel_cpu);
 bool checkBlockAllConstant(const ColorBlock::Ptr block, ColorVoxel voxel_cpu);
 
 }  // namespace test_utils

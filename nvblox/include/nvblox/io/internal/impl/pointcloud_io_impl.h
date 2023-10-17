@@ -34,7 +34,6 @@ bool outputVoxelLayerToPly(
   std::vector<Vector3f> points;
   std::vector<float> intensities;
 
-  constexpr int kVoxelsPerSide = VoxelBlock<VoxelType>::kVoxelsPerSide;
   const float block_size = layer.block_size();
   const float voxel_size = layer.voxel_size();
 
@@ -43,7 +42,7 @@ bool outputVoxelLayerToPly(
                         const VoxelType* voxel) {
     float intensity = 0.0f;
     if (lambda(voxel, &intensity)) {
-      points.push_back(getCenterPostionFromBlockIndexAndVoxelIndex(
+      points.push_back(getCenterPositionFromBlockIndexAndVoxelIndex(
           block_size, block_index, voxel_index));
       intensities.push_back(intensity);
     }

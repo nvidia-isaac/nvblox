@@ -20,7 +20,8 @@ limitations under the License.
 namespace nvblox {
 namespace io {
 
-bool writeLayerCakeToFile(const std::string& filename, const LayerCake& cake);
+bool writeLayerCakeToFile(const std::string& filename, const LayerCake& cake,
+                          const CudaStream cuda_stream = CudaStreamOwning());
 LayerCake loadLayerCakeFromFile(const std::string& filename,
                                 MemoryType memory_type);
 

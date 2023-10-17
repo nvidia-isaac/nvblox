@@ -40,7 +40,7 @@ class DepthImageTest : public ::testing::Test {
 
   int rows_ = 480;
   int cols_ = 640;
-  DepthImage depth_frame_;
+  DepthImage depth_frame_{MemoryType::kDevice};
 };
 
 void setImageConstantOnCpu(const float value, DepthImage* depth_frame_ptr) {
@@ -123,6 +123,19 @@ TEST_F(DepthImageTest, GpuOperation) {
   EXPECT_EQ(min, 1.5f);
 }
 
+TEST_F(DepthImageTest, CopyFrom) {
+  constexpr float kConstant{3};
+  std::vector<float> buffer(rows_ * cols_, kConstant);
+
+  DepthImage image(MemoryType::kHost);
+  image.copyFrom(rows_, cols_, buffer.data());
+  EXPECT_EQ(image.rows(), rows_);
+  EXPECT_EQ(image.cols(), cols_);
+
+  for (int i = 0; i < image.rows() * image.cols(); ++i) {
+    EXPECT_EQ(image(i), kConstant);
+  }
+}
 TEST_F(DepthImageTest, LinearInterpolation) {
   // The images {depth_frame_col_coords, depth_frame_row_coords} are set up such
   // that if you interpolate, you should get the interpolated position back.
@@ -163,7 +176,8 @@ TEST_F(DepthImageTest, DeepCopy) {
   setImageConstantOnCpu(kPixelValue, &depth_frame_);
 
   // Copy
-  DepthImage copy(depth_frame_);
+  DepthImage copy(MemoryType::kHost);
+  copy.copyFrom(depth_frame_);
 
   // Check the copy is actually a copy
   for (int lin_idx = 0; lin_idx < copy.numel(); lin_idx++) {
@@ -251,7 +265,7 @@ TEST_F(DepthImageTest, DifferenceImage) {
   image_2(1, 0) = 2.0f;
   image_2(1, 1) = 2.0f;
 
-  DepthImage diff_image;
+  DepthImage diff_image{MemoryType::kDevice};
 
   image::getDifferenceImageGPU(image_1, image_2, &diff_image);
 
@@ -289,7 +303,7 @@ TEST_F(DepthImageTest, ImageCast) {
   image(1, 0) = 3.1f;
   image(1, 1) = 4.1f;
 
-  MonoImage image_out;
+  MonoImage image_out(MemoryType::kDevice);
   image::castGPU(image, &image_out);
 
   EXPECT_EQ(image_out(0, 0), 1);
@@ -369,7 +383,8 @@ TEST_F(DepthImageTest, ImageView) {
 
 TEST_F(DepthImageTest, SetZero) {
   const uint8_t image_buffer[] = {0, 1, 2, 3, 4, 5};
-  auto image = MonoImage::fromBuffer(2, 3, image_buffer, MemoryType::kUnified);
+  MonoImage image(MemoryType::kUnified);
+  image.copyFrom(2, 3, image_buffer);
 
   for (int i = 0; i < 6; i++) {
     EXPECT_EQ(image(i), i);

@@ -73,9 +73,10 @@ TEST_F(SerializationTest, SerializeAndDeserializeTsdfLayer) {
   ASSERT_TRUE(serializer.open(test_filename, std::ios::out));
   EXPECT_TRUE(serializer.valid());
 
-  EXPECT_TRUE(serializer.writeLayerCake(cake_));
+  EXPECT_TRUE(serializer.writeLayerCake(cake_, CudaStreamOwning()));
 
-  LayerCake cake2 = serializer.loadLayerCake(MemoryType::kHost);
+  LayerCake cake2 =
+      serializer.loadLayerCake(MemoryType::kHost, CudaStreamOwning());
 
   EXPECT_EQ(cake2.voxel_size(), cake_.voxel_size());
 
@@ -189,7 +190,7 @@ TEST_F(SerializationTest, LayerBlockSerialization) {
   EXPECT_EQ(indices.size(), tsdf_layer.numAllocatedBlocks());
 
   std::vector<Byte> block_byte_string =
-      serializeLayerDataAtIndex(tsdf_layer, indices[0]);
+      serializeLayerDataAtIndex(tsdf_layer, indices[0], CudaStreamOwning());
 
   EXPECT_NE(block_byte_string.size(), 0);
 }
@@ -202,14 +203,16 @@ TEST_F(SerializationTest, SerializeDeviceBlock) {
   TsdfLayer::BlockType::ConstPtr block =
       tsdf_layer.getBlockAtIndex(Index3D::Zero());
 
-  std::vector<Byte> block_byte_string = serializeBlock(block);
+  std::vector<Byte> block_byte_string =
+      serializeBlock(block, CudaStreamOwning());
   EXPECT_NE(block_byte_string.size(), 0);
 
   // Create a device block.
   TsdfLayer::BlockType::ConstPtr block_device =
       block.clone(MemoryType::kDevice);
 
-  std::vector<Byte> device_block_byte_string = serializeBlock(block_device);
+  std::vector<Byte> device_block_byte_string =
+      serializeBlock(block_device, CudaStreamOwning());
 
   EXPECT_NE(device_block_byte_string.size(), 0);
   ASSERT_EQ(block_byte_string.size(), device_block_byte_string.size());
@@ -221,7 +224,8 @@ TEST_F(SerializationTest, SerializeDeviceBlock) {
   unified_ptr<TsdfBlock> deserialized_block =
       make_unified<TsdfBlock>(MemoryType::kDevice);
 
-  deserializeBlock(device_block_byte_string, deserialized_block);
+  deserializeBlock(device_block_byte_string, deserialized_block,
+                   CudaStreamOwning());
 
   auto deserialized_block_host = deserialized_block.clone(MemoryType::kHost);
 

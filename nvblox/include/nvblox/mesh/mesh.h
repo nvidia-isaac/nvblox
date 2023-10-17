@@ -18,6 +18,7 @@ limitations under the License.
 #include <nvblox/core/types.h>
 #include <nvblox/map/layer.h>
 #include <nvblox/mesh/mesh_block.h>
+#include <nvblox/map/common_names.h>
 
 namespace nvblox {
 
@@ -34,7 +35,7 @@ struct Mesh {
 
   /// Create a combined Mesh object from a MeshBlock layer. Useful for mesh
   /// output.
-  static Mesh fromLayer(const BlockLayer<MeshBlock>& layer);
+  static Mesh fromLayer(const MeshLayer& layer);
 };
 
 }  // namespace nvblox

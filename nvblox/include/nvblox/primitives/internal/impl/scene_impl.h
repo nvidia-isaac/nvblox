@@ -67,8 +67,15 @@ inline void Scene::setVoxel(float value, OccupancyVoxel* voxel) const {
 }
 
 template <>
+inline void Scene::setVoxel(float value, FreespaceVoxel* voxel) const {
+  // We assume the value is 1.0f if an object is inside the voxel and 0.0f if
+  // an object is outside the voxel (see getVoxelGroundTruthValue).
+  voxel->is_high_confidence_freespace = std::abs(value) <= 1e-4;
+}
+
+template <>
 inline float Scene::getVoxelGroundTruthValue<TsdfVoxel>(
-    const Vector3f& position, float max_dist, float voxel_size) const {
+    const Vector3f& position, float max_dist, float) const {
   // Iterate over all objects and get distances to this thing.
   // Only computes up to max_distance away from the voxel (to reduce amount
   // of ray casting).
@@ -78,9 +85,11 @@ inline float Scene::getVoxelGroundTruthValue<TsdfVoxel>(
   return std::max(distance, -max_dist);
 }
 
-template <>
-inline float Scene::getVoxelGroundTruthValue<OccupancyVoxel>(
-    const Vector3f& position, float max_dist, float voxel_size) const {
+template <typename VoxelType>
+inline float Scene::getVoxelGroundTruthValue(const Vector3f& position,
+                                             float max_dist,
+                                             float voxel_size) const {
+  // This template function is used both for Freespace and Tsdf voxels.
   const float min_distance_to_object =
       getSignedDistanceToPoint(position, max_dist);
   const float voxel_body_diagonal = sqrt(3.0) * voxel_size;
@@ -118,7 +127,7 @@ void Scene::generateLayerFromScene(float max_dist,
   auto lambda = [&block_size, &max_dist, &voxel_size, this](
                     const Index3D& block_index, const Index3D& voxel_index,
                     VoxelType* voxel) {
-    const Vector3f position = getCenterPostionFromBlockIndexAndVoxelIndex(
+    const Vector3f position = getCenterPositionFromBlockIndexAndVoxelIndex(
         block_size, block_index, voxel_index);
 
     if (!aabb_.contains(position)) {

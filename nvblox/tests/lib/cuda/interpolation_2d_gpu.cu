@@ -76,8 +76,8 @@ void linearInterpolateImageGpuTemplate(const Image<ElementType>& image,
   checkCudaErrors(cudaMemcpy(success_flags_ptr->data(),
                              success_flags_device_ptr, num_points * sizeof(int),
                              cudaMemcpyDeviceToHost));
-  cudaFree(values_device_ptr);
-  cudaFree(success_flags_device_ptr);
+  checkCudaErrors(cudaFree(values_device_ptr));
+  checkCudaErrors(cudaFree(success_flags_device_ptr));
 }
 
 void linearInterpolateImageGpu(const DepthImage& image,

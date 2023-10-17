@@ -43,13 +43,13 @@ uint32_t colorFromString(const std::string& str) {
 
 NvtxRange::NvtxRange(const std::string& message, const Color& color,
                      bool construct_stopped)
-    : started_(false), event_attributes_{0} {
+    : started_(false), event_attributes_{} {
   Init(message, color);
   if (!construct_stopped) Start();
 }
 
 NvtxRange::NvtxRange(const std::string& message, bool construct_stopped)
-    : started_(false), event_attributes_{0} {
+    : started_(false), event_attributes_{} {
   Init(message, colorFromString(message));
   if (!construct_stopped) Start();
 }
@@ -72,7 +72,7 @@ void NvtxRange::Init(const std::string& message, const Color& color) {
 
 void NvtxRange::Init(const std::string& message, const uint32_t color) {
   // Initialize
-  event_attributes_ = nvtxEventAttributes_t{0};
+  event_attributes_ = nvtxEventAttributes_t{};
   event_attributes_.version = NVTX_VERSION;
   event_attributes_.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
   // Configure the Attributes
@@ -84,7 +84,7 @@ void NvtxRange::Init(const std::string& message, const uint32_t color) {
 
 void mark(const std::string& message, const uint32_t color) {
   // Initialize
-  nvtxEventAttributes_t event_attributes = {0};
+  nvtxEventAttributes_t event_attributes{};
   event_attributes.version = NVTX_VERSION;
   event_attributes.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
   event_attributes.colorType = NVTX_COLOR_ARGB;

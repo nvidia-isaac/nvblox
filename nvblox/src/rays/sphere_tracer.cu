@@ -30,12 +30,12 @@ __device__ inline bool isTsdfVoxelValid(const TsdfVoxel& voxel) {
 }
 
 __device__ thrust::pair<float, bool> cast(
-    const Ray& ray,                                  // NOLINT
-    Index3DDeviceHashMapType<TsdfBlock> block_hash,  // NOLINT
-    float truncation_distance_m,                     // NOLINT
-    float block_size_m,                              // NOLINT
-    int maximum_steps,                               // NOLINT
-    float maximum_ray_length_m,                      // NOLINT
+    const Ray& ray,                                         // NOLINT
+    const Index3DDeviceHashMapType<TsdfBlock>& block_hash,  // NOLINT
+    float truncation_distance_m,                            // NOLINT
+    float block_size_m,                                     // NOLINT
+    int maximum_steps,                                      // NOLINT
+    float maximum_ray_length_m,                             // NOLINT
     float surface_distance_epsilon_m) {
   // -------------------------------------------------------------------------
   // Approach: Step along the ray until we find the surface, or fail to find a
@@ -300,14 +300,11 @@ __global__ void sphereTracingKernelWithColor(
   }
 }
 
-SphereTracer::SphereTracer() {
-  checkCudaErrors(cudaStreamCreate(&tracing_stream_));
-}
+SphereTracer::SphereTracer()
+    : SphereTracer(std::make_shared<CudaStreamOwning>()) {}
 
-SphereTracer::~SphereTracer() {
-  cudaStreamSynchronize(tracing_stream_);
-  checkCudaErrors(cudaStreamDestroy(tracing_stream_));
-}
+SphereTracer::SphereTracer(std::shared_ptr<CudaStream> cuda_stream)
+    : cuda_stream_(cuda_stream) {}
 
 int SphereTracer::maximum_steps() const { return maximum_steps_; }
 
@@ -347,13 +344,13 @@ bool SphereTracer::castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
   // Allocate space
   float* t_device;
   bool* success_flag_device;
-  cudaMalloc(&t_device, sizeof(float));
-  cudaMalloc(&success_flag_device, sizeof(bool));
+  checkCudaErrors(cudaMalloc(&t_device, sizeof(float)));
+  checkCudaErrors(cudaMalloc(&success_flag_device, sizeof(bool)));
 
   // Kernel
   const float surface_distance_epsilon_m =
       surface_distance_epsilon_vox_ * tsdf_layer.voxel_size();
-  sphereTracingKernel<<<1, 1, 0, tracing_stream_>>>(
+  sphereTracingKernel<<<1, 1, 0, *cuda_stream_>>>(
       ray,                             // NOLINT
       gpu_layer_view.getHash().impl_,  // NOLINT
       t_device,                        // NOLINT
@@ -365,18 +362,19 @@ bool SphereTracer::castOnGPU(const Ray& ray, const TsdfLayer& tsdf_layer,
       surface_distance_epsilon_m);
 
   // GPU -> CPU
-  cudaMemcpyAsync(t, t_device, sizeof(float), cudaMemcpyDeviceToHost,
-                  tracing_stream_);
+  checkCudaErrors(cudaMemcpyAsync(t, t_device, sizeof(float),
+                                  cudaMemcpyDeviceToHost, *cuda_stream_));
   bool success_flag;
-  cudaMemcpyAsync(&success_flag, success_flag_device, sizeof(bool),
-                  cudaMemcpyDeviceToHost, tracing_stream_);
+  checkCudaErrors(cudaMemcpyAsync(&success_flag, success_flag_device,
+                                  sizeof(bool), cudaMemcpyDeviceToHost,
+                                  *cuda_stream_));
 
-  checkCudaErrors(cudaStreamSynchronize(tracing_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
   // Deallocate
-  cudaFree(t_device);
-  cudaFree(success_flag_device);
+  checkCudaErrors(cudaFree(t_device));
+  checkCudaErrors(cudaFree(success_flag_device));
 
   return success_flag;
 }
@@ -460,7 +458,7 @@ void SphereTracer::renderImageOnGPU(const Camera& camera,
       depth_ptr->rows() / kThreadsPerThreadBlock.y + 1,  // NOLINT
       1);
   sphereTracingKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
-                        tracing_stream_>>>(
+                        *cuda_stream_>>>(
       camera,                          // NOLINT
       T_L_C,                           // NOLINT
       gpu_layer_view.getHash().impl_,  // NOLINT
@@ -471,7 +469,7 @@ void SphereTracer::renderImageOnGPU(const Camera& camera,
       maximum_ray_length_m_,           // NOLINT
       surface_distance_epsilon_m,      // NOLINT
       ray_subsampling_factor);
-  checkCudaErrors(cudaStreamSynchronize(tracing_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 }
 
@@ -522,7 +520,7 @@ void SphereTracer::renderRgbdImageOnGPU(
                         image_height / kThreadsPerThreadBlock.x + 1,  // NOLINT
                         1);
   sphereTracingKernelWithColor<<<num_blocks, kThreadsPerThreadBlock, 0,
-                                 tracing_stream_>>>(
+                                 *cuda_stream_>>>(
       camera,                                // NOLINT
       T_L_C,                                 // NOLINT
       tsdf_gpu_layer_view.getHash().impl_,   // NOLINT
@@ -535,7 +533,7 @@ void SphereTracer::renderRgbdImageOnGPU(
       maximum_ray_length_m_,                 // NOLINT
       surface_distance_epsilon_m,            // NOLINT
       ray_subsampling_factor);
-  checkCudaErrors(cudaStreamSynchronize(tracing_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 }
 
@@ -582,7 +580,8 @@ std::pair<device_vector<Vector3f>, device_vector<bool>> SphereTracer::castOnGPU(
     std::vector<Ray>& rays_L, const TsdfLayer& tsdf_layer,
     const float truncation_distance_m) {
   // Inputs
-  device_vector<Ray> rays_L_device(rays_L);
+  device_vector<Ray> rays_L_device;
+  rays_L_device.copyFromAsync(rays_L, *cuda_stream_);
 
   // Output space
   device_vector<Vector3f> intersection_points_L(rays_L.size());
@@ -607,7 +606,7 @@ std::pair<device_vector<Vector3f>, device_vector<bool>> SphereTracer::castOnGPU(
   constexpr int kThreadsPerThreadBlock = 32;
   const int num_blocks = rays_L.size() / kThreadsPerThreadBlock + 1;
   sphereTracingKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
-                        tracing_stream_>>>(
+                        *cuda_stream_>>>(
       rays_L_device.data(),            // NOLINT
       rays_L_device.size(),            // NOLINT
       gpu_layer_view.getHash().impl_,  // NOLINT
@@ -618,7 +617,7 @@ std::pair<device_vector<Vector3f>, device_vector<bool>> SphereTracer::castOnGPU(
       maximum_steps_,                  // NOLINT
       maximum_ray_length_m_,           // NOLINT
       surface_distance_epsilon_m);
-  checkCudaErrors(cudaStreamSynchronize(tracing_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
   return {std::move(intersection_points_L), std::move(success_flags)};

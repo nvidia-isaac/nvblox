@@ -96,7 +96,7 @@ TEST_F(CudaTsdfIntegratorTest, GpuBlockCenterProjection) {
     for (int x = 0; x < VoxelBlock<bool>::kVoxelsPerSide; x++) {
       for (int y = 0; y < VoxelBlock<bool>::kVoxelsPerSide; y++) {
         for (int z = 0; z < VoxelBlock<bool>::kVoxelsPerSide; z++) {
-          const Vector3f p_L = getCenterPostionFromBlockIndexAndVoxelIndex(
+          const Vector3f p_L = getCenterPositionFromBlockIndexAndVoxelIndex(
               layer_.block_size(), block_index, Index3D(x, y, z));
           const Vector3f p_C = T_C_L * p_L;
           Eigen::Vector2f u_px;
@@ -116,7 +116,7 @@ TEST_F(CudaTsdfIntegratorTest, GpuBlockCenterProjection) {
       test_utils::projectBlocksOnGPU(block_indices, camera_, T_C_L, &layer_);
 
   // Check
-  for (int i = 0; i < gpu_block_projections.size(); i++) {
+  for (size_t i = 0; i < gpu_block_projections.size(); i++) {
     EXPECT_NEAR(
         (cpu_block_projections[i] - gpu_block_projections[i]).maxCoeff(), 0.0f,
         kFloatEpsilon);

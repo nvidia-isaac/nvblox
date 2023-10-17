@@ -24,8 +24,8 @@ from typing import Tuple
 import json
 import pandas as pd
 
-import replica
-from nvblox_evaluation.evaluation_utils.parse_nvblox_timing import get_timings_as_dataframe
+import nvblox_evaluation.replica_reconstruction_evaluation.replica as replica
+from nvblox_evaluation.evaluation_utils.parse_nvblox_timing import save_timing_statistics
 
 
 def replica_reconstruction(dataset_path: Path,
@@ -88,18 +88,8 @@ def replica_reconstruction(dataset_path: Path,
                    esdf_frame_subsampling_flag, f"{esdf_frame_subsampling}",
                    mesh_frame_subsampling_flag, f"{mesh_frame_subsampling}"])
 
-    # Extract the means of the timers
-    timings_df = get_timings_as_dataframe(timing_path)
-    means_series = timings_df['mean']
-    means_series.index = ['mean/' + row_name for row_name in means_series.index]
-    total_series = timings_df['total_time']
-    total_series.index = ['total/' + row_name for row_name in total_series.index]
-
-    # Write the results to a JSON
-    output_timings_path = output_dir / 'timing.json'
-    print(f"Writing the timings to: {output_timings_path}")
-    with open(output_timings_path, "w") as timings_file:
-        json.dump(pd.concat([means_series, total_series]).to_dict(), timings_file, indent=4)
+    # Write timing statistics to JSON
+    save_timing_statistics(timing_path, output_dir)
 
     return reconstructed_mesh_path, reconstructed_esdf_path
 

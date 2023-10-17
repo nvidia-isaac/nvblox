@@ -22,6 +22,7 @@ limitations under the License.
 #include "nvblox/map/blox.h"
 #include "nvblox/map/layer.h"
 #include "nvblox/map/voxels.h"
+#include "nvblox/sensors/image.h"
 
 DECLARE_bool(nvblox_test_file_output);
 
@@ -44,5 +45,13 @@ Vector3f getRandomUnitVector3f();
 
 Color randomColor();
 
+enum class MaskImageType : int64_t {
+  kFromDisk = 0,
+  kEverythingZero = 1,    // all pixels 255
+  kEverythingFilled = 2,  // all pixels 255
+  kGrid = 3,              // grid pattern
+  kTwoSquares = 4         // Two filled squares
+};
+void createMaskImage(MonoImage* mask, MaskImageType type);
 }  // namespace test_utils
 }  // namespace nvblox

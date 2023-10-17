@@ -174,8 +174,8 @@ class TimerNvtx {
   bool IsTiming() const;
 
  private:
-  NvtxRange nvtx_range_;
   TimerChrono timer_;
+  NvtxRange nvtx_range_;
 };
 
 class Timing {

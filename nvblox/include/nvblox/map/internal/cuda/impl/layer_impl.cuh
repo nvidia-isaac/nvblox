@@ -46,25 +46,35 @@ void VoxelBlockLayer<VoxelType>::getVoxelsGPU(
     const device_vector<Vector3f>& positions_L,
     device_vector<VoxelType>* voxels_ptr,
     device_vector<bool>* success_flags_ptr) const {
+  // Call the underlying streamed method on a newly created stream.
+  CudaStreamOwning cuda_stream;
+  getVoxelsGPU(positions_L, voxels_ptr, success_flags_ptr, &cuda_stream);
+}
+
+template <typename VoxelType>
+void VoxelBlockLayer<VoxelType>::getVoxelsGPU(
+    const device_vector<Vector3f>& positions_L,
+    device_vector<VoxelType>* voxels_ptr,
+    device_vector<bool>* success_flags_ptr, CudaStream* cuda_stream_ptr) const {
   CHECK_NOTNULL(voxels_ptr);
   CHECK_NOTNULL(success_flags_ptr);
+  CHECK_NOTNULL(cuda_stream_ptr);
 
   const int num_queries = positions_L.size();
-  voxels_ptr->resize(num_queries);
-  success_flags_ptr->resize(num_queries);
+  voxels_ptr->resizeAsync(num_queries, *cuda_stream_ptr);
+  success_flags_ptr->resizeAsync(num_queries, *cuda_stream_ptr);
 
-  cudaStream_t cuda_stream;
-  checkCudaErrors(cudaStreamCreate(&cuda_stream));
   constexpr int kNumThreads = 512;
   const int num_blocks = num_queries / kNumThreads + 1;
 
-  queryVoxelsKernel<VoxelType><<<num_blocks, kNumThreads, 0, cuda_stream>>>(
-      num_queries, this->getGpuLayerView().getHash().impl_, this->block_size_,
-      positions_L.data(), voxels_ptr->data(), success_flags_ptr->data());
+  queryVoxelsKernel<VoxelType>
+      <<<num_blocks, kNumThreads, 0, *cuda_stream_ptr>>>(
+          num_queries, this->getGpuLayerView().getHash().impl_,
+          this->block_size_, positions_L.data(), voxels_ptr->data(),
+          success_flags_ptr->data());
 
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream));
+  cuda_stream_ptr->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
-  checkCudaErrors(cudaStreamDestroy(cuda_stream));
 }
 
 }  // namespace nvblox

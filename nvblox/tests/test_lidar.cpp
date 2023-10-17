@@ -311,7 +311,6 @@ TEST_P(ParameterizedLidarTest, RandomPixelRoundTrips) {
   const int num_elevation_divisions = std::get<1>(params);
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float half_vertical_fov_rad = vertical_fov_rad / 2.0;
 
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, vertical_fov_rad);
 
@@ -328,13 +327,66 @@ TEST_P(ParameterizedLidarTest, RandomPixelRoundTrips) {
     // Randomly scale ray
     const Vector3f p_C = v_C * test_utils::randomFloatInRange(0.1f, 10.0f);
     // Project back to image plane
-    Vector2f u_C_reprojected;
+    Vector2f u_C_reprojected(0.F, 0.F);
     EXPECT_TRUE(lidar.project(p_C, &u_C_reprojected));
     // Check we get back to where we started
     constexpr float kAllowableReprojectionError = 0.001;
     EXPECT_NEAR((u_C_reprojected - u_C).maxCoeff(), 0.0f,
                 kAllowableReprojectionError);
   }
+}
+
+// Helper for generating test points.
+Vector3f sphericalToCartesianCoordinates(float pol, float az, float r) {
+  return Vector3f(r * sin(pol) * cos(az), r * sin(pol) * sin(az), r * cos(pol));
+}
+
+TEST_F(LidarTest, UnevenVerticalBeamsTest) {
+  // Define the vertically un-even LiDAR
+  const float min_angle_below_zero_elevation_deg = 2.0f;
+  const float max_angle_above_zero_elevation_deg = 1.0f;
+  const int num_azimuth_divisions = 10;
+  const int num_elevation_divisions = 4;
+
+  // Convert to rads
+  constexpr float kDegreesToRads = M_PI / 180.0f;
+  const float min_angle_below_zero_elevation_rad =
+      min_angle_below_zero_elevation_deg * kDegreesToRads;
+  const float max_angle_above_zero_elevation_rad =
+      max_angle_above_zero_elevation_deg * kDegreesToRads;
+
+  // Create a LiDAR with more beams below 0 than above (like the Pandar)
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions,
+              min_angle_below_zero_elevation_rad,
+              max_angle_above_zero_elevation_rad);
+  LOG(INFO) << "Created vertically un-even LiDAR\n" << lidar;
+
+  // The elevation angles of the extreme top and bottom beams
+  const float lower_left_el_rad = -min_angle_below_zero_elevation_rad;
+  const float upper_left_el_rad = max_angle_above_zero_elevation_rad;
+
+  // Generate points at the top-left and bottom-right extremes
+  const float rads_per_pixel_azimuth_ =
+      2.0f * M_PI / static_cast<float>(num_azimuth_divisions);
+  const float upper_left_pol_rad = M_PI_2 - upper_left_el_rad;
+  const float lower_right_pol_rad = M_PI_2 - lower_left_el_rad;
+  const Vector3f p_upper_left =
+      sphericalToCartesianCoordinates(upper_left_pol_rad, -M_PI, 1.0f);
+  const Vector3f p_lower_left = sphericalToCartesianCoordinates(
+      lower_right_pol_rad, M_PI - rads_per_pixel_azimuth_, 1.0f);
+
+  // Project these points
+  Vector2f u_C_upper_left;
+  EXPECT_TRUE(lidar.project(p_upper_left, &u_C_upper_left));
+  Vector2f u_C_lower_right;
+  EXPECT_TRUE(lidar.project(p_lower_left, &u_C_lower_right));
+
+  // Check that these projections are on the lower and upper-most pixel centers
+  constexpr float kEps = 1e-4;
+  EXPECT_NEAR(u_C_upper_left.y(), 0.5f, kEps);
+  EXPECT_NEAR(u_C_upper_left.x(), 0.5f, kEps);
+  EXPECT_NEAR(u_C_lower_right.y(), num_elevation_divisions - 0.5f, kEps);
+  EXPECT_NEAR(u_C_lower_right.x(), num_azimuth_divisions - 0.5f, kEps);
 }
 
 int main(int argc, char** argv) {

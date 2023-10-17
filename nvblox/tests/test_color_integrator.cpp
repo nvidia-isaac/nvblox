@@ -40,16 +40,9 @@ class ColorIntegrationTest : public ::testing::Test {
       : kSphereCenter(Vector3f(0.0f, 0.0f, 2.0f)),
         gt_layer_(voxel_size_m_, MemoryType::kUnified),
         camera_(Camera(fu_, fv_, cu_, cv_, width_, height_)) {
-    // Maximum distance to consider for scene generation.
-    constexpr float kMaxDist = 10.0;
-    constexpr float kMinWeight = 1.0;
-
-    // Tolerance for error.
-    constexpr float kDistanceErrorTolerance = truncation_distance_m_;
-
     // Scene is bounded to -5, -5, 0 to 5, 5, 5.
     scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-5.0f, -5.0f, 0.0f),
-                                          Vector3f(5.0f, 5.0f, 5.0f));
+                                           Vector3f(5.0f, 5.0f, 5.0f));
     // Create a scene with a ground plane and a sphere.
     scene_.addGroundLevel(0.0f);
     scene_.addCeiling(5.0f);
@@ -203,7 +196,7 @@ TEST_F(ColorIntegrationTest, TruncationBandTest) {
     const auto block_ptr = gt_layer_.getBlockAtIndex(idx);
     bool touches_band = false;
     auto touches_band_lambda = [&touches_band, kTestDistance](
-                                   const Index3D& voxel_index,
+                                   const Index3D&,
                                    const TsdfVoxel* voxel) -> void {
       if (std::abs(voxel->distance) <= kTestDistance) {
         touches_band = true;
@@ -218,7 +211,7 @@ TEST_F(ColorIntegrationTest, TruncationBandTest) {
     const auto block_ptr = gt_layer_.getBlockAtIndex(idx);
     bool touches_band = false;
     auto touches_band_lambda = [&touches_band, kTestDistance](
-                                   const Index3D& voxel_index,
+                                   const Index3D&,
                                    const TsdfVoxel* voxel) -> void {
       if (std::abs(voxel->distance) <= kTestDistance) {
         touches_band = true;
@@ -276,11 +269,12 @@ TEST_F(ColorIntegrationTest, IntegrateColorToGroundTruthDistanceField) {
   }
 
   // Create a host copy of the layer.
-  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+  ColorLayer color_layer_host(voxel_size_m_, MemoryType::kHost);
+  color_layer_host.copyFrom(color_layer);
 
   // Lambda that checks if voxels have the passed color (if they have weight >
   // 0)
-  auto color_check_lambda = [&color](const Index3D& voxel_idx,
+  auto color_check_lambda = [&color](const Index3D&,
                                      const ColorVoxel* voxel) -> void {
     if (voxel->weight > 0.0f) {
       EXPECT_TRUE(colorsEqualIgnoreAlpha(voxel->color, color));
@@ -414,7 +408,8 @@ TEST_F(ColorIntegrationTest, ColoredSpheres) {
       mesh_integrator.integrateMeshFromDistanceField(gt_layer_, &mesh_layer));
   mesh_integrator.colorMesh(color_layer, &mesh_layer);
 
-  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+  ColorLayer color_layer_host(block_size_m_, MemoryType::kHost);
+  color_layer_host.copyFrom(color_layer);
 
   const float sphere_1_observed_ratio =
       checkSphereColor(color_layer_host, center_1, kSphereRadius, color_1);
@@ -473,7 +468,8 @@ TEST_F(ColorIntegrationTest, OcclusionTesting) {
   color_integrator.integrateFrame(image_1, T_S_C, camera_, gt_layer_,
                                   &color_layer, &updated_blocks);
 
-  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+  ColorLayer color_layer_host(voxel_size_m_, MemoryType::kHost);
+  color_layer_host.copyFrom(color_layer);
 
   // Check front sphere (observed voxels red)
   const float sphere_1_observed_ratio =
@@ -512,16 +508,11 @@ TEST_F(ColorIntegrationTest, WeightingFunction) {
 
   // Change to constant weight
   EXPECT_EQ(integrator.weighting_function_type(),
-            kDefaultWeightingFunctionType);
+            ProjectiveColorIntegrator::kDefaultWeightingFunctionType);
   integrator.weighting_function_type(
       WeightingFunctionType::kInverseSquareWeight);
   EXPECT_EQ(integrator.weighting_function_type(),
             WeightingFunctionType::kInverseSquareWeight);
-
-  // Plane centered at (0,0,depth) with random (slight) slant
-  const float kPlaneDistance = 5.0f;
-  const test_utils::Plane plane = test_utils::Plane(
-      Vector3f(0.0f, 0.0f, kPlaneDistance), Vector3f(0.0f, 0.0f, -1.0f));
 
   // Scene
   primitives::Scene scene;
@@ -569,7 +560,7 @@ TEST_F(ColorIntegrationTest, WeightingFunction) {
             // Get the depth of the voxel
             const Index3D voxel_idx(x, y, z);
             const Vector3f voxel_center =
-                getCenterPostionFromBlockIndexAndVoxelIndex(
+                getCenterPositionFromBlockIndexAndVoxelIndex(
                     color_layer.block_size(), block_idx, voxel_idx);
             const float voxel_depth = voxel_center.z();
 

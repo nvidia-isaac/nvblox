@@ -24,6 +24,7 @@ limitations under the License.
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/map/accessors.h"
 #include "nvblox/map/common_names.h"
+#include "nvblox/mesh/internal/cuda/marching_cubes.cuh"
 #include "nvblox/mesh/internal/impl/marching_cubes_table.h"
 #include "nvblox/mesh/internal/marching_cubes.h"
 #include "nvblox/mesh/mesh_integrator.h"
@@ -31,25 +32,42 @@ limitations under the License.
 
 namespace nvblox {
 
-MeshIntegrator::~MeshIntegrator() {
-  if (cuda_stream_ != nullptr) {
-    cudaStreamDestroy(cuda_stream_);
-  }
+MeshIntegrator::MeshIntegrator()
+    : MeshIntegrator(std::make_shared<CudaStreamOwning>()) {}
+
+MeshIntegrator::MeshIntegrator(std::shared_ptr<CudaStream> cuda_stream)
+    : cuda_stream_(cuda_stream) {
+  // clang-format off
+    cube_index_offsets_ << 0, 1, 1, 0, 0, 1, 1, 0,
+                           0, 0, 1, 1, 0, 0, 1, 1,
+                           0, 0, 0, 0, 1, 1, 1, 1;
+  // clang-format on
+}
+
+// Return all indices that exists in layer
+std::vector<Index3D> getIndicesInLayer(
+    const std::vector<Index3D>& block_indices_in, const TsdfLayer& layer) {
+  std::vector<Index3D> out = block_indices_in;
+
+  auto remove_end = std::remove_if(
+      out.begin(), out.end(), [&layer](const Index3D& block_index) {
+        return layer.getBlockAtIndex(block_index) == nullptr;
+      });
+  out.erase(remove_end, out.end());
+  return out;
 }
 
 bool MeshIntegrator::integrateBlocksGPU(
-    const TsdfLayer& distance_layer, const std::vector<Index3D>& block_indices,
+    const TsdfLayer& distance_layer,
+    const std::vector<Index3D>& block_indices_in,
     BlockLayer<MeshBlock>* mesh_layer) {
   timing::Timer mesh_timer("mesh/gpu/integrate");
+  const std::vector<Index3D> block_indices =
+      getIndicesInLayer(block_indices_in, distance_layer);
   CHECK_NOTNULL(mesh_layer);
   CHECK_NEAR(distance_layer.block_size(), mesh_layer->block_size(), 1e-4);
   if (block_indices.empty()) {
     return true;
-  }
-
-  // Initialize the stream if not done yet.
-  if (cuda_stream_ == nullptr) {
-    checkCudaErrors(cudaStreamCreate(&cuda_stream_));
   }
 
   // Figure out which of these actually contain something worth meshing.
@@ -67,27 +85,16 @@ bool MeshIntegrator::integrateBlocksGPU(
   // First create a list of meshable blocks.
   std::vector<Index3D> meshable_blocks;
   timing::Timer meshable_timer("mesh/gpu/get_meshable");
-  getMeshableBlocksGPU(distance_layer, block_indices, 5 * voxel_size,
-                       &meshable_blocks);
+  getMeshableBlocksGPU(distance_layer, block_indices,
+                       cutoff_distance_vox_ * voxel_size, &meshable_blocks);
   meshable_timer.Stop();
 
   // Then get all the candidates and mesh each block.
   timing::Timer mesh_blocks_timer("mesh/gpu/mesh_blocks");
-
   meshBlocksGPU(distance_layer, meshable_blocks, mesh_layer);
-
-  // TODO: optionally weld here as well.
   mesh_blocks_timer.Stop();
 
   return true;
-}
-
-MeshIntegrator::MeshIntegrator() {
-  // clang-format off
-    cube_index_offsets_ << 0, 1, 1, 0, 0, 1, 1, 0,
-                           0, 0, 1, 1, 0, 0, 1, 1,
-                           0, 0, 0, 0, 1, 1, 1, 1;
-  // clang-format on
 }
 
 bool MeshIntegrator::integrateMeshFromDistanceField(
@@ -144,7 +151,7 @@ bool MeshIntegrator::integrateBlocksCPU(
     }
 
     // Allocate the mesh block.
-    MeshBlock::Ptr mesh_block = mesh_layer->allocateBlockAtIndex(block_index);
+    MeshBlock::Ptr mesh_block = mesh_layer->allocateBlockAtIndexAsync(block_index, *cuda_stream_);
 
     // Then actually calculate the triangles.
     for (const marching_cubes::PerVoxelMarchingCubesResults& candidate :
@@ -204,7 +211,7 @@ void MeshIntegrator::getTriangleCandidatesInBlock(
       for (voxel_index.z() = 0; voxel_index.z() < kVoxelsPerSide;
            voxel_index.z()++) {
         // Get the position of this voxel.
-        Vector3f voxel_position = getCenterPostionFromBlockIndexAndVoxelIndex(
+        Vector3f voxel_position = getCenterPositionFromBlockIndexAndVoxelIndex(
             block_size, block_index, voxel_index);
 
         marching_cubes::PerVoxelMarchingCubesResults neighbors;
@@ -492,19 +499,20 @@ void MeshIntegrator::getMeshableBlocksGPU(
         distance_layer.getBlockAtIndex(block_indices[i]).get();
   }
 
-  block_ptrs_device_ = block_ptrs_host_;
+  block_ptrs_device_.copyFromAsync(block_ptrs_host_, *cuda_stream_);
 
   // Allocate a device vector that holds the meshable result.
-  meshable_device_.resize(block_indices.size());
-  meshable_device_.setZero();
+  meshable_device_.resizeAsync(block_indices.size(), *cuda_stream_);
+  meshable_device_.setZeroAsync(*cuda_stream_);
 
-  isBlockMeshableKernel<<<dim_block, dim_threads, 0, cuda_stream_>>>(
+  isBlockMeshableKernel<<<dim_block, dim_threads, 0, *cuda_stream_>>>(
       block_indices.size(), block_ptrs_device_.data(), cutoff_distance,
       min_weight_, meshable_device_.data());
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+
   checkCudaErrors(cudaPeekAtLastError());
 
-  meshable_host_ = meshable_device_;
+  meshable_host_.copyFromAsync(meshable_device_, *cuda_stream_);
+  cuda_stream_->synchronize();
 
   for (size_t i = 0; i < block_indices.size(); i++) {
     if (meshable_host_[i]) {
@@ -554,19 +562,19 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
 
   // Create an output mesh blocks vector..
   mesh_blocks_host_.resize(block_indices.size());
-  mesh_blocks_host_.setZero();
+  mesh_blocks_host_.setZeroAsync(*cuda_stream_);
 
-  block_ptrs_device_ = block_ptrs_host_;
-  block_positions_device_ = block_positions_host_;
+  block_ptrs_device_.copyFromAsync(block_ptrs_host_, *cuda_stream_);
+  block_positions_device_.copyFromAsync(block_positions_host_, *cuda_stream_);
 
   // Allocate working space
   constexpr int kNumVoxelsPerBlock =
       kVoxelsPerSide * kVoxelsPerSide * kVoxelsPerSide;
-  marching_cubes_results_device_.resize(block_indices.size() *
-                                        kNumVoxelsPerBlock);
-  marching_cubes_results_device_.setZero();
-  mesh_block_sizes_device_.resize(block_indices.size());
-  mesh_block_sizes_device_.setZero();
+  marching_cubes_results_device_.resizeAsync(
+      block_indices.size() * kNumVoxelsPerBlock, *cuda_stream_);
+  marching_cubes_results_device_.setZeroAsync(*cuda_stream_);
+  mesh_block_sizes_device_.resizeAsync(block_indices.size(), *cuda_stream_);
+  mesh_block_sizes_device_.setZeroAsync(*cuda_stream_);
   mesh_prep_timer.Stop();
 
   // Run the first half of marching cubes and calculate:
@@ -574,48 +582,53 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
   // - the number of vertices in each mesh block.
   timing::Timer mesh_kernel_1_timer("mesh/gpu/mesh_blocks/kernel_table");
   meshBlocksCalculateTableIndicesKernel<<<dim_block, dim_threads, 0,
-                                          cuda_stream_>>>(
+                                          *cuda_stream_>>>(
       block_indices.size(), block_ptrs_device_.data(),
       block_positions_device_.data(), voxel_size, min_weight_,
       marching_cubes_results_device_.data(), mesh_block_sizes_device_.data());
   checkCudaErrors(cudaPeekAtLastError());
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  cuda_stream_->synchronize();
 
   mesh_kernel_1_timer.Stop();
 
   // Copy back the new mesh block sizes (so we can allocate space)
   timing::Timer mesh_copy_timer("mesh/gpu/mesh_blocks/copy_out");
-  mesh_block_sizes_host_ = mesh_block_sizes_device_;
+  mesh_block_sizes_host_.copyFromAsync(mesh_block_sizes_device_, *cuda_stream_);
+  cuda_stream_->synchronize();
   mesh_copy_timer.Stop();
 
   // Allocate mesh blocks
   timing::Timer mesh_allocation_timer("mesh/gpu/mesh_blocks/block_allocation");
   for (size_t i = 0; i < block_indices.size(); i++) {
-    const int num_vertices = mesh_block_sizes_host_[i];
+    const size_t num_vertices = mesh_block_sizes_host_[i];
 
     if (num_vertices > 0) {
-      MeshBlock::Ptr output_block =
-          mesh_layer->allocateBlockAtIndex(block_indices[i]);
+      MeshBlock::Ptr output_block = mesh_layer->allocateBlockAtIndexAsync(
+          block_indices[i], *cuda_stream_);
       if (output_block == nullptr) {
         continue;
       }
       // Grow the vector with a growth factor and a minimum allocation to avoid
       // repeated reallocation
       if (num_vertices > output_block->capacity()) {
-        constexpr int kMinimumMeshBlockTrianglesPerVoxel = 1;
-        constexpr int kMinimumMeshBlockVertices =
+        constexpr size_t kMinimumMeshBlockTrianglesPerVoxel = 1;
+        constexpr size_t kMinimumMeshBlockVertices =
             kNumVoxelsPerBlock * kMinimumMeshBlockTrianglesPerVoxel * 3;
-        constexpr int kMeshBlockOverallocationFactor = 2;
+        constexpr size_t kMeshBlockOverallocationFactor = 2;
         const int num_vertices_to_allocate =
             std::max(kMinimumMeshBlockVertices,
                      num_vertices * kMeshBlockOverallocationFactor);
-        output_block->reserveNumberOfVertices(num_vertices_to_allocate);
+        output_block->vertices.reserve(num_vertices_to_allocate);
+        output_block->normals.reserve(num_vertices_to_allocate);
+        output_block->triangles.reserve(num_vertices_to_allocate);
       }
-      output_block->resizeToNumberOfVertices(num_vertices);
+      output_block->vertices.resize(num_vertices);
+      output_block->normals.resize(num_vertices);
+      output_block->triangles.resize(num_vertices);
       mesh_blocks_host_[i] = CudaMeshBlock(output_block.get());
     }
   }
-  mesh_blocks_device_ = mesh_blocks_host_;
+  mesh_blocks_device_.copyFromAsync(mesh_blocks_host_, *cuda_stream_);
   mesh_allocation_timer.Stop();
 
   // Run the second half of marching cubes
@@ -623,11 +636,11 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
   //   them into the mesh layer.
   timing::Timer mesh_kernel_2_timer("mesh/gpu/mesh_blocks/kernel_vertices");
   meshBlocksCalculateVerticesKernel<<<dim_block, dim_threads, 0,
-                                      cuda_stream_>>>(
+                                      *cuda_stream_>>>(
       block_indices.size(), marching_cubes_results_device_.data(),
       mesh_block_sizes_device_.data(), mesh_blocks_device_.data());
   checkCudaErrors(cudaPeekAtLastError());
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  cuda_stream_->synchronize();
   mesh_kernel_2_timer.Stop();
 
   // Optional third stage: welding.
@@ -635,7 +648,8 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
     timing::Timer welding_timer("mesh/gpu/mesh_blocks/welding");
     weldVertices(&mesh_blocks_device_);
 
-    mesh_blocks_host_ = mesh_blocks_device_;
+    mesh_blocks_host_.copyFromAsync(mesh_blocks_device_, *cuda_stream_);
+    cuda_stream_->synchronize();
 
     // Set the sizes on CPU :(
     for (size_t i = 0; i < block_indices.size(); i++) {
@@ -778,9 +792,22 @@ void MeshIntegrator::weldVertices(
   constexpr int kNumThreads = 128;
   constexpr int kNumItemsPerThread = 20;
   weldVerticesCubKernel<kNumThreads, kNumItemsPerThread>
-      <<<cuda_mesh_blocks->size(), kNumThreads, 0, cuda_stream_>>>(
+      <<<cuda_mesh_blocks->size(), kNumThreads, 0, *cuda_stream_>>>(
           cuda_mesh_blocks->data());
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  cuda_stream_->synchronize();
+}
+
+parameters::ParameterTreeNode MeshIntegrator::getParameterTree(
+    const std::string& name_remap) const {
+  using parameters::ParameterTreeNode;
+  const std::string name =
+      (name_remap.empty()) ? "mesh_integrator" : name_remap;
+  return ParameterTreeNode(
+      name, {
+                ParameterTreeNode("min_weight:", min_weight_),
+                ParameterTreeNode("cutoff_distance_vox:", cutoff_distance_vox_),
+                ParameterTreeNode("weld_vertices:", weld_vertices_),
+            });
 }
 
 }  // namespace nvblox

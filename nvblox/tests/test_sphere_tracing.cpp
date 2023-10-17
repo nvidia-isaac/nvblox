@@ -208,7 +208,7 @@ TEST_P(SphereTracingInScaledDistanceFieldTest, PlaneTest) {
   callFunctionOnAllVoxels<TsdfVoxel>(&layer_host, scaling_lambda);
 
   // Copy over to the device.
-  *layer_ = layer_host;
+  layer_->copyFrom(layer_host);
 
   // Sphere tracer
   SphereTracerTester sphere_tracer_gpu;
@@ -310,13 +310,13 @@ TEST_P(SphereTracingInSphereSceneTest, SphereSceneTests) {
   SphereTracer sphere_tracer_gpu;
 
   // Copy over to the GPU.
-  *layer_ = layer_host;
+  layer_->copyFrom(layer_host);
 
   // Declare the images here so we have access to them after the tests
-  DepthImage depth_image_sphere_traced;
+  DepthImage depth_image_sphere_traced(MemoryType::kDevice);
   DepthImage depth_frame_gt(camera_ptr_->height(), camera_ptr_->width(),
                             MemoryType::kUnified);
-  DepthImage diff;
+  DepthImage diff(MemoryType::kDevice);
 
   constexpr int kNUmImages = 10;
   for (int i = 0; i < kNUmImages; i++) {
@@ -411,7 +411,8 @@ void generateErrorImageFromSubsampledImage(const DepthImage& original,
       const float original_depth = original(row_idx, col_idx);
       const bool original_success = original_depth > 0.0f;
 
-      float subsampled_depth;
+      float subsampled_depth = 0.0f;
+
       const bool subsampled_success = interpolation::interpolate2DLinear(
           subsampled, u_px_subsampled, &subsampled_depth);
 
@@ -450,9 +451,9 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
   SphereTracer sphere_tracer_gpu;
 
   // Declare the images here so we have access to them after the tests
-  DepthImage depth_image_full;
-  DepthImage depth_image_half;
-  DepthImage depth_image_quarter;
+  DepthImage depth_image_full(MemoryType::kDevice);
+  DepthImage depth_image_half(MemoryType::kDevice);
+  DepthImage depth_image_quarter(MemoryType::kDevice);
   DepthImage diff(camera_ptr_->rows(), camera_ptr_->cols(),
                   MemoryType::kUnified);
 
@@ -507,10 +508,10 @@ TEST_F(SphereTracingTest, SubsamplingTest) {
 
   // Write Images
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToPng("sphere_tracing_image_full.csv", depth_image_full);
-    io::writeToPng("sphere_tracing_image_half.csv", depth_image_half);
-    io::writeToPng("sphere_tracing_image_quarter.csv", depth_image_quarter);
-    io::writeToPng("sphere_tracing_image_subsampling_diff.csv", diff);
+    io::writeToPng("sphere_tracing_image_full.png", depth_image_full);
+    io::writeToPng("sphere_tracing_image_half.png", depth_image_half);
+    io::writeToPng("sphere_tracing_image_quarter.png", depth_image_quarter);
+    io::writeToPng("sphere_tracing_image_subsampling_diff.png", diff);
   }
 }
 
@@ -603,7 +604,7 @@ TEST_F(SphereTracingTest, CastingFromPositiveAndNegative) {
       generatePlanarGrid(bound_box_2d, 0.0f, layer_host);
 
   // Copy over to the device.
-  *layer_ = layer_host;
+  layer_->copyFrom(layer_host);
 
   // Get distances at ray origins
   std::vector<TsdfVoxel> start_voxels;
@@ -612,7 +613,7 @@ TEST_F(SphereTracingTest, CastingFromPositiveAndNegative) {
 
   // Making dem rays
   std::vector<Ray> rays_L;
-  for (int i = 0; i < grid_points.size(); i++) {
+  for (size_t i = 0; i < grid_points.size(); i++) {
     const auto& p_L = grid_points[i];
     CHECK(get_voxels_success_flags[i]);
     // Fire ray down if start distance positive, up if negative
@@ -676,6 +677,5 @@ int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InstallFailureSignalHandler();
   testing::InitGoogleTest(&argc, argv);
-  warmupCuda();
   return RUN_ALL_TESTS();
 }

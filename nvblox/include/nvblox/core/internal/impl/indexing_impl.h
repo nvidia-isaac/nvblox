@@ -30,25 +30,6 @@ __host__ __device__ inline float blockSizeToVoxelSize(const float block_size) {
   return block_size * kVoxelsPerSideInv;
 }
 
-// TODO: this is badly done now for non-Eigen types.
-/// Input position: metric (world) units with respect to the layer origin.
-/// Output index: voxel index relative to the block origin.
-Index3D getVoxelIndexFromPositionInLayer(const float block_size,
-                                         const Vector3f& position) {
-  const float voxel_size = blockSizeToVoxelSize(block_size);
-  Index3D global_voxel_index =
-      (position / voxel_size).array().floor().cast<int>();
-  Index3D voxel_index = global_voxel_index.unaryExpr([&](int x) {
-    return static_cast<int>(x % VoxelBlock<bool>::kVoxelsPerSide);
-  });
-
-  // Double-check that we get reasonable indices out.
-  DCHECK((voxel_index.array() >= 0).all() &&
-         (voxel_index.array() < VoxelBlock<bool>::kVoxelsPerSide).all());
-
-  return voxel_index;
-}
-
 Index3D getBlockIndexFromPositionInLayer(const float block_size,
                                          const Vector3f& position) {
   Eigen::Vector3i index = (position / block_size).array().floor().cast<int>();
@@ -83,7 +64,13 @@ Vector3f getPositionFromBlockIndex(const float block_size,
   return Vector3f(block_size * block_index.cast<float>());
 }
 
-Vector3f getCenterPostionFromBlockIndexAndVoxelIndex(
+Vector3f getCenterPositionFromBlockIndex(const float block_size,
+                                         const Index3D& block_index) {
+  // This is pretty trivial, huh.
+  return Vector3f(block_size * (block_index.cast<float>().array() + 0.5f));
+}
+
+Vector3f getCenterPositionFromBlockIndexAndVoxelIndex(
     const float block_size, const Index3D& block_index,
     const Index3D& voxel_index) {
   constexpr float kHalfVoxelsPerSideInv =

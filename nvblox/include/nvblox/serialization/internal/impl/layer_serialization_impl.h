@@ -35,7 +35,8 @@ std::vector<Index3D> getLayerDataIndices(
 
 template <typename VoxelType>
 std::vector<Byte> serializeLayerDataAtIndex(
-    const VoxelBlockLayer<VoxelType>& layer, const Index3D& index) {
+    const VoxelBlockLayer<VoxelType>& layer, const Index3D& index,
+    const CudaStream cuda_stream) {
   std::vector<Byte> data;
   typename VoxelBlockLayer<VoxelType>::BlockType::ConstPtr block =
       layer.getBlockAtIndex(index);
@@ -44,7 +45,7 @@ std::vector<Byte> serializeLayerDataAtIndex(
     return std::vector<Byte>();
   }
 
-  return serializeBlock(block);
+  return serializeBlock(block, cuda_stream);
 }
 
 template <typename VoxelType>
@@ -65,12 +66,13 @@ std::unique_ptr<VoxelBlockLayer<VoxelType>> deserializeLayerParameters(
 
 template <typename VoxelType>
 void addDataToLayer(const Index3D& index, const std::vector<Byte>& data,
-                    VoxelBlockLayer<VoxelType>* layer) {
+                    VoxelBlockLayer<VoxelType>* layer,
+                    const CudaStream cuda_stream) {
   // Create a block at the relevant index.
-  auto block = layer->allocateBlockAtIndex(index);
+  auto block = layer->allocateBlockAtIndexAsync(index, cuda_stream);
 
   // Populate it using block serialialization.
-  deserializeBlock(data, block);
+  deserializeBlock(data, block, cuda_stream);
 }
 
 }  // namespace nvblox

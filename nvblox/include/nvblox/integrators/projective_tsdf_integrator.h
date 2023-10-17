@@ -15,6 +15,7 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/integrators/internal/projective_integrator.h"
 #include "nvblox/integrators/weighting_function.h"
 
@@ -31,6 +32,7 @@ struct UpdateTsdfVoxelFunctor;
 class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
  public:
   ProjectiveTsdfIntegrator();
+  ProjectiveTsdfIntegrator(std::shared_ptr<CudaStream> cuda_stream);
   virtual ~ProjectiveTsdfIntegrator();
 
   /// Integrates a depth image in to the passed TSDF layer.
@@ -58,18 +60,6 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
   void integrateFrame(const DepthImage& depth_frame, const Transform& T_L_C,
                       const Lidar& lidar, TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
-
-  /// For voxels with a radius, allocate memory and give a small weight and
-  /// truncation distance, effectively making these voxels free-space. Does not
-  /// affect voxels which are already observed.
-  /// @param center The center of the sphere affected.
-  /// @param radius The radius of the sphere affected.
-  /// @param layer A pointed to the layer which will be affected by the update.
-  /// @param updated_blocks Optional pointer to a list of blocks affected by the
-  /// update.
-  void markUnobservedFreeInsideRadius(
-      const Vector3f& center, float radius, TsdfLayer* layer,
-      std::vector<Index3D>* updated_blocks = nullptr);
 
   /// A parameter getter
   /// The maximum weight that voxels can have. The integrator clips the
@@ -118,6 +108,23 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
   /// @param marked_unobserved_voxels_weight The assigned weight
   void marked_unobserved_voxels_weight(float marked_unobserved_voxels_weight);
 
+  /// For voxels with a radius, allocate memory and give a small weight and
+  /// truncation distance, effectively making these voxels free-space. Does not
+  /// affect voxels which are already observed.
+  /// @param center The center of the sphere affected.
+  /// @param radius The radius of the sphere affected.
+  /// @param layer A pointed to the layer which will be affected by the update.
+  /// @param updated_blocks_ptr Optional pointer to a list of blocks affected by
+  /// the update.
+  void markUnobservedFreeInsideRadius(
+      const Vector3f& center, float radius, TsdfLayer* layer,
+      std::vector<Index3D>* updated_blocks_ptr = nullptr);
+
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
+
  protected:
   std::string getIntegratorName() const override;
 
@@ -129,7 +136,7 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
   unified_ptr<UpdateTsdfVoxelFunctor> update_functor_host_ptr_;
 
   // The maximum weight that a TsdfVoxel can accumulate.
-  float max_weight_ = 100.0f;
+  float max_weight_ = kDefaultMaxWeight;
 
   // The type of the weighting function to be applied to observations
   WeightingFunctionType weighting_function_type_ =

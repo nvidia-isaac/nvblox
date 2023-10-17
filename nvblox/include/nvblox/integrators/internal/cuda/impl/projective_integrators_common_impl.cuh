@@ -20,8 +20,9 @@ namespace nvblox {
 template <typename SensorType>
 __device__ inline bool projectThreadVoxel(
     const Index3D* block_indices_device_ptr, const SensorType& sensor,
-    const Transform& T_C_L, const float block_size, Eigen::Vector2f* u_px_ptr,
-    float* u_depth_ptr, Vector3f* p_voxel_center_C_ptr) {
+    const Transform& T_C_L, const float block_size, const float max_depth,
+    Eigen::Vector2f* u_px_ptr, float* u_depth_ptr,
+    Vector3f* p_voxel_center_C_ptr) {
   // The indices of the voxel this thread will work on
   // block_indices_device_ptr[blockIdx.x]:
   //                 - The index of the block we're working on (blockIdx.y/z
@@ -32,8 +33,9 @@ __device__ inline bool projectThreadVoxel(
   const Index3D voxel_idx(threadIdx.z, threadIdx.y, threadIdx.x);
 
   // Voxel center point
-  const Vector3f p_voxel_center_L = getCenterPostionFromBlockIndexAndVoxelIndex(
-      block_size, block_idx, voxel_idx);
+  const Vector3f p_voxel_center_L =
+      getCenterPositionFromBlockIndexAndVoxelIndex(block_size, block_idx,
+                                                   voxel_idx);
   // To sensor frame
   *p_voxel_center_C_ptr = T_C_L * p_voxel_center_L;
 
@@ -44,6 +46,12 @@ __device__ inline bool projectThreadVoxel(
 
   // Depth
   *u_depth_ptr = sensor.getDepth(*p_voxel_center_C_ptr);
+
+  // Test for max depth
+  if ((max_depth > 0.0f) && (*u_depth_ptr > max_depth)) {
+    return false;
+  }
+
   return true;
 }
 
