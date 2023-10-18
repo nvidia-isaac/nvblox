@@ -20,31 +20,39 @@ namespace nvblox {
 template <typename VoxelType>
 typename VoxelBlock<VoxelType>::Ptr VoxelBlock<VoxelType>::allocate(
     MemoryType memory_type) {
-  Ptr voxel_block_ptr = make_unified<VoxelBlock>(memory_type);
+  return allocateAsync(memory_type, CudaStreamOwning());
+}
+
+template <typename VoxelType>
+typename VoxelBlock<VoxelType>::Ptr VoxelBlock<VoxelType>::allocateAsync(
+    MemoryType memory_type, const CudaStream& cuda_stream) {
+  Ptr voxel_block_ptr =
+      make_unified_async<VoxelBlock>(memory_type, cuda_stream);
   if (memory_type == MemoryType::kDevice) {
-    initOnGPU(voxel_block_ptr.get());
+    initOnGPUAsync(voxel_block_ptr.get(), cuda_stream);
   }
   return voxel_block_ptr;
 }
 
 template <typename VoxelType>
-void VoxelBlock<VoxelType>::initOnGPU(VoxelBlock<VoxelType>* block_ptr) {
-  setBlockBytesZeroOnGPU(block_ptr);
+void VoxelBlock<VoxelType>::initOnGPUAsync(VoxelBlock<VoxelType>* block_ptr,
+                                           const CudaStream& cuda_stream) {
+  setBlockBytesZeroOnGPUAsync(block_ptr, cuda_stream);
 }
 
 // Initialization specialization for ColorVoxel which is initialized to gray
 // with zero weight
 template <>
-inline void VoxelBlock<ColorVoxel>::initOnGPU(
-    VoxelBlock<ColorVoxel>* block_ptr) {
-  setColorBlockGrayOnGPU(block_ptr);
+inline void VoxelBlock<ColorVoxel>::initOnGPUAsync(
+    VoxelBlock<ColorVoxel>* block_ptr, const CudaStream& cuda_stream) {
+  setColorBlockGrayOnGPUAsync(block_ptr, cuda_stream);
 }
 
 template <typename BlockType>
-void setBlockBytesZeroOnGPU(BlockType* block_device_ptr) {
-  // TODO(alexmillane): This is a cuda call in a public header... Is this
-  // causing issues?
-  cudaMemset(block_device_ptr, 0, sizeof(BlockType));
+void setBlockBytesZeroOnGPUAsync(BlockType* block_device_ptr,
+                                 const CudaStream& cuda_stream) {
+  checkCudaErrors(
+      cudaMemsetAsync(block_device_ptr, 0, sizeof(BlockType), cuda_stream));
 }
 
 }  // namespace nvblox

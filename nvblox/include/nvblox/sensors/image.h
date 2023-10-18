@@ -121,8 +121,8 @@ class Image : public ImageBase<_ElementType> {
   // "Save" the element type so it's queryable as Image::ElementType.
   typedef _ElementType ElementType;
 
-  explicit Image(MemoryType memory_type = kDefaultImageMemoryType)
-      : memory_type_(memory_type) {}
+  Image() = delete;
+  explicit Image(MemoryType memory_type) : memory_type_(memory_type) {}
 
   Image(int rows, int cols, MemoryType memory_type = kDefaultImageMemoryType);
 
@@ -132,34 +132,22 @@ class Image : public ImageBase<_ElementType> {
   Image(Image&& other);
   Image& operator=(Image&& other);
 
-  /// Deep copy constructor (second can be used to transition memory type)
-  explicit Image(const Image& other);
-  Image(const Image& other, MemoryType memory_type);
-  Image& operator=(const Image& other);
-
   // Attributes
   inline MemoryType memory_type() const { return memory_type_; }
 
   /// Set the image to 0.
   void setZero();
 
-  /// Reset the contents of the image. Reallocate if the image got larger.
-  ///@param rows Number of rows in the new image.
-  ///@param colsNumber of columns in the new image.
-  ///@param buffer A pointer to a memory buffer containing pixel data.
-  ///@param memory_type Where the newly allocated image should reside.
-  void populateFromBuffer(int rows, int cols, const ElementType* buffer,
-                          MemoryType memory_type = kDefaultImageMemoryType);
+  /// Deep copy from other image
+  void copyFrom(const Image& other);
+  void copyFromAsync(const Image& other, const CudaStream cuda_stream);
 
-  /// @brief Allocates a new image and populates it. Always allocates.
-  /// @param rows Number of rows in the new image.
-  /// @param cols Number of columns in the new image.
-  /// @param buffer A pointer to a memory buffer containing pixel data.
-  /// @param memory_type Where the newly allocated image should reside.
-  /// @return A newly allocated image.
-  static inline Image fromBuffer(
-      int rows, int cols, const ElementType* buffer,
-      MemoryType memory_type = kDefaultImageMemoryType);
+  /// Copy from other buffer and reallocate if necessary
+  void copyFromAsync(const size_t rows, const size_t cols,
+                     const ElementType* const buffer,
+                     const CudaStream cuda_stream);
+  void copyFrom(const size_t rows, const size_t cols,
+                const ElementType* const buffer);
 
  protected:
   MemoryType memory_type_;

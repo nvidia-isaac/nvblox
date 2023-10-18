@@ -25,7 +25,7 @@ Index3DDeviceSet::~Index3DDeviceSet() {
 }
 
 void Index3DDeviceSet::resize(size_t size) {
-  if (set.size() >= size) {
+  if (set.size() >= static_cast<int32_t>(size)) {
     clear();
   } else {
     Index3DDeviceSetType::destroyDeviceObject(set);
@@ -42,9 +42,10 @@ void copySetToVector(const Index3DDeviceSetType& set,
   thrust::copy_n(set_iter.begin(), set_iter.size(), vec->begin());
 }
 
-void copySetToDeviceVector(const Index3DDeviceSetType& set,
-                           device_vector<Index3D>* vec) {
-  vec->resize(set.size());
+void copySetToDeviceVectorAsync(const Index3DDeviceSetType& set,
+                                device_vector<Index3D>* vec,
+                                const CudaStream cuda_stream) {
+  vec->resizeAsync(set.size(), cuda_stream);
   auto set_iter = set.device_range();
   thrust::copy_n(thrust::device, set_iter.begin(), set_iter.size(),
                  vec->begin());

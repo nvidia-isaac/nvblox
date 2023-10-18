@@ -67,7 +67,7 @@ AxisAlignedBoundingBox Camera::getViewAABB(const Transform& T_L_C,
   aabb_max.setConstant(std::numeric_limits<float>::lowest());
 
   // Transform it into the layer coordinate frame.
-  for (size_t corner_idx = 0; corner_idx < corners_C.rows(); corner_idx++) {
+  for (int corner_idx = 0; corner_idx < corners_C.rows(); corner_idx++) {
     const Vector3f& corner_C = corners_C.row(corner_idx);
     Vector3f corner_L = T_L_C * corner_C;
     for (int i = 0; i < 3; i++) {
@@ -110,6 +110,19 @@ Eigen::Matrix<float, 8, 3> Camera::getViewCorners(const float min_depth,
   return corners_C;
 }
 
+CameraViewport Camera::getNormalizedViewport(const float margin_pixels) const {
+  // Get the normalized coordinates of the points defining the
+  // viewport: (0, 0, width, height) with added margin. Normalized
+  // coordinates are obtained by "undoing" the camera intrinsics,
+  // i.e. multiplying a pixel coordinate with inverse(K). This is the
+  // same operation we perform inside vectorFromImagePlaneCoordinates()
+  const Eigen::Vector3f min_coord =
+      vectorFromImagePlaneCoordinates({-margin_pixels, -margin_pixels});
+  const Eigen::Vector3f max_coord = vectorFromImagePlaneCoordinates(
+      {width() + margin_pixels, height() + margin_pixels});
+  return CameraViewport(min_coord.head<2>(), max_coord.head<2>());
+}
+
 // Frustum definitions.
 Frustum::Frustum(const Camera& camera, const Transform& T_L_C, float min_depth,
                  float max_depth) {
@@ -150,7 +163,7 @@ void Frustum::computeBoundingPlanes(const Eigen::Matrix<float, 8, 3>& corners_C,
   aabb_max.setConstant(std::numeric_limits<double>::lowest());
 
   for (int i = 0; i < corners_L.cols(); i++) {
-    for (size_t j = 0; j < corners_L.rows(); j++) {
+    for (int j = 0; j < corners_L.rows(); j++) {
       aabb_min(i) = std::min(aabb_min(i), corners_L(j, i));
       aabb_max(i) = std::max(aabb_max(i), corners_L(j, i));
     }

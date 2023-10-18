@@ -19,21 +19,130 @@ limitations under the License.
 
 namespace nvblox {
 
+enum class MappingType {
+  kStaticTsdf,           /// only static tsdf
+  kStaticOccupancy,      /// only static occupancy
+  kDynamic,              /// static tsdf (incl. freespace) and dynamic occupancy
+  kHumanWithStaticTsdf,  /// static tsdf and human occupancy
+  kHumanWithStaticOccupancy  /// static occupancy and human occupancy
+};
+
+/// Whether the masked mapper is used for dynamic/human mapping
+inline bool isUsingDynamicMapper(MappingType mapping_type) {
+  if (mapping_type == MappingType::kDynamic ||
+      mapping_type == MappingType::kHumanWithStaticTsdf ||
+      mapping_type == MappingType::kHumanWithStaticOccupancy) {
+    return true;
+  }
+  return false;
+}
+
+/// Whether the masked mapper is used for human mapping
+inline bool isHumanMapping(MappingType mapping_type) {
+  if (mapping_type == MappingType::kHumanWithStaticTsdf ||
+      mapping_type == MappingType::kHumanWithStaticOccupancy) {
+    return true;
+  }
+  return false;
+}
+
+/// Whether the unmasked mapper is doing occupancy
+inline bool isStaticOccupancy(MappingType mapping_type) {
+  if (mapping_type == MappingType::kStaticOccupancy ||
+      mapping_type == MappingType::kHumanWithStaticOccupancy) {
+    return true;
+  }
+  return false;
+}
+
+inline std::string toString(MappingType mapping_type) {
+  switch (mapping_type) {
+    case MappingType::kStaticTsdf:
+      return "kStaticTsdf";
+      break;
+    case MappingType::kStaticOccupancy:
+      return "kStaticOccupancy";
+      break;
+    case MappingType::kDynamic:
+      return "kDynamic";
+      break;
+    case MappingType::kHumanWithStaticTsdf:
+      return "kHumanWithStaticTsdf";
+      break;
+    case MappingType::kHumanWithStaticOccupancy:
+      return "kHumanWithStaticOccupancy";
+      break;
+    default:
+      CHECK(false) << "Requested mapping type is not implemented.";
+  }
+}
+
 /// The MultiMapper class is composed of two standard Mappers.
 /// Depth and color are integrated into one of these Mappers according to a
 /// mask.
+/// Setup:
+/// - masked mapper:   Handling general dynamics or humans in an occupancy
+///                    layer.
+/// - unmasked mapper: Handling static objects with a tsdf or a occupancy layer.
+///                    Also updating a freespace layer if mapping type is
+///                    kDynamic.
 class MultiMapper {
  public:
-  MultiMapper(float voxel_size_m, MemoryType memory_type = MemoryType::kDevice,
-              ProjectiveLayerType masked_projective_layer_type =
-                  ProjectiveLayerType::kOccupancy,
-              ProjectiveLayerType unmasked_projective_layer_type =
-                  ProjectiveLayerType::kTsdf);
+  static constexpr bool kDefaultEsdf2dMinHeight = 0.0f;
+  static constexpr bool kDefaultEsdf2dMaxHeight = 1.0f;
+  static constexpr bool kDefaultEsdf2dSliceHeight = 1.0f;
+  static constexpr int kDefaultConnectedMaskComponentSizeThreshold = 2000;
+
+  struct Params {
+    /// The minimum height, in meters, to consider obstacles part of the 2D ESDF
+    /// slice.
+    float esdf_2d_min_height = kDefaultEsdf2dMinHeight;
+    /// The maximum height, in meters, to consider obstacles part of the 2D ESDF
+    /// slice.
+    float esdf_2d_max_height = kDefaultEsdf2dMaxHeight;
+    /// The output slice height for the distance slice and ESDF pointcloud. Does
+    /// not need to be within min and max height below. In units of meters.
+    float esdf_slice_height = kDefaultEsdf2dSliceHeight;
+    /// The minimum number of pixels of a connected component in the mask image
+    /// to count as a dynamic detection.
+    int connected_mask_component_size_threshold =
+        kDefaultConnectedMaskComponentSizeThreshold;
+  };
+
+  MultiMapper(
+      float voxel_size_m, MappingType mapping_type, EsdfMode esdf_mode,
+      MemoryType memory_type = MemoryType::kDevice,
+      std::shared_ptr<CudaStream> = std::make_shared<CudaStreamOwning>());
   ~MultiMapper() = default;
 
-  /// Integrates a depth frame into the reconstruction
+  /// @brief Setting the multi mapper param struct
+  /// @param multi_mapper_params the param struct
+  void setMultiMapperParams(const Params& multi_mapper_params) {
+    params_ = multi_mapper_params;
+  }
+
+  /// @brief Setting the mapper param struct to the two mappers
+  /// @param unmasked_mapper_params param struct for unmasked mapper
+  /// @param masked_mapper_params  param struct for masked mapper (optional)
+  void setMapperParams(
+      const MapperParams& unmasked_mapper_params,
+      const std::optional<MapperParams>& masked_mapper_params = std::nullopt);
+
+  /// @brief Integrates a depth frame into the reconstruction (for mapping type
+  /// kStaticTsdf/kStaticOccupancy/kDynamic).
+  /// @param depth_frameDepth frame to integrate.
+  /// @param T_L_CD Pose of the depth camera, specified as a transform from
+  ///              camera frame to layer frame transform.
+  /// @param depth_camera Intrinsics model of the depth camera.
+  /// @param update_time_ms Current update time in millisecond.
+  void integrateDepth(const DepthImage& depth_frame, const Transform& T_L_CD,
+                      const Camera& depth_camera,
+                      const std::optional<Time>& update_time_ms = std::nullopt);
+
+  /// @brief Integrates a depth frame into the reconstruction
   /// using the transformation between depth and mask frame and their
-  /// intrinsics.
+  /// intrinsics (for mapping type
+  /// kHumanWithStaticTsdf/kHumanWithStaticOccupancy).
   ///@param depth_frame Depth frame to integrate. Depth in the image is
   ///                   specified as a float representing meters.
   ///@param mask Mask. Interpreted as 0=non-masked, >0=masked.
@@ -46,7 +155,17 @@ class MultiMapper {
                       const Transform& T_L_CD, const Transform& T_CM_CD,
                       const Camera& depth_camera, const Camera& mask_camera);
 
-  /// Integrates a color frame into the reconstruction.
+  /// @brief Integrates a color frame into the reconstruction (for mapping type
+  /// kStaticTsdf/kStaticOccupancy/kDynamic).
+  /// @param color_frame Color image to integrate.
+  /// @param T_L_C Pose of the camera, specified as a transform from camera
+  /// frame to the layer frame.
+  /// @param camera Intrinsics model of the camera.
+  void integrateColor(const ColorImage& color_frame, const Transform& T_L_C,
+                      const Camera& camera);
+
+  /// @brief Integrates a color frame into the reconstruction (for mapping type
+  /// kHumanWithStaticTsdf/kHumanWithStaticOccupancy).
   ///@param color_frame Color image to integrate.
   ///@param mask Mask. Interpreted as 0=non-masked, >0=masked.
   ///@param T_L_C Pose of the camera, specified as a transform from camera frame
@@ -54,6 +173,15 @@ class MultiMapper {
   ///@param camera Intrinsics model of the camera.
   void integrateColor(const ColorImage& color_frame, const MonoImage& mask,
                       const Transform& T_L_C, const Camera& camera);
+
+  /// @brief Updating the esdf layers of the mappers depending on the mapping
+  /// type.
+  void updateEsdf();
+
+  /// @brief Updating the mesh layers of the mappers depending on the mapping
+  /// type.
+  /// @return The indices of the blocks that were updated in this call.
+  std::vector<Index3D> updateMesh();
 
   // Access to the internal mappers
   const Mapper& unmasked_mapper() const { return *unmasked_mapper_.get(); }
@@ -69,34 +197,52 @@ class MultiMapper {
   const ColorImage& getLastColorFrameMasked();
   const ColorImage& getLastDepthFrameMaskOverlay();
   const ColorImage& getLastColorFrameMaskOverlay();
+  const ColorImage& getLastDynamicFrameMaskOverlay();
+  const Pointcloud& getLastDynamicPointcloud();
 
-  /// Setting the depth value for unmasked depth pixels on the masked output
-  /// frame.
-  ///@param depth_value The new depth value.
-  void setDepthMaskedImageInvalidPixel(float depth_value);
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
 
-  /// Setting the depth value for masked depth pixels on the unmasked output
-  /// frame.
-  ///@param depth_value The new depth value.
-  void setDepthUnmaskedImageInvalidPixel(float depth_value);
+  /// Return the parameter tree represented as a string
+  /// @return the parameter tree string
+  virtual std::string getParametersAsString() const;
 
  protected:
+  // Performs the esdf update on the passed mapper
+  void updateEsdfOfMapper(const std::shared_ptr<Mapper>& mapper);
+
+  // Mapping type needed on construction
+  const MappingType mapping_type_;
+  const EsdfMode esdf_mode_;
+
+  // Parameter struct for multi mapper
+  Params params_;
+
+  // Helper to detect dynamics from a freespace layer
+  DynamicsDetection dynamic_detector_;
+  MonoImage cleaned_dynamic_mask_{MemoryType::kDevice};
+
   // Split depth images based on a mask.
   // Note that we internally pre-allocate space for the split images on the
   // first call.
   ImageMasker image_masker_;
-  DepthImage depth_frame_unmasked_;
-  DepthImage depth_frame_masked_;
-  ColorImage color_frame_unmasked_;
-  ColorImage color_frame_masked_;
+  DepthImage depth_frame_unmasked_{MemoryType::kDevice};
+  DepthImage depth_frame_masked_{MemoryType::kDevice};
+  ColorImage color_frame_unmasked_{MemoryType::kDevice};
+  ColorImage color_frame_masked_{MemoryType::kDevice};
 
   // Mask overlays used as debug outputs
-  ColorImage masked_depth_overlay_;
-  ColorImage masked_color_overlay_;
+  ColorImage masked_depth_overlay_{MemoryType::kDevice};
+  ColorImage masked_color_overlay_{MemoryType::kDevice};
 
   // The two mappers to which the frames are integrated.
-  std::shared_ptr<Mapper> unmasked_mapper_;
   std::shared_ptr<Mapper> masked_mapper_;
+  std::shared_ptr<Mapper> unmasked_mapper_;
+
+  // The CUDA stream on which to process all work
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

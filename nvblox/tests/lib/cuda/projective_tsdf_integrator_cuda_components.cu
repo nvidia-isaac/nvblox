@@ -81,8 +81,9 @@ __global__ void projectBlocksToCamera(
   const Index3D voxel_idx(threadIdx.x, threadIdx.y, threadIdx.z);
 
   // Voxel center point
-  const Vector3f p_voxel_center_L = getCenterPostionFromBlockIndexAndVoxelIndex(
-      block_size, block_idx, voxel_idx);
+  const Vector3f p_voxel_center_L =
+      getCenterPositionFromBlockIndexAndVoxelIndex(block_size, block_idx,
+                                                   voxel_idx);
   // To camera frame
   const Vector3f p_voxel_center_C = R_C_L * p_voxel_center_L + t_C_L;
   // Project to image plane
@@ -145,7 +146,7 @@ void setVoxelBlockOnGPU(TsdfLayer* layer) {
   checkCudaErrors(cudaGetLastError());
   checkCudaErrors(cudaDeviceSynchronize());
 
-  cudaFree(block_device_ptrs);
+  checkCudaErrors(cudaFree(block_device_ptrs));
 }
 
 Eigen::VectorXf interpolatePointsOnGPU(const DepthImage& depth_frame,
@@ -185,9 +186,9 @@ Eigen::VectorXf interpolatePointsOnGPU(const DepthImage& depth_frame,
                              u_px_vec.rows() * sizeof(float),
                              cudaMemcpyDeviceToHost));
 
-  cudaFree(depth_frame_device_ptr);
-  cudaFree(u_px_vec_device_ptr);
-  cudaFree(interpolated_values_device_ptr);
+  checkCudaErrors(cudaFree(depth_frame_device_ptr));
+  checkCudaErrors(cudaFree(u_px_vec_device_ptr));
+  checkCudaErrors(cudaFree(interpolated_values_device_ptr));
 
   return results;
 }
@@ -252,10 +253,10 @@ std::vector<BlockProjectionResult> projectBlocksOnGPU(
                  cudaMemcpyDeviceToHost));
 
   // Free
-  cudaFree(R_C_L_device_ptr);
-  cudaFree(t_C_L_device_ptr);
-  cudaFree(block_indices_device_ptr);
-  cudaFree(block_projection_results_device_ptr);
+  checkCudaErrors(cudaFree(R_C_L_device_ptr));
+  checkCudaErrors(cudaFree(t_C_L_device_ptr));
+  checkCudaErrors(cudaFree(block_indices_device_ptr));
+  checkCudaErrors(cudaFree(block_projection_results_device_ptr));
 
   return projection_results;
 }
@@ -305,10 +306,10 @@ Eigen::Matrix3Xf transformPointsOnGPU(const Transform& T_B_A,
                              num_elements * sizeof(float),
                              cudaMemcpyDeviceToHost));
 
-  cudaFree(vecs_A_device_ptr);
-  cudaFree(R_A_B_device_ptr);
-  cudaFree(t_A_B_device_ptr);
-  cudaFree(vecs_B_device);
+  checkCudaErrors(cudaFree(vecs_A_device_ptr));
+  checkCudaErrors(cudaFree(R_A_B_device_ptr));
+  checkCudaErrors(cudaFree(t_A_B_device_ptr));
+  checkCudaErrors(cudaFree(vecs_B_device));
 
   return vecs_B;
 }

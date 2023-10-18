@@ -86,10 +86,10 @@ TEST(LayerTest, MinCornerBasedIndexing) {
   constexpr float KTestBlockSize = 0.1;
   BlockLayer<BooleanBlock> layer(KTestBlockSize, MemoryType::kUnified);
 
-  const Vector3f kPostion3DEpsilson(0.001f, 0.001f, 0.001f);
+  const Vector3f kPosition3DEpsilson(0.001f, 0.001f, 0.001f);
   Vector3f position_low(0, 0, 0);
   Vector3f position_high =
-      KTestBlockSize * Vector3f::Ones() - kPostion3DEpsilson;
+      KTestBlockSize * Vector3f::Ones() - kPosition3DEpsilson;
 
   // Put something in on the low side of the block's range
   BooleanBlock::Ptr block_low_ptr = layer.allocateBlockAtPosition(position_low);
@@ -127,7 +127,7 @@ std::vector<Vector3f> generateQueryPositions() {
 
 void checkSequentialTsdfTest(const std::vector<TsdfVoxel>& voxels,
                              const std::vector<bool>& flags) {
-  for (int i = 0; i < voxels.size(); i++) {
+  for (size_t i = 0; i < voxels.size(); i++) {
     EXPECT_TRUE(flags[i]);
     EXPECT_EQ(voxels[i].distance, static_cast<float>(i));
     EXPECT_EQ(voxels[i].weight, static_cast<float>(i));
@@ -175,12 +175,16 @@ TEST(VoxelLayerTest, GetTsdfVoxelsOnDevice) {
   TsdfLayer tsdf_layer = generateTsdfLayer();
 
   // Check voxel center positions
-  device_vector<Vector3f> query_device = generateQueryPositions();
+  device_vector<Vector3f> query_device;
+  query_device.copyFrom(generateQueryPositions());
+
   device_vector<TsdfVoxel> voxels;
   device_vector<bool> flags;
   tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
-  unified_vector<TsdfVoxel> voxels_host = voxels;
-  unified_vector<bool> flags_host = flags;
+  unified_vector<TsdfVoxel> voxels_host;
+  voxels_host.copyFrom(voxels);
+  unified_vector<bool> flags_host;
+  flags_host.copyFrom(flags);
   checkSequentialTsdfTest(voxels_host.toVector(), flags_host.toVector());
 
   // Now try some edge cases
@@ -188,10 +192,10 @@ TEST(VoxelLayerTest, GetTsdfVoxelsOnDevice) {
   // Just inside the block from {0.0f, 0.0f, 0.0f}
   Vector3f kVecEps = 1e-5 * Vector3f::Ones();
   std::vector<Vector3f> query = {kVecEps};
-  query_device = query;
+  query_device.copyFrom(query);
   tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
-  voxels_host = voxels;
-  flags_host = flags;
+  voxels_host.copyFrom(voxels);
+  flags_host.copyFrom(flags);
   EXPECT_EQ(flags_host.size(), 1);
   EXPECT_EQ(voxels_host.size(), 1);
   EXPECT_TRUE(flags_host[0]);
@@ -200,26 +204,26 @@ TEST(VoxelLayerTest, GetTsdfVoxelsOnDevice) {
 
   // Just inside the block from it's far boundary {8.0f, 8.0f, 8.0f}
   query = {Vector3f(8.0f, 8.0f, 8.0f) - kVecEps};
-  query_device = query;
+  query_device.copyFrom(query);
   tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
-  voxels_host = voxels;
-  flags_host = flags;
+  voxels_host.copyFrom(voxels);
+  flags_host.copyFrom(flags);
   EXPECT_TRUE(flags_host[0]);
   EXPECT_EQ(voxels_host[0].distance, 511.0f);
   EXPECT_EQ(voxels_host[0].weight, 511.0f);
 
   // Just outside the block from {0.0f, 0.0f, 0.0f}
   query = {-kVecEps};
-  query_device = query;
+  query_device.copyFrom(query);
   tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
-  flags_host = flags;
+  flags_host.copyFrom(flags);
   EXPECT_FALSE(flags_host[0]);
 
   // Just outside the block from it's far boundary {8.0f, 8.0f, 8.0f}
   query = {Vector3f(8.0f, 8.0f, 8.0f) + kVecEps};
-  query_device = query;
+  query_device.copyFrom(query);
   tsdf_layer.getVoxelsGPU(query_device, &voxels, &flags);
-  flags_host = flags;
+  flags_host.copyFrom(flags);
   EXPECT_FALSE(flags_host[0]);
 }
 
@@ -231,13 +235,16 @@ TEST(VoxelLayerTest, GetCustomVoxelsOnDevice) {
   test_utils::setFloatingBlockVoxelsInSequence(block_ptr);
 
   // Check voxel center positions
-  device_vector<Vector3f> query_device = generateQueryPositions();
+  device_vector<Vector3f> query_device;
+  query_device.copyFrom(generateQueryPositions());
   device_vector<FloatVoxel> voxels;
   device_vector<bool> flags;
   voxel_layer.getVoxelsGPU(query_device, &voxels, &flags);
-  unified_vector<FloatVoxel> voxels_host = voxels;
-  unified_vector<bool> flags_host = flags;
-  for (int i = 0; i < voxels.size(); i++) {
+  unified_vector<FloatVoxel> voxels_host;
+  voxels_host.copyFrom(voxels);
+  unified_vector<bool> flags_host;
+  flags_host.copyFrom(flags);
+  for (size_t i = 0; i < voxels.size(); i++) {
     EXPECT_TRUE(flags_host[i]);
     EXPECT_EQ(voxels_host[i].voxel_data, static_cast<float>(i));
   }
@@ -324,7 +331,8 @@ TEST(VoxelLayerTest, CopyLayerTest) {
 
   // Now copy over the layer with a deep copy operator.
   LOG(INFO) << "About to do first copy of layer";
-  TsdfLayer tsdf_layer_host(tsdf_layer, MemoryType::kHost);
+  TsdfLayer tsdf_layer_host(voxel_size_m, MemoryType::kHost);
+  tsdf_layer_host.copyFrom(tsdf_layer);
   EXPECT_EQ(tsdf_layer_host.memory_type(), MemoryType::kHost);
 
   std::vector<Index3D> all_blocks_host = tsdf_layer_host.getAllBlockIndices();
@@ -347,7 +355,7 @@ TEST(VoxelLayerTest, CopyLayerTest) {
   // Now try the assignment. This triggers a second copy.
   TsdfLayer tsdf_layer_assignment(voxel_size_m, MemoryType::kHost);
   LOG(INFO) << "About to do second copy of layer";
-  tsdf_layer_assignment = tsdf_layer;
+  tsdf_layer_assignment.copyFrom(tsdf_layer);
   EXPECT_EQ(tsdf_layer_assignment.memory_type(), MemoryType::kHost);
 
   std::vector<Index3D> block_indices_assignment =
@@ -397,6 +405,32 @@ TEST(VoxelLayerTest, ClearBlocks) {
   tsdf_layer.clearBlocks(
       {Index3D(0, 0, 2), Index3D(0, 0, 3), Index3D(0, 0, 4)});
   EXPECT_EQ(tsdf_layer.numAllocatedBlocks(), 0);
+}
+
+TEST(VoxelLayerTest, AllocateMultipleBlocks) {
+  constexpr float voxel_size_m = 0.1f;
+  TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kDevice);
+
+  const Index3D idx_1(0, 0, 0);
+  const Index3D idx_2(0, 0, 1);
+  const Index3D idx_3(0, 0, 2);
+  const std::vector<Index3D> indices{idx_1, idx_2, idx_3};
+
+  tsdf_layer.allocateBlocksAtIndices(indices, CudaStreamOwning());
+
+  EXPECT_TRUE(tsdf_layer.isBlockAllocated(idx_1));
+  EXPECT_TRUE(tsdf_layer.isBlockAllocated(idx_2));
+  EXPECT_TRUE(tsdf_layer.isBlockAllocated(idx_3));
+}
+
+TEST(LayerTest, IsLayerTrait) {
+  // NOTE(alexmillane): For some reason be have to assign to an intermediate
+  // value for EXPECT_TRUE
+  bool test_true = traits::are_layers<TsdfLayer, EsdfLayer, MeshLayer>::value;
+  EXPECT_TRUE(test_true);
+  bool test_false =
+      traits::are_layers<TsdfLayer, EsdfLayer, MeshLayer, std::string>::value;
+  EXPECT_FALSE(test_false);
 }
 
 int main(int argc, char** argv) {

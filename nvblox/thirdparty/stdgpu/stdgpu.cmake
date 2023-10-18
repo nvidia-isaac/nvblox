@@ -1,6 +1,7 @@
 include(FetchContent)
 FetchContent_Declare(
   ext_stdgpu
+  SYSTEM
   PREFIX stdgpu
   GIT_REPOSITORY https://github.com/stotko/stdgpu.git
   GIT_TAG        e10f6f3ccc9902d693af4380c3bcd188ec34a2e6

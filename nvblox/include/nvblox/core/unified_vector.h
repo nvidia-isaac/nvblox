@@ -17,10 +17,10 @@ limitations under the License.
 
 #include <type_traits>
 #include <vector>
-#include "nvblox/utils/logging.h"
-
+#include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/iterator.h"
 #include "nvblox/core/types.h"
+#include "nvblox/utils/logging.h"
 
 namespace nvblox {
 
@@ -39,15 +39,19 @@ class unified_vector {
       std::is_default_constructible<T>::value,
       "Objects stored in unified vector should be default constructible.");
 
+  /// Construct with a given memory type
   unified_vector(MemoryType memory_type = kDefaultMemoryType);
+
+  /// Construct resized with a given memory type
   unified_vector(size_t size, MemoryType memory_type = kDefaultMemoryType);
+
+  /// Construct resized and constant-initialized with a given memory type
   unified_vector(size_t size, const T& initial,
                  MemoryType memory_type = kDefaultMemoryType);
-  /// Copy constructor.
-  unified_vector(const unified_vector<T>& other,
-                 MemoryType memory_type = kDefaultMemoryType);
-  unified_vector(const std::vector<T>& other,
-                 MemoryType memory_type = kDefaultMemoryType);
+
+  /// Copy constructors are deleted. Use copyFrom instead
+  unified_vector(const unified_vector<T>& other) = delete;
+  unified_vector<T> operator=(const unified_vector<T>& other) = delete;
 
   /// Move constructor.
   unified_vector(unified_vector<T>&& other);
@@ -58,12 +62,22 @@ class unified_vector {
   /// Operators.
   T& operator[](size_t index);
   const T& operator[](size_t index) const;
-  unified_vector<T>& operator=(const unified_vector<T>& other);
+
   unified_vector<T>& operator=(unified_vector<T>&& other);
-  unified_vector<T>& operator=(const std::vector<T>& other);
+
+  // Assignment operator is deleted. Use copyFrom instead.
+
+  /// Deep copies with and without stream synchronization
+  /// OtherVectorType must be compliant with std::vector
+  template <typename OtherVectorType>
+  void copyFromAsync(const OtherVectorType& other,
+                     const CudaStream cuda_stream);
+  template <typename OtherVectorType>
+  void copyFrom(const OtherVectorType& other);
 
   /// Convert to an std::vector. Creates a copy.
   std::vector<T> toVector() const;
+  std::vector<T> toVectorAsync(const CudaStream cuda_stream) const;
 
   /// Get raw pointers. This is also for GPU pointers.
   T* data();
@@ -78,10 +92,22 @@ class unified_vector {
   size_t size() const;
   bool empty() const;
 
-  /// Changing the size.
+  /// Reserve space without changing the size.
+  /// Memory will be reallocated only if new capacity is greater than current.
   void reserve(size_t capacity);
+  void reserveAsync(size_t capacity, const CudaStream cuda_stream);
+
+  /// Change the size
+  /// Memory will be reallocated only if new size is greater than current
+  /// capacity
   void resize(size_t size);
+  void resizeAsync(size_t size, const CudaStream cuda_stream);
+
+  /// Clear and deallocate memory
   void clear();
+
+  /// Clear without deallocation
+  void clearNoDealloc();
 
   /// Adding elements.
   void push_back(const T& value);
@@ -98,6 +124,7 @@ class unified_vector {
   MemoryType memory_type() const { return memory_type_; }
 
   /// Set the entire *memory* of the vector to zero.
+  void setZeroAsync(const CudaStream cuda_stream);
   void setZero();
 
  private:
@@ -117,28 +144,6 @@ class device_vector : public unified_vector<T> {
   device_vector(size_t size) : unified_vector<T>(size, MemoryType::kDevice) {}
   device_vector(size_t size, const T& initial)
       : unified_vector<T>(size, initial, MemoryType::kDevice) {}
-
-  // Conversions from base
-  device_vector(const unified_vector<T>& other)
-      : unified_vector<T>(other, MemoryType::kDevice){};
-  device_vector(unified_vector<T>&& other)
-      : unified_vector<T>(std::move(other), MemoryType::kDevice){};
-  device_vector& operator=(const unified_vector<T>& other) {
-    unified_vector<T>::operator=(other);
-    return *this;
-  }
-  device_vector& operator=(unified_vector<T>&& other) {
-    unified_vector<T>::operator=(std::move(other));
-    return *this;
-  }
-
-  // From std::vector
-  device_vector(const std::vector<T>& other)
-      : unified_vector<T>(other, MemoryType::kDevice) {}
-  device_vector<T>& operator=(const std::vector<T>& other) {
-    unified_vector<T>::operator=(other);
-    return *this;
-  }
 };
 
 /// Specialization for unified_vector on host memory only.
@@ -150,28 +155,6 @@ class host_vector : public unified_vector<T> {
   host_vector(size_t size) : unified_vector<T>(size, MemoryType::kHost) {}
   host_vector(size_t size, const T& initial)
       : unified_vector<T>(size, initial, MemoryType::kHost) {}
-
-  // Conversions from base
-  host_vector(const unified_vector<T>& other)
-      : unified_vector<T>(other, MemoryType::kHost){};
-  host_vector(unified_vector<T>&& other)
-      : unified_vector<T>(std::move(other), MemoryType::kHost){};
-  host_vector& operator=(const unified_vector<T>& other) {
-    unified_vector<T>::operator=(other);
-    return *this;
-  }
-  host_vector& operator=(unified_vector<T>&& other) {
-    unified_vector<T>::operator=(std::move(other));
-    return *this;
-  }
-
-  // From std::vector
-  host_vector(const std::vector<T>& other)
-      : unified_vector<T>(other, MemoryType::kHost) {}
-  host_vector<T>& operator=(const std::vector<T>& other) {
-    unified_vector<T>::operator=(other);
-    return *this;
-  }
 };
 
 }  // namespace nvblox

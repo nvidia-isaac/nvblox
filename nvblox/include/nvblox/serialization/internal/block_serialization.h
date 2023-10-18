@@ -26,21 +26,25 @@ namespace nvblox {
 // ------------------- Serialization ----------------------
 // Base template.
 template <typename BlockType>
-std::vector<Byte> serializeBlock(const unified_ptr<BlockType>& block);
+std::vector<Byte> serializeBlock(const unified_ptr<BlockType>& block,
+                                 const CudaStream cuda_stream);
 
 // Voxel specializations
 template <typename VoxelType>
 std::vector<Byte> serializeBlock(
-    const unified_ptr<const VoxelBlock<VoxelType>>& block);
+    const unified_ptr<const VoxelBlock<VoxelType>>& block,
+    const CudaStream cuda_stream);
 
 // ------------------- Deserialization ----------------------
 template <typename BlockType>
 void deserializeBlock(const std::vector<Byte>& bytes,
-                      unified_ptr<BlockType>& block);
+                      unified_ptr<BlockType>& block,
+                      const CudaStream cuda_stream);
 
 template <typename VoxelType>
 void deserializeBlock(const std::vector<Byte>& bytes,
-                      unified_ptr<VoxelBlock<VoxelType>>& block);
+                      unified_ptr<VoxelBlock<VoxelType>>& block,
+                      const CudaStream cuda_stream);
 
 }  // namespace nvblox
 

@@ -41,7 +41,8 @@ bool Serializer::open(const std::string& filename,
   return sqlite_.open(filename, openmode);
 }
 
-LayerCake Serializer::loadLayerCake(MemoryType memory_type) {
+LayerCake Serializer::loadLayerCake(MemoryType memory_type,
+                                    const CudaStream cuda_stream) {
   // Get all the layers that are in here.
   std::vector<std::string> layer_names;
   getLayerNames(&layer_names);
@@ -83,7 +84,7 @@ LayerCake Serializer::loadLayerCake(MemoryType memory_type) {
     for (const Index3D& index : data_indices) {
       std::vector<Byte> data;
       getDataAtIndex(layer_name, index, &data);
-      layer_functions.add_data(index, data, layer.get());
+      layer_functions.add_data(index, data, layer.get(), cuda_stream);
     }
 
     // If the layer has a block size, then set the layer cake to the correct
@@ -111,7 +112,8 @@ LayerCake Serializer::loadLayerCake(MemoryType memory_type) {
   return cake;
 }
 
-bool Serializer::writeLayerCake(const LayerCake& cake) {
+bool Serializer::writeLayerCake(const LayerCake& cake,
+                                const CudaStream cuda_stream) {
   const std::unordered_map<std::type_index, std::unique_ptr<BaseLayer>>&
       layer_map = cake.get_layers();
 
@@ -156,7 +158,7 @@ bool Serializer::writeLayerCake(const LayerCake& cake) {
     for (const Index3D& index : data_indices) {
       // Get the byte string for this data.
       std::vector<Byte> data_bytes =
-          layer_functions.serialize_data(it->second.get(), index);
+          layer_functions.serialize_data(it->second.get(), index, cuda_stream);
 
       addLayerData(layer_name, index, data_bytes);
     }

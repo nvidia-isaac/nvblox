@@ -108,7 +108,6 @@ TEST_F(RayCasterTest, Length0Cast) {
 }
 
 int main(int argc, char** argv) {
-  warmupCuda();
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;
   google::InstallFailureSignalHandler();

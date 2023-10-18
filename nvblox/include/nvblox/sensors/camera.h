@@ -22,6 +22,9 @@ namespace nvblox {
 class Frustum;
 class BoundingPlane;
 
+/// Class representing the image rectangle
+using CameraViewport = Eigen::AlignedBox<float, 2>;
+
 /// Class that describes the parameters and FoV of a camera.
 class Camera {
  public:
@@ -34,8 +37,18 @@ class Camera {
   /// @param p_C Input 3D point coordinate in image space.
   /// @param u_C Output 2D pixel coordinate.
   /// @return Whether the pixel is on the image.
-  __host__ __device__ inline bool project(const Vector3f& p_C,
-                                          Vector2f* u_C) const;
+  __host__ __device__ inline bool project(
+      const Vector3f& p_C, Vector2f* u_C,
+      const float min_depth = kDefaultMinProjectionDepth) const;
+
+  /// Project p_C into a normalized camera (camera that has identity
+  /// calibration matrix).
+  /// @param p_C Input 3D point coordinate in image space.
+  /// @param u_C Output 2D normalized image coordinate.
+  /// @return Whether the pixel is on the image.
+  inline static __host__ __device__ bool projectToNormalizedCoordinates(
+      const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C,
+      const float min_depth = kDefaultMinProjectionDepth);
 
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
 
@@ -58,10 +71,19 @@ class Camera {
   __host__ Eigen::Matrix<float, 8, 3> getViewCorners(
       const float min_depth, const float max_depth) const;
 
-  // Returns an unnormalized ray direction in the camera frame corresponding to
-  // the passed pixel.
-  // Two functions, one for (floating point) image-plane coordinates, another
-  // function for pixel indices.
+  /// Get the camera viewport in normalized image coordinates with an
+  /// appended margin in pixels.
+  ///
+  /// A normalized camera has K = I and thus its image coordinates
+  /// reside in a plane situated one length-unit in front of the
+  /// camera. For more info, see:
+  /// https://en.wikipedia.org/wiki/Camera_matrix#Normalized_camera_matrix_and_normalized_image_coordinates
+  __host__ CameraViewport
+  getNormalizedViewport(const float margin_pixels = 0.F) const;
+
+  /// Returns an unnormalized ray direction in the camera frame corresponding
+  /// to the passed pixel. Two functions, one for (floating point)
+  /// image-plane coordinates, another function for pixel indices.
   __host__ __device__ inline Vector3f vectorFromImagePlaneCoordinates(
       const Vector2f& u_C) const;
   __host__ __device__ inline Vector3f vectorFromPixelIndices(
@@ -80,6 +102,8 @@ class Camera {
   // Factories
   inline static Camera fromIntrinsicsMatrix(const Eigen::Matrix3f& mat,
                                             int width, int height);
+
+  static constexpr float kDefaultMinProjectionDepth = 1E-6;
 
  private:
   float fu_;

@@ -1,3 +1,18 @@
+/*
+Copyright 2022-2023 NVIDIA CORPORATION
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 #pragma once
 
 namespace nvblox {
@@ -26,6 +41,11 @@ float WeightingFunction::operator()(float measured_depth, float voxel_depth,
       return computeInverseSquare(measured_depth, voxel_depth,
                                   truncation_distance) *
              computeDropoff(measured_depth, voxel_depth, truncation_distance);
+    case WeightingFunctionType::kInverseSquareTsdfDistancePenalty:
+      return computeInverseSquare(measured_depth, voxel_depth,
+                                  truncation_distance) *
+             computeTsdfDistancePenalty(measured_depth, voxel_depth,
+                                        truncation_distance);
     default:
       LOG(FATAL) << "Requested weighting function type not implemented";
       return 0.0;
@@ -73,6 +93,19 @@ float WeightingFunction::computeInverseSquare(float measured_depth,
   return 1.0f / (voxel_depth * voxel_depth);
 }
 
+float WeightingFunction::computeTsdfDistancePenalty(
+    float measured_depth, float voxel_depth, float truncation_distance) const {
+  // Big tsdf distances measurements are susceptible to viewpoint changes.
+  // Therefore we decrease the weight outside the truncation distance.
+  // Note: can help to reduce holes in the floor reconstruction.
+  const float tsdf_distance = measured_depth - voxel_depth;
+  if (std::abs(tsdf_distance) >= truncation_distance) {
+    // TODO(remos): Find optimal factor or make dependent on tsdf distance
+    return 0.1f;
+  }
+  return 1.0f;
+}
+
 // Useful so we can print the weighting function types.
 std::ostream& operator<<(std::ostream& os,
                          const WeightingFunctionType& weighting_function_type) {
@@ -89,10 +122,18 @@ std::ostream& operator<<(std::ostream& os,
     case WeightingFunctionType::kInverseSquareDropoffWeight:
       os << "kInverseSquareDropoffWeight";
       break;
+    case WeightingFunctionType::kInverseSquareTsdfDistancePenalty:
+      os << "kInverseSquareTsdfDistancePenalty";
     default:
       break;
   }
   return os;
+}
+
+std::string to_string(const WeightingFunctionType& weighting_function_type) {
+  std::ostringstream ss;
+  ss << weighting_function_type;
+  return ss.str();
 }
 
 }  // namespace nvblox

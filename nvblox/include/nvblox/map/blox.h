@@ -31,22 +31,28 @@ struct VoxelBlock {
   /// Allow introspection of the voxel type through BlockType::VoxelType
   typedef _VoxelType VoxelType;
 
-  static constexpr size_t kVoxelsPerSide = 8;
+  static constexpr int kVoxelsPerSide = 8;
+  static constexpr int kNumVoxels =
+      kVoxelsPerSide * kVoxelsPerSide * kVoxelsPerSide;
   VoxelType voxels[kVoxelsPerSide][kVoxelsPerSide][kVoxelsPerSide];
 
   /// Allocate a voxel block of a given memory type.
+  static Ptr allocateAsync(MemoryType memory_type,
+                           const CudaStream& cuda_stream);
   static Ptr allocate(MemoryType memory_type);
   /// Initializes all the memory of the voxels to 0 by default, can be
   /// specialized by voxel type.
-  static void initOnGPU(VoxelBlock* block_ptr);
+  static void initOnGPUAsync(VoxelBlock* block_ptr,
+                             const CudaStream& cuda_stream);
 };
 
 // Initialization Utility Functions
 /// Set all the memory of the block to 0 on the GPU.
 template <typename BlockType>
-void setBlockBytesZeroOnGPU(BlockType* block_device_ptr);
+void setBlockBytesZeroOnGPUAsync(BlockType* block_device_ptr);
 /// Set all of the default colors to gray on a GPU.
-void setColorBlockGrayOnGPU(VoxelBlock<ColorVoxel>* block_device_ptr);
+void setColorBlockGrayOnGPUAsync(VoxelBlock<ColorVoxel>* block_device_ptr,
+                                 const CudaStream& cuda_stream);
 
 }  // namespace nvblox
 

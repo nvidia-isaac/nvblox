@@ -41,5 +41,16 @@ struct has_allocate<
     void_t<decltype(std::declval<BlockType&>().allocate(MemoryType::kUnified))>>
     : std::true_type {};
 
+template <typename, typename = void>
+struct has_allocate_async : std::false_type {};
+
+// FIXME: cannot use CudaStreamOwning, since it will break for
+// cudaStreamNonOwning()kowning
+template <typename BlockType>
+struct has_allocate_async<
+    BlockType, void_t<decltype(std::declval<BlockType&>().allocateAsync(
+                   MemoryType::kUnified, CudaStreamOwning()))>>
+    : std::true_type {};
+
 }  // namespace traits
 }  // namespace nvblox

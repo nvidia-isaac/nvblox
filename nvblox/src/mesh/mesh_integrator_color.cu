@@ -108,7 +108,7 @@ __global__ void colorMeshBlocksConstant(Color color,
 
 void colorMeshBlocksConstantGPU(const std::vector<Index3D>& block_indices,
                                 const Color& color, MeshLayer* mesh_layer,
-                                cudaStream_t cuda_stream) {
+                                CudaStream* cuda_stream) {
   CHECK_NOTNULL(mesh_layer);
   if (block_indices.size() == 0) {
     return;
@@ -117,7 +117,7 @@ void colorMeshBlocksConstantGPU(const std::vector<Index3D>& block_indices,
   // Prepare CudaMeshBlocks, which are effectively containers of device pointers
   std::vector<CudaMeshBlock> cuda_mesh_blocks;
   cuda_mesh_blocks.resize(block_indices.size());
-  for (int i = 0; i < block_indices.size(); i++) {
+  for (size_t i = 0; i < block_indices.size(); i++) {
     cuda_mesh_blocks[i] =
         CudaMeshBlock(mesh_layer->getBlockAtIndex(block_indices[i]).get());
   }
@@ -131,15 +131,14 @@ void colorMeshBlocksConstantGPU(const std::vector<Index3D>& block_indices,
   checkCudaErrors(
       cudaMemcpyAsync(cuda_mesh_block_device_ptrs, cuda_mesh_blocks.data(),
                       cuda_mesh_blocks.size() * sizeof(CudaMeshBlock),
-                      cudaMemcpyHostToDevice, cuda_stream));
+                      cudaMemcpyHostToDevice, *cuda_stream));
 
   // Kernel call - One ThreadBlock launched per VoxelBlock
   constexpr int kThreadsPerBlock = 8 * 32;  // Chosen at random
   const int num_blocks = block_indices.size();
-  colorMeshBlocksConstant<<<num_blocks, kThreadsPerBlock, 0, cuda_stream>>>(
-      Color::Gray(),  // NOLINT
-      cuda_mesh_block_device_ptrs);
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream));
+  colorMeshBlocksConstant<<<num_blocks, kThreadsPerBlock, 0, *cuda_stream>>>(
+      color, cuda_mesh_block_device_ptrs);
+  cuda_stream->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
   // Deallocate
@@ -148,7 +147,7 @@ void colorMeshBlocksConstantGPU(const std::vector<Index3D>& block_indices,
 
 void colorMeshBlockByClosestColorVoxelGPU(
     const ColorLayer& color_layer, const std::vector<Index3D>& block_indices,
-    MeshLayer* mesh_layer, cudaStream_t cuda_stream) {
+    MeshLayer* mesh_layer, CudaStream* cuda_stream) {
   CHECK_NOTNULL(mesh_layer);
   if (block_indices.size() == 0) {
     return;
@@ -163,7 +162,7 @@ void colorMeshBlockByClosestColorVoxelGPU(
   // Prepare CudaMeshBlocks, which are effectively containers of device pointers
   std::vector<CudaMeshBlock> cuda_mesh_blocks;
   cuda_mesh_blocks.resize(block_indices.size());
-  for (int i = 0; i < block_indices.size(); i++) {
+  for (size_t i = 0; i < block_indices.size(); i++) {
     cuda_mesh_blocks[i] =
         CudaMeshBlock(mesh_layer->getBlockAtIndex(block_indices[i]).get());
   }
@@ -182,15 +181,15 @@ void colorMeshBlockByClosestColorVoxelGPU(
   // Host -> GPU transfers
   checkCudaErrors(cudaMemcpyAsync(color_block_device_ptrs, color_blocks.data(),
                                   color_blocks.size() * sizeof(ColorBlock*),
-                                  cudaMemcpyHostToDevice, cuda_stream));
+                                  cudaMemcpyHostToDevice, *cuda_stream));
   checkCudaErrors(cudaMemcpyAsync(block_indices_device_ptr,
                                   block_indices.data(),
                                   block_indices.size() * sizeof(Index3D),
-                                  cudaMemcpyHostToDevice, cuda_stream));
+                                  cudaMemcpyHostToDevice, *cuda_stream));
   checkCudaErrors(
       cudaMemcpyAsync(cuda_mesh_block_device_ptrs, cuda_mesh_blocks.data(),
                       cuda_mesh_blocks.size() * sizeof(CudaMeshBlock),
-                      cudaMemcpyHostToDevice, cuda_stream));
+                      cudaMemcpyHostToDevice, *cuda_stream));
 
   // Kernel call - One ThreadBlock launched per VoxelBlock
   constexpr int kThreadsPerBlock = 8 * 32;  // Chosen at random
@@ -198,13 +197,13 @@ void colorMeshBlockByClosestColorVoxelGPU(
   const float voxel_size =
       mesh_layer->block_size() / VoxelBlock<TsdfVoxel>::kVoxelsPerSide;
   colorMeshBlockByClosestColorVoxel<<<num_blocks, kThreadsPerBlock, 0,
-                                      cuda_stream>>>(
+                                      *cuda_stream>>>(
       color_block_device_ptrs,   // NOLINT
       block_indices_device_ptr,  // NOLINT
       mesh_layer->block_size(),  // NOLINT
       voxel_size,                // NOLINT
       cuda_mesh_block_device_ptrs);
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream));
+  cuda_stream->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
   // Deallocate
@@ -261,10 +260,12 @@ void MeshIntegrator::colorMeshGPU(
   }
 
   // Color
-  colorMeshBlockByClosestColorVoxelGPU(
-      color_layer, block_indices_in_color_layer, mesh_layer, cuda_stream_);
+  colorMeshBlockByClosestColorVoxelGPU(color_layer,
+                                       block_indices_in_color_layer, mesh_layer,
+                                       cuda_stream_.get());
   colorMeshBlocksConstantGPU(block_indices_not_in_color_layer,
-                             default_mesh_color_, mesh_layer, cuda_stream_);
+                             default_mesh_color_, mesh_layer,
+                             cuda_stream_.get());
 }
 
 void MeshIntegrator::colorMeshCPU(const ColorLayer& color_layer,
@@ -282,7 +283,7 @@ void MeshIntegrator::colorMeshCPU(const ColorLayer& color_layer,
       continue;
     }
     block->colors.resize(block->vertices.size());
-    for (int i = 0; i < block->vertices.size(); i++) {
+    for (size_t i = 0; i < block->vertices.size(); i++) {
       const Vector3f& vertex = block->vertices[i];
       const ColorVoxel* color_voxel;
       if (getVoxelAtPosition<ColorVoxel>(color_layer, vertex, &color_voxel)) {

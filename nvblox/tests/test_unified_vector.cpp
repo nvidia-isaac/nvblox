@@ -56,6 +56,20 @@ TEST(UnifiedVectorTest, ClearTest) {
   EXPECT_EQ(vec.size(), 0);
 }
 
+TEST(UnifiedVectorTest, ClearNoDeallocTest) {
+  unified_vector<float> vec(100);
+
+  const float* ptr = vec.data();
+  EXPECT_NE(ptr, nullptr);
+
+  vec.clearNoDealloc();
+
+  EXPECT_EQ(vec.data(), ptr);
+  EXPECT_TRUE(vec.empty());
+  EXPECT_EQ(vec.size(), 0);
+  EXPECT_EQ(vec.capacity(), 100);
+}
+
 TEST(UnifiedVectorTest, PushBackTest) {
   unified_vector<size_t> vec;
   constexpr size_t kMaxSize = 999999;
@@ -80,7 +94,8 @@ TEST(UnifiedVectorTest, AssignmentTest) {
   }
 
   // Copy the vector over;
-  unified_vector<size_t> vec2 = vec;
+  unified_vector<size_t> vec2;
+  vec2.copyFrom(vec);
 
   EXPECT_FALSE(vec2.empty());
   EXPECT_NE(vec2.data(), nullptr);
@@ -115,7 +130,7 @@ TEST(UnifiedVectorTest, CpuGpuReadWrite) {
   test_utils::fillVectorWithConstant(value, &vec);
 
   // Use the operator to check on the HOST
-  for (int i = 0; i < kVectorSize; i++) {
+  for (size_t i = 0; i < kVectorSize; i++) {
     EXPECT_EQ(vec[i], value);
   }
 
@@ -146,7 +161,7 @@ TEST(UnifiedVectorTest, HostToDeviceToHostCopy) {
 
   // Copy over to unified memory.
   unified_vector<int> vec_unified(MemoryType::kUnified);
-  vec_unified = vec;
+  vec_unified.copyFrom(vec);
   EXPECT_EQ(getPointerMemoryType(vec_unified.data()),
             cudaMemoryType::cudaMemoryTypeManaged);
   for (size_t i = 0; i < kSize; i++) {
@@ -157,11 +172,12 @@ TEST(UnifiedVectorTest, HostToDeviceToHostCopy) {
 
   // Copy over to device memory.
   unified_vector<int> vec_device(MemoryType::kDevice);
-  vec_device = vec_unified;
+  vec_device.copyFrom(vec_unified);
   EXPECT_EQ(getPointerMemoryType(vec_device.data()),
             cudaMemoryType::cudaMemoryTypeDevice);
 
-  unified_vector<int> vec_host(vec_device, MemoryType::kHost);
+  unified_vector<int> vec_host(MemoryType::kHost);
+  vec_host.copyFrom(vec_device);
   EXPECT_EQ(getPointerMemoryType(vec_host.data()),
             cudaMemoryType::cudaMemoryTypeHost);
   for (size_t i = 0; i < kSize; i++) {
@@ -183,14 +199,16 @@ TEST(UnifiedVectorTest, HostAndDeviceVectors) {
   checkAllConstantCPU(vec_host_1, 1);
 
   // To device
-  device_vector<int> vec_device = vec_host_1;
+  device_vector<int> vec_device;
+  vec_device.copyFrom(vec_host_1);
   EXPECT_TRUE(test_utils::checkAllConstant(vec_device.data(), 1, kNumElems));
   EXPECT_FALSE(test_utils::checkAllConstant(vec_device.data(), 2, kNumElems));
   test_utils::incrementOnGPU(kNumElems, vec_device.data());
   EXPECT_TRUE(test_utils::checkAllConstant(vec_device.data(), 2, kNumElems));
 
   // Back to host
-  host_vector<int> vec_host_2 = vec_device;
+  host_vector<int> vec_host_2;
+  vec_host_2.copyFrom(vec_device);
   checkAllConstantCPU(vec_host_2, 2);
 
   // Conversion to std::vector
@@ -200,21 +218,23 @@ TEST(UnifiedVectorTest, HostAndDeviceVectors) {
   // Conversion from std::vector
   std::vector<int> std_vec_host_2(kNumElems, 3);
   checkAllConstantCPU(std_vec_host_2, 3);
-  device_vector<int> vec_device_2(std_vec_host_2);
+  device_vector<int> vec_device_2;
+  vec_device_2.copyFrom(std_vec_host_2);
   EXPECT_TRUE(test_utils::checkAllConstant(vec_device_2.data(), 3, kNumElems));
 
   // Checking conversion from base class.
   host_vector<int> std_vec_host_3(kNumElems, 4);
   const unified_vector<int>& base_class_reference = std_vec_host_3;
   checkAllConstantCPU(base_class_reference, 4);
-  device_vector<int> vec_device_3(base_class_reference);
+  device_vector<int> vec_device_3;
+  vec_device_3.copyFrom(base_class_reference);
   EXPECT_TRUE(test_utils::checkAllConstant(vec_device_3.data(), 4, kNumElems));
 }
 
 TEST(UnifiedVectorTest, BoolTest) {
   // Setup test vector (true and false in alternating fashion)
   unified_vector<bool> vec_unified(100);
-  for (int i = 0; i < vec_unified.size(); i++) {
+  for (size_t i = 0; i < vec_unified.size(); i++) {
     if (i % 2 == 0) {
       vec_unified[i] = true;
     } else {
@@ -230,7 +250,6 @@ TEST(UnifiedVectorTest, BoolTest) {
 }
 
 int main(int argc, char** argv) {
-  warmupCuda();
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;
   google::InstallFailureSignalHandler();

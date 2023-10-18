@@ -21,15 +21,18 @@ limitations under the License.
 #include <string>
 
 #include "nvblox/datasets/data_loader.h"
+#include "nvblox/dynamics/dynamics_detection.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/projective_color_integrator.h"
 #include "nvblox/integrators/projective_tsdf_integrator.h"
+#include "nvblox/io/image_io.h"
 #include "nvblox/map/blox.h"
 #include "nvblox/map/layer.h"
 #include "nvblox/map/layer_cake.h"
 #include "nvblox/map/voxels.h"
 #include "nvblox/mapper/mapper.h"
+#include "nvblox/mapper/multi_mapper.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/rays/sphere_tracer.h"
@@ -42,29 +45,21 @@ class Fuser {
   Fuser() = default;
   Fuser(std::unique_ptr<datasets::RgbdDataLoaderInterface>&& data_loader);
 
-  // Loads parameters from command line flags
-  void readCommandLineFlags();
-
   // Runs an experiment
   int run();
-
-  // Set various settings.
-  void setVoxelSize(float voxel_size);
-  void setProjectiveFrameSubsampling(int subsample);
-  void setColorFrameSubsampling(int subsample);
-  void setMeshFrameSubsampling(int subsample);
-  void setEsdfFrameSubsampling(int subsample);
-  void setEsdfMode(Mapper::EsdfMode esdf_mode);
 
   // Integrate certain layers.
   bool integrateFrame(const int frame_number);
   bool integrateFrames();
-  void updateEsdf();
 
+  // Write a dynamic overlay image to disk.
+  bool outputDynamicOverlayImage(int frame_number);
   // Output a pointcloud tsdf as PLY file.
   bool outputTsdfPointcloudPly();
   // Output a pointcloud occupancy as PLY file.
   bool outputOccupancyPointcloudPly();
+  // Output a pointcloud freespace as PLY file.
+  bool outputFreespacePointcloudPly();
   // Output a pointcloud ESDF as PLY file.
   bool outputESDFPointcloudPly();
   // Output a file with the mesh.
@@ -74,16 +69,23 @@ class Fuser {
   // Output the serialized map to a file
   bool outputMapToFile();
 
-  // Get the mapper (useful for experiments where we modify mapper settings)
-  Mapper& mapper();
+  // Get the static mapper (useful for experiments where we modify mapper
+  // settings)
+  Mapper& static_mapper();
+
+  // MultiMapper - Contains two mappers
+  std::shared_ptr<MultiMapper> multi_mapper_;
+
+  // MultiMapper params
+  float voxel_size_m_ = 0.05;
+  MappingType mapping_type_ = MappingType::kStaticTsdf;
+  EsdfMode esdf_mode_ = EsdfMode::k3D;
 
   // Dataset settings.
   int num_frames_to_integrate_ = std::numeric_limits<int>::max();
   std::unique_ptr<datasets::RgbdDataLoaderInterface> data_loader_;
 
-  // Params
-  float voxel_size_m_ = 0.05;
-  ProjectiveLayerType projective_layer_type_ = ProjectiveLayerType::kTsdf;
+  // Subsampling params
   int projective_frame_subsampling_ = 1;
   int color_frame_subsampling_ = 1;
   // By default we just do the mesh and esdf once at the end
@@ -91,24 +93,18 @@ class Fuser {
   int mesh_frame_subsampling_ = -1;
   int esdf_frame_subsampling_ = -1;
 
-  // ESDF slice params
-  float z_min_ = 0.5f;
-  float z_max_ = 1.0f;
-  float z_slice_ = 0.75f;
-
-  // ESDF mode
-  Mapper::EsdfMode esdf_mode_ = Mapper::EsdfMode::k3D;
-
-  // Mapper - Contains map layers and integrators
-  std::unique_ptr<Mapper> mapper_;
+  // Param for dynamics
+  nvblox::Time frame_period_ms_{33};  // 30 Hz
 
   // Output paths
   std::string timing_output_path_;
   std::string tsdf_output_path_;
   std::string esdf_output_path_;
   std::string occupancy_output_path_;
+  std::string freespace_output_path_;
   std::string mesh_output_path_;
   std::string map_output_path_;
+  std::string dynamic_overlay_path_;
 };
 
 }  //  namespace nvblox

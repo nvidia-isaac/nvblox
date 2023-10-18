@@ -92,6 +92,7 @@ LayerCake LayerCake::create(float voxel_size, MemoryType memory_type) {
                 "LayerTypes.");
   LayerCake cake(voxel_size);
   BaseLayer* ignored[] = {cake.add<LayerTypes>(memory_type)...};
+  static_cast<void>(ignored);
   return cake;
 }
 
@@ -102,6 +103,7 @@ LayerCake LayerCake::create(float voxel_size, MemoryTypes... memory_types) {
                 "LayerTypes.");
   LayerCake cake(voxel_size);
   BaseLayer* ignored[] = {cake.add<LayerTypes>(memory_types)...};
+  static_cast<void>(ignored);
   return cake;
 }
 

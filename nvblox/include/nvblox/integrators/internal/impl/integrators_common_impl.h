@@ -1,5 +1,5 @@
 /*
-Copyright 2022 NVIDIA CORPORATION
+Copyright 2022-2023 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -46,12 +46,64 @@ __host__ std::vector<const BlockType*> getBlockPtrsFromIndices(
   return block_ptrs;
 }
 
-template <typename VoxelType>
+template <typename BlockType>
 void allocateBlocksWhereRequired(const std::vector<Index3D>& block_indices,
-                                 BlockLayer<VoxelBlock<VoxelType>>* layer) {
-  for (const Index3D& block_index : block_indices) {
-    layer->allocateBlockAtIndex(block_index);
+                                 BlockLayer<BlockType>* layer,
+                                 const CudaStream& cuda_stream) {
+  layer->allocateBlocksAtIndices(block_indices, cuda_stream);
+  cuda_stream.synchronize();
+}
+
+template <class... Args>
+void expandBuffersIfRequired(size_t required_min_size, CudaStream cuda_stream,
+                             Args... args) {
+  static_assert((std::is_pointer<Args>::value && ...));
+  const bool at_least_one_vector_smaller =
+      (... || (args->capacity() < required_min_size));
+  if (at_least_one_vector_smaller) {
+    constexpr float kBufferExpansionFactor = 1.5f;
+    const int new_size =
+        static_cast<int>(kBufferExpansionFactor * required_min_size);
+    (args->reserveAsync(new_size, cuda_stream), ...);
   }
+}
+
+template <typename BlockType>
+void transferBlockPointersToDevice(
+    const std::vector<Index3D>& block_indices, CudaStream cuda_stream,
+    BlockLayer<BlockType>* layer_ptr, host_vector<BlockType*>* block_ptrs_host,
+    device_vector<BlockType*>* block_ptrs_device) {
+  if (block_indices.empty()) {
+    return;
+  }
+  // Get the device pointers associated with this indices
+  const std::vector<BlockType*> block_ptrs =
+      getBlockPtrsFromIndices(block_indices, layer_ptr);
+  // Expand the buffers if they're too small
+  const int num_blocks = block_indices.size();
+  expandBuffersIfRequired(num_blocks, cuda_stream, block_ptrs_device,
+                          block_ptrs_host);
+  // Stage on the host pinned memory
+  block_ptrs_host->copyFromAsync(block_ptrs, cuda_stream);
+  // Transfer to the device
+  block_ptrs_device->copyFromAsync(*block_ptrs_host, cuda_stream);
+}
+
+inline void transferBlocksIndicesToDevice(
+    const std::vector<Index3D>& block_indices, CudaStream cuda_stream,
+    host_vector<Index3D>* block_indices_host,
+    device_vector<Index3D>* block_indices_device) {
+  if (block_indices.empty()) {
+    return;
+  }
+  // Expand the buffers if they're too small
+  const int num_blocks = block_indices.size();
+  expandBuffersIfRequired(num_blocks, cuda_stream, block_indices_device,
+                          block_indices_host);
+  // Stage on the host pinned memory
+  block_indices_host->copyFromAsync(block_indices, cuda_stream);
+  // Transfer to the device
+  block_indices_device->copyFromAsync(*block_indices_host, cuda_stream);
 }
 
 }  // namespace nvblox

@@ -68,7 +68,7 @@ TEST(LayerDecayTest, EmptyLayerTest) {
   OccupancyLayer layer(KVoxelSize, MemoryType::kUnified);
 
   OccupancyDecayIntegrator decay_integrator;
-  decay_integrator.decay(&layer);
+  decay_integrator.decay(&layer, CudaStreamOwning());
 
   EXPECT_EQ(layer.numAllocatedBlocks(), 0);
 }
@@ -84,7 +84,7 @@ TEST(LayerDecayTest, SingleDecayTest) {
   // Decay the occupancy probabilities
   OccupancyDecayIntegrator decay_integrator;
   decay_integrator.deallocate_decayed_blocks(false);
-  decay_integrator.decay(&layer);
+  decay_integrator.decay(&layer, CudaStreamOwning());
 
   // Check if this worked
   int num_checked_voxels = 0;
@@ -126,7 +126,12 @@ TEST(LayerDecayTest, SingleDecayTest) {
   CHECK_EQ(num_checked_voxels, kNumVoxels);
 }
 
-TEST(LayerDecayTest, DecayAll) {
+class OccupancyDecayParameterizedTestFixture
+    : public ::testing::TestWithParam<float> {
+  // Empty fixture. Just to expose the parameter.
+};
+
+TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
   // Test that a all voxels decay eventually
   constexpr int kNumBlocksToAllocate = 100;
   constexpr int kNumVoxels =
@@ -145,36 +150,48 @@ TEST(LayerDecayTest, DecayAll) {
       probabilityFromLogOdds(-decay_step_size_log_odds));
   decay_integrator.deallocate_decayed_blocks(false);
 
+  // The value to decay to
+  const float decay_to_probability = GetParam();
+  decay_integrator.decay_to_probability(decay_to_probability);
+
   // Decay everything
   for (size_t i = 0; i < num_decays_until_converged; i++) {
-    decay_integrator.decay(&layer);
+    decay_integrator.decay(&layer, CudaStreamOwning());
   }
+
+  // Fully decayed value
+  const float fully_decayed_value_log_odds =
+      logOddsFromProbability(decay_integrator.decay_to_probability());
 
   // Check that all voxels are decayed
   int num_checked_voxels = 0;
-  auto check_decay_lambda = [&num_checked_voxels](
-                                const Index3D& block_index,
-                                const Index3D& voxel_index,
-                                const OccupancyVoxel* voxel_ptr) {
-    num_checked_voxels++;
-    EXPECT_EQ(voxel_ptr->log_odds, 0.0f);
-  };
+  auto check_decay_lambda =
+      [&num_checked_voxels, &fully_decayed_value_log_odds](
+          const Index3D&, const Index3D&, const OccupancyVoxel* voxel_ptr) {
+        num_checked_voxels++;
+        EXPECT_EQ(voxel_ptr->log_odds, fully_decayed_value_log_odds);
+      };
   callFunctionOnAllVoxels<OccupancyVoxel>(&layer, check_decay_lambda);
   // Check that no blocks were deallocated
   CHECK_EQ(num_checked_voxels, kNumVoxels);
 
   // Now test decay with deallocation
   decay_integrator.deallocate_decayed_blocks(true);
-  decay_integrator.decay(&layer);
+  decay_integrator.decay(&layer, CudaStreamOwning());
   int num_allocated_voxels = 0;
-  auto check_deallocation =
-      [&num_allocated_voxels](
-          const Index3D& block_index, const Index3D& voxel_index,
-          const OccupancyVoxel* voxel_ptr) { num_allocated_voxels++; };
+  auto check_deallocation = [&num_allocated_voxels](const Index3D&,
+                                                    const Index3D&,
+                                                    const OccupancyVoxel*) {
+    num_allocated_voxels++;
+  };
   callFunctionOnAllVoxels<OccupancyVoxel>(&layer, check_deallocation);
   // All blocks should be deallocated
   CHECK_EQ(num_allocated_voxels, 0);
 }
+
+// Run the above test with different values to decay to
+INSTANTIATE_TEST_CASE_P(DecayAll, OccupancyDecayParameterizedTestFixture,
+                        ::testing::Values(0.5f, 0.4f));
 
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;

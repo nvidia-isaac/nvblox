@@ -25,8 +25,8 @@ import open3d as o3d
 
 from nvblox_evaluation.evaluation_utils import quad_mesh
 from nvblox_evaluation.evaluation_utils import surface_evaluation
-from replica_reconstruction import replica_reconstruction
-import replica
+from nvblox_evaluation.replica_reconstruction_evaluation.replica_reconstruction import replica_reconstruction
+import nvblox_evaluation.replica_reconstruction_evaluation.replica as replica
 
 
 def evaluate_mesh(reconstructed_mesh_path: Path,

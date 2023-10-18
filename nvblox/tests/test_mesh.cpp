@@ -128,8 +128,10 @@ TEST_F(MeshTest, PlaneMesh) {
     EXPECT_EQ(mesh_block->vertices.size(), mesh_block->normals.size());
     EXPECT_EQ(mesh_block->vertices.size(), mesh_block->triangles.size());
 
-    std::vector<Vector3f> vertices = mesh_block->getVertexVectorOnCPU();
-    std::vector<Vector3f> normals = mesh_block->getNormalVectorOnCPU();
+    unified_vector<Vector3f> vertices(MemoryType::kHost);
+    unified_vector<Vector3f> normals(MemoryType::kHost);
+    vertices.copyFrom(mesh_block->vertices);
+    normals.copyFrom(mesh_block->normals);
 
     // Make sure that the actual points are correct.
     for (size_t i = 0; i < vertices.size(); i++) {
@@ -218,8 +220,11 @@ TEST_F(MeshTest, GPUPlaneTest) {
     if (mesh_block_cpu != nullptr) {
       EXPECT_EQ(mesh_block->vertices.size(), mesh_block_cpu->vertices.size());
     }
-    std::vector<Vector3f> vertices = mesh_block->getVertexVectorOnCPU();
-    std::vector<Vector3f> normals = mesh_block->getNormalVectorOnCPU();
+
+    unified_vector<Vector3f> vertices(MemoryType::kHost);
+    unified_vector<Vector3f> normals(MemoryType::kHost);
+    vertices.copyFrom(mesh_block->vertices);
+    normals.copyFrom(mesh_block->normals);
 
     // Make sure that the actual points are correct.
     for (size_t i = 0; i < vertices.size(); i++) {
@@ -240,7 +245,6 @@ TEST_F(MeshTest, GPUPlaneTest) {
 }
 
 TEST_F(MeshTest, IncrementalMesh) {
-  constexpr float kSphereRadius = 2.0f;
   constexpr float kTrajectoryRadius = 4.0f;
   constexpr float kTrajectoryHeight = 2.0f;
   constexpr int kNumTrajectoryPoints = 80;
@@ -338,8 +342,8 @@ TEST_F(MeshTest, IncrementalMesh) {
 TEST_F(MeshTest, RepeatabilityTest) {
   const std::string base_path = "../tests/data/3dmatch";
   constexpr int seq_id = 1;
-  DepthImage depth_image;
-  ColorImage color_image;
+  DepthImage depth_image(MemoryType::kDevice);
+  ColorImage color_image(MemoryType::kDevice);
   EXPECT_TRUE(datasets::load16BitDepthImage(
       datasets::threedmatch::internal::getPathForDepthImage(base_path, seq_id,
                                                             0),
@@ -377,7 +381,7 @@ TEST_F(MeshTest, RepeatabilityTest) {
   auto block_indices_1 = mesh_layer_1.getAllBlockIndices();
   auto block_indices_2 = mesh_layer_2.getAllBlockIndices();
   EXPECT_EQ(block_indices_1.size(), block_indices_2.size());
-  for (int block_idx = 0; block_idx < block_indices_1.size(); block_idx++) {
+  for (size_t block_idx = 0; block_idx < block_indices_1.size(); block_idx++) {
     const Index3D& idx_1 = block_indices_1[block_idx];
     const Index3D& idx_2 = block_indices_2[block_idx];
     EXPECT_TRUE((idx_1.array() == idx_2.array()).all());
@@ -394,11 +398,14 @@ TEST_F(MeshTest, RepeatabilityTest) {
       }
       return p_1.z() < p_2.z();
     };
-    auto vertex_vector_1 = block_1->getVertexVectorOnCPU();
-    auto vertex_vector_2 = block_2->getVertexVectorOnCPU();
+
+    unified_vector<Vector3f> vertex_vector_1(MemoryType::kHost);
+    unified_vector<Vector3f> vertex_vector_2(MemoryType::kHost);
+    vertex_vector_1.copyFrom(block_1->vertices);
+    vertex_vector_2.copyFrom(block_2->vertices);
     std::sort(vertex_vector_1.begin(), vertex_vector_1.end(), threed_less);
     std::sort(vertex_vector_2.begin(), vertex_vector_2.end(), threed_less);
-    for (int i = 0; i < vertex_vector_1.size(); i++) {
+    for (size_t i = 0; i < vertex_vector_1.size(); i++) {
       EXPECT_TRUE(
           (vertex_vector_1[i].array() == vertex_vector_2[i].array()).all());
     }
@@ -446,7 +453,7 @@ TEST_F(MeshTest, WeldingTest) {
 
 TEST_F(MeshTest, InPlaceWeldingTest) {
   mesh_integrator_.weld_vertices(false);
-  MeshIntegrator welding_integrator = mesh_integrator_;
+  MeshIntegrator welding_integrator;
   welding_integrator.weld_vertices(true);
 
   MeshLayer::Ptr welded_mesh_layer(
@@ -515,18 +522,26 @@ TEST_F(MeshTest, WeldingPartsTest) {
 
     // Get the size of the vertices before.
     MeshBlock::Ptr mesh_block = mesh_layer_->getBlockAtIndex(index);
-    size_t num_vertices_preweld = mesh_block->size();
 
     // Create a copy of the vertices.
-    device_vector<Vector3f> input_vertices = mesh_block->vertices;
-    device_vector<Vector3f> thrust_vertices = mesh_block->vertices;
-    device_vector<Vector3f> kernel_vertices = mesh_block->vertices;
-    device_vector<Vector3f> unique_vertices = mesh_block->vertices;
-    device_vector<int> input_indices = mesh_block->triangles;
-    device_vector<int> combined_indices = mesh_block->triangles;
-    device_vector<Vector3f> combined_vertices = mesh_block->vertices;
-    device_vector<int> thrust_combined_indices = mesh_block->triangles;
-    device_vector<Vector3f> thrust_combined_vertices = mesh_block->vertices;
+    device_vector<Vector3f> input_vertices;
+    input_vertices.copyFrom(mesh_block->vertices);
+    device_vector<Vector3f> thrust_vertices;
+    thrust_vertices.copyFrom(mesh_block->vertices);
+    device_vector<Vector3f> kernel_vertices;
+    kernel_vertices.copyFrom(mesh_block->vertices);
+    device_vector<Vector3f> unique_vertices;
+    unique_vertices.copyFrom(mesh_block->vertices);
+    device_vector<int> input_indices;
+    input_indices.copyFrom(mesh_block->triangles);
+    device_vector<int> combined_indices;
+    combined_indices.copyFrom(mesh_block->triangles);
+    device_vector<Vector3f> combined_vertices;
+    combined_vertices.copyFrom(mesh_block->vertices);
+    device_vector<int> thrust_combined_indices;
+    thrust_combined_indices.copyFrom(mesh_block->triangles);
+    device_vector<Vector3f> thrust_combined_vertices;
+    thrust_combined_vertices.copyFrom(mesh_block->vertices);
 
     // First sort them with thrust.
     sortSingleBlockThrust(&thrust_vertices);
@@ -534,9 +549,12 @@ TEST_F(MeshTest, WeldingPartsTest) {
 
     // Sort order is unfortunately different for the vectors. :( Since CUB
     // vectors are sorted by hash value.
-    host_vector<Vector3f> kernel_vertices_host = kernel_vertices;
-    host_vector<Vector3f> input_vertices_host = input_vertices;
-    host_vector<int> input_indices_host = input_indices;
+    host_vector<Vector3f> kernel_vertices_host;
+    kernel_vertices_host.copyFrom(kernel_vertices);
+    host_vector<Vector3f> input_vertices_host;
+    input_vertices_host.copyFrom(input_vertices);
+    host_vector<int> input_indices_host;
+    input_indices_host.copyFrom(input_indices);
 
     if (kernel_vertices.size() <= 3) {
       continue;
@@ -554,7 +572,8 @@ TEST_F(MeshTest, WeldingPartsTest) {
     // Next up run unique on this whole thing.
     uniqueSingleBlockCub(&kernel_vertices, &unique_vertices);
 
-    host_vector<Vector3f> unique_vertices_host = unique_vertices;
+    host_vector<Vector3f> unique_vertices_host;
+    unique_vertices_host.copyFrom(unique_vertices);
 
     // Check that they're all unique!
     for (size_t i = 1; i < unique_vertices_host.size(); i++) {
@@ -566,8 +585,10 @@ TEST_F(MeshTest, WeldingPartsTest) {
     combinedSingleBlockCub(&input_vertices, &input_indices, &combined_vertices,
                            &combined_indices);
 
-    host_vector<Vector3f> combined_vertices_host = combined_vertices;
-    host_vector<int> combined_indices_host = combined_indices;
+    host_vector<Vector3f> combined_vertices_host;
+    combined_vertices_host.copyFrom(combined_vertices);
+    host_vector<int> combined_indices_host;
+    combined_indices_host.copyFrom(combined_indices);
 
     // Check the indices.
     for (size_t i = 0; i < combined_indices_host.size(); i++) {
@@ -590,9 +611,10 @@ TEST_F(MeshTest, WeldingPartsTest) {
     weldSingleBlockThrust(&input_vertices, &input_indices,
                           &thrust_combined_vertices, &thrust_combined_indices);
 
-    host_vector<int> thrust_combined_indices_host = thrust_combined_indices;
-    host_vector<Vector3f> thrust_combined_vertices_host =
-        thrust_combined_vertices;
+    host_vector<int> thrust_combined_indices_host;
+    thrust_combined_indices_host.copyFrom(thrust_combined_indices);
+    host_vector<Vector3f> thrust_combined_vertices_host;
+    thrust_combined_vertices_host.copyFrom(thrust_combined_vertices);
 
     // Check that they're all unique!
     for (size_t i = 1; i < thrust_combined_vertices_host.size(); i++) {
@@ -605,7 +627,6 @@ TEST_F(MeshTest, WeldingPartsTest) {
 }
 
 int main(int argc, char** argv) {
-  warmupCuda();
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;
   google::InstallFailureSignalHandler();
