@@ -69,11 +69,11 @@ void EsdfIntegratorCPU::markAllSitesOnCPU(
 
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const float voxel_size = tsdf_layer.block_size() / kVoxelsPerSide;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   // Cache the minimum distance in metric size.
-  const float max_site_distance_m = tsdf_max_site_distance_vox_ * voxel_size;
+  const float max_site_distance_m = max_tsdf_site_distance_vox_ * voxel_size;
   int num_observed = 0;
   for (const Index3D& block_index : block_indices) {
     EsdfBlock::Ptr esdf_block = esdf_layer->getBlockAtIndex(block_index);
@@ -160,7 +160,7 @@ void EsdfIntegratorCPU::clearInvalidOnCPU(
 
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const float voxel_size = esdf_layer->block_size() / kVoxelsPerSide;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   Index3DSet neighbor_clearing_set;
@@ -263,7 +263,7 @@ void EsdfIntegratorCPU::clearAllInvalidOnCPU(
 
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const float voxel_size = esdf_layer->block_size() / kVoxelsPerSide;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   Index3DSet neighbor_clearing_set;
@@ -310,7 +310,6 @@ void EsdfIntegratorCPU::clearAllInvalidOnCPU(
               parent_index.z() < 0 || parent_index.z() >= kVoxelsPerSide) {
             // Then we need to get the block index.
             Index3D neighbor_block_index = block_index;
-            Index3D neighbor_voxel_index = parent_index;
 
             // Find the parent index.
             while (parent_index.x() >= kVoxelsPerSide) {
@@ -379,7 +378,7 @@ void EsdfIntegratorCPU::clearNeighborsOnCPU(const Index3D& block_index,
 
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const float voxel_size = esdf_layer->block_size() / kVoxelsPerSide;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
   constexpr int kNumSweepDir = 3;
 
@@ -552,9 +551,8 @@ void EsdfIntegratorCPU::updateLocalNeighborBandsOnCPU(
     std::vector<Index3D>* updated_blocks) {
   constexpr int kNumSweepDir = 3;
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
-  constexpr float kAlmostZero = 1e-4;
   const float voxel_size = esdf_layer->block_size() / kVoxelsPerSide;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   // Get the center block.
@@ -635,8 +633,7 @@ void EsdfIntegratorCPU::propagateEdgesOnCPU(int axis_to_sweep, float voxel_size,
                                             EsdfBlock* esdf_block) {
   CHECK_NOTNULL(esdf_block);
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
-  constexpr float kAlmostZero = 1e-4;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   // Select the axes to increment.
@@ -704,7 +701,7 @@ void EsdfIntegratorCPU::propagateEdgesOnCPU(int axis_to_sweep, float voxel_size,
 void EsdfIntegratorCPU::sweepBlockBandOnCPU(int axis_to_sweep, float voxel_size,
                                             EsdfBlock* esdf_block) {
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
-  const float max_distance_vox = max_distance_m_ / voxel_size;
+  const float max_distance_vox = max_esdf_distance_m_ / voxel_size;
   const float max_squared_distance_vox = max_distance_vox * max_distance_vox;
 
   // Select the axes to increment.

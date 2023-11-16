@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "nvblox/core/types.h"
 #include "nvblox/sensors/image.h"
+#include "nvblox/sensors/lidar.h"
 
 namespace nvblox {
 namespace interpolation {
@@ -80,6 +81,14 @@ __host__ __device__ inline bool interpolate2DLinear(
     const ElementType* frame, const Vector2f& u_px, const int rows,
     const int cols, ElementType* value_interpolated_ptr,
     Interpolation2DNeighbours<ElementType>* neighbours_ptr = nullptr);
+
+// LiDAR GPU interpolation
+__device__ inline bool interpolateLidarImage(
+    const Lidar& lidar, const Vector3f& p_voxel_center_C, const float* image,
+    const Vector2f& u_px, const int rows, const int cols,
+    const float linear_interpolation_max_allowable_difference_m,
+    const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
+    float* image_value);
 
 }  // namespace interpolation
 }  // namespace nvblox

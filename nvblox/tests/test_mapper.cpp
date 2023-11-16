@@ -54,6 +54,18 @@ bool allMeshPointsOnSphere(const MeshLayer& mesh_layer, const Vector3f& center,
   return true;
 }
 
+TEST(MapperTest, SettersAndGetters) {
+  Mapper mapper(0.05f, MemoryType::kDevice);
+
+  mapper.do_depth_preprocessing(true);
+  EXPECT_TRUE(mapper.do_depth_preprocessing());
+  mapper.do_depth_preprocessing(false);
+  EXPECT_FALSE(mapper.do_depth_preprocessing());
+
+  mapper.depth_preprocessing_num_dilations(123);
+  EXPECT_EQ(mapper.depth_preprocessing_num_dilations(), 123);
+}
+
 TEST(MapperTest, ClearOutsideSphere) {
   // Create a scene with a sphere
   const Vector3f sphere_center(0.0f, 0.0f, 5.0f);
@@ -66,12 +78,12 @@ TEST(MapperTest, ClearOutsideSphere) {
   TsdfLayer tsdf_layer_host(voxel_size_m, MemoryType::kHost);
 
   scene.generateLayerFromScene(1.0, &tsdf_layer_host);
-  mapper.tsdf_layer() = tsdf_layer_host;
+  mapper.tsdf_layer().copyFrom(tsdf_layer_host);
 
   EXPECT_GT(mapper.tsdf_layer().numAllocatedBlocks(), 0);
 
-  mapper.generateMesh();
-  mapper.generateEsdf();
+  mapper.updateFullMesh();
+  mapper.updateFullEsdf();
 
   // allocate color, just so we can clear later
   for (const Index3D& idx : mapper.tsdf_layer().getAllBlockIndices()) {
@@ -79,7 +91,8 @@ TEST(MapperTest, ClearOutsideSphere) {
   }
 
   // Create a copy of the mesh layer on host.
-  MeshLayer mesh_layer_host(mapper.mesh_layer(), MemoryType::kHost);
+  MeshLayer mesh_layer_host(voxel_size_m, MemoryType::kHost);
+  mesh_layer_host.copyFrom(mapper.mesh_layer());
 
   // Not all mesh points are on the sphere (walls are there).
   EXPECT_FALSE(
@@ -93,7 +106,8 @@ TEST(MapperTest, ClearOutsideSphere) {
   EXPECT_EQ(mapper.tsdf_layer().numAllocatedBlocks(),
             mapper.color_layer().numAllocatedBlocks());
 
-  MeshLayer mesh_layer_host2(mapper.mesh_layer(), MemoryType::kHost);
+  MeshLayer mesh_layer_host2(voxel_size_m, MemoryType::kHost);
+  mesh_layer_host2.copyFrom(mapper.mesh_layer());
 
   // Test resulting mesh
   EXPECT_TRUE(

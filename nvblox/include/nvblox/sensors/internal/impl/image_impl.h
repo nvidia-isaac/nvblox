@@ -18,15 +18,6 @@ limitations under the License.
 #include <algorithm>
 
 namespace nvblox {
-namespace image {
-
-template <typename T>
-void copy(const int rows, const int cols, const T* from, T* to) {
-  checkCudaErrors(
-      cudaMemcpy(to, from, rows * cols * sizeof(T), cudaMemcpyDefault));
-}
-
-}  // namespace image
 
 // Image (memory owning)
 template <typename ElementType>
@@ -35,26 +26,11 @@ Image<ElementType>::Image(int rows, int cols, MemoryType memory_type)
       memory_type_(memory_type),
       owned_data_(make_unified<ElementType[]>(static_cast<size_t>(rows * cols),
                                               memory_type_)) {
+  CHECK_GT(rows, 0)
+      << "Invalid size. Use another constructor to construct empty image.";
+  CHECK_GT(cols, 0)
+      << "Invalid size. Use another constructor to construct empty image.";
   ImageBase<ElementType>::data_ = owned_data_.get();
-}
-
-template <typename ElementType>
-Image<ElementType>::Image(const Image<ElementType>& other)
-    : Image(other, other.memory_type_) {
-  LOG(WARNING) << "Deep copy of Image.";
-};
-
-template <typename ElementType>
-Image<ElementType>::Image(const Image<ElementType>& other,
-                          MemoryType memory_type)
-    : ImageBase<ElementType>(other.rows_, other.cols_),
-      memory_type_(memory_type),
-      owned_data_(make_unified<ElementType[]>(
-          static_cast<size_t>(other.rows_ * other.cols_), memory_type)) {
-  LOG(WARNING) << "Deep copy of Image.";
-  image::copy(this->rows_, this->cols_, other.owned_data_.get(),
-              owned_data_.get());
-  this->data_ = owned_data_.get();
 }
 
 template <typename ElementType>
@@ -74,54 +50,37 @@ Image<ElementType>& Image<ElementType>::operator=(Image<ElementType>&& other) {
 }
 
 template <typename ElementType>
-Image<ElementType>& Image<ElementType>::operator=(
-    const Image<ElementType>& other) {
-  LOG(WARNING) << "Deep copy of Image.";
-  this->rows_ = other.rows_;
-  this->cols_ = other.cols_;
-  memory_type_ = other.memory_type_;
-  owned_data_ = make_unified<ElementType[]>(
-      static_cast<size_t>(this->rows_ * this->cols_), memory_type_);
-  image::copy(this->rows_, this->cols_, other.owned_data_.get(),
-              owned_data_.get());
-  this->data_ = owned_data_.get();
-  return *this;
-}
-
-template <typename ImageType>
-ImageType fromBufferTemplate(int rows, int cols,
-                             const typename ImageType::ElementType* buffer,
-                             MemoryType memory_type) {
-  ImageType image(rows, cols, memory_type);
-  image::copy<typename ImageType::ElementType>(rows, cols, buffer,
-                                               image.dataPtr());
-  return image;
+void Image<ElementType>::copyFrom(const Image& other) {
+  copyFromAsync(other, CudaStreamOwning());
 }
 
 template <typename ElementType>
-Image<ElementType> Image<ElementType>::fromBuffer(int rows, int cols,
-                                                  const ElementType* buffer,
-                                                  MemoryType memory_type) {
-  return fromBufferTemplate<Image<ElementType>>(rows, cols, buffer,
-                                                memory_type);
+void Image<ElementType>::copyFromAsync(const Image& other,
+                                       const CudaStream cuda_stream) {
+  copyFromAsync(other.rows(), other.cols(), other.dataConstPtr(), cuda_stream);
 }
 
 template <typename ElementType>
-void Image<ElementType>::populateFromBuffer(int rows, int cols,
-                                            const ElementType* buffer,
-                                            MemoryType memory_type) {
-  if (!owned_data_ || this->numel() < rows * cols ||
-      memory_type != memory_type_) {
+void Image<ElementType>::copyFrom(const size_t rows, const size_t cols,
+                                  const ElementType* const buffer) {
+  copyFromAsync(rows, cols, buffer, CudaStreamOwning());
+}
+
+template <typename ElementType>
+void Image<ElementType>::copyFromAsync(const size_t rows, const size_t cols,
+                                       const ElementType* const buffer,
+                                       const CudaStream cuda_stream) {
+  if (!owned_data_ || this->numel() < static_cast<int>(rows * cols)) {
     // We need to reallocate.
     owned_data_ = make_unified<ElementType[]>(static_cast<size_t>(rows * cols),
-                                              memory_type);
+                                              memory_type_);
     this->data_ = owned_data_.get();
   }
+
   this->rows_ = rows;
   this->cols_ = cols;
-  memory_type_ = memory_type;
-  cudaMemcpy(owned_data_.get(), buffer, rows * cols * sizeof(ElementType),
-             cudaMemcpyDefault);
+
+  owned_data_.copyFromAsync(buffer, rows * cols, cuda_stream);
 }
 
 template <typename ElementType>

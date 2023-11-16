@@ -37,11 +37,10 @@ TEST(ImageIO, SaveToPng) {
   io::writeToPng(filepath, mono_image);
 
   // Read back
-  MonoImage mono_image_readback;
-  EXPECT_TRUE(
-      io::readFromPng(filepath, &mono_image_readback, MemoryType::kDevice));
+  MonoImage mono_image_readback(MemoryType::kDevice);
+  EXPECT_TRUE(io::readFromPng(filepath, &mono_image_readback));
 
-  MonoImage diff_image;
+  MonoImage diff_image(MemoryType::kUnified);
   image::getDifferenceImageGPU(mono_image, mono_image_readback, &diff_image);
 
   EXPECT_EQ(diff_image(0, 0), 0);
@@ -54,12 +53,11 @@ TEST(ImageIO, 3DMatchDepthToMonoAndSave) {
   const std::string base_path = "./data/3dmatch";
   constexpr int seq_id = 1;
   constexpr int frame_id = 0;
-  DepthImage depth_image;
+  DepthImage depth_image(MemoryType::kUnified);
   const std::string depth_image_path =
       datasets::threedmatch::internal::getPathForDepthImage(base_path, seq_id,
                                                             frame_id);
-  EXPECT_TRUE(
-      io::readFromPng(depth_image_path, &depth_image, MemoryType::kUnified));
+  EXPECT_TRUE(io::readFromPng(depth_image_path, &depth_image));
 
   std::string filepath = "image_io_test_3dmatch_depth.png";
   io::writeToPng(filepath, depth_image);
@@ -78,18 +76,18 @@ TEST(ImageIO, 3DMatchDepthToMonoAndSave) {
 TEST(ImageIO, 3DMatchColorImageLoadAndSave) {
   const std::string base_path = "./data/3dmatch";
   constexpr int seq_id = 1;
-  ColorImage color_image;
+  ColorImage color_image(MemoryType::kDevice);
   EXPECT_TRUE(datasets::load8BitColorImage(
       datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
                                                             0),
-      &color_image, MemoryType::kDevice));
+      &color_image));
 
   std::string filepath = "image_io_test_3dmatch_color.png";
   io::writeToPng(filepath, color_image);
 
   // Readback
-  ColorImage image_readback;
-  EXPECT_TRUE(io::readFromPng(filepath, &image_readback, MemoryType::kDevice));
+  ColorImage image_readback(MemoryType::kDevice);
+  EXPECT_TRUE(io::readFromPng(filepath, &image_readback));
 
   // Check difference
   ColorImage diff_image(color_image.rows(), color_image.cols(),

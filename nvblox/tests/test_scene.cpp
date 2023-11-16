@@ -107,7 +107,7 @@ TEST_F(SceneTest, PlaneSceneVertical) {
   DepthImage depth_frame(camera_.height(), camera_.width(),
                          MemoryType::kUnified);
   scene_.generateDepthImageFromScene(camera_, T_S_C, max_dist, &depth_frame);
-  io::writeToPng("test_plane_scene_vertical.csv", depth_frame);
+  io::writeToPng("test_plane_scene_vertical.png", depth_frame);
 
   // Check all the pixels.
   for (int lin_idx = 0; lin_idx < depth_frame.numel(); lin_idx++) {

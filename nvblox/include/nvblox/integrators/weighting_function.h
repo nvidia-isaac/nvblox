@@ -12,22 +12,21 @@ enum class WeightingFunctionType {
   kConstantWeight,
   kConstantDropoffWeight,
   kInverseSquareWeight,
-  kInverseSquareDropoffWeight
+  kInverseSquareDropoffWeight,
+  kInverseSquareTsdfDistancePenalty
 };
 
 inline std::ostream& operator<<(
     std::ostream& os, const WeightingFunctionType& weighting_function_type);
-
-constexpr WeightingFunctionType kDefaultWeightingFunctionType =
-    WeightingFunctionType::kInverseSquareWeight;
+inline std::string to_string(
+    const WeightingFunctionType& weighting_function_type);
 
 /** Class encapsulating the supported weighting types. Unfortunately CUDA does
  * not support polymorphism/inheritance in any way that's usable in this
  * context, so we have to go with a monolithic class. */
 class WeightingFunction {
  public:
-  __host__ __device__ inline WeightingFunction(
-      WeightingFunctionType type = kDefaultWeightingFunctionType);
+  __host__ __device__ inline WeightingFunction(WeightingFunctionType type);
   __host__ __device__ ~WeightingFunction() = default;
 
   /// Returns the weight of the given voxel, depending on the type.
@@ -57,6 +56,9 @@ class WeightingFunction {
       float measured_depth, float voxel_depth, float truncation_distance) const;
 
   __host__ __device__ inline float computeInverseSquare(
+      float measured_depth, float voxel_depth, float truncation_distance) const;
+
+  __host__ __device__ inline float computeTsdfDistancePenalty(
       float measured_depth, float voxel_depth, float truncation_distance) const;
 
   WeightingFunctionType type_;

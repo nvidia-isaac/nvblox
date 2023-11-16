@@ -126,7 +126,8 @@ bool checkVectorAllConstantTemplate(const T* vec, T value, size_t size) {
 
   // Copy the flag back
   bool flag;
-  cudaMemcpy(&flag, flag_device_ptr, sizeof(bool), cudaMemcpyDeviceToHost);
+  checkCudaErrors(
+      cudaMemcpy(&flag, flag_device_ptr, sizeof(bool), cudaMemcpyDeviceToHost));
 
   // Free the flag
   checkCudaErrors(cudaFree(flag_device_ptr));

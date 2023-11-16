@@ -15,6 +15,7 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
 #include "nvblox/sensors/camera.h"
@@ -33,21 +34,29 @@ class Pointcloud {
              MemoryType memory_type = kDefaultPointcloudMemoryType);
   Pointcloud(MemoryType memory_type = kDefaultPointcloudMemoryType);
 
-  /// Constructor from points
-  Pointcloud(const std::vector<Vector3f>& points,
-             MemoryType memory_type = kDefaultPointcloudMemoryType);
-
   /// Move operations
   Pointcloud(Pointcloud&& other) = default;
   Pointcloud& operator=(Pointcloud&& other) = default;
+  Pointcloud(const Pointcloud& other) = delete;
+  void copyFrom(const Pointcloud& other);
+  void copyFromAsync(const Pointcloud& other, const CudaStream cuda_stream);
+  void copyFrom(const std::vector<Vector3f>& points);
+  void copyFromAsync(const std::vector<Vector3f>& points, const CudaStream cuda_stream);
+  void copyFrom(const unified_vector<Vector3f>& points);
+  void copyFromAsync(const unified_vector<Vector3f>& points, const CudaStream cuda_stream);
 
   /// Deep copy constructor (second can be used to transition memory type)
-  Pointcloud(const Pointcloud& other);
+  /// Pointcloud(const Pointcloud& other);
   Pointcloud(const Pointcloud& other, MemoryType memory_type);
   Pointcloud& operator=(const Pointcloud& other);
 
   /// Expand memory available
-  void resize(int num_points) { points_.resize(num_points); }
+  void resizeAsync(int num_points, const CudaStream cuda_stream) {
+    points_.resizeAsync(num_points, cuda_stream);
+  }
+  void resize(int num_points) {
+    points_.resizeAsync(num_points, CudaStreamOwning());
+  }
 
   /// Attributes
   inline int num_points() const { return points_.size(); }
@@ -87,5 +96,12 @@ class Pointcloud {
 void transformPointcloudOnGPU(const Transform& T_out_in,        // NOLINT
                               const Pointcloud& pointcloud_in,  // NOLINT
                               Pointcloud* pointcloud_out_ptr);
+
+/// Transforms the points in a pointcloud into another frame
+/// See transformPointcloudOnGPU(). Same function just on a stream.
+void transformPointcloudOnGPU(const Transform& T_out_in,        // NOLINT
+                              const Pointcloud& pointcloud_in,  // NOLINT
+                              Pointcloud* pointcloud_out_ptr,   // NOLINT
+                              CudaStream* cuda_stream_ptr);
 
 }  // namespace nvblox

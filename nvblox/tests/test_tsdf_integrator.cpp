@@ -136,8 +136,7 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
 
   // Check that something actually got integrated
   float max_distance = std::numeric_limits<float>::min();
-  auto lambda = [&max_distance](const Index3D& block_index,
-                                const Index3D& voxel_index,
+  auto lambda = [&max_distance](const Index3D&, const Index3D&,
                                 const TsdfVoxel* voxel) {
     if (voxel->distance > max_distance) max_distance = voxel->distance;
   };
@@ -148,7 +147,7 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   // Check that all interpolations worked and that the distance is close to zero
   int num_failures = 0;
   int num_bad_flags = 0;
-  for (int i = 0; i < distances.size(); i++) {
+  for (size_t i = 0; i < distances.size(); i++) {
     EXPECT_TRUE(success_flags[i]);
     if (!success_flags[i]) {
       num_bad_flags++;
@@ -329,8 +328,7 @@ TEST_F(TsdfIntegratorTest, MarkUnobservedFree) {
       integrator.truncation_distance_vox() * voxel_size_m;
   callFunctionOnAllVoxels<TsdfVoxel>(
       tsdf_layer,
-      [truncation_distance_m](const Index3D& block_index,
-                              const Index3D& voxel_index,
+      [truncation_distance_m](const Index3D&, const Index3D&,
                               const TsdfVoxel* voxel) -> void {
         constexpr float kEps = 0.001;
         EXPECT_NEAR(voxel->distance, truncation_distance_m, kEps);
@@ -355,10 +353,11 @@ TEST_F(TsdfIntegratorTest, GettersAndSetters) {
 TEST_F(TsdfIntegratorTest, WeightingFunction) {
   // Integrator
   ProjectiveTsdfIntegrator integrator;
+  integrator.max_weight(100.0);
 
   // Check that weighting function gets initialized to the default
   EXPECT_EQ(integrator.weighting_function_type(),
-            kDefaultWeightingFunctionType);
+            ProjectiveTsdfIntegrator::kDefaultWeightingFunctionType);
 
   // Change to constant weight
   integrator.weighting_function_type(WeightingFunctionType::kConstantWeight);
@@ -438,7 +437,7 @@ TEST_F(TsdfIntegratorTest, WeightingFunction) {
             // Get the depth of the voxel
             const Index3D voxel_idx(x, y, z);
             const Vector3f voxel_center =
-                getCenterPostionFromBlockIndexAndVoxelIndex(
+                getCenterPositionFromBlockIndexAndVoxelIndex(
                     layer_.block_size(), block_idx, voxel_idx);
             const float voxel_depth = voxel_center.z();
 

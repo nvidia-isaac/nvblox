@@ -24,15 +24,22 @@ limitations under the License.
 namespace nvblox {
 
 template <typename BlockType>
-BlockLayer<BlockType>::BlockLayer(const BlockLayer& other)
-    : BlockLayer(other, other.memory_type_) {}
+void BlockLayer<BlockType>::copyFrom(const BlockLayer& other) {
+  block_size_ = other.block_size_;
+  gpu_layer_view_up_to_date_ = false;
+
+  copyFromAsync(other, CudaStreamOwning());
+}
 
 template <typename BlockType>
-BlockLayer<BlockType>::BlockLayer(const BlockLayer& other,
-                                  MemoryType memory_type)
-    : BlockLayer(other.block_size_, memory_type) {
+void BlockLayer<BlockType>::copyFromAsync(const BlockLayer& other,
+                                          const CudaStream cuda_stream) {
   LOG(INFO) << "Deep copy of BlockLayer containing "
             << other.numAllocatedBlocks() << " blocks.";
+
+  block_size_ = other.block_size_;
+  gpu_layer_view_up_to_date_ = false;
+
   // Re-create all the blocks.
   std::vector<Index3D> all_block_indices = other.getAllBlockIndices();
 
@@ -42,16 +49,8 @@ BlockLayer<BlockType>::BlockLayer(const BlockLayer& other,
     if (block == nullptr) {
       continue;
     }
-    blocks_.emplace(block_index, block.clone(memory_type_));
+    blocks_.emplace(block_index, block.cloneAsync(memory_type_, cuda_stream));
   }
-}
-
-template <typename BlockType>
-BlockLayer<BlockType>& BlockLayer<BlockType>::operator=(
-    const BlockLayer<BlockType>& other) {
-  BlockLayer<BlockType> new_layer(other, memory_type_);
-  *this = std::move(new_layer);
-  return *this;
 }
 
 // Block accessors by index.
@@ -80,8 +79,8 @@ typename BlockType::ConstPtr BlockLayer<BlockType>::getBlockAtIndex(
 }
 
 template <typename BlockType>
-typename BlockType::Ptr BlockLayer<BlockType>::allocateBlockAtIndex(
-    const Index3D& index) {
+typename BlockType::Ptr BlockLayer<BlockType>::allocateBlockAtIndexAsync(
+    const Index3D& index, const CudaStream& cuda_stream) {
   auto it = blocks_.find(index);
   if (it != blocks_.end()) {
     return it->second;
@@ -89,10 +88,25 @@ typename BlockType::Ptr BlockLayer<BlockType>::allocateBlockAtIndex(
     // Invalidate the GPU hash
     gpu_layer_view_up_to_date_ = false;
     // Blocks define their own method for allocation.
-    auto insert_status =
-        blocks_.emplace(index, BlockType::allocate(memory_type_));
+    auto insert_status = blocks_.emplace(
+        index, BlockType::allocateAsync(memory_type_, cuda_stream));
     return insert_status.first->second;
   }
+}
+
+template <typename BlockType>
+typename BlockType::Ptr BlockLayer<BlockType>::allocateBlockAtIndex(
+    const Index3D& index) {
+  return allocateBlockAtIndexAsync(index, CudaStreamOwning());
+}
+
+template <typename BlockType>
+void BlockLayer<BlockType>::allocateBlocksAtIndices(
+    const std::vector<Index3D>& indices, const CudaStream& cuda_stream) {
+  for (const Index3D& idx : indices) {
+    allocateBlockAtIndexAsync(idx, cuda_stream);
+  }
+  cuda_stream.synchronize();
 }
 
 // Block accessors by position.
@@ -111,10 +125,16 @@ typename BlockType::ConstPtr BlockLayer<BlockType>::getBlockAtPosition(
 }
 
 template <typename BlockType>
+typename BlockType::Ptr BlockLayer<BlockType>::allocateBlockAtPositionAsync(
+    const Eigen::Vector3f& position, const CudaStream& cuda_stream) {
+  return allocateBlockAtIndexAsync(
+      getBlockIndexFromPositionInLayer(block_size_, position), cuda_stream);
+}
+
+template <typename BlockType>
 typename BlockType::Ptr BlockLayer<BlockType>::allocateBlockAtPosition(
     const Eigen::Vector3f& position) {
-  return allocateBlockAtIndex(
-      getBlockIndexFromPositionInLayer(block_size_, position));
+  return allocateBlockAtPositionAsync(position, CudaStreamOwning());
 }
 
 template <typename BlockType>
@@ -137,6 +157,16 @@ std::vector<BlockType*> BlockLayer<BlockType>::getAllBlockPointers() {
     block_ptrs.push_back(kv.second.get());
   }
   return block_ptrs;
+}
+
+template <typename BlockType>
+std::vector<Index3D> BlockLayer<BlockType>::getBlockIndicesIf(
+    std::function<bool(const Index3D&)> predicate) {
+  std::vector<Index3D> all_indices = getAllBlockIndices();
+  std::vector<Index3D> indices_out;
+  std::copy_if(all_indices.begin(), all_indices.end(),
+               std::back_inserter(indices_out), predicate);
+  return indices_out;
 }
 
 template <typename BlockType>
@@ -184,16 +214,24 @@ void VoxelBlockLayer<VoxelType>::getVoxels(
     const std::vector<Vector3f>& positions_L,
     std::vector<VoxelType>* voxels_ptr,
     std::vector<bool>* success_flags_ptr) const {
+  // Call the underlying streamed method on a newly created stream.
+  CudaStreamOwning cuda_stream;
+  getVoxels(positions_L, voxels_ptr, success_flags_ptr, &cuda_stream);
+}
+
+template <typename VoxelType>
+void VoxelBlockLayer<VoxelType>::getVoxels(
+    const std::vector<Vector3f>& positions_L,
+    std::vector<VoxelType>* voxels_ptr, std::vector<bool>* success_flags_ptr,
+    CudaStream* cuda_stream_ptr) const {
   CHECK_NOTNULL(voxels_ptr);
   CHECK_NOTNULL(success_flags_ptr);
-
-  cudaStream_t transfer_stream;
-  checkCudaErrors(cudaStreamCreate(&transfer_stream));
+  CHECK_NOTNULL(cuda_stream_ptr);
 
   voxels_ptr->resize(positions_L.size());
   success_flags_ptr->resize(positions_L.size());
 
-  for (int i = 0; i < positions_L.size(); i++) {
+  for (size_t i = 0; i < positions_L.size(); i++) {
     const Vector3f& p_L = positions_L[i];
     // Get the block address
     Index3D block_idx;
@@ -213,16 +251,17 @@ void VoxelBlockLayer<VoxelType>::getVoxels(
         &block_raw_ptr->voxels[voxel_idx.x()][voxel_idx.y()][voxel_idx.z()];
     // Copy the Voxel to the CPU (if on the GPU)
     if (this->memory_type_ == MemoryType::kDevice) {
-      cudaMemcpyAsync(&(*voxels_ptr)[i], voxel_ptr, sizeof(VoxelType),
-                      cudaMemcpyDefault, transfer_stream);
+      checkCudaErrors(cudaMemcpyAsync(&(*voxels_ptr)[i], voxel_ptr,
+                                      sizeof(VoxelType), cudaMemcpyDefault,
+                                      *cuda_stream_ptr));
     }
     // Accessible by the CPU, just do a normal copy
     else {
       (*voxels_ptr)[i] = *voxel_ptr;
     }
   }
-  cudaStreamSynchronize(transfer_stream);
-  checkCudaErrors(cudaStreamDestroy(transfer_stream));
+  cuda_stream_ptr->synchronize();
+  checkCudaErrors(cudaPeekAtLastError());
 }
 
 template <typename VoxelType>
@@ -233,26 +272,6 @@ std::pair<VoxelType, bool> VoxelBlockLayer<VoxelType>::getVoxel(
   std::vector<bool> success_flags;
   getVoxels(positions_L, &voxels, &success_flags);
   return {voxels[0], success_flags[0]};
-}
-
-template <typename VoxelType>
-VoxelBlockLayer<VoxelType>::VoxelBlockLayer(const VoxelBlockLayer& other)
-    : VoxelBlockLayer(other, other.memory_type_) {}
-
-template <typename VoxelType>
-VoxelBlockLayer<VoxelType>::VoxelBlockLayer(const VoxelBlockLayer& other,
-                                            MemoryType memory_type)
-    : BlockLayer<VoxelBlock<VoxelType>>(other, memory_type),
-      voxel_size_(other.voxel_size_) {
-  // Copying done in the base class.
-}
-
-template <typename VoxelType>
-VoxelBlockLayer<VoxelType>& VoxelBlockLayer<VoxelType>::operator=(
-    const VoxelBlockLayer<VoxelType>& other) {
-  VoxelBlockLayer<VoxelType> new_layer(other, this->memory_type_);
-  *this = std::move(new_layer);
-  return *this;
 }
 
 namespace internal {

@@ -31,11 +31,9 @@ namespace datasets {
 constexpr float kDefaultUintDepthScaleFactor = 1.0f / 1000.0f;
 bool load16BitDepthImage(
     const std::string& filename, DepthImage* depth_frame_ptr,
-    MemoryType memory_type = kDefaultImageMemoryType,
     const float scaling_factor = kDefaultUintDepthScaleFactor);
 bool load8BitColorImage(const std::string& filename,
-                        ColorImage* color_image_ptr,
-                        MemoryType memory_type = kDefaultImageMemoryType);
+                        ColorImage* color_image_ptr);
 
 using IndexToFilepathFunction = std::function<std::string(int image_idx)>;
 
@@ -44,10 +42,8 @@ template <typename ImageType>
 class ImageLoader {
  public:
   ImageLoader(IndexToFilepathFunction index_to_filepath,
-              MemoryType memory_type = kDefaultImageMemoryType,
               float depth_image_scaling_factor = kDefaultUintDepthScaleFactor)
       : index_to_filepath_(index_to_filepath),
-        memory_type_(memory_type),
         depth_image_scaling_factor_(depth_image_scaling_factor) {}
   virtual ~ImageLoader() {}
 
@@ -58,7 +54,6 @@ class ImageLoader {
 
   int image_idx_ = 0;
   const IndexToFilepathFunction index_to_filepath_;
-  const MemoryType memory_type_;
 
   // Note(alexmillane): Only used for depth image loading. Ignored for color;
   const float depth_image_scaling_factor_;
@@ -74,7 +69,6 @@ class MultiThreadedImageLoader : public ImageLoader<ImageType> {
  public:
   MultiThreadedImageLoader(
       IndexToFilepathFunction index_to_filepath, int num_threads,
-      MemoryType memory_type = kDefaultImageMemoryType,
       float depth_image_scaling_factor = kDefaultUintDepthScaleFactor);
   ~MultiThreadedImageLoader();
 
@@ -83,8 +77,9 @@ class MultiThreadedImageLoader : public ImageLoader<ImageType> {
  protected:
   void initLoadQueue();
   void emptyLoadQueue();
-  void addNextImageToQueue();
-  ImageOptional<ImageType> getImageAsOptional(int image_idx);
+  void addNextImageToQueue(MemoryType memory_type);
+  ImageOptional<ImageType> getImageAsOptional(int image_idx,
+                                              MemoryType memory_type);
 
   const int num_threads_;
   std::deque<std::future<ImageOptional<ImageType>>> load_queue_;

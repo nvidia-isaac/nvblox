@@ -39,6 +39,21 @@ template <typename VoxelType>
 bool outputVoxelLayerToPly(const VoxelBlockLayer<VoxelType>& layer,
                            const std::string& filename);
 
+/// @brief Function to store 3D points as a ply file.
+/// @param points The points represented as a 3*X matrix.
+/// @param filename Filename to store the ply to.
+/// @return Boolean to indicate success or failure.
+bool outputPointMatrixToPly(const Eigen::Matrix3Xf& points,
+                            const std::string& filename);
+
+/// @brief Function to store 3D points as a ply file.
+/// @param points The points represented as a 3*X matrix.
+/// @param intensities Corresponding intensities to store with the points.
+/// @param filename Filename to store the ply to.
+/// @return Boolean to indicate success or failure.
+bool outputPointMatrixToPly(const Eigen::Matrix3Xf& pointcloud,
+                            const Eigen::VectorXf& intensities,
+                            const std::string& filename);
 }  // namespace io
 }  // namespace nvblox
 

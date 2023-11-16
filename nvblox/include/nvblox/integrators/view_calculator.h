@@ -17,6 +17,8 @@ limitations under the License.
 
 #include <memory>
 
+#include "nvblox/core/cuda_stream.h"
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
 #include "nvblox/sensors/camera.h"
@@ -30,7 +32,8 @@ namespace nvblox {
 class ViewCalculator {
  public:
   ViewCalculator();
-  ~ViewCalculator();
+  ViewCalculator(std::shared_ptr<CudaStream> cuda_stream);
+  ~ViewCalculator() = default;
 
   /// Gets blocks which fall into the camera view (without using an image)
   /// Operates by checking if voxel block corners fall inside the pyramid formed
@@ -128,6 +131,11 @@ class ViewCalculator {
   /// @param raycast_to_pixels whether to raycast to block corners.
   void raycast_to_pixels(bool raycast_to_pixels);
 
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
+
  private:
   // Raycasts to all corners of all blocks touched by the endpoints of depth
   // rays.
@@ -177,9 +185,10 @@ class ViewCalculator {
   bool raycast_to_pixels_ = true;
   // The rate at which we subsample pixels to raycast. Note that we always
   // raycast the extremes of the frame, no matter the subsample rate.
-  unsigned int raycast_subsampling_factor_ = 1;
+  unsigned int raycast_subsampling_factor_ = 4;
 
-  cudaStream_t cuda_stream_;
+  // CUDA stream on which to execute work.
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

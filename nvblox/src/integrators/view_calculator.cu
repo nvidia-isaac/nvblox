@@ -13,20 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "nvblox/integrators/view_calculator.h"
-
 #include "nvblox/core/hash.h"
 #include "nvblox/core/indexing.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
 #include "nvblox/geometry/bounding_boxes.h"
+#include "nvblox/integrators/view_calculator.h"
 #include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
 
-ViewCalculator::ViewCalculator() { cudaStreamCreate(&cuda_stream_); }
-ViewCalculator::~ViewCalculator() { cudaStreamDestroy(cuda_stream_); }
+ViewCalculator::ViewCalculator()
+    : ViewCalculator(std::make_shared<CudaStreamOwning>()) {}
+
+ViewCalculator::ViewCalculator(std::shared_ptr<CudaStream> cuda_stream)
+    : cuda_stream_(cuda_stream) {}
 
 unsigned int ViewCalculator::raycast_subsampling_factor() const {
   return raycast_subsampling_factor_;
@@ -36,6 +38,19 @@ void ViewCalculator::raycast_subsampling_factor(
     unsigned int raycast_subsampling_factor) {
   CHECK_GT(raycast_subsampling_factor, 0);
   raycast_subsampling_factor_ = raycast_subsampling_factor;
+}
+
+parameters::ParameterTreeNode ViewCalculator::getParameterTree(
+    const std::string& name_remap) const {
+  using parameters::ParameterTreeNode;
+  const std::string name =
+      (name_remap.empty()) ? "view_calculator" : name_remap;
+  return ParameterTreeNode(
+      name, {
+                ParameterTreeNode("raycast_to_pixels:", raycast_to_pixels_),
+                ParameterTreeNode("raycast_subsampling_factor:",
+                                  raycast_subsampling_factor_),
+            });
 }
 
 // AABB linear indexing
@@ -238,13 +253,13 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
     constexpr float kBufferExpansionFactor = 1.5f;
     const int new_size =
         static_cast<int>(kBufferExpansionFactor * aabb_linear_size);
-    aabb_device_buffer_.reserve(new_size);
-    aabb_host_buffer_.reserve(new_size);
+    aabb_device_buffer_.reserveAsync(new_size, *cuda_stream_);
+    aabb_host_buffer_.reserveAsync(new_size, *cuda_stream_);
   }
-  checkCudaErrors(cudaMemsetAsync(aabb_device_buffer_.data(), 0,
-                                  sizeof(bool) * aabb_linear_size));
-  aabb_device_buffer_.resize(aabb_linear_size);
-  aabb_host_buffer_.resize(aabb_linear_size);
+
+  aabb_device_buffer_.resizeAsync(aabb_linear_size, *cuda_stream_);
+  aabb_device_buffer_.setZeroAsync(*cuda_stream_);
+  aabb_host_buffer_.resizeAsync(aabb_linear_size, *cuda_stream_);
 
   setup_timer.Stop();
 
@@ -263,10 +278,10 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
 
   // Output vector.
   timing::Timer output_timer("view_calculator/raycast/output");
-  cudaMemcpyAsync(aabb_host_buffer_.data(), aabb_device_buffer_.data(),
-                  sizeof(bool) * aabb_linear_size, cudaMemcpyDeviceToHost,
-                  cuda_stream_);
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  checkCudaErrors(cudaMemcpyAsync(
+      aabb_host_buffer_.data(), aabb_device_buffer_.data(),
+      sizeof(bool) * aabb_linear_size, cudaMemcpyDeviceToHost, *cuda_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
   std::vector<Index3D> output_vector;
@@ -319,12 +334,12 @@ void ViewCalculator::getBlocksByRaycastingCorners(
   dim3 thread_dim(kThreadDim, kThreadDim);
 
   timing::Timer image_blocks_timer("view_calculator/raycast/get_image_blocks");
-  getBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, cuda_stream_>>>(
+  getBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, *cuda_stream_>>>(
       T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,
       max_integration_distance_behind_surface_m, min_index, aabb_size,
       aabb_updated_cuda);
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
   image_blocks_timer.Stop();
@@ -350,10 +365,10 @@ void ViewCalculator::getBlocksByRaycastingCorners(
       static_cast<float>(num_initial_blocks) / kNumBlocksPerThreadBlock));
   dim3 raycast_thread_dim(kNumBlocksPerThreadBlock, kNumCorners);
   raycastToBlocksKernel<<<raycast_block_dim, raycast_thread_dim, 0,
-                          cuda_stream_>>>(
+                          *cuda_stream_>>>(
       num_initial_blocks, initial_vector.data(), T_L_C, block_size, min_index,
       aabb_size, aabb_updated_cuda);
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
   raycast_blocks_timer.Stop();
 }
@@ -385,12 +400,13 @@ void ViewCalculator::getBlocksByRaycastingPixels(
   dim3 block_dim(rounded_rows, rounded_cols);
   dim3 thread_dim(kThreadDim, kThreadDim);
 
-  combinedBlockIndicesInImageKernel<<<block_dim, thread_dim, 0, cuda_stream_>>>(
+  combinedBlockIndicesInImageKernel<<<block_dim, thread_dim, 0,
+                                      *cuda_stream_>>>(
       T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,
       max_integration_distance_behind_surface_m, raycast_subsampling_factor_,
       min_index, aabb_size, aabb_updated_cuda);
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
+  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
   combined_kernel_timer.Stop();
 }
@@ -401,8 +417,11 @@ std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
   CHECK_GT(max_distance, 0.0f);
   timing::Timer("view_calculator/get_blocks_in_view_planes");
 
-  // View frustum
-  constexpr float kMinDistance = 0.0f;
+  // Project all block centers into the image and check if they are
+  // inside the image viewport.
+
+  // View frustum with small positive min distance to avoid div-by-zero
+  constexpr float kMinDistance = 1E-6f;
   const Frustum frustum =
       camera.getViewFrustum(T_L_C, kMinDistance, max_distance);
 
@@ -411,13 +430,37 @@ std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
   const std::vector<Index3D> block_indices_in_aabb =
       getBlockIndicesTouchedByBoundingBox(block_size, aabb_L);
 
-  // Tight bound: View frustum
+  // Get the 2D viewport of the camera. We use normalized image
+  // coordinates rather than pixels to avoid having to apply the
+  // camera intrinsics to each point we want to check. A small margin
+  // is added to also capture blocks which intersect a frustum plane
+  // but have their center point outside the plane.
+  constexpr float kMargin{10.F};
+  CameraViewport normalized_viewport = camera.getNormalizedViewport(kMargin);
+
+  // Get the transform to camera from layer. To save some extra
+  // cycles, we extract the rotation and translation components rather
+  // than multiplying with the whole 4x4 matrix.
+  const Transform T_C_L = T_L_C.inverse();
+  const Eigen::Matrix3f rotation_C_L = T_C_L.rotation();
+  const Eigen::Vector3f translation_C_L = T_C_L.translation();
+
   std::vector<Index3D> block_indices_in_frustum;
   for (const Index3D& block_index : block_indices_in_aabb) {
-    const AxisAlignedBoundingBox& aabb_block =
-        getAABBOfBlock(block_size, block_index);
-    if (frustum.isAABBInView(aabb_block)) {
-      block_indices_in_frustum.push_back(block_index);
+    // Transform the block center into camera frame
+    const Eigen::Vector3f p3d_layer =
+        getCenterPositionFromBlockIndex(block_size, block_index);
+    const Eigen::Vector3f p3d_cam = rotation_C_L * p3d_layer + translation_C_L;
+
+    if (p3d_cam[2] > kMinDistance) {
+      // Project into normalized camera coordinates
+      Eigen::Vector2f p2d_normalized_cam;
+      camera.projectToNormalizedCoordinates(p3d_cam, &p2d_normalized_cam);
+
+      // Check if the projected point is inside the viewport
+      if (normalized_viewport.contains(p2d_normalized_cam)) {
+        block_indices_in_frustum.push_back(block_index);
+      }
     }
   }
   return block_indices_in_frustum;

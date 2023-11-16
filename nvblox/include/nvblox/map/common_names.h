@@ -1,5 +1,5 @@
 /*
-Copyright 2022 NVIDIA CORPORATION
+Copyright 2022-2023 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ namespace nvblox {
 
 using TsdfBlock = VoxelBlock<TsdfVoxel>;
 using TsdfLayer = VoxelBlockLayer<TsdfVoxel>;
+using FreespaceBlock = VoxelBlock<FreespaceVoxel>;
+using FreespaceLayer = VoxelBlockLayer<FreespaceVoxel>;
 using OccupancyBlock = VoxelBlock<OccupancyVoxel>;
 using OccupancyLayer = VoxelBlockLayer<OccupancyVoxel>;
 using EsdfBlock = VoxelBlock<EsdfVoxel>;

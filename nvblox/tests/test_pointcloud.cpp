@@ -49,8 +49,10 @@ TEST(PointcloudTest, Copy) {
   EXPECT_EQ(pointcloud.memory_type(), MemoryType::kUnified);
 
   // Copy
-  Pointcloud pointcloud_copy_1 = pointcloud;
-  Pointcloud pointcloud_copy_2 = pointcloud;
+  Pointcloud pointcloud_copy_1(MemoryType::kUnified);
+  pointcloud_copy_1.copyFrom(pointcloud);
+  Pointcloud pointcloud_copy_2(MemoryType::kUnified);
+  pointcloud_copy_2.copyFrom(pointcloud);
   EXPECT_EQ(pointcloud_copy_1.memory_type(), MemoryType::kUnified);
   EXPECT_EQ(pointcloud_copy_2.memory_type(), MemoryType::kUnified);
 
@@ -80,13 +82,15 @@ TEST(PointcloudTest, DeviceCopy) {
   }
 
   // Pointcloud to the device
-  Pointcloud pointcloud_gpu(pointcloud, MemoryType::kDevice);
+  Pointcloud pointcloud_gpu(MemoryType::kDevice);
+  pointcloud_gpu.copyFrom(pointcloud);
   EXPECT_EQ(pointcloud_gpu.memory_type(), MemoryType::kDevice);
 
   // Check that the data made it.
   std::vector<Vector3f> points_on_host(kNumOfPoints);
-  cudaMemcpy(points_on_host.data(), pointcloud_gpu.dataConstPtr(),
-             sizeof(Vector3f) * kNumOfPoints, cudaMemcpyDeviceToHost);
+  checkCudaErrors(
+      cudaMemcpy(points_on_host.data(), pointcloud_gpu.dataConstPtr(),
+                 sizeof(Vector3f) * kNumOfPoints, cudaMemcpyDeviceToHost));
 
   for (int i = 0; i < kNumOfPoints; i++) {
     EXPECT_TRUE(points_on_host[i] == test_point);
@@ -102,7 +106,8 @@ TEST(PointcloudTest, ConstructFromVector) {
   }
 
   // To kUnified Pointcloud
-  Pointcloud pointcloud(points_vec, MemoryType::kUnified);
+  Pointcloud pointcloud(MemoryType::kUnified);
+  pointcloud.copyFrom(points_vec);
   EXPECT_EQ(pointcloud.memory_type(), MemoryType::kUnified);
 
   // Check
@@ -127,7 +132,7 @@ TEST(PointcloudTest, TransformPointcloudOnGpu) {
   T_B_A.prerotate(
       Eigen::AngleAxisf(M_PI / 2.0f, Vector3f::UnitZ()).toRotationMatrix());
 
-  Pointcloud pointcloud_B;
+  Pointcloud pointcloud_B(MemoryType::kUnified);
   transformPointcloudOnGPU(T_B_A, pointcloud_A, &pointcloud_B);
   EXPECT_EQ(pointcloud_B.memory_type(), MemoryType::kUnified);
 

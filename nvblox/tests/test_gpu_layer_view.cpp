@@ -111,7 +111,7 @@ TEST(GpuHashTest, SphereSceneAccessTest) {
                 [](bool flag) { EXPECT_TRUE(flag); });
 
   CHECK_EQ(cpu_lookup_voxels.size(), gpu_lookup_voxels.size());
-  for (int i = 0; i < gpu_lookup_voxels.size(); i++) {
+  for (size_t i = 0; i < gpu_lookup_voxels.size(); i++) {
     constexpr float eps = 1e-6;
     EXPECT_NEAR(cpu_lookup_voxels[i].distance, gpu_lookup_voxels[i].distance,
                 eps);
@@ -152,7 +152,7 @@ TEST(GpuHashTest, ResizeTest) {
 
 TEST(GpuHashTest, LoadFactorTest) {
   // Create a layer with 1000 blocks
-  constexpr size_t num_blocks = 1000;
+  constexpr int num_blocks = 1000;
   std::vector<Index3D> block_indices;
   for (int i = 0; i < num_blocks; i++) {
     block_indices.push_back({i, 0, 0});

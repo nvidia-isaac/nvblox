@@ -66,7 +66,7 @@ TEST_F(OccupancyIntegratorTest, ReconstructPlane) {
   const DepthImage depth_frame = test_utils::getDepthImage(plane, camera_);
 
   if (FLAGS_nvblox_test_file_output) {
-    std::string filepath = "./depth_frame_occupancy_test.csv";
+    std::string filepath = "./depth_frame_occupancy_test.png";
     io::writeToPng(filepath, depth_frame);
   }
 
@@ -102,7 +102,7 @@ TEST_F(OccupancyIntegratorTest, ReconstructPlane) {
   // Check that all interpolations worked and that the probability increased
   int num_failures = 0;
   int num_bad_flags = 0;
-  for (int i = 0; i < probabilities.size(); i++) {
+  for (size_t i = 0; i < probabilities.size(); i++) {
     EXPECT_TRUE(success_flags[i]);
     if (!success_flags[i]) {
       num_bad_flags++;
@@ -206,6 +206,33 @@ TEST_F(OccupancyIntegratorTest, SphereSceneTest) {
     io::outputVoxelLayerToPly(gt_layer, "occupancy_sphere_gt.ply");
     io::outputVoxelLayerToPly(layer_gpu, "occupancy_sphere.ply");
   }
+}
+
+TEST_F(OccupancyIntegratorTest, MarkUnobservedFree) {
+  constexpr float voxel_size_m = 0.1;
+  OccupancyLayer occupancy_layer(voxel_size_m, MemoryType::kUnified);
+
+  EXPECT_EQ(occupancy_layer.numAllocatedBlocks(), 0);
+
+  // Do the observation.
+  const Vector3f center(0.0, 0.0, 0.0);
+  const float radius = 1.0;
+
+  ProjectiveOccupancyIntegrator integrator;
+  integrator.markUnobservedFreeInsideRadius(center, radius, &occupancy_layer);
+
+  // Check some blocks got allocated
+  CHECK_GT(occupancy_layer.numAllocatedBlocks(), 0);
+
+  // Check the blocks
+  // If the log_odds is zero, then it means the voxel is unobserved. If it is
+  // less than zero then it has been observed and is unoccupied
+  callFunctionOnAllVoxels<OccupancyVoxel>(
+      occupancy_layer,
+      [](const Index3D&, const Index3D&, const OccupancyVoxel* voxel) -> void {
+        constexpr float kLogOddsUnobserved = 0;
+        EXPECT_LT(voxel->log_odds, kLogOddsUnobserved);
+      });
 }
 
 int main(int argc, char** argv) {

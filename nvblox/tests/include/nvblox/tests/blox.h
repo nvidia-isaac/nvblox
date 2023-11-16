@@ -32,6 +32,10 @@ struct IndexBlock {
   static Ptr allocate(MemoryType memory_type) {
     return make_unified<IndexBlock>(memory_type);
   }
+
+  static Ptr allocateAsync(MemoryType memory_type, const CudaStream&) {
+    return make_unified<IndexBlock>(memory_type);
+  }
 };
 
 // Dummy block that stores a single bool
@@ -44,6 +48,10 @@ struct BooleanBlock {
   static Ptr allocate(MemoryType memory_type) {
     return make_unified<BooleanBlock>(memory_type);
   }
+
+  static Ptr allocateAsync(MemoryType memory_type, const CudaStream&) {
+    return make_unified<BooleanBlock>(memory_type);
+  }
 };
 
 struct FloatBlock {
@@ -51,10 +59,54 @@ struct FloatBlock {
   typedef unified_ptr<const FloatBlock> ConstPtr;
 
   static Ptr allocate(MemoryType memory_type) {
-    return make_unified<FloatBlock>();
+    return make_unified<FloatBlock>(memory_type);
+  }
+
+  static Ptr allocateAsync(MemoryType memory_type, const CudaStream&) {
+    return make_unified<FloatBlock>(memory_type);
   };
 
   float block_data = 0.0f;
+};
+
+template <typename BlockType>
+void setBlockBytesConstantOnGPU(int value, BlockType* block_device_ptr) {
+  setBlockBytesConstantOnGPU(value, block_device_ptr, CudaStreamOwning());
+}
+
+template <typename BlockType>
+void setBlockBytesConstantOnGPUAsync(int value, BlockType* block_device_ptr,
+                                     const CudaStream& cuda_stream) {
+  checkCudaErrors(
+      cudaMemsetAsync(block_device_ptr, value, sizeof(BlockType), cuda_stream));
+}
+
+// We use this voxel to test GPU initialization
+struct InitializationTestVoxel {
+  static constexpr uint8_t kCPUInitializationValue = 0;
+  static constexpr uint8_t kGPUInitializationValue = 1;
+
+  uint8_t data = kCPUInitializationValue;
+};
+
+template <>
+inline void VoxelBlock<InitializationTestVoxel>::initOnGPUAsync(
+    VoxelBlock<InitializationTestVoxel>* voxel_block_ptr,
+    const CudaStream& cuda_stream) {
+  setBlockBytesConstantOnGPUAsync(
+      InitializationTestVoxel::kGPUInitializationValue, voxel_block_ptr,
+      cuda_stream);
+}
+
+// A custom (non-voxel) block which forgets to define allocate(), and therefore
+// will fail the type_trait has nvblox::traits::has_allocate<T>()
+struct TestBlockNoAllocation {
+  typedef unified_ptr<TestBlockNoAllocation> Ptr;
+  typedef unified_ptr<const TestBlockNoAllocation> ConstPtr;
+
+  static constexpr uint8_t kCPUInitializationValue = 0;
+
+  uint8_t data = kCPUInitializationValue;
 };
 
 using IndexBlockLayer = BlockLayer<IndexBlock>;
@@ -62,5 +114,7 @@ using BooleanBlockLayer = BlockLayer<BooleanBlock>;
 using FloatBlockLayer = BlockLayer<FloatBlock>;
 using FloatVoxelBlock = VoxelBlock<FloatVoxel>;
 using FloatVoxelLayer = VoxelBlockLayer<FloatVoxel>;
+using InitializationTestVoxelBlock = VoxelBlock<InitializationTestVoxel>;
+using InitializationTestVoxelLayer = VoxelBlockLayer<InitializationTestVoxel>;
 
 }  // namespace nvblox

@@ -24,18 +24,35 @@ namespace nvblox {
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
              float vertical_fov_rad)
+    : Lidar(num_azimuth_divisions, num_elevation_divisions,
+            vertical_fov_rad / 2.0f, vertical_fov_rad / 2.0f) {}
+
+Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
+             float min_angle_below_zero_elevation_rad,
+             float max_angle_above_zero_elevation_rad)
     : num_azimuth_divisions_(num_azimuth_divisions),
-      num_elevation_divisions_(num_elevation_divisions),
-      vertical_fov_rad_(vertical_fov_rad) {
-  // Even numbers of beams allowed
+      num_elevation_divisions_(num_elevation_divisions) {
+  // Only even numbers of azimuth divisions allowed
   CHECK(num_azimuth_divisions_ % 2 == 0);
+
+  // Max sure the min elevation angle is negative (this also makes us tolerant
+  // to positive and negative inputs).
+  if (min_angle_below_zero_elevation_rad > 0) {
+    min_angle_below_zero_elevation_rad = -min_angle_below_zero_elevation_rad;
+  }
+  CHECK_GT(max_angle_above_zero_elevation_rad, 0.f);
+  CHECK_LT(min_angle_below_zero_elevation_rad, 0.f);
+
+  // Calculate the vertical FOV
+  vertical_fov_rad_ =
+      max_angle_above_zero_elevation_rad - min_angle_below_zero_elevation_rad;
 
   // Angular distance between pixels
   // Note(alexmillane): Note the difference in division by N vs. (N-1) below.
   // This is because in the azimuth direction there's a wrapping around. The
   // point at pi/-pi is not double sampled, generating this difference.
   rads_per_pixel_elevation_ =
-      vertical_fov_rad / static_cast<float>(num_elevation_divisions_ - 1);
+      vertical_fov_rad_ / static_cast<float>(num_elevation_divisions_ - 1);
   rads_per_pixel_azimuth_ =
       2.0f * M_PI / static_cast<float>(num_azimuth_divisions_);
 
@@ -49,7 +66,7 @@ Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
   // below this.
   // Note(alexmillane): Note that we use polar angle here, not elevation.
   // Polar is from the top of the sphere down, elevation, the middle up.
-  start_polar_angle_rad_ = M_PI / 2.0f - (vertical_fov_rad / 2.0f +
+  start_polar_angle_rad_ = M_PI / 2.0f - (max_angle_above_zero_elevation_rad +
                                           rads_per_pixel_elevation_ / 2.0f);
   start_azimuth_angle_rad_ = -M_PI - rads_per_pixel_azimuth_ / 2.0f;
 }
@@ -59,6 +76,8 @@ int Lidar::num_azimuth_divisions() const { return num_azimuth_divisions_; }
 int Lidar::num_elevation_divisions() const { return num_elevation_divisions_; }
 
 float Lidar::vertical_fov_rad() const { return vertical_fov_rad_; }
+
+float Lidar::start_polar_angle_rad() const { return start_polar_angle_rad_; }
 
 int Lidar::numel() const {
   return num_azimuth_divisions_ * num_elevation_divisions_;
@@ -150,7 +169,7 @@ Vector3f Lidar::vectorFromPixelIndices(const Index2D& u_C) const {
 }
 
 AxisAlignedBoundingBox Lidar::getViewAABB(const Transform& T_L_C,
-                                          const float min_depth,
+                                          const float,
                                           const float max_depth) const {
   // The AABB is a square centered at the lidars location where the height is
   // determined by the lidar FoV.
@@ -181,6 +200,16 @@ bool operator==(const Lidar& lhs, const Lidar& rhs) {
          (lhs.num_elevation_divisions_ == rhs.num_elevation_divisions_) &&
          (std::fabs(lhs.vertical_fov_rad_ - rhs.vertical_fov_rad_) <
           std::numeric_limits<float>::epsilon());
+}
+
+std::ostream& operator<<(std::ostream& os, const Lidar& lidar) {
+  constexpr float kRadToDegrees = 180.0f / M_PI;
+  os << "Lidar with intrinsics:\n"
+     << "\tnum_azimuth_divisions: " << lidar.num_azimuth_divisions() << "\n"
+     << "\tnum_elevation_divisions: " << lidar.num_elevation_divisions() << "\n"
+     << "\tvertical_fov_deg: " << lidar.vertical_fov_rad() * kRadToDegrees << "\n"
+     << "\tstart_polar_angle_deg: " << lidar.start_polar_angle_rad() * kRadToDegrees;
+  return os;
 }
 
 }  // namespace nvblox

@@ -35,26 +35,30 @@ struct Color {
   uint8_t a;
 
   /// Check if colors are exactly identical. Also checks alpha.
-  bool operator==(const Color& other) const {
+  __host__ __device__ bool operator==(const Color& other) const {
     return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
   }
 
   /// Static functions for working with colors
-  static Color blendTwoColors(const Color& first_color, float first_weight,
-                              const Color& second_color, float second_weight);
+  __host__ __device__ static Color blendTwoColors(const Color& first_color,
+                                                  float first_weight,
+                                                  const Color& second_color,
+                                                  float second_weight);
 
   // Now a bunch of static colors to use! :)
-  static const Color White() { return Color(255, 255, 255); }
-  static const Color Black() { return Color(0, 0, 0); }
-  static const Color Gray() { return Color(127, 127, 127); }
-  static const Color Red() { return Color(255, 0, 0); }
-  static const Color Green() { return Color(0, 255, 0); }
-  static const Color Blue() { return Color(0, 0, 255); }
-  static const Color Yellow() { return Color(255, 255, 0); }
-  static const Color Orange() { return Color(255, 127, 0); }
-  static const Color Purple() { return Color(127, 0, 255); }
-  static const Color Teal() { return Color(0, 255, 255); }
-  static const Color Pink() { return Color(255, 0, 127); }
+  __host__ __device__ static const Color White() {
+    return Color(255, 255, 255);
+  }
+  __host__ __device__ static const Color Black() { return Color(0, 0, 0); }
+  __host__ __device__ static const Color Gray() { return Color(127, 127, 127); }
+  __host__ __device__ static const Color Red() { return Color(255, 0, 0); }
+  __host__ __device__ static const Color Green() { return Color(0, 255, 0); }
+  __host__ __device__ static const Color Blue() { return Color(0, 0, 255); }
+  __host__ __device__ static const Color Yellow() { return Color(255, 255, 0); }
+  __host__ __device__ static const Color Orange() { return Color(255, 127, 0); }
+  __host__ __device__ static const Color Purple() { return Color(127, 0, 255); }
+  __host__ __device__ static const Color Teal() { return Color(0, 255, 255); }
+  __host__ __device__ static const Color Pink() { return Color(255, 0, 127); }
 };
 
 }  // namespace nvblox

@@ -42,17 +42,9 @@ TEST(MeshColoringTests, UniformColorSphere) {
   TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kUnified);
 
   // Build the test scene
-  constexpr float kSphereRadius = 2.0f;
   constexpr float kTruncationDistanceVox = 2;
   constexpr float kTruncationDistanceMeters =
       kTruncationDistanceVox * voxel_size_m;
-
-  // Maximum distance to consider for scene generation.
-  constexpr float kMaxDist = 10.0;
-  constexpr float kMinWeight = 1.0;
-
-  // Tolerance for error.
-  constexpr float kDistanceErrorTolerance = kTruncationDistanceMeters;
 
   // Scene is bounded to -5, -5, 0 to 5, 5, 5.
   primitives::Scene scene;
@@ -74,8 +66,7 @@ TEST(MeshColoringTests, UniformColorSphere) {
   for (const Index3D& block_idx : tsdf_layer.getAllBlockIndices()) {
     ColorBlock::Ptr color_block = color_layer.allocateBlockAtIndex(block_idx);
     callFunctionOnAllVoxels<ColorVoxel>(
-        color_block.get(),
-        [&kTestColor](const Index3D& voxel_index, ColorVoxel* voxel) {
+        color_block.get(), [&kTestColor](const Index3D&, ColorVoxel* voxel) {
           voxel->color = kTestColor;
         });
   }
@@ -89,8 +80,7 @@ TEST(MeshColoringTests, UniformColorSphere) {
 
   // Check that all the mesh points are correctly colored
   callFunctionOnAllBlocks<MeshBlock>(
-      mesh_layer,
-      [&kTestColor](const Index3D& block_index, const MeshBlock* mesh_block) {
+      mesh_layer, [&kTestColor](const Index3D&, const MeshBlock* mesh_block) {
         EXPECT_EQ(mesh_block->vertices.size(), mesh_block->colors.size());
         for (const Color& color : mesh_block->colors) {
           EXPECT_EQ(color, kTestColor);
@@ -102,8 +92,8 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
   // Load 3dmatch image
   const std::string base_path = "../tests/data/3dmatch";
   constexpr int seq_id = 1;
-  DepthImage depth_image_1;
-  ColorImage color_image_1;
+  DepthImage depth_image_1(MemoryType::kDevice);
+  ColorImage color_image_1(MemoryType::kDevice);
   EXPECT_TRUE(datasets::load16BitDepthImage(
       datasets::threedmatch::internal::getPathForDepthImage(base_path, seq_id,
                                                             0),
@@ -136,7 +126,8 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
   ColorLayer color_layer(kVoxelSizeM, MemoryType::kDevice);
   color_integrator.integrateFrame(color_image_1, Transform::Identity(), camera,
                                   tsdf_layer, &color_layer);
-  ColorLayer color_layer_host(color_layer, MemoryType::kHost);
+  ColorLayer color_layer_host(kVoxelSizeM, MemoryType::kHost);
+  color_layer_host.copyFrom(color_layer);
 
   // Generate a mesh from the "reconstruction"
   MeshIntegrator mesh_integrator;
@@ -145,8 +136,8 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
       tsdf_layer, &mesh_layer_colored_on_gpu));
 
   // Copy the mesh
-  MeshLayer mesh_layer_colored_on_cpu(mesh_layer_colored_on_gpu,
-                                      MemoryType::kHost);
+  MeshLayer mesh_layer_colored_on_cpu(kBlockSizeM, MemoryType::kHost);
+  mesh_layer_colored_on_cpu.copyFrom(mesh_layer_colored_on_gpu);
 
   // Color on GPU and CPU
   mesh_integrator.colorMeshGPU(color_layer, &mesh_layer_colored_on_gpu);
@@ -158,13 +149,13 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
   int num_diff_outside = 0;
   int total_vertices = 0;
 
-  MeshLayer mesh_layer_colored_on_gpu_host(mesh_layer_colored_on_gpu,
-                                           MemoryType::kHost);
+  MeshLayer mesh_layer_colored_on_gpu_host(kBlockSizeM, MemoryType::kHost);
+  mesh_layer_colored_on_gpu_host.copyFrom(mesh_layer_colored_on_gpu);
 
   auto block_indices_gpu = mesh_layer_colored_on_gpu_host.getAllBlockIndices();
   auto block_indices_cpu = mesh_layer_colored_on_cpu.getAllBlockIndices();
   EXPECT_EQ(block_indices_gpu.size(), block_indices_cpu.size());
-  for (int idx = 0; idx < block_indices_gpu.size(); idx++) {
+  for (size_t idx = 0; idx < block_indices_gpu.size(); idx++) {
     const Index3D& block_idx = block_indices_gpu[idx];
 
     MeshBlock::ConstPtr block_gpu =
@@ -177,7 +168,7 @@ TEST(MeshColoringTests, CPUvsGPUon3DMatch) {
     EXPECT_EQ(block_gpu->vertices.size(), block_cpu->vertices.size());
     EXPECT_EQ(block_gpu->colors.size(), block_cpu->colors.size());
     EXPECT_EQ(block_gpu->vertices.size(), block_gpu->colors.size());
-    for (int i = 0; i < block_gpu->colors.size(); i++) {
+    for (size_t i = 0; i < block_gpu->colors.size(); i++) {
       EXPECT_TRUE(
           (block_gpu->vertices[i].array() == block_cpu->vertices[i].array())
               .all());

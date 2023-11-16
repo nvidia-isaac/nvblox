@@ -40,7 +40,7 @@ void ProjectiveTsdfIntegratorCPU::updateBlocks(
            voxel_index.y()++) {
         for (voxel_index.z() = 0; voxel_index.z() < TsdfBlock::kVoxelsPerSide;
              voxel_index.z()++) {
-          Vector3f p_L = getCenterPostionFromBlockIndexAndVoxelIndex(
+          Vector3f p_L = getCenterPositionFromBlockIndexAndVoxelIndex(
               layer->block_size(), block_index, voxel_index);
 
           // Convert the p_L to a p_C

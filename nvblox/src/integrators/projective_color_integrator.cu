@@ -1,5 +1,5 @@
 /*
-Copyright 2022 NVIDIA CORPORATION
+Copyright 2022-2023 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+#include "nvblox/core/color.h"
+#include "nvblox/integrators/internal/cuda/impl/projective_integrator_impl.cuh"
 #include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/integrators/projective_color_integrator.h"
@@ -21,15 +24,23 @@ limitations under the License.
 
 namespace nvblox {
 
-ProjectiveColorIntegrator::ProjectiveColorIntegrator() {
+ProjectiveColorIntegrator::ProjectiveColorIntegrator()
+    : ProjectiveColorIntegrator(std::make_shared<CudaStreamOwning>()) {}
+
+ProjectiveColorIntegrator::ProjectiveColorIntegrator(
+    std::shared_ptr<CudaStream> cuda_stream)
+    : ProjectiveIntegrator<ColorVoxel>(cuda_stream),
+      update_functor_host_ptr_(
+          make_unified<UpdateColorVoxelFunctor>(MemoryType::kHost)),
+      sphere_tracer_(cuda_stream),
+      synthetic_depth_image_(MemoryType::kDevice) {
   sphere_tracer_.maximum_ray_length_m(max_integration_distance_m_);
-  checkCudaErrors(cudaStreamCreate(&integration_stream_));
 }
 
-ProjectiveColorIntegrator::~ProjectiveColorIntegrator() {
-  cudaStreamSynchronize(integration_stream_);
-  checkCudaErrors(cudaStreamDestroy(integration_stream_));
-}
+// NOTE(dtingdahl): We can't default this in the header file because to the
+// unified_ptr to a forward declared type. The type has to be defined where
+// the destructor is.
+ProjectiveColorIntegrator::~ProjectiveColorIntegrator() = default;
 
 void ProjectiveColorIntegrator::integrateFrame(
     const ColorImage& color_frame, const Transform& T_L_C, const Camera& camera,
@@ -42,7 +53,18 @@ void ProjectiveColorIntegrator::integrateFrame(
   // Metric truncation distance for this layer
   const float voxel_size =
       color_layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
-  const float truncation_distance_m = truncation_distance_vox_ * voxel_size;
+  const float truncation_distance_m =
+      truncation_distance_vox_ * tsdf_layer.voxel_size();
+
+  // TODO(alexmillane): This order of operations could be improved here. We
+  // could:
+  // - Create synthetic depth *first*
+  // - Then use the depth image to gets block in view, as we do in the
+  //   TSDFIntegrator.
+  // - We could add an option to the view calculator to only return blocks in
+  //   the truncation band.
+  // - We could then remove the kernel below for reduce blocks to those in the
+  // truncation band.
 
   timing::Timer blocks_in_view_timer("color/integrate/get_blocks_in_view");
   std::vector<Index3D> block_indices = view_calculator_.getBlocksInViewPlanes(
@@ -60,6 +82,9 @@ void ProjectiveColorIntegrator::integrateFrame(
       "color/integrate/reduce_to_blocks_in_band");
   block_indices = reduceBlocksToThoseInTruncationBand(block_indices, tsdf_layer,
                                                       truncation_distance_m);
+  if (block_indices.empty()) {
+    return;
+  }
   blocks_in_band_timer.Stop();
 
   // Allocate blocks (CPU)
@@ -67,7 +92,7 @@ void ProjectiveColorIntegrator::integrateFrame(
   // - there are allocated TSDF blocks, AND
   // - these blocks are within the truncation band
   timing::Timer allocate_blocks_timer("color/integrate/allocate_blocks");
-  allocateBlocksWhereRequired(block_indices, color_layer);
+  allocateBlocksWhereRequired(block_indices, color_layer, *cuda_stream_);
   allocate_blocks_timer.Stop();
 
   // Create a synthetic depth image
@@ -77,16 +102,33 @@ void ProjectiveColorIntegrator::integrateFrame(
       MemoryType::kDevice, sphere_tracing_ray_subsampling_factor_);
   sphere_trace_timer.Stop();
 
-  // Update identified blocks
-  // Calls out to the child-class implementing the integation (GPU)
+  timing::Timer transfer_blocks_timer("color/integrate/transfer_blocks");
+  transferBlockPointersToDevice<ColorBlock>(block_indices, *cuda_stream_,
+                                            color_layer, &block_ptrs_host_,
+                                            &block_ptrs_device_);
+  transferBlocksIndicesToDevice(block_indices, *cuda_stream_,
+                                &block_indices_host_, &block_indices_device_);
+
+  // We need the inverse transform in the kernel
+  const Transform T_C_L = T_L_C.inverse();
+
+  // Move the functor to the GPU
+  unified_ptr<UpdateColorVoxelFunctor> update_functor_device =
+      getColorUpdateFunctorOnDevice(tsdf_layer.voxel_size());
+  transfer_blocks_timer.Stop();
+
+  // Calling the GPU to do the updates
   timing::Timer update_blocks_timer("color/integrate/update_blocks");
-  updateBlocks(block_indices, color_frame, synthetic_depth_image_, T_L_C,
-               camera, truncation_distance_m, color_layer);
-  update_blocks_timer.Stop();
+  integrateBlocks(synthetic_depth_image_, color_frame, T_C_L, camera,
+                  update_functor_device.get(), color_layer);
 
   if (updated_blocks != nullptr) {
     *updated_blocks = block_indices;
   }
+}
+
+std::string ProjectiveColorIntegrator::getIntegratorName() const {
+  return "color";
 }
 
 void ProjectiveColorIntegrator::sphere_tracing_ray_subsampling_factor(
@@ -100,31 +142,11 @@ int ProjectiveColorIntegrator::sphere_tracing_ray_subsampling_factor() const {
   return sphere_tracing_ray_subsampling_factor_;
 }
 
-float ProjectiveColorIntegrator::truncation_distance_vox() const {
-  return truncation_distance_vox_;
-}
-
 float ProjectiveColorIntegrator::max_weight() const { return max_weight_; }
-
-float ProjectiveColorIntegrator::max_integration_distance_m() const {
-  return max_integration_distance_m_;
-}
-
-void ProjectiveColorIntegrator::truncation_distance_vox(
-    float truncation_distance_vox) {
-  CHECK_GT(truncation_distance_vox, 0.0f);
-  truncation_distance_vox_ = truncation_distance_vox;
-}
 
 void ProjectiveColorIntegrator::max_weight(float max_weight) {
   CHECK_GT(max_weight, 0.0f);
   max_weight_ = max_weight;
-}
-
-void ProjectiveColorIntegrator::max_integration_distance_m(
-    float max_integration_distance_m) {
-  CHECK_GT(max_integration_distance_m, 0.0f);
-  max_integration_distance_m_ = max_integration_distance_m;
 }
 
 float ProjectiveColorIntegrator::get_truncation_distance_m(
@@ -151,6 +173,30 @@ ViewCalculator& ProjectiveColorIntegrator::view_calculator() {
   return view_calculator_;
 }
 
+parameters::ParameterTreeNode ProjectiveColorIntegrator::getParameterTree(
+    const std::string& name_remap) const {
+  using parameters::ParameterTreeNode;
+  const std::string name =
+      (name_remap.empty()) ? "projective_color_integrator" : name_remap;
+  // NOTE(alexmillane): Wrapping our weighting function to_string version in the
+  // std::function for passing to the parameter tree node constructor because it
+  // seems to have trouble with template deduction.
+  std::function<std::string(const WeightingFunctionType&)>
+      weighting_function_to_string =
+          [](const WeightingFunctionType& w) { return to_string(w); };
+  return ParameterTreeNode(
+      name, {
+                ParameterTreeNode("sphere_tracing_ray_subsampling_factor:",
+                                  sphere_tracing_ray_subsampling_factor_),
+                ParameterTreeNode("max_weight:", max_weight_),
+                ParameterTreeNode(
+                    "weighting_function_type:", weighting_function_type_,
+                    weighting_function_to_string),
+                ProjectiveIntegrator<ColorVoxel>::getParameterTree(),
+                view_calculator_.getParameterTree(),
+            });
+}
+
 __device__ inline Color blendTwoColors(const Color& first_color,
                                        float first_weight,
                                        const Color& second_color,
@@ -169,6 +215,52 @@ __device__ inline Color blendTwoColors(const Color& first_color,
       first_color.b * first_weight + second_color.b * second_weight));
 
   return new_color;
+}
+
+struct UpdateColorVoxelFunctor {
+  __host__ __device__ UpdateColorVoxelFunctor() = default;
+  __host__ __device__ ~UpdateColorVoxelFunctor() = default;
+
+  __device__ bool operator()(const float measured_depth_m,
+                             const float voxel_depth_m,
+                             const Color& color_measured,
+                             ColorVoxel* voxel_ptr) {
+    // Read CURRENT voxel values (from global GPU memory)
+    const Color voxel_color_current = voxel_ptr->color;
+    const float voxel_weight_current = voxel_ptr->weight;
+    // Fuse
+    const float measurement_weight = weighting_function_(
+        measured_depth_m, voxel_depth_m, truncation_distance_m_);
+    const Color fused_color =
+        blendTwoColors(voxel_color_current, voxel_weight_current,
+                       color_measured, measurement_weight);
+    const float weight =
+        fmin(measurement_weight + voxel_weight_current, max_weight_);
+    // Write NEW voxel values (to global GPU memory)
+    voxel_ptr->color = fused_color;
+    voxel_ptr->weight = weight;
+    return true;
+  }
+  WeightingFunction weighting_function_ = WeightingFunction(
+      ProjectiveColorIntegrator::kDefaultWeightingFunctionType);
+  float truncation_distance_m_ = 0.2f;
+  float max_weight_ = ProjectiveColorIntegrator::kDefaultMaxWeight;
+};
+
+unified_ptr<UpdateColorVoxelFunctor>
+ProjectiveColorIntegrator::getColorUpdateFunctorOnDevice(float voxel_size) {
+  // Set the update function params
+  // NOTE(alex.millane): We do this with every frame integration to avoid
+  // bug-prone logic for detecting when params have changed etc.
+  CHECK(update_functor_host_ptr_ != nullptr);
+  update_functor_host_ptr_->max_weight_ = max_weight();
+  update_functor_host_ptr_->truncation_distance_m_ =
+      get_truncation_distance_m(voxel_size);
+  update_functor_host_ptr_->weighting_function_ =
+      WeightingFunction(weighting_function_type_);
+  // Transfer to the device
+  return update_functor_host_ptr_.cloneAsync(MemoryType::kDevice,
+                                             *cuda_stream_);
 }
 
 __device__ inline bool updateVoxel(const Color color_measured,
@@ -195,132 +287,6 @@ __device__ inline bool updateVoxel(const Color color_measured,
   return true;
 }
 
-__global__ void integrateBlocks(
-    const Index3D* block_indices_device_ptr, const Camera camera,
-    const Color* color_image, const int color_rows, const int color_cols,
-    const float* depth_image, const int depth_rows, const int depth_cols,
-    const Transform T_C_L, const float block_size,
-    const float truncation_distance_m, const float max_weight,
-    const float max_integration_distance, const int depth_subsample_factor,
-    const WeightingFunction weighting_function,
-    ColorBlock** block_device_ptrs) {
-  // Get - the image-space projection of the voxel associated with this thread
-  //     - the depth associated with the projection.
-  Eigen::Vector2f u_px;
-  float voxel_depth_m;
-  Vector3f p_voxel_center_C;
-  if (!projectThreadVoxel<Camera>(block_indices_device_ptr, camera, T_C_L,
-                                  block_size, &u_px, &voxel_depth_m,
-                                  &p_voxel_center_C)) {
-    return;
-  }
-
-  // If voxel further away than the limit, skip this voxel
-  if (max_integration_distance > 0.0f) {
-    if (voxel_depth_m > max_integration_distance) {
-      return;
-    }
-  }
-
-  const Eigen::Vector2f u_px_depth =
-      u_px / static_cast<float>(depth_subsample_factor);
-  float surface_depth_m;
-  if (!interpolation::interpolate2DLinear<float>(
-          depth_image, u_px_depth, depth_rows, depth_cols, &surface_depth_m)) {
-    return;
-  }
-
-  // Occlusion testing
-  // Get the distance of the voxel from the rendered surface. If outside
-  // truncation band, skip.
-  const float voxel_distance_from_surface = surface_depth_m - voxel_depth_m;
-  if (fabsf(voxel_distance_from_surface) > truncation_distance_m) {
-    return;
-  }
-
-  Color image_value;
-  if (!interpolation::interpolate2DLinear<
-          Color, interpolation::checkers::ColorPixelAlphaGreaterThanZero>(
-          color_image, u_px, color_rows, color_cols, &image_value)) {
-    return;
-  }
-
-  // Get the Voxel we'll update in this thread
-  // NOTE(alexmillane): Note that we've reverse the voxel indexing order such
-  // that adjacent threads (x-major) access adjacent memory locations in the
-  // block (z-major).
-  ColorVoxel* voxel_ptr =
-      &(block_device_ptrs[blockIdx.x]
-            ->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
-
-  // Update the voxel using the update rule for this layer type
-  updateVoxel(image_value, surface_depth_m, voxel_depth_m, max_weight,
-              truncation_distance_m, weighting_function, voxel_ptr);
-}
-
-void ProjectiveColorIntegrator::updateBlocks(
-    const std::vector<Index3D>& block_indices, const ColorImage& color_frame,
-    const DepthImage& depth_frame, const Transform& T_L_C, const Camera& camera,
-    const float truncation_distance_m, ColorLayer* layer_ptr) {
-  CHECK_NOTNULL(layer_ptr);
-  CHECK_EQ(color_frame.rows() % depth_frame.rows(), 0);
-  CHECK_EQ(color_frame.cols() % depth_frame.cols(), 0);
-
-  if (block_indices.empty()) {
-    return;
-  }
-  const int num_blocks = block_indices.size();
-  const int depth_subsampling_factor = color_frame.rows() / depth_frame.rows();
-  CHECK_EQ(color_frame.cols() / depth_frame.cols(), depth_subsampling_factor);
-
-  // Expand the buffers when needed
-  if (num_blocks > block_indices_device_.capacity()) {
-    constexpr float kBufferExpansionFactor = 1.5f;
-    const int new_size = static_cast<int>(kBufferExpansionFactor * num_blocks);
-    block_indices_device_.reserve(new_size);
-    block_ptrs_device_.reserve(new_size);
-    block_indices_host_.reserve(new_size);
-    block_ptrs_host_.reserve(new_size);
-  }
-
-  // Stage on the host pinned memory
-  block_indices_host_ = block_indices;
-  block_ptrs_host_ = getBlockPtrsFromIndices(block_indices, layer_ptr);
-
-  // Transfer to the device
-  block_indices_device_ = block_indices_host_;
-  block_ptrs_device_ = block_ptrs_host_;
-
-  // We need the inverse transform in the kernel
-  const Transform T_C_L = T_L_C.inverse();
-
-  // Kernel call - One ThreadBlock launched per VoxelBlock
-  constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
-  const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
-  const int num_thread_blocks = block_indices.size();
-  // clang-format off
-  integrateBlocks<<<num_thread_blocks, kThreadsPerBlock, 0, integration_stream_>>>(
-      block_indices_device_.data(),
-      camera,
-      color_frame.dataConstPtr(),
-      color_frame.rows(),
-      color_frame.cols(),
-      depth_frame.dataConstPtr(),
-      depth_frame.rows(),
-      depth_frame.cols(),
-      T_C_L,
-      layer_ptr->block_size(),
-      truncation_distance_m,
-      max_weight_,
-      max_integration_distance_m_,
-      depth_subsampling_factor,
-      WeightingFunction(weighting_function_type_),
-      block_ptrs_device_.data());
-  // clang-format on
-  cudaStreamSynchronize(integration_stream_);
-  checkCudaErrors(cudaPeekAtLastError());
-}
-
 __global__ void checkBlocksInTruncationBand(
     const VoxelBlock<TsdfVoxel>** block_device_ptrs,
     const float truncation_distance_m,
@@ -335,12 +301,11 @@ __global__ void checkBlocksInTruncationBand(
   const TsdfVoxel voxel = block_device_ptrs[blockIdx.x]
                               ->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
 
-  // If this voxel in the truncation band, write the flag to say that the block
-  // should be processed.
-  // NOTE(alexmillane): There will be collision on write here. However, from my
-  // reading, all threads' writes will result in a single write to global
-  // memory. Because we only write a single value (1) it doesn't matter which
-  // thread "wins".
+  // If this voxel in the truncation band, write the flag to say that the
+  // block should be processed. NOTE(alexmillane): There will be collision on
+  // write here. However, from my reading, all threads' writes will result in
+  // a single write to global memory. Because we only write a single value (1)
+  // it doesn't matter which thread "wins".
   if (std::abs(voxel.distance) <= truncation_distance_m) {
     contains_truncation_band_device_ptr[blockIdx.x] = true;
   }
@@ -370,24 +335,25 @@ ProjectiveColorIntegrator::reduceBlocksToThoseInTruncationBand(
   std::vector<const TsdfBlock*> block_ptrs =
       getBlockPtrsFromIndices(block_indices_check_1, tsdf_layer);
 
-  const int num_blocks = block_ptrs.size();
+  const size_t num_blocks = block_ptrs.size();
 
   // Expand the buffers when needed
   if (num_blocks > truncation_band_block_ptrs_device_.capacity()) {
     constexpr float kBufferExpansionFactor = 1.5f;
     const int new_size = static_cast<int>(kBufferExpansionFactor * num_blocks);
-    truncation_band_block_ptrs_host_.reserve(new_size);
-    truncation_band_block_ptrs_device_.reserve(new_size);
-    block_in_truncation_band_device_.reserve(new_size);
-    block_in_truncation_band_host_.reserve(new_size);
+    truncation_band_block_ptrs_host_.reserveAsync(new_size, *cuda_stream_);
+    truncation_band_block_ptrs_device_.reserveAsync(new_size, *cuda_stream_);
+    block_in_truncation_band_device_.reserveAsync(new_size, *cuda_stream_);
+    block_in_truncation_band_host_.reserveAsync(new_size, *cuda_stream_);
   }
 
   // Host -> Device
-  truncation_band_block_ptrs_host_ = block_ptrs;
-  truncation_band_block_ptrs_device_ = truncation_band_block_ptrs_host_;
+  truncation_band_block_ptrs_host_.copyFromAsync(block_ptrs, *cuda_stream_);
+  truncation_band_block_ptrs_device_.copyFromAsync(
+      truncation_band_block_ptrs_host_, *cuda_stream_);
 
   // Prepare output space
-  block_in_truncation_band_device_.resize(num_blocks);
+  block_in_truncation_band_device_.resizeAsync(num_blocks, *cuda_stream_);
 
   // Do the check on GPU
   // Kernel call - One ThreadBlock launched per VoxelBlock
@@ -395,21 +361,22 @@ ProjectiveColorIntegrator::reduceBlocksToThoseInTruncationBand(
   const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
   const int num_thread_blocks = num_blocks;
   // clang-format off
-  checkBlocksInTruncationBand<<<num_thread_blocks, kThreadsPerBlock, 0, integration_stream_>>>(
+  checkBlocksInTruncationBand<<<num_thread_blocks, kThreadsPerBlock, 0, *cuda_stream_>>>(
       truncation_band_block_ptrs_device_.data(),
       truncation_distance_m,
       block_in_truncation_band_device_.data());
   // clang-format on
-  checkCudaErrors(cudaStreamSynchronize(integration_stream_));
   checkCudaErrors(cudaPeekAtLastError());
 
   // Copy results back
-  block_in_truncation_band_host_ = block_in_truncation_band_device_;
+  block_in_truncation_band_host_.copyFromAsync(block_in_truncation_band_device_,
+                                               *cuda_stream_);
+  cuda_stream_->synchronize();
 
   // Filter the indices using the result
   std::vector<Index3D> block_indices_check_2;
   block_indices_check_2.reserve(block_indices_check_1.size());
-  for (int i = 0; i < block_indices_check_1.size(); i++) {
+  for (size_t i = 0; i < block_indices_check_1.size(); i++) {
     if (block_in_truncation_band_host_[i] == true) {
       block_indices_check_2.push_back(block_indices_check_1[i]);
     }

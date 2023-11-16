@@ -32,15 +32,22 @@ Camera getTestCamera(const int cols, const int rows) {
   return Camera(fu, fv, cu, cv, cols, rows);
 }
 
-TEST(ImageMaskerTest, RandomMask) {
+class ParameterizedImageMaskerTest : public ::testing::TestWithParam<int> {
+ protected:
+};
+
+TEST_P(ParameterizedImageMaskerTest, RandomMask) {
+  // Test if the splitImageOnGPU function works as it should
   std::srand(0);
   const int rows = 480;
   const int cols = 640;
+  const int size_addon = GetParam();
   DepthImage depth(rows, cols, MemoryType::kUnified);
-  ColorImage color(rows, cols, MemoryType::kUnified);
-  MonoImage mask(rows, cols, MemoryType::kUnified);
+  ColorImage color(rows + size_addon, cols + size_addon, MemoryType::kUnified);
+  MonoImage mask(rows + size_addon, cols + size_addon, MemoryType::kUnified);
   const Camera depth_camera = getTestCamera(cols, rows);
-  const Camera mask_camera = getTestCamera(cols, rows);
+  const Camera mask_camera =
+      getTestCamera(cols + size_addon, rows + size_addon);
 
   const Color valid_pixel_color(255, 255, 255, 255);
   const Color invalid_pixel_color(0, 0, 0, 0);
@@ -49,17 +56,21 @@ TEST(ImageMaskerTest, RandomMask) {
   for (int row_idx = 0; row_idx < mask.rows(); row_idx++) {
     for (int col_idx = 0; col_idx < mask.cols(); col_idx++) {
       mask(row_idx, col_idx) = std::rand() % 2;
-      depth(row_idx, col_idx) = 1.0;
       color(row_idx, col_idx) = valid_pixel_color;
+    }
+  }
+  for (int row_idx = 0; row_idx < depth.rows(); row_idx++) {
+    for (int col_idx = 0; col_idx < depth.cols(); col_idx++) {
+      depth(row_idx, col_idx) = 1.0;
     }
   }
 
   // Split
   ImageMasker image_masker;
-  DepthImage unmasked_depth_output;
-  DepthImage masked_depth_output;
-  ColorImage unmasked_color_output;
-  ColorImage masked_color_output;
+  DepthImage unmasked_depth_output(MemoryType::kDevice);
+  DepthImage masked_depth_output(MemoryType::kDevice);
+  ColorImage unmasked_color_output(MemoryType::kDevice);
+  ColorImage masked_color_output(MemoryType::kDevice);
 
   Transform T_CM_CD = Transform::Identity();
   image_masker.splitImageOnGPU(depth, mask, T_CM_CD, depth_camera, mask_camera,
@@ -68,37 +79,58 @@ TEST(ImageMaskerTest, RandomMask) {
                                &masked_color_output);
 
   // Check that output images exist and dont exist in the right places
-  int num_valid_pixels = 0;
-  int num_invalid_pixels = 0;
-  for (int row_idx = 0; row_idx < mask.rows(); row_idx++) {
-    for (int col_idx = 0; col_idx < mask.cols(); col_idx++) {
+  int num_valid_pixels_color = 0;
+  int num_invalid_pixels_color = 0;
+  int num_valid_pixels_depth = 0;
+  int num_invalid_pixels_depth = 0;
+  for (int row_idx = 0; row_idx < color.rows(); row_idx++) {
+    for (int col_idx = 0; col_idx < color.cols(); col_idx++) {
       if (mask(row_idx, col_idx)) {
-        EXPECT_NEAR(unmasked_depth_output(row_idx, col_idx), -1.0f,
-                    kFloatEpsilon);
-        EXPECT_NEAR(masked_depth_output(row_idx, col_idx), 1.0f, kFloatEpsilon);
         EXPECT_EQ(unmasked_color_output(row_idx, col_idx), invalid_pixel_color);
         EXPECT_EQ(masked_color_output(row_idx, col_idx), valid_pixel_color);
-        ++num_valid_pixels;
+        ++num_valid_pixels_color;
       } else {
-        EXPECT_NEAR(unmasked_depth_output(row_idx, col_idx), 1.0f,
-                    kFloatEpsilon);
-        EXPECT_NEAR(masked_depth_output(row_idx, col_idx), -1.0f,
-                    kFloatEpsilon);
         EXPECT_EQ(unmasked_color_output(row_idx, col_idx), valid_pixel_color);
         EXPECT_EQ(masked_color_output(row_idx, col_idx), invalid_pixel_color);
-        ++num_invalid_pixels;
+        ++num_invalid_pixels_color;
+      }
+    }
+  }
+  for (int depth_row_idx = 0; depth_row_idx < depth.rows(); depth_row_idx++) {
+    for (int depth_col_idx = 0; depth_col_idx < depth.cols(); depth_col_idx++) {
+      int mask_row = depth_row_idx + size_addon / 2;
+      int mask_col = depth_col_idx + size_addon / 2;
+      if (mask_row >= 0 && mask_col >= 0 && mask_row < mask.rows() &&
+          mask_col < mask.cols() && mask(mask_row, mask_col)) {
+        EXPECT_NEAR(unmasked_depth_output(depth_row_idx, depth_col_idx), -1.0f,
+                    kFloatEpsilon);
+        EXPECT_NEAR(masked_depth_output(depth_row_idx, depth_col_idx), 1.0f, kFloatEpsilon);
+        ++num_valid_pixels_depth;
+      } else {
+        EXPECT_NEAR(unmasked_depth_output(depth_row_idx, depth_col_idx), 1.0f,
+                    kFloatEpsilon);
+        EXPECT_NEAR(masked_depth_output(depth_row_idx, depth_col_idx), -1.0f,
+                    kFloatEpsilon);
+        ++num_invalid_pixels_depth;
       }
     }
   }
 
-  std::cout << "num_valid_pixels: " << num_valid_pixels << std::endl;
-  std::cout << "num_invalid_pixels: " << num_invalid_pixels << std::endl;
+  std::cout << "num_valid_pixels_color: " << num_valid_pixels_color << std::endl;
+  std::cout << "num_invalid_pixels_color: " << num_invalid_pixels_color << std::endl;
+  std::cout << "num_valid_pixels_depth: " << num_valid_pixels_depth << std::endl;
+  std::cout << "num_invalid_pixels_depth: " << num_invalid_pixels_depth << std::endl;
 
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToPng("unmasked_output_image.csv", unmasked_depth_output);
-    io::writeToPng("masked_output_image.csv", masked_depth_output);
+    io::writeToPng("unmasked_output_image.png", unmasked_depth_output);
+    io::writeToPng("masked_output_image.png", masked_depth_output);
   }
 }
+
+// We test the cases where the mask resolution is bigger, smaller and equal to the depth 
+// resolution 
+INSTANTIATE_TEST_CASE_P(ParameterizedImageMaskerTests,
+                        ParameterizedImageMaskerTest, ::testing::Values(0, 256, -256));
 
 TEST(ImageMaskerTest, PerpendicularTransformMask) {
   const int rows = 481;  // must be odd to have a center pixel
@@ -120,8 +152,8 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   }
 
   ImageMasker image_masker;
-  DepthImage unmasked_output;
-  DepthImage masked_output;
+  DepthImage unmasked_output(MemoryType::kDevice);
+  DepthImage masked_output(MemoryType::kDevice);
 
   // Generate depth to mask camera transform
   Transform T_CM_CD = Transform::Identity();
@@ -152,9 +184,9 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   }
 
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToPng("input_mask.csv", mask);
-    io::writeToPng("unmasked_output_occlusion.csv", unmasked_output);
-    io::writeToPng("masked_output_occlusion.csv", masked_output);
+    io::writeToPng("input_mask.png", mask);
+    io::writeToPng("unmasked_output_occlusion.png", unmasked_output);
+    io::writeToPng("masked_output_occlusion.png", masked_output);
   }
 
   // Mask all depth points that project onto the masked pixel on the mask image
@@ -178,8 +210,8 @@ TEST(ImageMaskerTest, PerpendicularTransformMask) {
   }
 
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToPng("unmasked_output_no_occlusion.csv", unmasked_output);
-    io::writeToPng("masked_output_no_occlusion.csv", masked_output);
+    io::writeToPng("unmasked_output_no_occlusion.png", unmasked_output);
+    io::writeToPng("masked_output_no_occlusion.png", masked_output);
   }
 }
 
