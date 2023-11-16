@@ -10,7 +10,7 @@ ExternalProject_Add(
 
 add_library(nvblox_eigen INTERFACE)
 
-target_include_directories(nvblox_eigen INTERFACE 
+target_include_directories(nvblox_eigen SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/eigen/include/eigen3/>
     $<INSTALL_INTERFACE:include/eigen3>
 )

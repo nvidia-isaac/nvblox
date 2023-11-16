@@ -1,5 +1,3 @@
-#include "nvblox/semantics/image_projector.h"
-
 #include <thrust/execution_policy.h>
 #include <thrust/functional.h>
 #include <thrust/sort.h>
@@ -7,17 +5,16 @@
 #include <thrust/unique.h>
 
 #include "nvblox/core/hash.h"
+#include "nvblox/semantics/image_projector.h"
 
 namespace nvblox {
 
-DepthImageBackProjector::DepthImageBackProjector() {
-  checkCudaErrors(cudaStreamCreate(&cuda_stream_));
-}
+DepthImageBackProjector::DepthImageBackProjector()
+    : DepthImageBackProjector(std::make_shared<CudaStreamOwning>()) {}
 
-DepthImageBackProjector::~DepthImageBackProjector() {
-  cudaStreamSynchronize(cuda_stream_);
-  checkCudaErrors(cudaStreamDestroy(cuda_stream_));
-}
+DepthImageBackProjector::DepthImageBackProjector(
+    std::shared_ptr<CudaStream> cuda_stream)
+    : cuda_stream_(cuda_stream) {}
 
 __global__ void projectImageKernel(const Camera camera, const float* image,
                                    const int rows, const int cols,
@@ -52,7 +49,7 @@ void DepthImageBackProjector::backProjectOnGPU(
         pointcloud_C_ptr->memory_type() == MemoryType::kUnified);
 
   // Create the max number of output points.
-  pointcloud_C_ptr->resize(image.numel());
+  pointcloud_C_ptr->resizeAsync(image.numel(), *cuda_stream_);
 
   // Reset the counter.
   if (pointcloud_size_device_ == nullptr || pointcloud_size_host_ == nullptr) {
@@ -68,14 +65,15 @@ void DepthImageBackProjector::backProjectOnGPU(
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
   const dim3 num_blocks(image.cols() / kThreadsPerThreadBlock.x + 1,
                         image.rows() / kThreadsPerThreadBlock.y + 1, 1);
-  projectImageKernel<<<num_blocks, kThreadsPerThreadBlock, 0, cuda_stream_>>>(
+  projectImageKernel<<<num_blocks, kThreadsPerThreadBlock, 0, *cuda_stream_>>>(
       camera, image.dataConstPtr(), image.rows(), image.cols(),
       max_back_projection_distance_m, pointcloud_C_ptr->dataPtr(),
       pointcloud_size_device_.get());
-  checkCudaErrors(cudaStreamSynchronize(cuda_stream_));
   checkCudaErrors(cudaPeekAtLastError());
 
-  pointcloud_size_device_.copyTo(pointcloud_size_host_);
+  pointcloud_size_device_.copyToAsync(pointcloud_size_host_, *cuda_stream_);
+  cuda_stream_->synchronize();
+
   pointcloud_C_ptr->resize(*pointcloud_size_host_);
 }
 

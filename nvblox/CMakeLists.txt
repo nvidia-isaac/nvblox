@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22.1)
 
 # set the project name and version
 project(nvblox VERSION 0.0.4 LANGUAGES CXX CUDA)
@@ -13,7 +13,7 @@ option(BUILD_TESTING "Build tests" ON)
 # Whether to build redistributable artifacts using static libraries. In this
 # case, the pre-build static libraries for stdgpu, glog, and gflags MUST be
 # specified, and built with -fPIC. (See README instructions).
-option(BUILD_REDISTRIBUTABLE "Whether to build redistributable artifacts, 
+option(BUILD_REDISTRIBUTABLE "Whether to build redistributable artifacts,
   linking in static versions of the dependent libraries" OFF)
 
 # These are only used if BUILD_REDISTRIBUTABLE is ON:
@@ -22,55 +22,12 @@ set(SQLITE3_BASE_PATH "" CACHE STRING "Base path to static output for Sqlite3, b
 set(GLOG_BASE_PATH "" CACHE STRING "Base path to static output for glog, build with -fPIC.")
 set(GFLAGS_BASE_PATH "" CACHE STRING "Base path to static output for gflags, build with -fPIC.")
 
-# GPU architectures
-# By default this flag is NOT set. Cmake then detects the architecture of the build computer
-# and compiles for that architecture only. This can be an issue if you're building on one
-# machine, and running on machines with a different GPU achitecture. In this case, set the flag.
-# The penalty for doing this is increased build times.
-option(BUILD_FOR_ALL_ARCHS "Build for all GPU architectures" OFF)
+include(cmake/setup_compilers.cmake)
 
-# This option avoids any implementations using std::string in their signature in header files
-# Useful for Nvblox PyTorch wrapper, which requires the old Pre-CXX11 ABI
-option(PRE_CXX11_ABI_LINKABLE "Better support pre-C++11 ABI library users" OFF)
-IF(PRE_CXX11_ABI_LINKABLE)
-    ADD_DEFINITIONS(-DPRE_CXX11_ABI_LINKABLE)
-ENDIF(PRE_CXX11_ABI_LINKABLE)
 
-# specify the C++ standard
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
-# This link flag replaces "runpath" with "rpath" in executables and shared objects.
-# This is important because it means the search paths are passed down the shared object tree.
-# https://stackoverflow.com/questions/58997230/cmake-project-fails-to-find-shared-library
-set(nvblox_link_options "-Wl,--disable-new-dtags")
 
-# Cmake -fPIC flag.
-# NOTE(alexmillane): I needed to add this when I changed to linking against a static version
-# of stdgpu. Without is we get an error from thrust/cub linking.
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
-# Only used if the BUILD_FOR_ALL_ARCHS flag above is true.
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
-    set(CUDA_ARCHITECTURE_FLAGS "86;80;75;72;70;61;60")
-else()
-    set(CUDA_ARCHITECTURE_FLAGS " -gencode=arch=compute_86,code=sm_86 \
-                                  -gencode=arch=compute_80,code=sm_80 \
-                                  -gencode=arch=compute_75,code=sm_75 \
-                                  -gencode=arch=compute_72,code=sm_72 \
-                                  -gencode=arch=compute_70,code=sm_70 \
-                                  -gencode=arch=compute_61,code=sm_61 \
-                                  -gencode=arch=compute_60,code=sm_60")
-endif()
-
-# Suppress spammy Eigen CUDA warnings.
-# "expt-relaxed-constexpr" allows sharing constexpr between host and device code.
-# "display_error_number" shows a warning number with all warnings, and the
-# rest is just suppressing specific warnings from Eigen. Note that the numbers
-# keep changing with every CUDA release so this list is a bit arbitrary.
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr --disable-warnings --generate-line-info -lineinfo -Xcudafe --display_error_number")
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
 
 ################
 # DEPENDENCIES #
@@ -87,6 +44,7 @@ include(thirdparty/stdgpu/stdgpu.cmake)
 # Include dem deps
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 find_package(CUDA REQUIRED)
+find_package(CUDAToolkit)
 
 # Treat redistributable and non-redistributable builds differently for
 # the other dependencies.
@@ -117,6 +75,10 @@ if(BUILD_REDISTRIBUTABLE)
 
     # Set dependent settings, like turning testing off.
     set(BUILD_TESTING OFF)
+
+    # For the benchmarking executable. This is not deployed so we're fine to build it with this
+    # dynamically-linked library.
+    find_package(benchmark REQUIRED)
 else()
     # By default, use system dependencies for these.
     # In the case of ROS builds, glog will likely be found at a higher level.
@@ -129,6 +91,7 @@ else()
 
     find_package(gflags REQUIRED)
     find_package(SQLite3 REQUIRED)
+    find_package(benchmark REQUIRED)
 
     set(gflags_INCLUDE_DIRS ${gflag_INCLUDE_DIR})
     set(gflags_LIBRARIES "gflags")
@@ -137,10 +100,13 @@ endif()
 ############
 # INCLUDES #
 ############
-# Include dirs
-include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
+# Internal includes
 include_directories(include)
-include_directories(${GLOG_INCLUDE_DIRS} ${gflags_INCLUDE_DIRS})
+
+# External includes
+include_directories(SYSTEM ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+include_directories(SYSTEM ${GLOG_INCLUDE_DIRS}  ${gflags_INCLUDE_DIRS})
 
 #############
 # LIBRARIES #
@@ -170,24 +136,33 @@ target_link_libraries(nvblox_gpu_hash
 target_link_options(nvblox_gpu_hash PUBLIC ${nvblox_link_options})
 
 add_library(nvblox_lib SHARED
+    src/core/cuda_stream.cpp
     src/core/warmup.cu
     src/core/error_check.cu
+    src/core/parameter_tree.cpp
+    src/dynamics/dynamics_detection.cu
     src/map/blox.cu
     src/map/layer.cu
+    src/sensors/connected_components.cpp
     src/sensors/camera.cpp
     src/sensors/color.cpp
     src/sensors/pointcloud.cu
     src/sensors/image.cu
+    src/sensors/npp_image_operations.cpp
+    src/sensors/depth_preprocessing.cpp
     src/geometry/bounding_boxes.cpp
     src/geometry/bounding_spheres.cpp
     src/mapper/mapper.cpp
     src/mapper/multi_mapper.cpp
     src/integrators/view_calculator.cu
     src/integrators/occupancy_decay_integrator.cu
+    src/integrators/tsdf_decay_integrator.cu
     src/integrators/projective_occupancy_integrator.cu
     src/integrators/projective_tsdf_integrator.cu
     src/integrators/projective_color_integrator.cu
+    src/integrators/freespace_integrator.cu
     src/integrators/esdf_integrator.cu
+    src/integrators/esdf_slicer.cu
     src/rays/sphere_tracer.cu
     src/interpolation/interpolation_3d.cpp
     src/io/mesh_io.cpp
@@ -195,16 +170,18 @@ add_library(nvblox_lib SHARED
     src/io/layer_cake_io.cpp
     src/io/pointcloud_io.cpp
     src/io/image_io.cpp
-    src/mesh/marching_cubes.cu
     src/mesh/mesh_block.cu
     src/mesh/mesh_integrator_color.cu
     src/mesh/mesh_integrator.cu
     src/mesh/mesh.cpp
+    src/mesh/mesh_streamer.cpp
     src/primitives/primitives.cpp
     src/primitives/scene.cpp
     src/utils/nvtx_ranges.cpp
     src/utils/timing.cpp
+    src/utils/rates.cpp
     src/serialization/serializer.cpp
+    src/serialization/mesh_serializer.cu
     src/serialization/sqlite_database.cpp
     src/serialization/layer_type_register.cpp
     src/semantics/image_masker.cu
@@ -220,6 +197,11 @@ target_link_libraries(nvblox_lib
     PRIVATE
     ${CUDA_nvToolsExt_LIBRARY}
     ${SQLite3_LIBRARIES}
+    CUDA::nppc
+    CUDA::nppial
+    CUDA::nppitc
+    CUDA::nppim
+    CUDA::nppidei
 )
 target_link_options(nvblox_lib PUBLIC ${nvblox_link_options})
 target_include_directories(nvblox_lib PUBLIC
@@ -229,7 +211,7 @@ target_include_directories(nvblox_lib PUBLIC
     ${SQLite3_INCLUDE_DIRS}
 )
 
-set_target_properties(nvblox_lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(nvblox_lib PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
     set_property(TARGET nvblox_lib APPEND PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
@@ -246,7 +228,7 @@ add_executable(sphere_benchmark src/benchmarks/sphere_benchmark.cpp)
 target_link_libraries(sphere_benchmark
     nvblox_lib
 )
-set_target_properties(sphere_benchmark PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(sphere_benchmark PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 # Binaries for specific datasets
 add_subdirectory(executables)

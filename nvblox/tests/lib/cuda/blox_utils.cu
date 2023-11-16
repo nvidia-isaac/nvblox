@@ -65,9 +65,6 @@ void setTsdfBlockVoxelsInSequence(TsdfBlock::Ptr block) {
 
 __global__ void setTsdfBlockVoxelsConstantKernel(TsdfBlock* block,
                                                  float distance) {
-  const int lin_idx =
-      threadIdx.x + TsdfBlock::kVoxelsPerSide *
-                        (threadIdx.y + TsdfBlock::kVoxelsPerSide * threadIdx.z);
   TsdfVoxel* voxel_ptr = &block->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
   voxel_ptr->distance = distance;
 }
@@ -100,14 +97,15 @@ __global__ void checkBlockAllConstant(const TsdfBlock* block,
   }
 }
 
-__global__ void checkBlockAllConstant(const TestBlock* block,
-                                      const TestVoxel* voxel_constant,
-                                      bool* flag) {
+__global__ void checkBlockAllConstant(
+    const InitializationTestVoxelBlock* block,
+    const InitializationTestVoxel* voxel_constant, bool* flag) {
   if ((blockIdx.x == 0) && (threadIdx.x == 0)) {
     *flag = true;
   }
   __syncthreads();
-  const TestVoxel voxel = block->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
+  const InitializationTestVoxel voxel =
+      block->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
   if (voxel.data != voxel_constant->data) {
     *flag = false;
   }
@@ -170,8 +168,10 @@ bool checkBlockAllConstant(const TsdfBlock::Ptr block, TsdfVoxel voxel_cpu) {
   return checkBlockAllConstantTemplate<TsdfVoxel>(block, voxel_cpu);
 }
 
-bool checkBlockAllConstant(const TestBlock::Ptr block, TestVoxel voxel_cpu) {
-  return checkBlockAllConstantTemplate<TestVoxel>(block, voxel_cpu);
+bool checkBlockAllConstant(const InitializationTestVoxelBlock::Ptr block,
+                           InitializationTestVoxel voxel_cpu) {
+  return checkBlockAllConstantTemplate<InitializationTestVoxel>(block,
+                                                                voxel_cpu);
 }
 
 bool checkBlockAllConstant(const ColorBlock::Ptr block, ColorVoxel voxel_cpu) {

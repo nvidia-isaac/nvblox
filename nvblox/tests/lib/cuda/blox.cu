@@ -22,5 +22,6 @@ namespace nvblox {
 template class GPULayerView<IndexBlock>;
 template class GPULayerView<BooleanBlock>;
 template class GPULayerView<FloatVoxelBlock>;
+template class GPULayerView<InitializationTestVoxelBlock>;
 
 }  // namespace nvblox

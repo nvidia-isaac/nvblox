@@ -215,7 +215,9 @@ void Timing::Print(std::ostream& out) {
     return;
   }
 
-  out << "NVBlox Timing\n";
+  out << "\nNVBlox Timings (in seconds)\n";
+  out << "namespace/tag - NumSamples - TotalTime - (Mean +- StdDev) - "
+         "[Min,Max]\n";
   out << "-----------\n";
   for (typename map_t::value_type t : tagMap) {
     size_t i = t.second;
@@ -242,6 +244,7 @@ void Timing::Print(std::ostream& out) {
     }
     out << std::endl;
   }
+  out << "-----------\n";
 }
 std::string Timing::Print() {
   std::stringstream ss;

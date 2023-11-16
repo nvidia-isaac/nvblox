@@ -32,12 +32,11 @@ class Serializer {
   Serializer();
   virtual ~Serializer() = default;
 
-  /// Open a particular file, default to open for reading.
-  Serializer(const std::string& filename,
-             std::ios_base::openmode openmode = std::ios::in);
+  /// Open a particular file.
+  Serializer(const std::string& filename, std::ios_base::openmode openmode);
 
-  /// Is the current file valid? This means that we have successfully opened a
-  /// valid database file to write to or read from.
+  /// Is the current file valid? This means that we have successfully opened
+  /// a valid database file to write to or read from.
   bool valid() const;
 
   /// Open a file for reading (std::ios::in) or writing (std::ios::out) or both.
@@ -46,10 +45,10 @@ class Serializer {
             std::ios_base::openmode openmode = std::ios::in);
 
   /// Load a layer cake from the opened file of a given memory type.
-  LayerCake loadLayerCake(MemoryType memory_type);
+  LayerCake loadLayerCake(MemoryType memory_type, const CudaStream cuda_stream);
 
   /// Write out a layer cake to the opened file, return success.
-  bool writeLayerCake(const LayerCake& cake);
+  bool writeLayerCake(const LayerCake& cake, const CudaStream cuda_stream);
 
   /// Close the file.
   bool close();

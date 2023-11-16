@@ -28,9 +28,8 @@ bool ImageLoader<ImageType>::getNextImage(ImageType* image_ptr) {
 template <typename ImageType>
 MultiThreadedImageLoader<ImageType>::MultiThreadedImageLoader(
     IndexToFilepathFunction index_to_filepath, int num_threads,
-    MemoryType memory_type, float depth_image_scaling_factor)
-    : ImageLoader<ImageType>(index_to_filepath, memory_type,
-                             depth_image_scaling_factor),
+    float depth_image_scaling_factor)
+    : ImageLoader<ImageType>(index_to_filepath, depth_image_scaling_factor),
       num_threads_(num_threads) {
   initLoadQueue();
 }
@@ -50,14 +49,14 @@ bool MultiThreadedImageLoader<ImageType>::getNextImage(ImageType* image_ptr) {
     *image_ptr = std::move(image_optional.second);
   }
   load_queue_.pop_front();
-  addNextImageToQueue();
+  addNextImageToQueue(image_ptr->memory_type());
   return image_optional.first;
 }
 
 template <typename ImageType>
 void MultiThreadedImageLoader<ImageType>::initLoadQueue() {
   for (int i = 0; i < num_threads_; i++) {
-    addNextImageToQueue();
+    addNextImageToQueue(MemoryType::kDevice);
   }
 }
 
@@ -69,18 +68,19 @@ void MultiThreadedImageLoader<ImageType>::emptyLoadQueue() {
 }
 
 template <typename ImageType>
-void MultiThreadedImageLoader<ImageType>::addNextImageToQueue() {
+void MultiThreadedImageLoader<ImageType>::addNextImageToQueue(MemoryType memory_type) {
   load_queue_.push_back(
       std::async(std::launch::async,
                  &MultiThreadedImageLoader<ImageType>::getImageAsOptional, this,
-                 this->image_idx_));
+                 this->image_idx_, memory_type));
   ++this->image_idx_;
 }
 
 template <typename ImageType>
 ImageOptional<ImageType>
-MultiThreadedImageLoader<ImageType>::getImageAsOptional(int image_idx) {
-  ImageType image;
+MultiThreadedImageLoader<ImageType>::getImageAsOptional(
+    int image_idx, MemoryType memory_type) {
+  ImageType image(memory_type);
   bool success_flag = ImageLoader<ImageType>::getImage(image_idx, &image);
   return {success_flag, std::move(image)};
 }
@@ -102,11 +102,10 @@ std::unique_ptr<ImageLoader<ImageType>> createImageLoader(
     LOG(INFO) << "Using " << num_loading_threads
               << " threads for loading images.";
     return std::make_unique<MultiThreadedImageLoader<ImageType>>(
-        index_to_path_function, kMaxLoadingThreads, MemoryType::kDevice,
-        depth_image_scaling_factor);
+        index_to_path_function, kMaxLoadingThreads, depth_image_scaling_factor);
   }
-  return std::make_unique<ImageLoader<ImageType>>(
-      index_to_path_function, MemoryType::kDevice, depth_image_scaling_factor);
+  return std::make_unique<ImageLoader<ImageType>>(index_to_path_function,
+                                                  depth_image_scaling_factor);
 }
 
 }  // namespace datasets

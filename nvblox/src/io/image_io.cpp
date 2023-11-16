@@ -36,9 +36,10 @@ template <typename ImageType>
 bool writeToPngTemplate(const std::string& filepath, const ImageType& frame) {
   // Transfer GPU -> Host (if required)
   const ImageType* frame_host_ptr;
-  ImageType tmp;
+  ImageType tmp(MemoryType::kHost);
   if (frame.memory_type() != MemoryType::kHost) {
-    tmp = ImageType(frame, MemoryType::kHost);
+    tmp = ImageType(MemoryType::kHost);
+    tmp.copyFrom(frame);
     frame_host_ptr = &tmp;
   } else {
     frame_host_ptr = &frame;
@@ -46,7 +47,6 @@ bool writeToPngTemplate(const std::string& filepath, const ImageType& frame) {
   // Channels
   const int channels = internal::NumChannels<ImageType>::value;
   // Write using stb
-  const int comp = 1;  // 1=Y, 2=YA, 3=RGB, 4=RGBA
   const int ret = stbi_write_png(filepath.c_str(), frame_host_ptr->cols(),
                                  frame_host_ptr->rows(), channels,
                                  frame_host_ptr->dataConstPtr(),
@@ -67,15 +67,15 @@ bool writeToPng(const std::string& filepath, const ColorImage& frame) {
 
 bool writeToPng(const std::string& filepath, const DepthImage& frame) {
   // Make a modifyable copy, and (possibly) transfer CPU -> GPU.
-  auto depth_image_gpu_ptr =
-      std::make_unique<DepthImage>(frame, MemoryType::kDevice);
+  auto depth_image_gpu_ptr = std::make_unique<DepthImage>(MemoryType::kDevice);
+  depth_image_gpu_ptr->copyFrom(frame);
 
   // Scale the image 0-255 uint8_t
   float max_value = image::maxGPU(*depth_image_gpu_ptr);
   const float scale_factor = std::numeric_limits<uint8_t>::max() / max_value;
   image::elementWiseMultiplicationInPlaceGPU(scale_factor,
                                              depth_image_gpu_ptr.get());
-  MonoImage image_out;
+  MonoImage image_out(MemoryType::kHost);
   image::castGPU(*depth_image_gpu_ptr, &image_out);
 
   // Write as mono image
@@ -83,8 +83,8 @@ bool writeToPng(const std::string& filepath, const DepthImage& frame) {
 }
 
 template <typename ImageType>
-bool readFromUint8PngTemplate(const std::string& filepath, ImageType* frame_ptr,
-                              const MemoryType memory_type) {
+bool readFromUint8PngTemplate(const std::string& filepath,
+                              ImageType* frame_ptr) {
   CHECK_NOTNULL(frame_ptr);
   int width;
   int height;
@@ -106,17 +106,16 @@ bool readFromUint8PngTemplate(const std::string& filepath, ImageType* frame_ptr,
     return false;
   }
   // Convert to a MonoImage
-  *frame_ptr = ImageType::fromBuffer(
+  frame_ptr->copyFrom(
       height, width,
-      reinterpret_cast<typename ImageType::ElementType*>(image_data),
-      memory_type);
+      reinterpret_cast<typename ImageType::ElementType*>(image_data));
   // Free memory used by stbi
   stbi_image_free(image_data);
   return true;
 }
 
 bool readFromPng(const std::string& filepath, DepthImage* frame_ptr,
-                 const MemoryType memory_type, const float scale_factor) {
+                 const float scale_factor) {
   CHECK_NOTNULL(frame_ptr);
   int width;
   int height;
@@ -143,26 +142,23 @@ bool readFromPng(const std::string& filepath, DepthImage* frame_ptr,
   //                    Follow up: I measured and this scaling + cast takes
   //                    ~1ms. So only do this when 1ms is relevant.
   std::vector<float> float_image_data(height * width);
-  for (int lin_idx = 0; lin_idx < float_image_data.size(); lin_idx++) {
+  for (size_t lin_idx = 0; lin_idx < float_image_data.size(); lin_idx++) {
     float_image_data[lin_idx] =
         static_cast<float>(image_data[lin_idx]) * scale_factor;
   }
 
-  *frame_ptr = DepthImage::fromBuffer(height, width, float_image_data.data(),
-                                      memory_type);
+  frame_ptr->copyFrom(height, width, float_image_data.data());
 
   stbi_image_free(image_data);
   return true;
 }
 
-bool readFromPng(const std::string& filepath, ColorImage* frame_ptr,
-                 const MemoryType memory_type) {
-  return readFromUint8PngTemplate(filepath, frame_ptr, memory_type);
+bool readFromPng(const std::string& filepath, ColorImage* frame_ptr) {
+  return readFromUint8PngTemplate(filepath, frame_ptr);
 }
 
-bool readFromPng(const std::string& filepath, MonoImage* frame_ptr,
-                 const MemoryType memory_type) {
-  return readFromUint8PngTemplate(filepath, frame_ptr, memory_type);
+bool readFromPng(const std::string& filepath, MonoImage* frame_ptr) {
+  return readFromUint8PngTemplate(filepath, frame_ptr);
 }
 
 }  // namespace io

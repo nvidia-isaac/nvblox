@@ -53,7 +53,7 @@ bool SqliteDatabase::open(const std::string& filename,
   int status = sqlite3_open_v2(filename.c_str(), &db_, flags, nullptr);
   if (status != 0) {
     LOG(ERROR) << "Can't open database: " << sqlite3_errmsg(db_);
-    db_ = nullptr;
+    close();
   }
   return status == SQLITE_OK;
 }

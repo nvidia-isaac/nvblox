@@ -96,7 +96,7 @@ TEST(UnifiedPointerTest, MemoryTest) {
 
   // Make sure the memory no longer exists now it's out of scope.
   cudaPointerAttributes attributes;
-  cudaError_t error = cudaPointerGetAttributes(&attributes, raw_ptr);
+  checkCudaErrors(cudaPointerGetAttributes(&attributes, raw_ptr));
   // Note(alexmillane): Whether or not this call returns an error seems to vary
   // between machines... Hopefully the checks below indicate that the memory has
   // been freed. EXPECT_EQ(error, cudaErrorInvalidValue);
@@ -183,6 +183,30 @@ TEST(UnifiedPointerTest, CloneTest) {
   }
 }
 
+TEST(UnifiedPointerTest, CopyFrom) {
+  constexpr int32_t kTestValue = 123456;
+  auto ptr_host = make_unified<int>(MemoryType::kHost, kTestValue);
+  auto ptr_device = make_unified<int>(MemoryType::kDevice);
+
+  ptr_device.copyFrom(ptr_host);
+  auto ptr_host2 = make_unified<int>(MemoryType::kHost);
+  ptr_host2.copyFrom(ptr_device);
+
+  EXPECT_EQ(*ptr_host2, kTestValue);
+}
+
+TEST(UnifiedPointerTest, CopyTo) {
+  constexpr int32_t kTestValue = 123456;
+  auto ptr_host = make_unified<int>(MemoryType::kHost, kTestValue);
+  auto ptr_device = make_unified<int>(MemoryType::kDevice);
+
+  ptr_host.copyTo(ptr_device);
+  auto ptr_host2 = make_unified<int>(MemoryType::kHost);
+  ptr_device.copyTo(ptr_host2);
+
+  EXPECT_EQ(*ptr_host2, kTestValue);
+}
+
 TEST(UnifiedPointerTest, CloneConstBlock) {
   constexpr float kBlockSize = 1.0f;
   TsdfLayer layer(kBlockSize, MemoryType::kDevice);
@@ -193,7 +217,7 @@ TEST(UnifiedPointerTest, CloneConstBlock) {
   TsdfBlock::Ptr cloned_block =
       layer_const_ref.getBlockAtIndex({0, 0, 0}).clone(MemoryType::kHost);
 
-  auto expect_voxel_zero_lambda = [](const Index3D& voxel_index,
+  auto expect_voxel_zero_lambda = [](const Index3D&,
                                      const TsdfVoxel* voxel) -> void {
     EXPECT_EQ(voxel->distance, 0.0f);
     EXPECT_EQ(voxel->weight, 0.0f);

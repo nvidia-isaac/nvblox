@@ -16,12 +16,12 @@ limitations under the License.
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 #include <cuda_runtime.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <vector>
 
 namespace nvblox {
 
@@ -44,6 +44,10 @@ inline std::string toString(MemoryType memory_type) {
       return "kHost";
       break;
   }
+}
+inline bool isGpuMemory(const MemoryType memory_type) {
+  return ((memory_type == MemoryType::kDevice) ||
+          (memory_type == MemoryType::kUnified));
 }
 
 typedef Eigen::Vector3i Index3D;

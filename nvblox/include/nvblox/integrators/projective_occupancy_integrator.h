@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/integrators/internal/projective_integrator.h"
+#include "nvblox/integrators/weighting_function.h"
 
 #include "nvblox/core/log_odds.h"
 
@@ -32,7 +33,13 @@ struct UpdateOccupancyVoxelFunctor;
 class ProjectiveOccupancyIntegrator
     : public ProjectiveIntegrator<OccupancyVoxel> {
  public:
+  static constexpr float kDefaultFreeRegionOccupancyProbability = 0.3;
+  static constexpr float kDefaultOccupiedRegionOccupancyProbability = 0.7;
+  static constexpr float kDefaultUnobservedRegionOccupancyProbability = 0.5;
+  static constexpr float kDefaultOccupiedRegionHalfWidthM = 0.1;
+
   ProjectiveOccupancyIntegrator();
+  ProjectiveOccupancyIntegrator(std::shared_ptr<CudaStream> cuda_stream);
   virtual ~ProjectiveOccupancyIntegrator();
 
   /// Integrates a depth image in to the passed occupancy layer.
@@ -106,18 +113,41 @@ class ProjectiveOccupancyIntegrator
   /// meters
   void occupied_region_half_width_m(float occupied_region_half_width_m);
 
+  /// For voxels with a radius, allocate memory and give a small weight and
+  /// truncation distance, effectively making these voxels free-space. Does not
+  /// affect voxels which are already observed.
+  /// @param center The center of the sphere affected.
+  /// @param radius The radius of the sphere affected.
+  /// @param layer A pointed to the layer which will be affected by the update.
+  /// @param updated_blocks_ptr Optional pointer to a list of blocks affected by
+  /// the update.
+  void markUnobservedFreeInsideRadius(
+      const Vector3f& center, float radius, OccupancyLayer* layer,
+      std::vector<Index3D>* updated_blocks_ptr = nullptr);
+
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
+
  protected:
   void setFunctorParameters(const float block_size);
   std::string getIntegratorName() const override;
 
   // Sensor model parameters
-  float free_region_log_odds_ = logOddsFromProbability(0.3);
-  float occupied_region_log_odds_ = logOddsFromProbability(0.7);
-  float unobserved_region_log_odds_ = logOddsFromProbability(0.5);
-  float occupied_region_half_width_m_ = 0.1;
+  float free_region_log_odds_ =
+      logOddsFromProbability(kDefaultFreeRegionOccupancyProbability);
+  float occupied_region_log_odds_ =
+      logOddsFromProbability(kDefaultOccupiedRegionOccupancyProbability);
+  float unobserved_region_log_odds_ =
+      logOddsFromProbability(kDefaultUnobservedRegionOccupancyProbability);
+  float occupied_region_half_width_m_ = kDefaultOccupiedRegionHalfWidthM;
 
   // Functor which defines the voxel update operation.
   unified_ptr<UpdateOccupancyVoxelFunctor> update_functor_host_ptr_;
+
+  // Cuda stream
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

@@ -40,8 +40,10 @@ void weldVerticesThrust(const std::vector<Index3D>& block_indices,
     }
 
     // Store a copy of the input vertices.
-    device_vector<Vector3f> input_vertices = mesh_block->vertices;
-    device_vector<Vector3f> input_normals = mesh_block->normals;
+    device_vector<Vector3f> input_vertices;
+    input_vertices.copyFrom(mesh_block->vertices);
+    device_vector<Vector3f> input_normals;
+    input_normals.copyFrom(mesh_block->normals);
 
     // sort vertices to bring duplicates together
     thrust::sort(thrust::device, mesh_block->vertices.begin(),
@@ -78,8 +80,8 @@ void weldSingleBlockThrust(device_vector<Vector3f>* input_vertices,
                            device_vector<int>* input_indices,
                            device_vector<Vector3f>* output_vertices,
                            device_vector<int>* output_indices) {
-  *output_vertices = *input_vertices;
-  *output_indices = *input_indices;
+  output_vertices->copyFrom(*input_vertices);
+  output_indices->copyFrom(*input_indices);
 
   // sort vertices to bring duplicates together
   thrust::sort(thrust::device, output_vertices->begin(), output_vertices->end(),

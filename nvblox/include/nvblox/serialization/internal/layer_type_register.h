@@ -41,7 +41,8 @@ struct LayerSerializationFunctions {
       SerializeLayerParametersFunction;
   typedef std::function<std::vector<Index3D>(const BaseLayer*)>
       GetLayerDataIndicesFunction;
-  typedef std::function<std::vector<Byte>(const BaseLayer*, const Index3D&)>
+  typedef std::function<std::vector<Byte>(const BaseLayer*, const Index3D&,
+                                          const CudaStream cuda_stream)>
       SerializeLayerDataFunction;
 
   // Deserialization functions.
@@ -49,7 +50,7 @@ struct LayerSerializationFunctions {
                                                    const LayerParameterStruct&)>
       ConstructLayerFunction;
   typedef std::function<void(const Index3D&, const std::vector<Byte>&,
-                             BaseLayer*)>
+                             BaseLayer*, const CudaStream cuda_stream)>
       AddDataToLayerFunction;
 
   // The 5 functions that have to be defined to serialize and deserialize a

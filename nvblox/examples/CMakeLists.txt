@@ -5,7 +5,7 @@ add_executable(esdf_query
 target_link_libraries(esdf_query
     nvblox_lib
 )
-set_target_properties(esdf_query PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(esdf_query PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 # An example for map loading
 add_executable(load_map_and_mesh
@@ -15,4 +15,4 @@ target_link_libraries(load_map_and_mesh
     nvblox_lib
 )
 
-set_target_properties(load_map_and_mesh PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(load_map_and_mesh PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)

@@ -62,7 +62,7 @@ TEST(CameraTest, PointsInView) {
     Vector2f u_C;
     std::tie(ray_C, u_C) = getRandomVisibleRayAndImagePoint(camera);
     const Vector3f p_C = test_utils::randomFloatInRange(1.0, 1000.0) * ray_C;
-    Vector2f u_reprojection_C;
+    Vector2f u_reprojection_C(0.F, 0.F);
     EXPECT_TRUE(camera.project(p_C, &u_reprojection_C));
     EXPECT_TRUE(((u_reprojection_C - u_C).array().abs() < kFloatEpsilon).all());
   }
@@ -77,7 +77,7 @@ TEST(CameraTest, CenterPixel) {
   // Center
   const Vector3f center_ray = Vector3f(0.0f, 0.0f, 1.0f);
   const Vector3f p_C = test_utils::randomFloatInRange(1.0, 1000.0) * center_ray;
-  Eigen::Vector2f u;
+  Eigen::Vector2f u(0.F, 0.F);
   EXPECT_TRUE(camera.project(p_C, &u));
   EXPECT_TRUE(
       ((u - Vector2f(camera.cu(), camera.cv())).array().abs() < kFloatEpsilon)
@@ -256,7 +256,7 @@ TEST(CameraTest, FrustumAABBTest) {
            voxel_index.y()++) {
         for (voxel_index.z() = 0; voxel_index.z() < kVoxelsPerSide;
              voxel_index.z()++) {
-          Vector3f position = getCenterPostionFromBlockIndexAndVoxelIndex(
+          Vector3f position = getCenterPositionFromBlockIndexAndVoxelIndex(
               block_size, block_index, voxel_index);
           Eigen::Vector2f u_C;
           bool in_frustum = frustum.isPointInView(position);
@@ -317,7 +317,7 @@ TEST(CameraTest, FrustumAtLeastOneValidVoxelTest) {
            voxel_index.y()++) {
         for (voxel_index.z() = 0; voxel_index.z() < kVoxelsPerSide;
              voxel_index.z()++) {
-          Vector3f position = getCenterPostionFromBlockIndexAndVoxelIndex(
+          Vector3f position = getCenterPositionFromBlockIndexAndVoxelIndex(
               block_size, block_index, voxel_index);
           Eigen::Vector2f u_C;
           bool in_frustum = frustum.isPointInView(position);
@@ -367,6 +367,18 @@ TEST(CameraTest, UnProjectionTest) {
     EXPECT_NEAR(u_C_in.x(), u_C_out.x(), kFloatEpsilon);
     EXPECT_NEAR(u_C_in.y(), u_C_out.y(), kFloatEpsilon);
   }
+}
+
+TEST(CameraTest, CameraViewport) {
+  const Camera camera = getTestCamera();
+  const CameraViewport viewport = camera.getNormalizedViewport();
+
+  EXPECT_NEAR(viewport.min()[0], -camera.cu() / camera.fu(), kFloatEpsilon);
+  EXPECT_NEAR(viewport.min()[1], -camera.cv() / camera.fv(), kFloatEpsilon);
+  EXPECT_NEAR(viewport.max()[0], (camera.width() - camera.cu()) / camera.fu(),
+              kFloatEpsilon);
+  EXPECT_NEAR(viewport.max()[1], (camera.height() - camera.cv()) / camera.fv(),
+              kFloatEpsilon);
 }
 
 int main(int argc, char** argv) {

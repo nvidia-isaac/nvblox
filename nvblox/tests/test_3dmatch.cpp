@@ -77,7 +77,7 @@ TEST_F(Dataset3DMatchTest, LoadImage) {
   const std::string image_filename =
       datasets::threedmatch::internal::getPathForDepthImage(base_path_, 1, 0);
 
-  DepthImage image;
+  DepthImage image(MemoryType::kDevice);
   ASSERT_TRUE(datasets::load16BitDepthImage(image_filename, &image));
 
   EXPECT_EQ(image.rows(), 480);
@@ -107,10 +107,10 @@ TEST_P(LoaderParameterizedTest, ImageLoaderObject) {
         base_path_, seq_id, true);
   }
 
-  DepthImage depth_image_1;
-  DepthImage depth_image_2;
-  DepthImage depth_image_3;
-  DepthImage depth_image_4;
+  DepthImage depth_image_1(MemoryType::kDevice);
+  DepthImage depth_image_2(MemoryType::kDevice);
+  DepthImage depth_image_3(MemoryType::kDevice);
+  DepthImage depth_image_4(MemoryType::kDevice);
   EXPECT_TRUE(depth_loader_ptr->getNextImage(&depth_image_1));
   EXPECT_TRUE(depth_loader_ptr->getNextImage(&depth_image_2));
   EXPECT_TRUE(depth_loader_ptr->getNextImage(&depth_image_3));

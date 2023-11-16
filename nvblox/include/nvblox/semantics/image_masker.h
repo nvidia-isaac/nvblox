@@ -15,6 +15,10 @@ limitations under the License.
 */
 #pragma once
 
+#include <memory>
+
+#include "nvblox/core/cuda_stream.h"
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/types.h"
 #include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
@@ -26,7 +30,8 @@ namespace nvblox {
 class ImageMasker {
  public:
   ImageMasker();
-  ~ImageMasker();
+  ImageMasker(std::shared_ptr<CudaStream> cuda_stream);
+  ~ImageMasker() = default;
 
   /// Splitting the input color image according to a mask image
   /// assuming color and mask images are coming from the same camera.
@@ -97,6 +102,11 @@ class ImageMasker {
   /// @param the new parameter value
   void depth_unmasked_image_invalid_pixel(float value);
 
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
+
  private:
   template <typename ImageType>
   void allocateOutput(const ImageType& input, ImageType* unmasked_output,
@@ -110,7 +120,7 @@ class ImageMasker {
   Color color_masked_image_invalid_pixel_ = Color(0, 0, 0, 0);
   Color color_unmasked_image_invalid_pixel_ = Color(0, 0, 0, 0);
 
-  cudaStream_t cuda_stream_;
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

@@ -27,7 +27,7 @@ Above we show reconstruction using data from the [3DMatch dataset](https://3dmat
   - [C++ Interface](#c-interface)
 - [Native Installation](#native-installation)
   - [Install dependencies](#install-dependencies)
-  - [Build and run tests](#build-and-run-tests)
+  - [Build and run tests and benchmark](#build-and-run-tests-and-benchmark)
   - [Run an example](#run-an-example)
 - [Docker](#docker)
 - [Additional instructions for Jetson Xavier](#additional-instructions-for-jetson-xavier)
@@ -58,7 +58,7 @@ For users who would like to use nvblox in a robotic system or connect easily to 
 The ROS 2 interface includes examples which allow you to:
 * Build a reconstruction from a realsense camera using nvblox and NVIDIA VSLAM [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-realsense.md).
 * Navigate a robot in Isaac Sim [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-isaac-sim.md).
-* Combine 3D reconstruction with image segmentation with [realsense data](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-human-reconstruction-realsense.md) and in [simulation](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nvblox/blob/main/docs/tutorial-human-reconstruction-isaac-sim.md).
+* Combine 3D reconstruction with image segmentation with [realsense data](https://gitlab-master.nvidia.com/isaac_ros/isaac_ros_nvblox/-/blob/envoy-dev/docs/tutorial-human-reconstruction-realsense.md) and in [simulation](https://gitlab-master.nvidia.com/isaac_ros/isaac_ros_nvblox/-/blob/envoy-dev/docs/tutorial-human-reconstruction-isaac-sim.md).
 
 The ROS 2 interface downloads and builds the library contained in this repository during installation, so you don't need to clone and build this repository at all.
 
@@ -85,16 +85,23 @@ We depend on:
 - stdgpu (downloaded during compilation)
 Please run
 ```
-sudo apt-get install -y libgoogle-glog-dev libgtest-dev libgflags-dev python3-dev libsqlite3-dev
+sudo apt-get install -y libgoogle-glog-dev libgtest-dev libgflags-dev python3-dev libsqlite3-dev libbenchmark-dev
 cd /usr/src/googletest && sudo cmake . && sudo cmake --build . --target install
 ```
 
-## Build and run tests
+## Build and run tests and benchmark
+Build:
 ```
 cd nvblox/nvblox
 mkdir build
 cd build
-cmake .. && make && cd tests && ctest
+cmake .. && make
+```
+
+Run test and benchmark from build dir:
+```
+ctest
+executables/benchmark
 ```
 
 ## Run an example

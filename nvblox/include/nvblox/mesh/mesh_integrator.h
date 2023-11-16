@@ -19,14 +19,19 @@ limitations under the License.
 #include "nvblox/map/layer.h"
 #include "nvblox/mesh/internal/marching_cubes.h"
 #include "nvblox/mesh/mesh_block.h"
+#include "nvblox/core/parameter_tree.h"
 
 namespace nvblox {
 
 /// Class to integrate TSDF data into a mesh using marching cubes.
 class MeshIntegrator {
  public:
+  static constexpr float kDefaultMinWeight = 1e-4;
+  static constexpr bool kDefaultWeldVertices = true;
+
   MeshIntegrator();
-  ~MeshIntegrator();
+  MeshIntegrator(std::shared_ptr<CudaStream> cuda_stream);
+  ~MeshIntegrator() = default;
 
   /// Chooses the default mesher between CPU and GPU.
   bool integrateMeshFromDistanceField(
@@ -71,6 +76,10 @@ class MeshIntegrator {
   bool weld_vertices() const { return weld_vertices_; }
   void weld_vertices(bool weld_vertices) { weld_vertices_ = weld_vertices; }
 
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(const std::string& name_remap = std::string()) const;
+
  private:
   bool isBlockMeshable(const VoxelBlock<TsdfVoxel>::ConstPtr block,
                        float cutoff) const;
@@ -103,11 +112,14 @@ class MeshIntegrator {
   void weldVertices(device_vector<CudaMeshBlock>* cuda_mesh_blocks);
 
   // Minimum weight to actually mesh.
-  float min_weight_ = 1e-4;
+  float min_weight_ = kDefaultMinWeight;
 
-  /// Whether to perform vertex welding or not. It cuts down number
-  /// of vertices by 5x.
-  bool weld_vertices_ = true;
+  // The TSDF distance below which we consider a voxel for meshing.
+  float cutoff_distance_vox_ = 5.0f;
+
+  // Whether to perform vertex welding or not. It cuts down number
+  // of vertices by 5x.
+  bool weld_vertices_ = kDefaultWeldVertices;
 
   // Offsets for cube indices.
   Eigen::Matrix<int, 3, 8> cube_index_offsets_;
@@ -116,7 +128,7 @@ class MeshIntegrator {
   Color default_mesh_color_ = Color::Gray();
 
   // State.
-  cudaStream_t cuda_stream_ = nullptr;
+  std::shared_ptr<CudaStream> cuda_stream_;
 
   // These are temporary variables so we don't have to allocate every single
   // frame.

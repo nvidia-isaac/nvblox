@@ -23,61 +23,48 @@ MeshBlock::MeshBlock(MemoryType memory_type)
       colors(memory_type),
       triangles(memory_type) {}
 
-MeshBlock::MeshBlock(const MeshBlock& mesh_block)
-    : MeshBlock(mesh_block, mesh_block.vertices.memory_type()) {}
-
-MeshBlock::MeshBlock(const MeshBlock& mesh_block, MemoryType memory_type)
-    : vertices(mesh_block.vertices, memory_type),
-      normals(mesh_block.normals, memory_type),
-      colors(mesh_block.colors, memory_type),
-      triangles(mesh_block.triangles, memory_type) {}
-
 void MeshBlock::clear() {
-  vertices.resize(0);
-  normals.resize(0);
-  triangles.resize(0);
-  colors.resize(0);
-}
-
-void MeshBlock::resizeToNumberOfVertices(size_t new_size) {
-  vertices.resize(new_size);
-  normals.resize(new_size);
-  triangles.resize(new_size);
-}
-
-void MeshBlock::reserveNumberOfVertices(size_t new_capacity) {
-  vertices.reserve(new_capacity);
-  normals.reserve(new_capacity);
-  triangles.reserve(new_capacity);
+  vertices.clearNoDealloc();
+  normals.clearNoDealloc();
+  triangles.clearNoDealloc();
+  colors.clearNoDealloc();
 }
 
 MeshBlock::Ptr MeshBlock::allocate(MemoryType memory_type) {
   return std::make_shared<MeshBlock>(memory_type);
 }
 
-std::vector<Vector3f> MeshBlock::getVertexVectorOnCPU() const {
-  return vertices.toVector();
-}
-
-std::vector<Vector3f> MeshBlock::getNormalVectorOnCPU() const {
-  return normals.toVector();
-}
-
-std::vector<int> MeshBlock::getTriangleVectorOnCPU() const {
-  return triangles.toVector();
-}
-
-std::vector<Color> MeshBlock::getColorVectorOnCPU() const {
-  return colors.toVector();
+MeshBlock::Ptr MeshBlock::allocateAsync(MemoryType memory_type,
+                                        const CudaStream&) {
+  return allocate(memory_type);
 }
 
 size_t MeshBlock::size() const { return vertices.size(); }
+
+size_t MeshBlock::sizeInBytes() const {
+  return vertices.size() * sizeof(Vector3f) +  // NOLINT
+         normals.size() * sizeof(Vector3f) +   // NOLINT
+         colors.size() * sizeof(Color) +       // NOLINT
+         triangles.size() * sizeof(int);
+}
 
 size_t MeshBlock::capacity() const { return vertices.capacity(); }
 
 void MeshBlock::expandColorsToMatchVertices() {
   colors.reserve(vertices.capacity());
   colors.resize(vertices.size());
+}
+
+void MeshBlock::copyFromAsync(const MeshBlock& other,
+                              const CudaStream cuda_stream) {
+  vertices.copyFromAsync(other.vertices, cuda_stream);
+  normals.copyFromAsync(other.normals, cuda_stream);
+  colors.copyFromAsync(other.colors, cuda_stream);
+  triangles.copyFromAsync(other.triangles, cuda_stream);
+}
+
+void MeshBlock::copyFrom(const MeshBlock& other) {
+  copyFromAsync(other, CudaStreamOwning());
 }
 
 // Set the pointers to point to the mesh block.

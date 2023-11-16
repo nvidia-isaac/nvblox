@@ -18,15 +18,13 @@ limitations under the License.
 #include <Eigen/Core>
 
 #include "nvblox/utils/timing.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "nvblox/datasets/external/stb_image.h"
+#include "nvblox/io/internal/thirdparty/stb_image.h"
 
 namespace nvblox {
 namespace datasets {
 
 bool load16BitDepthImage(const std::string& filename,
-                         DepthImage* depth_frame_ptr, MemoryType memory_type,
+                         DepthImage* depth_frame_ptr,
                          const float scale_factor) {
   CHECK_NOTNULL(depth_frame_ptr);
   timing::Timer stbi_timer("file_loading/depth_image/stbi");
@@ -40,26 +38,23 @@ bool load16BitDepthImage(const std::string& filename,
   }
   CHECK_EQ(num_channels, 1);
 
-  // The image is expressed in mm. We need to divide by 1000 and convert to
-  // float.
   // TODO(alexmillane): It's likely better to do this on the GPU.
   //                    Follow up: I measured and this scaling + cast takes
   //                    ~1ms. So only do this when 1ms is relevant.
   std::vector<float> float_image_data(height * width);
-  for (int lin_idx = 0; lin_idx < float_image_data.size(); lin_idx++) {
+  for (size_t lin_idx = 0; lin_idx < float_image_data.size(); lin_idx++) {
     float_image_data[lin_idx] =
         static_cast<float>(image_data[lin_idx]) * scale_factor;
   }
 
-  *depth_frame_ptr = DepthImage::fromBuffer(
-      height, width, float_image_data.data(), memory_type);
+  depth_frame_ptr->copyFrom(height, width, float_image_data.data());
 
   stbi_image_free(image_data);
   return true;
 }
 
 bool load8BitColorImage(const std::string& filename,
-                        ColorImage* color_image_ptr, MemoryType memory_type) {
+                        ColorImage* color_image_ptr) {
   CHECK_NOTNULL(color_image_ptr);
   timing::Timer stbi_timer("file_loading/color_image/stbi");
   int width, height, num_channels;
@@ -77,8 +72,8 @@ bool load8BitColorImage(const std::string& filename,
   CHECK_EQ(sizeof(Color), 4 * sizeof(uint8_t))
       << "Color struct was padded by the compiler so image loading wont work.";
 
-  *color_image_ptr = ColorImage::fromBuffer(
-      height, width, reinterpret_cast<Color*>(image_data), memory_type);
+  color_image_ptr->copyFrom(height, width,
+                            reinterpret_cast<Color*>(image_data));
 
   stbi_image_free(image_data);
   return true;
@@ -88,15 +83,14 @@ template <>
 bool ImageLoader<DepthImage>::getImage(int image_idx, DepthImage* image_ptr) {
   CHECK_NOTNULL(image_ptr);
   bool res = load16BitDepthImage(index_to_filepath_(image_idx), image_ptr,
-                                 memory_type_, depth_image_scaling_factor_);
+                                 depth_image_scaling_factor_);
   return res;
 }
 
 template <>
 bool ImageLoader<ColorImage>::getImage(int image_idx, ColorImage* image_ptr) {
   CHECK_NOTNULL(image_ptr);
-  bool res = load8BitColorImage(index_to_filepath_(image_idx), image_ptr,
-                                memory_type_);
+  bool res = load8BitColorImage(index_to_filepath_(image_idx), image_ptr);
   return res;
 }
 

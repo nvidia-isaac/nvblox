@@ -15,8 +15,11 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/core/cuda_stream.h"
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 #include "nvblox/integrators/view_calculator.h"
+#include "nvblox/integrators/weighting_function.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
@@ -34,15 +37,26 @@ namespace nvblox {
 template <typename VoxelType>
 class ProjectiveIntegrator {
  public:
-  ProjectiveIntegrator(){};
-  virtual ~ProjectiveIntegrator() {}
+  static constexpr float kDefaultMaxIntegrationDistanceM = 7.0;
+  // Note(remos): per default the non lidar max integration distance is set
+  static constexpr float kDefaultLidarMaxIntegrationDistance = 10.0;
+  static constexpr float kDefaultTruncationDistanceVox = 4.0;
+  static constexpr WeightingFunctionType kDefaultWeightingFunctionType =
+      WeightingFunctionType::kInverseSquareWeight;
+  static constexpr float kDefaultMaxWeight = 5.0;
 
+  ProjectiveIntegrator();
+  ProjectiveIntegrator(std::shared_ptr<CudaStream> cuda_stream);
+  virtual ~ProjectiveIntegrator() = default;
+
+  /// Update a generic layer using depth image
   template <typename UpdateFunctor>
   void integrateFrame(const DepthImage& depth_frame, const Transform& T_L_C,
-                      const Camera& lidar, UpdateFunctor* op,
+                      const Camera& camera, UpdateFunctor* op,
                       VoxelBlockLayer<VoxelType>* layer,
                       std::vector<Index3D>* updated_blocks);
 
+  /// Update a generic layer using a (potentially) sparse depth image from lidar
   template <typename UpdateFunctor>
   void integrateFrame(const DepthImage& depth_frame, const Transform& T_L_C,
                       const Lidar& lidar, UpdateFunctor* op,
@@ -111,31 +125,46 @@ class ProjectiveIntegrator {
   /// Returns the object used to calculate the blocks in camera views.
   ViewCalculator& view_calculator();
 
+  /// Return the parameter tree.
+  /// @return the parameter tree
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
+
  protected:
-  // Given a set of blocks in view (block_indices) perform TSDF updates on all
-  // voxels within these blocks on the GPU.
-  template <typename UpdateFunctor>
-  void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,
-                       const Camera& camera, UpdateFunctor* op,
-                       VoxelBlockLayer<VoxelType>* layer_ptr);
-  template <typename UpdateFunctor>
-  void integrateBlocks(const DepthImage& depth_frame, const Transform& T_C_L,
-                       const Lidar& lidar, UpdateFunctor* op,
-                       VoxelBlockLayer<VoxelType>* layer_ptr);
+  /// For voxels with a radius, allocate memory and give a small weight and
+  /// truncation distance, effectively making these voxels free-space. Does not
+  /// affect voxels which are already observed.
+  /// @param center The center of the sphere affected.
+  /// @param radius The radius of the sphere affected.
+  /// @param layer A pointed to the layer which will be affected by the update.
+  /// @param updated_blocks Optional pointer to a list of blocks affected by the
+  /// update.
+  void markUnobservedFreeInsideRadiusTemplate(
+      const Vector3f& center, float radius, VoxelBlockLayer<VoxelType>* layer,
+      std::vector<Index3D>* updated_blocks = nullptr);
 
-  template <typename SensorType, typename UpdateFunctor>
-  void integrateBlocksTemplate(const std::vector<Index3D>& block_indices,
-                               const DepthImage& depth_frame,
-                               const Transform& T_L_C, const SensorType& sensor,
-                               UpdateFunctor* op,
-                               VoxelBlockLayer<VoxelType>* layer_ptr);
-
+  // Called from the integrateFrame() interfaces.
+  // Captures common behaviour between sensors.
   template <typename SensorType, typename UpdateFunctor>
   void integrateFrameTemplate(const DepthImage& depth_frame,
+                              const ColorImage& color_frame,
                               const Transform& T_L_C, const SensorType& sensor,
                               UpdateFunctor* op,
                               VoxelBlockLayer<VoxelType>* layer,
                               std::vector<Index3D>* updated_blocks = nullptr);
+
+  // Two methods below are specialized for Camera/LiDAR
+  // - Calls GPU kernel to do block update.
+  template <typename UpdateFunctor>
+  void integrateBlocks(const DepthImage& depth_frame,
+                       const ColorImage& color_frame, const Transform& T_C_L,
+                       const Camera& camera, UpdateFunctor* op,
+                       VoxelBlockLayer<VoxelType>* layer_ptr);
+  template <typename UpdateFunctor>
+  void integrateBlocks(const DepthImage& depth_frame,
+                       const ColorImage& color_frame, const Transform& T_C_L,
+                       const Lidar& lidar, UpdateFunctor* op,
+                       VoxelBlockLayer<VoxelType>* layer_ptr);
 
   // Get the child integrator name
   virtual std::string getIntegratorName() const = 0;
@@ -146,8 +175,8 @@ class ProjectiveIntegrator {
   // NOTE(alexmillane): See the getters above for a description.
   float lidar_linear_interpolation_max_allowable_difference_vox_ = 2.0f;
   float lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ = 0.5f;
-  float truncation_distance_vox_ = 4.0f;
-  float max_integration_distance_m_ = 7.0f;
+  float truncation_distance_vox_ = kDefaultTruncationDistanceVox;
+  float max_integration_distance_m_ = kDefaultMaxIntegrationDistanceM;
 
   // Frustum calculation.
   mutable ViewCalculator view_calculator_;
@@ -160,8 +189,8 @@ class ProjectiveIntegrator {
   host_vector<Index3D> block_indices_host_;
   host_vector<VoxelBlock<VoxelType>*> block_ptrs_host_;
 
-  // CUDA stream to process ingration on
-  cudaStream_t integration_stream_;
+  // CUDA stream to process integration on
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

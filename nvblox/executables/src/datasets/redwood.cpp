@@ -22,6 +22,7 @@ limitations under the License.
 #include <iomanip>
 #include <iostream>
 #include <unordered_map>
+#include <filesystem>
 
 #include "nvblox/utils/timing.h"
 
@@ -140,6 +141,11 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
   constexpr int width = 640;
   constexpr int height = 480;
   camera_ = Camera(fu, fv, width, height);
+  // If the base path doesn't exist return fail
+  if(!std::filesystem::exists(base_path)) {
+    LOG(WARNING) << "Tried to create a dataloader with a non-existant path.";
+    setup_success_ = false;
+  }
 }
 
 /// Interface for a function that loads the next frames in a dataset
@@ -159,7 +165,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
 
   // Because we might fail along the way, increment the frame number before we
   // start.
-  const int frame_number = frame_number_;
   ++frame_number_;
 
   // Load the image into a Depth Frame.
@@ -181,8 +186,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
     }
     timer_file_color.Stop();
   }
-
-  float scale;
 
   // Get the camera for this frame.
   timing::Timer timer_file_intrinsics("file_loading/camera");

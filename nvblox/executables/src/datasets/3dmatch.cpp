@@ -21,6 +21,7 @@ limitations under the License.
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <filesystem>
 
 #include "nvblox/utils/timing.h"
 
@@ -144,7 +145,11 @@ DataLoader::DataLoader(const std::string& base_path, const int seq_id,
                                   base_path, seq_id, multithreaded)),
       base_path_(base_path),
       seq_id_(seq_id) {
-  //
+  // If the base path doesn't exist return fail
+  if(!std::filesystem::exists(base_path)) {
+    LOG(WARNING) << "Tried to create a dataloader with a non-existant path.";
+    setup_success_ = false;
+  }
 }
 
 /// Interface for a function that loads the next frames in a dataset

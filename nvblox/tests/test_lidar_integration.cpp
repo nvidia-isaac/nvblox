@@ -147,7 +147,7 @@ TEST_F(LidarIntegrationTest, LidarBlocksInView) {
           truncation_distance_m, max_integration_distance_m);
 
   Eigen::MatrixX3i blocks_in_view_mat(blocks_in_view.size(), 3);
-  for (int idx = 0; idx < blocks_in_view.size(); idx++) {
+  for (size_t idx = 0; idx < blocks_in_view.size(); idx++) {
     blocks_in_view_mat.row(idx) = blocks_in_view[idx];
   }
 
@@ -222,7 +222,7 @@ TEST_F(LidarIntegrationTest, SurroundingSphere) {
   auto lambda = [&](const Index3D& block_index, const Index3D& voxel_index,
                     const TsdfVoxel* voxel) {
     if (voxel->weight > 0.0f) {
-      const Vector3f p_L = getCenterPostionFromBlockIndexAndVoxelIndex(
+      const Vector3f p_L = getCenterPositionFromBlockIndexAndVoxelIndex(
           block_size, block_index, voxel_index);
       float gt_distance = sphere_radius - p_L.norm();
       gt_distance = std::min(gt_distance, truncation_distance_m);
@@ -237,7 +237,7 @@ TEST_F(LidarIntegrationTest, SurroundingSphere) {
     const std::string mesh_filepath = "lidar_sphere_mesh.ply";
     io::outputMeshLayerToPly(mesh_layer, mesh_filepath);
     // Output
-    const std::string filepath = "sphere_lidar_image.csv";
+    const std::string filepath = "sphere_lidar_image.png";
     io::writeToPng(filepath, depth_image);
   }
 }

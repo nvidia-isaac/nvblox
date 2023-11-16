@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#include "nvblox/core/internal/error_check.h"
 #include "nvblox/tests/increment_on_gpu.h"
 
 __global__ void incrementKernel(int* number) {
@@ -31,16 +32,21 @@ __global__ void incrementKernel(int* number, const int num_elelments) {
 namespace nvblox {
 namespace test_utils {
 
-void incrementOnGPU(int* number) {
-  incrementKernel<<<1, 1>>>(number);
-  cudaDeviceSynchronize();
+void incrementOnStream(int* number_ptr, CudaStream* stream_ptr) {
+  incrementKernel<<<1, 1, 0, *stream_ptr>>>(number_ptr);
+  stream_ptr->synchronize();
 }
 
-void incrementOnGPU(const int num_elelments, int* number) {
+void incrementOnGPU(int* number_ptr) {
+  incrementKernel<<<1, 1>>>(number_ptr);
+  checkCudaErrors(cudaDeviceSynchronize());
+}
+
+void incrementOnGPU(const int num_elelments, int* numbers_ptr) {
   constexpr int kThreadsPerBlock = 32;
   const int num_blocks = (num_elelments / kThreadsPerBlock) + 1;
-  incrementKernel<<<num_blocks, kThreadsPerBlock>>>(number, num_elelments);
-  cudaDeviceSynchronize();
+  incrementKernel<<<num_blocks, kThreadsPerBlock>>>(numbers_ptr, num_elelments);
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 }  // namespace test_utils

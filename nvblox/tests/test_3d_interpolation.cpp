@@ -233,7 +233,6 @@ TEST(InterpolatorTest, InterpolationTest) {
 TEST(InterpolatorTest, PrimitivesInterpolationTest) {
   // Maximum distance to consider for scene generation.
   constexpr float kMaxDist = 10.0;
-  constexpr float kMinWeight = 1.0;
 
   // Scene is bounded to -5, -5, 0 to 5, 5, 5.
   primitives::Scene scene;
@@ -278,7 +277,7 @@ TEST(InterpolatorTest, PrimitivesInterpolationTest) {
   }
 
   // Check
-  for (int i = 0; i < p_L_vec.size(); i++) {
+  for (size_t i = 0; i < p_L_vec.size(); i++) {
     EXPECT_NEAR(interpolated_distances[i], gt_distances[i], 0.5 * kVoxelSize_m);
   }
 }

@@ -38,7 +38,7 @@ class SphereBenchmark {
  public:
   SphereBenchmark();
 
-  void runBenchmark(const std::string& csv_output_path = "");
+  void runBenchmark();
   bool outputMesh(const std::string& ply_output_path);
 
  private:
@@ -81,12 +81,12 @@ constexpr float SphereBenchmark::kSphereRadius;
 constexpr float SphereBenchmark::kTrajectoryRadius;
 constexpr float SphereBenchmark::kMaxEnvironmentDimension;
 
-void SphereBenchmark::runBenchmark(const std::string& csv_output_path) {
+void SphereBenchmark::runBenchmark() {
   // Create an integrator with default settings.
   ProjectiveTsdfIntegrator integrator;
   MeshIntegrator mesh_integrator;
   EsdfIntegrator esdf_integrator;
-  esdf_integrator.max_distance_m(4.0f);
+  esdf_integrator.max_esdf_distance_m(4.0f);
 
   // Scene is bounded to the dimensions above.
   primitives::Scene scene;
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
   }
 
   nvblox::SphereBenchmark benchmark;
-  benchmark.runBenchmark("");
+  benchmark.runBenchmark();
 
   if (!output_mesh_path.empty()) {
     benchmark.outputMesh(output_mesh_path);

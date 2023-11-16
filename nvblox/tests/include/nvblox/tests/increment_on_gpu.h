@@ -14,12 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "nvblox/core/cuda_stream.h"
+
 namespace nvblox {
 namespace test_utils {
 
-void incrementOnGPU(int* number);
+void incrementOnGPU(int* number_ptr);
+void incrementOnStream(int* number_ptr, CudaStream* cuda_stream_ptr);
 
-void incrementOnGPU(const int num_elelments, int* number);
+void incrementOnGPU(const int num_elelments, int* numbers_ptr);
 
 }  // namespace test_utils
 }  // namespace nvblox
