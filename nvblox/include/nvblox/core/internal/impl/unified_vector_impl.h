@@ -110,7 +110,7 @@ template <typename OtherVectorType>
 void unified_vector<T>::copyFromAsync(const OtherVectorType& other,
                                       const CudaStream cuda_stream) {
   resizeAsync(other.size(), cuda_stream);
-  if (other.data() != nullptr) {
+  if (other.data() != nullptr && buffer_capacity_ > 0) {
     checkCudaErrors(cudaMemcpyAsync(buffer_, other.data(),
                                     sizeof(T) * other.size(), cudaMemcpyDefault,
                                     cuda_stream));
@@ -149,7 +149,7 @@ inline std::vector<bool> unified_vector<bool>::toVectorAsync(
     const CudaStream cuda_stream) const {
   // The memory layout of std::vector<bool> is different so we have to first
   // copy to an intermediate buffer.
-  CHECK(buffer_ != nullptr);
+  CHECK(buffer_ != nullptr && buffer_capacity_ > 0);
   std::unique_ptr<bool[]> bool_buffer(new bool[buffer_size_]);
   checkCudaErrors(cudaMemcpyAsync(bool_buffer.get(), buffer_,
                                   sizeof(bool) * buffer_size_,
@@ -346,7 +346,7 @@ template <typename T>
 void unified_vector<T>::setZeroAsync(const CudaStream cuda_stream) {
   // It is safe to use cudaMemset since the memory is ALWAYS allocated with
   // cudaMalloc.
-  CHECK(buffer_ != nullptr);
+  CHECK(buffer_ != nullptr && buffer_capacity_ > 0);
   checkCudaErrors(
       cudaMemsetAsync(buffer_, 0, buffer_size_ * sizeof(T), cuda_stream));
 }

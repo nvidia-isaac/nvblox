@@ -279,7 +279,8 @@ class EsdfIntegrator {
 
   /// @brief TsdfLayer related parameter
   /// Maximum (TSDF) distance at which a voxel is considered a site
-  float tsdf_max_site_distance_vox_ = 1.7321;
+  //float tsdf_max_site_distance_vox_ = 1.7321;
+  float max_tsdf_site_distance_vox_ = kDefaultMaxTsdfSiteDistanceVox;
 
   /// @brief TsdfLayer related parameter
   /// Minimum weight to consider a TSDF voxel observed.
