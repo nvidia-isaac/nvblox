@@ -78,7 +78,7 @@ if(BUILD_REDISTRIBUTABLE)
 
     # For the benchmarking executable. This is not deployed so we're fine to build it with this
     # dynamically-linked library.
-    find_package(benchmark REQUIRED)
+    # find_package(benchmark REQUIRED)
 else()
     # By default, use system dependencies for these.
     # In the case of ROS builds, glog will likely be found at a higher level.
