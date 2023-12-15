@@ -15,6 +15,10 @@ limitations under the License.
 */
 #pragma once
 
+#include <limits>
+#include <memory>
+
+#include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/core/unified_vector.h"
@@ -28,7 +32,8 @@ namespace nvblox {
 class DepthImageBackProjector {
  public:
   DepthImageBackProjector();
-  ~DepthImageBackProjector();
+  DepthImageBackProjector(std::shared_ptr<CudaStream> cuda_stream);
+  ~DepthImageBackProjector() = default;
 
   /// Back projects a depth image to a pointcloud in the camera frame.
   ///@param image DepthImage to be back projected
@@ -54,10 +59,10 @@ class DepthImageBackProjector {
                                      Pointcloud* voxel_center_pointcloud_L);
 
  private:
-  cudaStream_t cuda_stream_ = nullptr;
-
   unified_ptr<int> pointcloud_size_device_;
   unified_ptr<int> pointcloud_size_host_;
+
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

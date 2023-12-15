@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <nvblox/integrators/projective_occupancy_integrator.h>
+
 #include <nvblox/integrators/internal/cuda/impl/projective_integrator_impl.cuh>
 
 #include "nvblox/integrators/internal/integrators_common.h"
@@ -47,10 +48,16 @@ struct UpdateOccupancyVoxelFunctor {
   }
 
   // Sensor model parameters
-  float free_region_log_odds_ = logOddsFromProbability(0.3);
-  float occupied_region_log_odds_ = logOddsFromProbability(0.7);
-  float unobserved_region_log_odds_ = logOddsFromProbability(0.5);
-  float occupied_region_half_width_m_ = 0.1;
+  float free_region_log_odds_ = logOddsFromProbability(
+      ProjectiveOccupancyIntegrator::kDefaultFreeRegionOccupancyProbability);
+  float occupied_region_log_odds_ =
+      logOddsFromProbability(ProjectiveOccupancyIntegrator::
+                                 kDefaultOccupiedRegionOccupancyProbability);
+  float unobserved_region_log_odds_ =
+      logOddsFromProbability(ProjectiveOccupancyIntegrator::
+                                 kDefaultUnobservedRegionOccupancyProbability);
+  float occupied_region_half_width_m_ =
+      ProjectiveOccupancyIntegrator::kDefaultOccupiedRegionHalfWidthM;
 
   // Min and max values for clipping
   const float kMaxLogOdds_ = logOddsFromProbability(0.99);
@@ -58,15 +65,20 @@ struct UpdateOccupancyVoxelFunctor {
 };
 
 ProjectiveOccupancyIntegrator::ProjectiveOccupancyIntegrator()
-    : ProjectiveIntegrator<OccupancyVoxel>() {
+    : ProjectiveOccupancyIntegrator(std::make_shared<CudaStreamOwning>()) {}
+
+ProjectiveOccupancyIntegrator::ProjectiveOccupancyIntegrator(
+    const std::shared_ptr<CudaStream> cuda_stream)
+    : ProjectiveIntegrator<OccupancyVoxel>(cuda_stream),
+      cuda_stream_(cuda_stream) {
   update_functor_host_ptr_ =
       make_unified<UpdateOccupancyVoxelFunctor>(MemoryType::kHost);
-  checkCudaErrors(cudaStreamCreate(&integration_stream_));
 }
 
 ProjectiveOccupancyIntegrator::~ProjectiveOccupancyIntegrator() {
-  cudaStreamSynchronize(integration_stream_);
-  checkCudaErrors(cudaStreamDestroy(integration_stream_));
+  // NOTE(alexmillane): We can't default this in the header file because to the
+  // unified_ptr to a forward declared type. The type has to be defined where
+  // the destructor is.
 }
 
 void ProjectiveOccupancyIntegrator::integrateFrame(
@@ -75,8 +87,9 @@ void ProjectiveOccupancyIntegrator::integrateFrame(
   setFunctorParameters(layer->voxel_size());
   ProjectiveIntegrator<OccupancyVoxel>::integrateFrame(
       depth_frame, T_L_C, camera,
-      update_functor_host_ptr_.clone(MemoryType::kDevice).get(), layer,
-      updated_blocks);
+      update_functor_host_ptr_.cloneAsync(MemoryType::kDevice, *cuda_stream_)
+          .get(),
+      layer, updated_blocks);
 }
 
 void ProjectiveOccupancyIntegrator::integrateFrame(
@@ -85,8 +98,9 @@ void ProjectiveOccupancyIntegrator::integrateFrame(
   setFunctorParameters(layer->voxel_size());
   ProjectiveIntegrator<OccupancyVoxel>::integrateFrame(
       depth_frame, T_L_C, lidar,
-      update_functor_host_ptr_.clone(MemoryType::kDevice).get(), layer,
-      updated_blocks);
+      update_functor_host_ptr_.cloneAsync(MemoryType::kDevice, *cuda_stream_)
+          .get(),
+      layer, updated_blocks);
 }
 
 void ProjectiveOccupancyIntegrator::setFunctorParameters(
@@ -157,6 +171,32 @@ void ProjectiveOccupancyIntegrator::occupied_region_half_width_m(
 
 std::string ProjectiveOccupancyIntegrator::getIntegratorName() const {
   return "occupancy";
+}
+
+void ProjectiveOccupancyIntegrator::markUnobservedFreeInsideRadius(
+    const Vector3f& center, float radius, OccupancyLayer* layer,
+    std::vector<Index3D>* updated_blocks_ptr) {
+  markUnobservedFreeInsideRadiusTemplate(center, radius, layer,
+                                         updated_blocks_ptr);
+}
+
+parameters::ParameterTreeNode ProjectiveOccupancyIntegrator::getParameterTree(
+    const std::string& name_remap) const {
+  using parameters::ParameterTreeNode;
+  const std::string name =
+      (name_remap.empty()) ? "projective_occupancy_integrator" : name_remap;
+  return ParameterTreeNode(
+      name,
+      {
+          ParameterTreeNode("free_region_log_odds:", free_region_log_odds_),
+          ParameterTreeNode("occupied_region_log_odds:",
+                            occupied_region_log_odds_),
+          ParameterTreeNode("unobserved_region_log_odds:",
+                            unobserved_region_log_odds_),
+          ParameterTreeNode("occupied_region_half_width_m:",
+                            occupied_region_half_width_m_),
+          ProjectiveIntegrator<OccupancyVoxel>::getParameterTree(),
+      });
 }
 
 }  // namespace nvblox

@@ -18,6 +18,7 @@ limitations under the License.
 #include <memory>
 #include <vector>
 
+#include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/hash.h"
 #include "nvblox/core/traits.h"
 #include "nvblox/core/types.h"
@@ -46,9 +47,13 @@ class BlockLayer : public BaseLayer {
   typedef std::shared_ptr<BlockLayer> Ptr;
   typedef std::shared_ptr<const BlockLayer> ConstPtr;
 
-  /// Check that custom block types implement allocate
+  /// Check that custom block types implement allocate functions
   static_assert(traits::has_allocate<_BlockType>::value,
                 "BlockType must implement an allocate() function.");
+
+  // FIXME:  fix trait.h and enable static assert
+  //  static_assert(traits::has_allocate_async<_BlockType>::value,
+  //                "BlockType must implement an allocateAsync() function.");
 
   /// Allows inspection of the contained BlockType through LayerType::BlockType
   typedef _BlockType BlockType;
@@ -64,35 +69,50 @@ class BlockLayer : public BaseLayer {
         gpu_layer_view_up_to_date_(false) {}
   virtual ~BlockLayer() {}
 
-  /// Deep copies, with optionally changing the memory type.
-  BlockLayer(const BlockLayer& other);
-  BlockLayer(const BlockLayer& other, MemoryType memory_type);
-  BlockLayer& operator=(const BlockLayer& other);
+  /// Use copyFrom() instead of copy constructors
+  BlockLayer(const BlockLayer& other) = delete;
+  BlockLayer(const BlockLayer& other, MemoryType memory_type) = delete;
+  BlockLayer& operator=(const BlockLayer& other) = delete;
 
   /// Move operations
   BlockLayer(BlockLayer&& other) = default;
   BlockLayer& operator=(BlockLayer&& other) = default;
 
+  /// Deep copies, with optionally changing the memory type.
+  void copyFrom(const BlockLayer& other);
+  void copyFromAsync(const BlockLayer& other, const CudaStream cuda_stream);
+
   /// Block accessors by index.
   typename BlockType::Ptr getBlockAtIndex(const Index3D& index);
   typename BlockType::ConstPtr getBlockAtIndex(const Index3D& index) const;
   typename BlockType::Ptr allocateBlockAtIndex(const Index3D& index);
+  typename BlockType::Ptr allocateBlockAtIndexAsync(
+      const Index3D& index, const CudaStream& cuda_stream);
+  void allocateBlocksAtIndices(const std::vector<Index3D>& indices,
+                               const CudaStream& cuda_stream);
 
   /// Block accessors by position.
   typename BlockType::Ptr getBlockAtPosition(const Vector3f& position);
   typename BlockType::ConstPtr getBlockAtPosition(
       const Vector3f& position) const;
+  typename BlockType::Ptr allocateBlockAtPositionAsync(
+      const Vector3f& position, const CudaStream& cuda_stream);
   typename BlockType::Ptr allocateBlockAtPosition(const Vector3f& position);
 
   /// Get all blocks indices or pointers.
   std::vector<Index3D> getAllBlockIndices() const;
   std::vector<BlockType*> getAllBlockPointers();
 
+  /// Get block indices for which the provided predicate evaluates to true
+  std::vector<Index3D> getBlockIndicesIf(
+      std::function<bool(const Index3D&)> predicate);
+
   /// Check if allocated
   bool isBlockAllocated(const Index3D& index) const;
 
   __host__ __device__ float block_size() const { return block_size_; }
   int numAllocatedBlocks() const { return blocks_.size(); }
+  size_t size() const { return blocks_.size(); }
 
   /// Clear the layer of all data
   void clear() { blocks_.clear(); }
@@ -181,9 +201,32 @@ class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
                  std::vector<VoxelType>* voxels_ptr,
                  std::vector<bool>* success_flags_ptr) const;
 
+  /// Gets voxels by copy from a list of positions.
+  /// See getVoxels() above. This stream performs the same functionality
+  /// except that the copy is performed on a specific CUDA stream.
+  void getVoxels(const std::vector<Vector3f>& positions_L,
+                 std::vector<VoxelType>* voxels_ptr,
+                 std::vector<bool>* success_flags_ptr,
+                 CudaStream* cuda_stream_ptr) const;
+
+  /// Gets voxels by copy from a list of positions.
+  /// See getVoxels(). This function copies voxels to device vectors.
+  /// @param positions_L query positions in layer frame
+  /// @param voxels_ptr a pointer to a GPU vector of voxels where we'll store
+  ///                   the output
+  /// @param success_flags_ptr a pointer to a GPU vector of flags indicating if
+  ///                          we were able to retrive each voxel.
   void getVoxelsGPU(const device_vector<Vector3f>& positions_L,
                     device_vector<VoxelType>* voxels_ptr,
                     device_vector<bool>* success_flags_ptr) const;
+
+  /// Gets voxels by copy from a list of positions.
+  /// See getVoxelsGPU(). This stream performs the same functionality
+  /// except that the copy is performed on a specific CUDA stream.
+  void getVoxelsGPU(const device_vector<Vector3f>& positions_L,
+                    device_vector<VoxelType>* voxels_ptr,
+                    device_vector<bool>* success_flags_ptr,
+                    CudaStream* cuda_stream_ptr) const;
 
   /// Get a voxel by copy by (closest) position
   /// The position is given with respect to the layer frame (L). The function
@@ -207,6 +250,17 @@ class VoxelBlockLayer : public BlockLayer<VoxelBlock<VoxelType>> {
 };
 
 namespace traits {
+
+// Helpers for detecting if a type is a layer.
+template <typename Type>
+struct is_layer {
+  static constexpr bool value = std::is_base_of<BaseLayer, Type>::value;
+};
+
+template <typename... Args>
+struct are_layers {
+  static constexpr bool value = (is_layer<Args>::value && ...);
+};
 
 template <typename LayerType>
 struct is_voxel_layer : public std::false_type {};

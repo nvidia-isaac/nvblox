@@ -24,14 +24,14 @@ Camera::Camera(float fu, float fv, float cu, float cv, int width, int height)
 Camera::Camera(float fu, float fv, int width, int height)
     : Camera(fu, fv, width / 2.0, height / 2.0, width, height) {}
 
-bool Camera::project(const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C) const {
-  // Point is behind the camera.
-  if (p_C.z() <= 0.0f) {
+bool Camera::project(const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C,
+                     float min_depth) const {
+  // Projection
+  if (!projectToNormalizedCoordinates(p_C, u_C, min_depth)) {
     return false;
   }
-  const float inv_z = 1.0f / p_C.z();
-  *u_C = inv_z * Eigen::Vector2f(p_C.x(), p_C.y());
 
+  // Apply intrinsics
   u_C->x() = u_C->x() * fu_ + cu_;
   u_C->y() = u_C->y() * fv_ + cv_;
 
@@ -39,6 +39,18 @@ bool Camera::project(const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C) const {
     return false;
   }
   return true;
+}
+
+bool Camera::projectToNormalizedCoordinates(const Eigen::Vector3f& p_C,
+                                            Eigen::Vector2f* u_C,
+                                            const float min_depth) {
+  if (p_C[2] >= min_depth) {
+    u_C->x() = p_C[0] / p_C[2];
+    u_C->y() = p_C[1] / p_C[2];
+    return true;
+  } else {
+    return false;
+  }
 }
 
 float Camera::getDepth(const Vector3f& p_C) const { return p_C.z(); }

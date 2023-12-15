@@ -265,7 +265,7 @@ TEST_F(FrustumTest, PlaneWithGround) {
       }
     }
 
-    io::writeToPng("test_frustum_image.csv", depth_frame);
+    io::writeToPng("test_frustum_image.png", depth_frame);
 
     io::outputVoxelLayerToPly(tsdf_layer, "test_frustum_blocks_image.ply");
     io::outputVoxelLayerToPly(tsdf_layer_cuda, "test_frustum_blocks_cuda.ply");
@@ -325,7 +325,7 @@ TEST_F(FrustumTest, BlocksInView) {
                                                  kTruncationDistance, kMaxDist);
 
   EXPECT_EQ(blocks_in_view.size(), 10);
-  for (int i = 0; i < blocks_in_view.size(); i++) {
+  for (size_t i = 0; i < blocks_in_view.size(); i++) {
     EXPECT_TRUE((blocks_in_view[i].array() == Index3D(0, 0, i).array()).all());
   }
 }
@@ -341,7 +341,7 @@ TEST_F(FrustumTest, ThreeDMatch) {
                                                               kSequenceNum);
 
   // Get the first image.
-  DepthImage depth_frame;
+  DepthImage depth_frame(MemoryType::kDevice);
   ASSERT_TRUE(depth_image_loader->getNextImage(&depth_frame));
 
   // Get the tranform.
@@ -459,7 +459,6 @@ INSTANTIATE_TEST_CASE_P(FrustumTest, FrustumRayTracingSubsamplingTest,
                         ::testing::Values(1, 2));
 
 int main(int argc, char** argv) {
-  warmupCuda();
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;
   google::InstallFailureSignalHandler();

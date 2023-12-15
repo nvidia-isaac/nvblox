@@ -49,23 +49,23 @@ TEST(ColorImageTest, NearbyImagesSimilar) {
   // Load 3dmatch image
   const std::string base_path = "./data/3dmatch";
   constexpr int seq_id = 1;
-  ColorImage image_1;
+  ColorImage image_1(MemoryType::kUnified);
   EXPECT_TRUE(datasets::load8BitColorImage(
       datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
                                                             0),
-      &image_1, MemoryType::kUnified));
-  ColorImage image_2;
+      &image_1));
+  ColorImage image_2(MemoryType::kUnified);
   EXPECT_TRUE(datasets::load8BitColorImage(
       datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
                                                             1),
-      &image_2, MemoryType::kUnified));
+      &image_2));
 
   // Compute the diff image on the GPU
-  ColorImage diff_image;
+  ColorImage diff_image(MemoryType::kDevice);
   image::getDifferenceImageGPU(image_1, image_2, &diff_image);
 
   // Write diff image
-  io::writeToPng("./color_image_difference.csv", diff_image);
+  io::writeToPng("./color_image_difference.png", diff_image);
 
   // Check that there's not much difference between the images using the CPU
   // - 50 pixel values means constitutes a "big" difference for this test
@@ -225,11 +225,11 @@ TEST(ColorImageTest, LoadedImageAlpha) {
   // Load 3dmatch image
   const std::string base_path = "./data/3dmatch";
   constexpr int seq_id = 1;
-  ColorImage image;
+  ColorImage image(MemoryType::kUnified);
   EXPECT_TRUE(datasets::load8BitColorImage(
       datasets::threedmatch::internal::getPathForColorImage(base_path, seq_id,
                                                             0),
-      &image, MemoryType::kUnified));
+      &image));
 
   for (int row_idx = 0; row_idx < image.rows(); row_idx++) {
     for (int col_idx = 0; col_idx < image.rows(); col_idx++) {

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 NVIDIA CORPORATION
+Copyright 2022-2023 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ namespace nvblox {
 
 // Compile Specializations for the standard block types.
 template class GPULayerView<TsdfBlock>;
+template class GPULayerView<FreespaceBlock>;
 template class GPULayerView<EsdfBlock>;
 template class GPULayerView<ColorBlock>;
 template class GPULayerView<OccupancyBlock>;

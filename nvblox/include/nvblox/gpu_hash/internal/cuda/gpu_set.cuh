@@ -47,7 +47,8 @@ struct Index3DDeviceSet {
 // Copies the contents of a Index3DDeviceSet to an std::vector.
 void copySetToVector(const Index3DDeviceSetType& set,
                      std::vector<Index3D>* vec);
-void copySetToDeviceVector(const Index3DDeviceSetType& set,
-                           device_vector<Index3D>* vec);
+void copySetToDeviceVectorAsync(const Index3DDeviceSetType& set,
+                                device_vector<Index3D>* vec,
+                                const CudaStream cuda_stream);
 
 }  // namespace nvblox

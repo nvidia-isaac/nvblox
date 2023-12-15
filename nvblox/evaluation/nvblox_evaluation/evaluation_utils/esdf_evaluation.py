@@ -32,7 +32,7 @@ def generate_esdf_from_mesh(gt_mesh: o3d.geometry.TriangleMesh, points_xyz: np.n
 
     Returns:
         VoxelGrid: A voxel grid containing the groundtruth ESDF values.
-    """    
+    """
     # Getting the GT distances using a KD-tree to find the closest points on the mesh surface.
     gt_kdtree = KDTree(gt_mesh.vertices)
     gt_distances, gt_indices = gt_kdtree.query(points_xyz)
@@ -58,11 +58,12 @@ def get_sdf_abs_error_grid(reconstructed_sdf: VoxelGrid, gt_sdf: VoxelGrid) -> V
 
     Returns:
         VoxelGrid: A voxel grid containing the absolute differences.
-    """    
+    """
     # Check that these two grids define different values for matching voxels.
     # At the moment they even have to be in the same order.
+    voxel_center_position_epsilon = 1e-6
     assert(np.max(reconstructed_sdf.get_valid_voxel_centers() -
-           gt_sdf.get_valid_voxel_centers()) == 0)
+           gt_sdf.get_valid_voxel_centers()) < voxel_center_position_epsilon)
     # Figure out which voxels we should compare, voxels to compare are:
     # 1) GT positive (dont care if test is negative)
     compare_voxel_flags = gt_sdf.get_valid_voxel_values() >= 0.0

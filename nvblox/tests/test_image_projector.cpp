@@ -99,14 +99,14 @@ TEST(ImageProjectorTest, BackProjection) {
 
   // Check points are near zero in the distance field
   const float kMaximumDistance = kVoxelSize;
-  for (int i = 0; i < voxels.size(); i++) {
+  for (size_t i = 0; i < voxels.size(); i++) {
     EXPECT_TRUE(success_flags[i]);
     EXPECT_LT(voxels[i].distance, kMaximumDistance);
   }
 
   // Debug output
   if (FLAGS_nvblox_test_file_output) {
-    io::writeToPng("backprojector_depth_image.csv", depth_image);
+    io::writeToPng("backprojector_depth_image.png", depth_image);
     io::PlyWriter ply_writer("backprojector_pointcloud.ply");
     ply_writer.setPoints(&points_L);
     ply_writer.write();

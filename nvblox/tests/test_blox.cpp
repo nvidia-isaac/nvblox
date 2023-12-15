@@ -21,6 +21,7 @@ limitations under the License.
 #include "nvblox/map/common_names.h"
 
 #include "nvblox/tests/blox.h"
+#include "nvblox/tests/blox_utils.h"
 #include "nvblox/tests/test_utils_cuda.h"
 
 using namespace nvblox;
@@ -44,12 +45,13 @@ TEST(BloxTestDeathTest, NoAllocationDefined) {
 
 TEST(BloxTest, CustomGPUInitialization) {
   constexpr float block_size_m = 0.1;
-  BlockLayer<VoxelBlock<TestVoxel>> layer(block_size_m, MemoryType::kDevice);
+  BlockLayer<VoxelBlock<InitializationTestVoxel>> layer(block_size_m,
+                                                        MemoryType::kDevice);
   auto block_ptr = layer.allocateBlockAtIndex(Index3D(0, 0, 0));
-  TestVoxel one_voxel;
+  InitializationTestVoxel one_voxel;
   one_voxel.data = 1;
   EXPECT_TRUE(test_utils::checkBlockAllConstant(block_ptr, one_voxel));
-  TestVoxel zero_voxel;
+  InitializationTestVoxel zero_voxel;
   zero_voxel.data = 0;
   EXPECT_FALSE(test_utils::checkBlockAllConstant(block_ptr, zero_voxel));
 }
@@ -63,8 +65,7 @@ TEST(BloxTest, ColorInitialization) {
   constexpr float block_size_m = 0.1;
   BlockLayer<ColorBlock> layer_unified(block_size_m, MemoryType::kUnified);
   auto block_ptr = layer_unified.allocateBlockAtIndex(Index3D(0, 0, 0));
-  auto check_color_voxels = [](const Index3D& index,
-                               const ColorVoxel* voxel_ptr) {
+  auto check_color_voxels = [](const Index3D&, const ColorVoxel* voxel_ptr) {
     EXPECT_EQ(voxel_ptr->color, Color::Gray());
     EXPECT_EQ(voxel_ptr->weight, 0.0f);
   };

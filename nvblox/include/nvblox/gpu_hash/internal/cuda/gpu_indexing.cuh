@@ -27,20 +27,40 @@ limitations under the License.
 namespace nvblox {
 
 template <typename VoxelType>
+__device__ bool getVoxelPtr(
+    const Index3DDeviceHashMapType<VoxelBlock<VoxelType>>& block_hash,
+    const Index3D& block_index, const Index3D& voxel_index,
+    VoxelType** voxel_ptr) {
+  auto it = block_hash.find(block_index);
+  if (it != block_hash.end()) {
+    *voxel_ptr =
+        &it->second->voxels[voxel_index.x()][voxel_index.y()][voxel_index.z()];
+    return true;
+  }
+  return false;
+}
+
+template <typename VoxelType>
+__device__ VoxelBlock<VoxelType>* getBlockPtr(
+    const Index3DDeviceHashMapType<VoxelBlock<VoxelType>>& block_hash,
+    const Index3D& block_index) {
+  auto it = block_hash.find(block_index);
+  if (it != block_hash.end()) {
+    return it->second;
+  } else {
+    return nullptr;
+  }
+}
+
+template <typename VoxelType>
 __device__ inline bool getVoxelAtPosition(
-    Index3DDeviceHashMapType<VoxelBlock<VoxelType>> block_hash,
+    const Index3DDeviceHashMapType<VoxelBlock<VoxelType>>& block_hash,
     const Vector3f& p_L, float block_size, VoxelType** voxel_ptr) {
   Index3D block_idx;
   Index3D voxel_idx;
   getBlockAndVoxelIndexFromPositionInLayer(block_size, p_L, &block_idx,
                                            &voxel_idx);
-  auto it = block_hash.find(block_idx);
-  if (it != block_hash.end()) {
-    *voxel_ptr =
-        &it->second->voxels[voxel_idx.x()][voxel_idx.y()][voxel_idx.z()];
-    return true;
-  }
-  return false;
+  return getVoxelPtr(block_hash, block_idx, voxel_idx, voxel_ptr);
 }
 
 }  // namespace nvblox

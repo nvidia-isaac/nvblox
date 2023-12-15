@@ -15,6 +15,8 @@ limitations under the License.
 */
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <filesystem>
+
 #include "nvblox/utils/logging.h"
 
 #include "nvblox/datasets/3dmatch.h"
@@ -29,7 +31,8 @@ constexpr float kFloatEpsilon = 1e-6;
 class TestMultiMapper : public MultiMapper {
  public:
   TestMultiMapper(float voxel_size_m, MemoryType memory_type)
-      : MultiMapper(voxel_size_m, memory_type) {}
+      : MultiMapper(voxel_size_m, MappingType::kHumanWithStaticTsdf,
+                    EsdfMode::k3D, memory_type) {}
   FRIEND_TEST(MultiMapperTest, MaskOnAndOff);
 };
 
@@ -37,15 +40,16 @@ TEST(MultiMapperTest, MaskOnAndOff) {
   // Load some 3DMatch data
   constexpr int kSeqID = 1;
   constexpr bool kMultithreadedLoading = false;
-  datasets::threedmatch::DataLoader data_loader("./data/3dmatch", kSeqID,
-                                                kMultithreadedLoading);
+  auto data_loader = datasets::threedmatch::DataLoader::create(
+      "./data/3dmatch", kSeqID, kMultithreadedLoading);
+  EXPECT_TRUE(data_loader) << "Cant find the test input data.";
 
-  DepthImage depth_frame;
-  ColorImage color_frame;
+  DepthImage depth_frame(MemoryType::kDevice);
+  ColorImage color_frame(MemoryType::kDevice);
   Transform T_L_C;
   Camera camera;
   Transform T_CM_CD = Transform::Identity();  // depth to mask camera transform
-  data_loader.loadNext(&depth_frame, &T_L_C, &camera, &color_frame);
+  data_loader->loadNext(&depth_frame, &T_L_C, &camera, &color_frame);
 
   // Two mappers - one with mask, one without
   constexpr float voxel_size_m = 0.05f;
@@ -65,7 +69,8 @@ TEST(MultiMapperTest, MaskOnAndOff) {
     }
   }
   // Make a mask where nothing is masked out
-  MonoImage mask_zero(mask_one);
+  MonoImage mask_zero(MemoryType::kDevice);
+  mask_zero.copyFrom(mask_one);
   mask_zero.setZero();
 
   // Depth masked out - expect nothing integrated
@@ -87,7 +92,7 @@ TEST(MultiMapperTest, MaskOnAndOff) {
   int num_non_zero_weight_voxels = 0;
   callFunctionOnAllVoxels<ColorVoxel>(
       multi_mapper.unmasked_mapper()->color_layer(),
-      [&](const Index3D& block_index, const Index3D& voxel_index,
+      [&](const Index3D&, const Index3D&,
           const ColorVoxel* voxel) -> void {
         EXPECT_NEAR(voxel->weight, 0.0f, kFloatEpsilon);
         if (voxel->weight) {
@@ -124,8 +129,7 @@ TEST(MultiMapperTest, MaskOnAndOff) {
     }
   }
   EXPECT_GT(num_non_zero_weight_voxels, 0);
-  std::cout << "num_non_zero_weight_voxels: " << num_non_zero_weight_voxels
-            << std::endl;
+  LOG(INFO) << "num_non_zero_weight_voxels: ";
 }
 
 int main(int argc, char** argv) {

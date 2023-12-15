@@ -35,156 +35,86 @@ add_library(nvblox_test_utils SHARED
 target_include_directories(nvblox_test_utils PUBLIC
     include
     ${GTEST_INCLUDE_DIRS}
-)
+  )
+target_compile_options(nvblox_test_utils PRIVATE ${TEST_COMPILE_OPTIONS})
 target_link_libraries(nvblox_test_utils
-    nvblox_lib nvblox_datasets ${GTEST_LIBRARIES} ${CUDA_LIBRARIES} pthread
+    nvblox_lib nvblox_datasets ${GTEST_LIBRARIES} ${CUDA_LIBRARIES} pthread ${TEST_LINK_OPTIONS}
 )
-set_target_properties(nvblox_test_utils PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(nvblox_test_utils PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 set(TEST_OPTIONS DISCOVERY_TIMEOUT 30)
 
-# The tests
-add_executable(test_camera test_camera.cpp)
-target_link_libraries(test_camera nvblox_test_utils)
-gtest_discover_tests(test_camera ${TEST_OPTIONS})
+function (add_nvblox_test test_name)
+    add_executable(${test_name} ${test_name}.cpp)
+    target_link_libraries(${test_name} nvblox_test_utils)
+    # Sanitizer ASAN option to avoid crash during cuda init
+    gtest_discover_tests(${test_name} ${TEST_OPTIONS} PROPERTIES ENVIRONMENT "ASAN_OPTIONS=protect_shadow_gap=0")
+    target_compile_options(${test_name} PRIVATE ${TEST_COMPILE_OPTIONS})
+    target_link_options(${test_name} PRIVATE ${TEST_LINK_OPTIONS})
+endfunction()
 
-add_executable(test_indexing test_indexing.cpp)
-target_link_libraries(test_indexing nvblox_test_utils)
-gtest_discover_tests(test_indexing ${TEST_OPTIONS})
+add_nvblox_test(test_3d_interpolation)
+add_nvblox_test(test_3dmatch)
+add_nvblox_test(test_blox)
+add_nvblox_test(test_bounding_spheres)
+add_nvblox_test(test_connected_components)
+add_nvblox_test(test_cake)
+add_nvblox_test(test_camera)
+add_nvblox_test(test_color_image)
+add_nvblox_test(test_color_integrator)
+add_nvblox_test(test_cuda_stream)
+add_nvblox_test(test_depth_image)
+add_nvblox_test(test_dynamics)
+add_nvblox_test(test_for_memory_leaks)
+add_nvblox_test(test_freespace_integrator)
+add_nvblox_test(test_frustum)
+add_nvblox_test(test_fuser)
+add_nvblox_test(test_gpu_layer_view)
+add_nvblox_test(test_image_io)
+add_nvblox_test(test_image_masker)
+add_nvblox_test(test_image_projector)
+add_nvblox_test(test_indexing)
+add_nvblox_test(test_layer)
+add_nvblox_test(test_lidar)
+add_nvblox_test(test_lidar_integration)
+add_nvblox_test(test_mapper)
+add_nvblox_test(test_mesh_coloring)
+add_nvblox_test(test_mesh)
+add_nvblox_test(test_mesh_serializer)
+add_nvblox_test(test_multi_mapper)
+add_nvblox_test(test_nvtx_ranges)
+add_nvblox_test(test_occupancy_decay)
+add_nvblox_test(test_occupancy_integrator)
+add_nvblox_test(test_pointcloud)
+add_nvblox_test(test_ray_caster)
+add_nvblox_test(test_scene)
+add_nvblox_test(test_serialization)
+add_nvblox_test(test_sphere_tracing)
+add_nvblox_test(test_time)
+add_nvblox_test(test_traits)
+add_nvblox_test(test_tsdf_decay)
+add_nvblox_test(test_tsdf_integrator)
+add_nvblox_test(test_tsdf_integrator_cuda_components)
+add_nvblox_test(test_unified_ptr)
+add_nvblox_test(test_unified_vector)
+add_nvblox_test(test_weighting_function)
+add_nvblox_test(test_rates)
+add_nvblox_test(test_mesh_streamer)
+add_nvblox_test(test_npp_image_operations)
+add_nvblox_test(test_depth_image_preprocessing)
 
-add_executable(test_layer test_layer.cpp)
-target_link_libraries(test_layer nvblox_test_utils)
-gtest_discover_tests(test_layer ${TEST_OPTIONS})
+# TODO(dtingdahl) Fix tests that fails under sanitizer
+if(NOT USE_SANITIZER)
+  add_nvblox_test(test_esdf_integrator)
 
-add_executable(test_3d_interpolation test_3d_interpolation.cpp)
-target_link_libraries(test_3d_interpolation nvblox_test_utils)
-gtest_discover_tests(test_3d_interpolation ${TEST_OPTIONS})
-
-add_executable(test_tsdf_integrator test_tsdf_integrator.cpp)
-target_link_libraries(test_tsdf_integrator nvblox_test_utils)
-gtest_discover_tests(test_tsdf_integrator ${TEST_OPTIONS})
-
-add_executable(test_3dmatch test_3dmatch.cpp)
-target_link_libraries(test_3dmatch nvblox_test_utils nvblox_lib)
-gtest_discover_tests(test_3dmatch ${TEST_OPTIONS})
-set_target_properties(test_3dmatch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
-add_executable(test_unified_ptr test_unified_ptr.cpp)
-target_link_libraries(test_unified_ptr nvblox_test_utils)
-gtest_discover_tests(test_unified_ptr ${TEST_OPTIONS})
-
-add_executable(test_mesh test_mesh.cpp)
-target_link_libraries(test_mesh nvblox_test_utils)
-gtest_discover_tests(test_mesh ${TEST_OPTIONS})
-
-add_executable(test_scene test_scene.cpp)
-target_link_libraries(test_scene nvblox_test_utils)
-gtest_discover_tests(test_scene ${TEST_OPTIONS})
-
-add_executable(test_depth_image test_depth_image.cpp)
-target_link_libraries(test_depth_image nvblox_test_utils)
-gtest_discover_tests(test_depth_image ${TEST_OPTIONS})
-
-add_executable(test_tsdf_integrator_cuda_components test_tsdf_integrator_cuda_components.cpp)
-target_link_libraries(test_tsdf_integrator_cuda_components nvblox_test_utils)
-gtest_discover_tests(test_tsdf_integrator_cuda_components ${TEST_OPTIONS})
-
-add_executable(test_unified_vector test_unified_vector.cpp)
-target_link_libraries(test_unified_vector nvblox_test_utils)
-gtest_discover_tests(test_unified_vector ${TEST_OPTIONS})
-
-add_executable(test_esdf_integrator test_esdf_integrator.cpp)
-target_link_libraries(test_esdf_integrator nvblox_test_utils)
-gtest_discover_tests(test_esdf_integrator ${TEST_OPTIONS})
-
-add_executable(test_color_image test_color_image.cpp)
-target_link_libraries(test_color_image nvblox_test_utils)
-gtest_discover_tests(test_color_image ${TEST_OPTIONS})
-
-add_executable(test_color_integrator test_color_integrator.cpp)
-target_link_libraries(test_color_integrator nvblox_test_utils)
-gtest_discover_tests(test_color_integrator ${TEST_OPTIONS})
-
-add_executable(test_mesh_coloring test_mesh_coloring.cpp)
-target_link_libraries(test_mesh_coloring nvblox_test_utils)
-gtest_discover_tests(test_mesh_coloring ${TEST_OPTIONS})
-
-add_executable(test_for_memory_leaks test_for_memory_leaks.cpp)
-target_link_libraries(test_for_memory_leaks nvblox_test_utils)
-gtest_discover_tests(test_for_memory_leaks ${TEST_OPTIONS})
-
-add_executable(test_frustum test_frustum.cpp)
-target_link_libraries(test_frustum nvblox_test_utils)
-gtest_discover_tests(test_frustum ${TEST_OPTIONS})
-
-add_executable(test_gpu_layer_view test_gpu_layer_view.cpp)
-target_link_libraries(test_gpu_layer_view nvblox_test_utils)
-gtest_discover_tests(test_gpu_layer_view ${TEST_OPTIONS})
-
-add_executable(test_sphere_tracing test_sphere_tracing.cpp)
-target_link_libraries(test_sphere_tracing nvblox_test_utils)
-gtest_discover_tests(test_sphere_tracing ${TEST_OPTIONS})
-
-add_executable(test_cake test_cake.cpp)
-target_link_libraries(test_cake nvblox_test_utils)
-gtest_discover_tests(test_cake ${TEST_OPTIONS})
-
-add_executable(test_traits test_traits.cpp)
-target_link_libraries(test_traits nvblox_test_utils)
-gtest_discover_tests(test_traits ${TEST_OPTIONS})
-
-add_executable(test_serialization test_serialization.cpp)
-target_link_libraries(test_serialization nvblox_test_utils)
-gtest_discover_tests(test_serialization ${TEST_OPTIONS})
-
-add_executable(test_lidar test_lidar.cpp)
-target_link_libraries(test_lidar nvblox_test_utils)
-gtest_discover_tests(test_lidar ${TEST_OPTIONS})
-
-add_executable(test_lidar_integration test_lidar_integration.cpp)
-target_link_libraries(test_lidar_integration nvblox_test_utils)
-gtest_discover_tests(test_lidar_integration ${TEST_OPTIONS})
-
-add_executable(test_fuser test_fuser.cpp)
-target_link_libraries(test_fuser nvblox_test_utils)
-gtest_discover_tests(test_fuser ${TEST_OPTIONS})
-
-add_executable(test_bounding_spheres test_bounding_spheres.cpp)
-target_link_libraries(test_bounding_spheres nvblox_test_utils)
-gtest_discover_tests(test_bounding_spheres ${TEST_OPTIONS})
-
-add_executable(test_mapper test_mapper.cpp)
-target_link_libraries(test_mapper nvblox_test_utils)
-gtest_discover_tests(test_mapper ${TEST_OPTIONS})
-
-add_executable(test_image_masker test_image_masker.cpp)
-target_link_libraries(test_image_masker nvblox_test_utils)
-gtest_discover_tests(test_image_masker ${TEST_OPTIONS})
-
-add_executable(test_multi_mapper test_multi_mapper.cpp)
-target_link_libraries(test_multi_mapper nvblox_test_utils)
-gtest_discover_tests(test_multi_mapper ${TEST_OPTIONS})
-
-add_executable(test_image_projector test_image_projector.cpp)
-target_link_libraries(test_image_projector nvblox_test_utils)
-gtest_discover_tests(test_image_projector ${TEST_OPTIONS})
-
-add_executable(test_pointcloud test_pointcloud.cpp)
-target_link_libraries(test_pointcloud nvblox_test_utils)
-gtest_discover_tests(test_pointcloud ${TEST_OPTIONS})
-
-add_executable(test_occupancy_integrator test_occupancy_integrator.cpp)
-target_link_libraries(test_occupancy_integrator nvblox_test_utils)
-gtest_discover_tests(test_occupancy_integrator ${TEST_OPTIONS})
-
-add_executable(test_occupancy_decay test_occupancy_decay.cpp)
-target_link_libraries(test_occupancy_decay nvblox_test_utils)
-gtest_discover_tests(test_occupancy_decay ${TEST_OPTIONS})
-
-add_executable(test_weighting_function test_weighting_function.cpp)
-target_link_libraries(test_weighting_function nvblox_test_utils)
-gtest_discover_tests(test_weighting_function ${TEST_OPTIONS})
-
-add_executable(test_image_io test_image_io.cpp)
-target_link_libraries(test_image_io nvblox_test_utils)
-gtest_discover_tests(test_image_io ${TEST_OPTIONS})
+  # Add test that prevents us from accidentally introducing work on the default cuda stream.
+  # The test comes with a helper executable for for determining ID of the default cuda stream.
+  if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    add_executable(run_memcpy_on_default_cuda_stream
+      run_memcpy_on_default_cuda_stream.cpp
+    )
+    target_link_libraries(run_memcpy_on_default_cuda_stream ${CUDA_LIBRARIES} nvblox_lib)
+    add_test(test_default_stream_utilization ${CMAKE_CURRENT_SOURCE_DIR}/check_default_stream_utilization.sh
+    )
+  endif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+endif(NOT USE_SANITIZER)

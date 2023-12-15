@@ -38,27 +38,6 @@ class IndexingTest : public ::testing::Test {
   float voxel_size_ = 0.05;
 };
 
-TEST_F(IndexingTest, GetVoxelIndex) {
-  ASSERT_NEAR(voxel_size_, 0.05, kFloatEpsilon);
-  ASSERT_NEAR(block_size_, 0.4, kFloatEpsilon);
-
-  Vector3f point(0, 0, 0);
-  Index3D voxel_index = getVoxelIndexFromPositionInLayer(block_size_, point);
-  EXPECT_TRUE(voxel_index == Index3D(0, 0, 0));
-
-  point = Vector3f(block_size_, block_size_, block_size_);
-  voxel_index = getVoxelIndexFromPositionInLayer(block_size_, point);
-  EXPECT_TRUE(voxel_index == Index3D(0, 0, 0));
-
-  point = Vector3f(2.0f, 1.0f, 3.0f);
-  voxel_index = getVoxelIndexFromPositionInLayer(block_size_, point);
-  EXPECT_TRUE(voxel_index == Index3D(0, 4, 4)) << voxel_index;
-
-  point = Vector3f(-2.0f, -1.0f, -3.0f);
-  voxel_index = getVoxelIndexFromPositionInLayer(block_size_, point);
-  EXPECT_TRUE(voxel_index == Index3D(0, 4, 4)) << voxel_index;
-}
-
 TEST_F(IndexingTest, CenterIndexing) {
   AlignedVector<Vector3f> test_points;
   test_points.push_back({0, 0, 0});
@@ -67,14 +46,16 @@ TEST_F(IndexingTest, CenterIndexing) {
   test_points.push_back({-1, -3, 2});
 
   for (const Vector3f& point : test_points) {
-    Index3D voxel_index = getVoxelIndexFromPositionInLayer(block_size_, point);
-    Index3D block_index = getBlockIndexFromPositionInLayer(block_size_, point);
+    Index3D block_index;
+    Index3D voxel_index;
+    getBlockAndVoxelIndexFromPositionInLayer(block_size_, point, &block_index,
+                                             &voxel_index);
 
     Vector3f reconstructed_point = getPositionFromBlockIndexAndVoxelIndex(
         block_size_, block_index, voxel_index);
     Vector3f reconstructed_center_point =
-        getCenterPostionFromBlockIndexAndVoxelIndex(block_size_, block_index,
-                                                    voxel_index);
+        getCenterPositionFromBlockIndexAndVoxelIndex(block_size_, block_index,
+                                                     voxel_index);
 
     // Check the difference between the corner and the center.
     Vector3f center_difference =
@@ -140,6 +121,16 @@ TEST_F(IndexingTest, getBlockAndVoxelIndexFromPositionInLayerRoundingErrors) {
     EXPECT_TRUE(
         (voxel_indices[i].array() < VoxelBlock<bool>::kVoxelsPerSide).all());
   }
+}
+
+TEST_F(IndexingTest, BlockCenter) {
+  const float kBlockSize = 1.0f;
+  const Vector3f block_center =
+      getCenterPositionFromBlockIndex(kBlockSize, Index3D::Zero());
+  constexpr float kEps = 1e-6;
+  EXPECT_NEAR(block_center.x(), 0.5f, kEps);
+  EXPECT_NEAR(block_center.y(), 0.5f, kEps);
+  EXPECT_NEAR(block_center.z(), 0.5f, kEps);
 }
 
 int main(int argc, char** argv) {

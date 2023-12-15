@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#include "nvblox/core/internal/error_check.h"
 #include "nvblox/core/internal/warmup_cuda.h"
 
 namespace nvblox {
@@ -26,7 +27,7 @@ __global__ void warm_up_gpu() {
 
 void warmupCuda() {
   warm_up_gpu<<<64, 128>>>();
-  cudaDeviceSynchronize();
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 }  // namespace nvblox

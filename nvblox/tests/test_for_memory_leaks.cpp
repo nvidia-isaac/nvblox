@@ -30,7 +30,7 @@ using namespace nvblox;
 std::pair<int, float> getFreeGPUMemory() {
   size_t free_bytes;
   size_t total_bytes;
-  cudaMemGetInfo(&free_bytes, &total_bytes);
+  checkCudaErrors(cudaMemGetInfo(&free_bytes, &total_bytes));
   const int free_mb = free_bytes / 1e6;
   const int total_mb = total_bytes / 1e6;
   const float free_percent =
@@ -77,7 +77,7 @@ TEST(MemoryLeakTest, UnifiedVectorInt) {
   // Check that memory isn't depleting.
   // NOTE(alexmillane): We dont know what else is going on on the GPU but
   // hopefully nothing that allocates 100Mb during this test run...
-  constexpr int kMaxAllowableMemoryReductionMb = 100;
+  // constexpr int kMaxAllowableMemoryReductionMb = 100;
   // EXPECT_LT(reduction_in_free_gpu_memory_mb, kMaxAllowableMemoryReductionMb);
 }
 
@@ -85,8 +85,8 @@ TEST(MemoryLeakTest, 3DMatchMeshing) {
   // Load 3dmatch image
   const std::string base_path = "data/3dmatch";
   constexpr int seq_id = 1;
-  DepthImage depth_image_1;
-  ColorImage color_image_1;
+  DepthImage depth_image_1(MemoryType::kDevice);
+  ColorImage color_image_1(MemoryType::kDevice);
   EXPECT_TRUE(datasets::load16BitDepthImage(
       datasets::threedmatch::internal::getPathForDepthImage(base_path, seq_id,
                                                             0),
@@ -148,7 +148,7 @@ TEST(MemoryLeakTest, 3DMatchMeshing) {
   // Check that memory isn't depleting.
   // NOTE(alexmillane): We dont know what else is going on on the GPU but
   // hopefully nothing that allocates 100Mb during this test run...
-  constexpr int kMaxAllowableMemoryReductionMb = 100;
+  // constexpr int kMaxAllowableMemoryReductionMb = 100;
   // EXPECT_LT(reduction_in_free_gpu_memory_mb, kMaxAllowableMemoryReductionMb);
 }
 

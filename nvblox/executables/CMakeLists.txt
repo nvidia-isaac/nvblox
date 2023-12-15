@@ -12,7 +12,7 @@ target_include_directories(nvblox_datasets PUBLIC
 )
 
 target_link_libraries(nvblox_datasets nvblox_lib)
-set_target_properties(nvblox_datasets PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(nvblox_datasets PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 
 # 3Dmatch executable
@@ -22,7 +22,7 @@ add_executable(fuse_3dmatch
 target_link_libraries(fuse_3dmatch
     nvblox_lib nvblox_datasets
 )
-set_target_properties(fuse_3dmatch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(fuse_3dmatch PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 # Replica executable
 add_executable(fuse_replica
@@ -31,7 +31,7 @@ add_executable(fuse_replica
 target_link_libraries(fuse_replica
     nvblox_lib nvblox_datasets
 )
-set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(fuse_replica PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 
 # Redwood executable
 add_executable(fuse_redwood
@@ -40,4 +40,13 @@ add_executable(fuse_redwood
 target_link_libraries(fuse_redwood
     nvblox_lib nvblox_datasets
 )
-set_target_properties(fuse_redwood PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(fuse_redwood PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
+
+# Benchmarking executable
+#add_executable(benchmark
+#    src/benchmark.cpp
+#)
+#target_link_libraries(benchmark
+#    nvblox_lib nvblox_datasets nvblox_test_utils benchmark::benchmark
+#)
+#set_target_properties(benchmark PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)

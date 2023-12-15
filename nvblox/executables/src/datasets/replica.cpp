@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "nvblox/utils/logging.h"
 
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -86,6 +87,7 @@ bool parseCameraFromFile(const std::string& filename, Camera* camera_ptr,
   // Check that we found all parameters
   for (const float param : camera_params_vec) {
     if (param <= 0.0f) {
+      LOG(WARNING) << "Failed to find all camera parameters.";
       return false;
     }
   }
@@ -97,6 +99,7 @@ bool parseCameraFromFile(const std::string& filename, Camera* camera_ptr,
                        camera_params_vec[parameter_string_to_index.at("w")],
                        camera_params_vec[parameter_string_to_index.at("h")]);
   *scale_ptr = camera_params_vec[parameter_string_to_index.at("scale")];
+  LOG(INFO) << "Loaded camera\n" << *camera_ptr;
   return true;
 }
 
@@ -159,6 +162,11 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
           std::ifstream(replica::internal::getPathForTrajectory(base_path))) {
   // We load the scale from camera file and reset the depth image loader to
   // include it.
+  if (!std::filesystem::exists(base_path)) {
+    LOG(WARNING) << "Tried to create a dataloader with a non-existant path.";
+    setup_success_ = false;
+    return;
+  }
   float inv_depth_image_scaling_factor;
   if (replica::internal::parseCameraFromFile(
           replica::internal::getPathForCameraIntrinsics(base_path_), &camera_,
@@ -167,6 +175,8 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
         base_path, 1.0f / inv_depth_image_scaling_factor, multithreaded);
     setup_success_ = true;
   } else {
+    LOG(ERROR)
+        << "Dataloader failed to initialize. Couldn't load camera parameters.";
     setup_success_ = false;
   }
 }
@@ -199,7 +209,6 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
 
   // Because we might fail along the way, increment the frame number before we
   // start.
-  const int frame_number = frame_number_;
   ++frame_number_;
 
   // Load the image into a Depth Frame.

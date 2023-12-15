@@ -64,14 +64,15 @@ namespace checkers {
 
 template <typename ElementType>
 struct PixelAlwaysValid {
-  __host__ __device__ static inline bool check(const ElementType& pixel_value) {
+  __host__ __device__ static inline bool check(const ElementType&) {
     return true;
   }
 };
 
 struct FloatPixelGreaterThanZero {
   __host__ __device__ static inline bool check(const float& pixel_value) {
-    return pixel_value > 0.0f;
+    constexpr float kEps = 1e-6;
+    return pixel_value > kEps;
   }
 };
 
@@ -193,6 +194,63 @@ bool interpolate2DLinear(
     neighbours_ptr->p11 = p11;
     neighbours_ptr->u_low_side_px = u_low_side_px;
   }
+  return true;
+}
+
+__device__ bool interpolateLidarImage(
+    const Lidar& lidar, const Vector3f& p_voxel_center_C, const float* image,
+    const Vector2f& u_px, const int rows, const int cols,
+    const float linear_interpolation_max_allowable_difference_m,
+    const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
+    float* image_value) {
+  // Try linear interpolation first
+  interpolation::Interpolation2DNeighbours<float> neighbours;
+  bool linear_interpolation_success = interpolation::interpolate2DLinear<
+      float, interpolation::checkers::FloatPixelGreaterThanZero>(
+      image, u_px, rows, cols, image_value, &neighbours);
+
+  // Additional check
+  // Check that we're not interpolating over a discontinuity
+  // NOTE(alexmillane): This prevents smearing are object edges.
+  if (linear_interpolation_success) {
+    const float d00 = fabsf(neighbours.p00 - *image_value);
+    const float d01 = fabsf(neighbours.p01 - *image_value);
+    const float d10 = fabsf(neighbours.p10 - *image_value);
+    const float d11 = fabsf(neighbours.p11 - *image_value);
+    float maximum_depth_difference_to_neighbours =
+        fmax(fmax(d00, d01), fmax(d10, d11));
+    if (maximum_depth_difference_to_neighbours >
+        linear_interpolation_max_allowable_difference_m) {
+      linear_interpolation_success = false;
+    }
+  }
+
+  // If linear didn't work - try nearest neighbour interpolation
+  if (!linear_interpolation_success) {
+    Index2D u_neighbour_px;
+    if (!interpolation::interpolate2DClosest<
+            float, interpolation::checkers::FloatPixelGreaterThanZero>(
+            image, u_px, rows, cols, image_value, &u_neighbour_px)) {
+      // If we can't successfully do closest, fail to intgrate this voxel.
+      return false;
+    }
+    // Additional check
+    // Check that this voxel is close to the ray passing through the pixel.
+    // Note(alexmillane): This is to prevent large numbers of voxels
+    // being integrated by a single pixel at long ranges.
+    const Vector3f closest_ray = lidar.vectorFromPixelIndices(u_neighbour_px);
+    const float off_ray_squared_distance =
+        (p_voxel_center_C - p_voxel_center_C.dot(closest_ray) * closest_ray)
+            .squaredNorm();
+    if (off_ray_squared_distance >
+        nearest_interpolation_max_allowable_squared_dist_to_ray_m) {
+      return false;
+    }
+  }
+
+  // TODO(alexmillane): We should add clearing rays, even in the case both
+  // interpolations fail.
+
   return true;
 }
 

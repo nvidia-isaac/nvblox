@@ -18,6 +18,7 @@ limitations under the License.
 #include <memory>
 #include <utility>
 
+#include "nvblox/core/cuda_stream.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/sensors/camera.h"
@@ -29,7 +30,8 @@ namespace nvblox {
 class SphereTracer {
  public:
   SphereTracer();
-  ~SphereTracer();
+  SphereTracer(std::shared_ptr<CudaStream> cuda_stream);
+  ~SphereTracer() = default;
 
   /// Render an image on the GPU
   /// Rendering occurs by sphere tracing the passed TsdfLayer. This allocates if
@@ -201,7 +203,7 @@ class SphereTracer {
   float surface_distance_epsilon_vox_ = 0.1f;
 
   // The CUDA stream on which processing occurs
-  cudaStream_t tracing_stream_;
+  std::shared_ptr<CudaStream> cuda_stream_;
 };
 
 }  // namespace nvblox

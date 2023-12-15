@@ -21,19 +21,21 @@ namespace nvblox {
 
 __device__ float inline voxelIsDecayed(float log_odds,
                                        float free_space_decay_log_odds,
-                                       float occupied_space_decay_log_odds) {
-  // Check if the next decay step would change the sign of the log odds value
-  // (i.e. pass 0.5 probability).
-  if (log_odds >= 0) {
-    return log_odds + occupied_space_decay_log_odds < 0;
+                                       float occupied_space_decay_log_odds,
+                                       float decay_to_log_odds) {
+  // Check if the next decay step would pass the threshold value in either
+  // direction.
+  if (log_odds >= decay_to_log_odds) {
+    return log_odds + occupied_space_decay_log_odds < decay_to_log_odds;
   } else {
-    return log_odds + free_space_decay_log_odds >= 0;
+    return log_odds + free_space_decay_log_odds >= decay_to_log_odds;
   }
 }
 
 __global__ void decayProbabilityKernel(OccupancyBlock** block_ptrs,
                                        float free_space_decay_log_odds,
                                        float occupied_space_decay_log_odds,
+                                       float decay_to_log_odds,
                                        bool* is_block_fully_decayed) {
   // A single thread in each block initializes the output to true
   if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
@@ -45,9 +47,9 @@ __global__ void decayProbabilityKernel(OccupancyBlock** block_ptrs,
       &(block_ptrs[blockIdx.x]->voxels[threadIdx.z][threadIdx.y][threadIdx.x]);
 
   if (voxelIsDecayed(voxel_ptr->log_odds, free_space_decay_log_odds,
-                     occupied_space_decay_log_odds)) {
+                     occupied_space_decay_log_odds, decay_to_log_odds)) {
     // This voxel decayed to zero log odds (0.5 occupancy probability).
-    voxel_ptr->log_odds = 0.0;
+    voxel_ptr->log_odds = decay_to_log_odds;
     return;
   } else {
     // If one voxel in a block is not decayed, the block is not fully decayed.
@@ -63,96 +65,38 @@ __global__ void decayProbabilityKernel(OccupancyBlock** block_ptrs,
   }
 }
 
-OccupancyDecayIntegrator::OccupancyDecayIntegrator() {
-  checkCudaErrors(cudaStreamCreate(&integration_stream_));
-}
-OccupancyDecayIntegrator::~OccupancyDecayIntegrator() {
-  cudaStreamSynchronize(integration_stream_);
-  checkCudaErrors(cudaStreamDestroy(integration_stream_));
-}
-
-void OccupancyDecayIntegrator::decay(OccupancyLayer* layer_ptr) {
-  CHECK_NOTNULL(layer_ptr);
-  if (layer_ptr->numAllocatedBlocks() == 0) {
-    // Empty layer, nothing to do here.
-    return;
-  }
-  decayProbability(layer_ptr);
-  if (deallocate_decayed_blocks_) {
-    deallocateFullyDecayedBlocks(layer_ptr);
+OccupancyDecayIntegrator::OccupancyDecayIntegrator(DecayMode decay_mode)
+    : DecayIntegratorBase(decay_mode) {
+  if (decay_mode == DecayMode::kDecayToDeallocate) {
+    decay_to_probability(kDefaultProbabilityDeallocate);
+  } else if (decay_mode == DecayMode::kDecayToFree) {
+    // NOTE(alexmillane): When we decay to free we decay to a probability
+    // slightly lower than 0.5 (see default value). Note that if you want blocks
+    // to be free in the ESDF, this will have to be less than the occupied
+    // threshold in the ESDF integrator (which is 0.5 by default).
+    decay_to_probability(kDefaultProbabilityFree);
+  } else {
+    LOG(FATAL) << "Decay mode not implemented";
   }
 }
 
-void OccupancyDecayIntegrator::decayProbability(OccupancyLayer* layer_ptr) {
-  CHECK_NOTNULL(layer_ptr);
-  const int num_allocated_blocks = layer_ptr->numAllocatedBlocks();
-
-  // Expand the buffers when needed
-  if (num_allocated_blocks > allocated_block_ptrs_host_.capacity()) {
-    constexpr float kBufferExpansionFactor = 1.5f;
-    const int new_size =
-        static_cast<int>(kBufferExpansionFactor * num_allocated_blocks);
-    allocated_block_ptrs_host_.reserve(new_size);
-    allocated_block_ptrs_device_.reserve(new_size);
-    block_fully_decayed_device_.reserve(new_size);
-    block_fully_decayed_host_.reserve(new_size);
-  }
-
-  // Get the block pointers on host and copy them to device
-  allocated_block_ptrs_host_ = layer_ptr->getAllBlockPointers();
-  allocated_block_ptrs_device_ = allocated_block_ptrs_host_;
-
+void OccupancyDecayIntegrator::decayImplementationAsync(
+    OccupancyLayer*, const CudaStream cuda_stream) {
   // Kernel call - One ThreadBlock launched per VoxelBlock
-  block_fully_decayed_device_.resize(num_allocated_blocks);
   constexpr int kVoxelsPerSide = VoxelBlock<bool>::kVoxelsPerSide;
   const dim3 kThreadsPerBlock(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
-  const int num_thread_blocks = num_allocated_blocks;
+  const int num_thread_blocks = allocated_block_ptrs_host_.size();
   decayProbabilityKernel<<<num_thread_blocks, kThreadsPerBlock, 0,
-                           integration_stream_>>>(
+                           cuda_stream>>>(
       allocated_block_ptrs_device_.data(),  // NOLINT
       free_space_decay_log_odds_,           // NOLINT
       occupied_space_decay_log_odds_,       // NOLINT
+      decay_to_log_odds_,                   // NOLINT
       block_fully_decayed_device_.data());  // NOLINT
-  cudaStreamSynchronize(integration_stream_);
   checkCudaErrors(cudaPeekAtLastError());
-
-  // Copy results back to host
-  block_fully_decayed_host_ = block_fully_decayed_device_;
-
-  // Check if nothing is lost on the way
-  CHECK(allocated_block_ptrs_host_.size() == num_allocated_blocks);
-  CHECK(allocated_block_ptrs_device_.size() == num_allocated_blocks);
-  CHECK(block_fully_decayed_device_.size() == num_allocated_blocks);
-  CHECK(block_fully_decayed_host_.size() == num_allocated_blocks);
 }
 
-void OccupancyDecayIntegrator::deallocateFullyDecayedBlocks(
-    OccupancyLayer* layer_ptr) {
-  const int num_allocated_blocks = layer_ptr->numAllocatedBlocks();
-
-  // Get the block indices on host
-  std::vector<Index3D> allocated_block_indices_host =
-      layer_ptr->getAllBlockIndices();
-
-  // Find blocks that are fully decayed
-  CHECK(num_allocated_blocks == allocated_block_indices_host.size());
-  CHECK(num_allocated_blocks == block_fully_decayed_host_.size());
-  for (size_t i = 0; i < num_allocated_blocks; i++) {
-    if (block_fully_decayed_host_[i]) {
-      layer_ptr->clearBlock(allocated_block_indices_host[i]);
-    }
-  }
-}
-
-bool OccupancyDecayIntegrator::deallocate_decayed_blocks() {
-  return deallocate_decayed_blocks_;
-}
-void OccupancyDecayIntegrator::deallocate_decayed_blocks(
-    bool deallocate_decayed_blocks) {
-  deallocate_decayed_blocks_ = deallocate_decayed_blocks;
-}
-
-float OccupancyDecayIntegrator::free_region_decay_probability() {
+float OccupancyDecayIntegrator::free_region_decay_probability() const {
   return probabilityFromLogOdds(free_space_decay_log_odds_);
 }
 void OccupancyDecayIntegrator::free_region_decay_probability(float value) {
@@ -162,7 +106,7 @@ void OccupancyDecayIntegrator::free_region_decay_probability(float value) {
   free_space_decay_log_odds_ = logOddsFromProbability(value);
 }
 
-float OccupancyDecayIntegrator::occupied_region_decay_probability() {
+float OccupancyDecayIntegrator::occupied_region_decay_probability() const {
   return probabilityFromLogOdds(occupied_space_decay_log_odds_);
 }
 void OccupancyDecayIntegrator::occupied_region_decay_probability(float value) {
@@ -171,6 +115,30 @@ void OccupancyDecayIntegrator::occupied_region_decay_probability(float value) {
          "0.5] for the occupied region to decay towards 0.5 occupancy "
          "probability.";
   occupied_space_decay_log_odds_ = logOddsFromProbability(value);
+}
+
+float OccupancyDecayIntegrator::decay_to_probability() const {
+  return probabilityFromLogOdds(decay_to_log_odds_);
+}
+
+void OccupancyDecayIntegrator::decay_to_probability(float value) {
+  CHECK(value >= 0.f && value <= 1.0f)
+      << "The decay-to probility needs to be a valid probability (ie lying "
+         "between [0.0, 1.0].)";
+  decay_to_log_odds_ = logOddsFromProbability(value);
+}
+
+parameters::ParameterTreeNode OccupancyDecayIntegrator::getParameterTree(
+    const std::string& name_remap) const {
+  using parameters::ParameterTreeNode;
+  const std::string name =
+      (name_remap.empty()) ? "occupancy_decay_integrator" : name_remap;
+  return ParameterTreeNode(name,
+                           {ParameterTreeNode("free_space_decay_log_odds:",
+                                              free_space_decay_log_odds_),
+                            ParameterTreeNode("occupied_space_decay_log_odds:",
+                                              occupied_space_decay_log_odds_),
+                            DecayIntegratorBase::getParameterTree()});
 }
 
 }  // namespace nvblox

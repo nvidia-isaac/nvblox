@@ -20,7 +20,8 @@ limitations under the License.
 namespace nvblox {
 namespace io {
 
-bool writeLayerCakeToFile(const std::string& filename, const LayerCake& cake) {
+bool writeLayerCakeToFile(const std::string& filename, const LayerCake& cake,
+                          const CudaStream cuda_stream) {
   registerCommonTypes();
 
   // Truncate and overwrite by default.
@@ -31,7 +32,7 @@ bool writeLayerCakeToFile(const std::string& filename, const LayerCake& cake) {
     return false;
   }
 
-  bool status = serializer.writeLayerCake(cake);
+  bool status = serializer.writeLayerCake(cake, cuda_stream);
   serializer.close();
   return status;
 }
@@ -47,9 +48,9 @@ LayerCake loadLayerCakeFromFile(const std::string& filename,
     return LayerCake();
   }
 
-  LayerCake cake = serializer.loadLayerCake(memory_type);
+  LayerCake cake = serializer.loadLayerCake(memory_type, CudaStreamOwning());
   serializer.close();
-  return std::move(cake);
+  return cake;
 }
 
 }  // namespace io

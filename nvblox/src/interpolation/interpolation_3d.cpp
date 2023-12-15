@@ -65,7 +65,7 @@ bool interpolateOnCPU(const Vector3f& p_L, const OccupancyLayer& layer,
   auto get_probability_lambda = [](const OccupancyVoxel& voxel) -> float {
     return probabilityFromLogOdds(voxel.log_odds);
   };
-  auto voxel_valid_lambda = [](const OccupancyVoxel& voxel) -> bool {
+  auto voxel_valid_lambda = [](const OccupancyVoxel&) -> bool {
     return true;
   };
   return internal::interpolateMemberOnCPU<OccupancyVoxel>(

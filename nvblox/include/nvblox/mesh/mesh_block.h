@@ -18,6 +18,7 @@ limitations under the License.
 #include <memory>
 
 #include "nvblox/core/color.h"
+#include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/core/unified_vector.h"
@@ -36,16 +37,13 @@ struct MeshBlock {
   /// Create a mesh block of the specified memory type.
   MeshBlock(MemoryType memory_type = MemoryType::kDevice);
 
-  /// "Clone" copy constructor, with the possibility to change device type.
-  MeshBlock(const MeshBlock& mesh_block);
-  /// "Clone" to a different memory type.
-  MeshBlock(const MeshBlock& mesh_block, MemoryType memory_type);
-
+  void copyFromAsync(const MeshBlock& other, const CudaStream cuda_stream);
+  void copyFrom(const MeshBlock& other);
   // Mesh Data
   // These unified vectors contain the mesh data for this block. Note that
-  // Colors and/or intensities are optional. The "triangles" vector is a vector
-  // of indices into the vertices vector. Triplets of consecutive elements form
-  // triangles with the indexed vertices as their corners.
+  // Colors and/or intensities are optional. The "triangles" vector is a
+  // vector of indices into the vertices vector. Triplets of consecutive
+  // elements form triangles with the indexed vertices as their corners.
   unified_vector<Vector3f> vertices;
   unified_vector<Vector3f> normals;
   unified_vector<Color> colors;
@@ -54,28 +52,24 @@ struct MeshBlock {
   /// Clear all data within the mesh block.
   void clear();
 
-  /// Resize vertices and normals to the correct number of vertices.
-  void resizeToNumberOfVertices(size_t new_size);
-  /// Reserve space in the vertices and normals vectors.
-  void reserveNumberOfVertices(size_t new_capacity);
-
   /// Size of the vertices vector.
   size_t size() const;
   /// Capacity (allocated size) of the vertices vector.
   size_t capacity() const;
 
+  /// The number of bytes in this block
+  size_t sizeInBytes() const;
+
   /// Resize colors/intensities such that:
   /// `colors.size()/intensities.size() == vertices.size()`
   void expandColorsToMatchVertices();
 
-  // Copy mesh data to the CPU.
-  std::vector<Vector3f> getVertexVectorOnCPU() const;
-  std::vector<Vector3f> getNormalVectorOnCPU() const;
-  std::vector<int> getTriangleVectorOnCPU() const;
-  std::vector<Color> getColorVectorOnCPU() const;
-
   /// Note(alexmillane): Memory type ignored, MeshBlocks live in CPU memory.
   static Ptr allocate(MemoryType memory_type);
+
+  /// Note(dtingdahl): Required to comply with common block interface. Cuda
+  /// stream is not used, MeshBlocks live in CPU memory.
+  static Ptr allocateAsync(MemoryType memory_type, const CudaStream&);
 };
 
 /// Helper struct for mesh blocks on CUDA.
@@ -93,13 +87,16 @@ struct CudaMeshBlock {
   int triangles_size = 0;
 };
 
-/// Specialization of BlockLayer clone just for MeshBlocks.
+/// Specialization of BlockLayer copyFrom just for MeshBlocks
+/// Necessary since MeshBlock::Ptr is std::shared_ptr instead of unified_ptr
 template <>
-inline BlockLayer<MeshBlock>::BlockLayer(const BlockLayer& other,
-                                         MemoryType memory_type)
-    : BlockLayer(other.block_size_, memory_type) {
+inline void BlockLayer<MeshBlock>::copyFromAsync(const BlockLayer& other,
+                                                 const CudaStream cuda_stream) {
   LOG(INFO) << "Deep copy of Mesh BlockLayer containing "
             << other.numAllocatedBlocks() << " blocks.";
+
+  clear();
+
   // Re-create all the blocks.
   std::vector<Index3D> all_block_indices = other.getAllBlockIndices();
 
@@ -109,8 +106,9 @@ inline BlockLayer<MeshBlock>::BlockLayer(const BlockLayer& other,
     if (block == nullptr) {
       continue;
     }
-    blocks_.emplace(block_index,
-                    std::make_shared<MeshBlock>(*block, memory_type));
+    auto copy = std::make_shared<MeshBlock>(memory_type_);
+    copy->copyFromAsync(*block, cuda_stream);
+    blocks_.emplace(block_index, copy);
   }
 }
 

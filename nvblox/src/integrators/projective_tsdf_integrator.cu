@@ -15,8 +15,6 @@ limitations under the License.
 */
 #include <nvblox/integrators/projective_tsdf_integrator.h>
 
-#include "nvblox/geometry/bounding_boxes.h"
-#include "nvblox/geometry/bounding_spheres.h"
 #include "nvblox/integrators/internal/cuda/impl/projective_integrator_impl.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/integrators/weighting_function.h"
@@ -24,7 +22,8 @@ limitations under the License.
 namespace nvblox {
 
 struct UpdateTsdfVoxelFunctor {
-  UpdateTsdfVoxelFunctor() {}
+  __host__ __device__ UpdateTsdfVoxelFunctor() = default;
+  __host__ __device__ ~UpdateTsdfVoxelFunctor() = default;
 
   // Vector3f p_voxel_C, float depth, TsdfVoxel* voxel_ptr
   __device__ bool operator()(const float surface_depth_measured,
@@ -73,22 +72,26 @@ struct UpdateTsdfVoxelFunctor {
   }
 
   float truncation_distance_m_ = 0.2f;
-  float max_weight_ = 100.0f;
+  float max_weight_ = ProjectiveTsdfIntegrator::kDefaultMaxWeight;
 
-  WeightingFunction weighting_function_ =
-      WeightingFunction(kDefaultWeightingFunctionType);
+  WeightingFunction weighting_function_ = WeightingFunction(
+      ProjectiveTsdfIntegrator::kDefaultWeightingFunctionType);
 };
 
 ProjectiveTsdfIntegrator::ProjectiveTsdfIntegrator()
-    : ProjectiveIntegrator<TsdfVoxel>() {
+    : ProjectiveTsdfIntegrator(std::make_shared<CudaStreamOwning>()) {}
+
+ProjectiveTsdfIntegrator::ProjectiveTsdfIntegrator(
+    std::shared_ptr<CudaStream> cuda_stream)
+    : ProjectiveIntegrator<TsdfVoxel>(cuda_stream) {
   update_functor_host_ptr_ =
       make_unified<UpdateTsdfVoxelFunctor>(MemoryType::kHost);
-  checkCudaErrors(cudaStreamCreate(&integration_stream_));
 }
 
 ProjectiveTsdfIntegrator::~ProjectiveTsdfIntegrator() {
-  cudaStreamSynchronize(integration_stream_);
-  checkCudaErrors(cudaStreamDestroy(integration_stream_));
+  // NOTE(alexmillane): We can't default this in the header file because to the
+  // unified_ptr to a forward declared type. The type has to be defined where
+  // the destructor is.
 }
 
 unified_ptr<UpdateTsdfVoxelFunctor>
@@ -102,7 +105,8 @@ ProjectiveTsdfIntegrator::getTsdfUpdateFunctorOnDevice(float voxel_size) {
   update_functor_host_ptr_->weighting_function_ =
       WeightingFunction(weighting_function_type_);
   // Transfer to the device
-  return update_functor_host_ptr_.clone(MemoryType::kDevice);
+  return update_functor_host_ptr_.cloneAsync(MemoryType::kDevice,
+                                             *cuda_stream_);
 }
 
 void ProjectiveTsdfIntegrator::integrateFrame(
@@ -113,8 +117,7 @@ void ProjectiveTsdfIntegrator::integrateFrame(
       getTsdfUpdateFunctorOnDevice(layer->voxel_size());
   // Integrate
   ProjectiveIntegrator<TsdfVoxel>::integrateFrame(
-      depth_frame, T_L_C, camera,
-      update_functor_host_ptr_.clone(MemoryType::kDevice).get(), layer,
+      depth_frame, T_L_C, camera, update_functor_device_ptr.get(), layer,
       updated_blocks);
 }
 
@@ -169,67 +172,35 @@ std::string ProjectiveTsdfIntegrator::getIntegratorName() const {
   return "tsdf";
 }
 
-// Call with:
-// - One threadBlock per VoxelBlock
-// - 8x8x8 threads per threadBlock
-__global__ void setUnobservedVoxelsKernel(const TsdfVoxel voxel_value,
-                                          TsdfBlock** tsdf_block_ptrs) {
-  // Get the voxel addressed by this thread.
-  TsdfBlock* tsdf_block = tsdf_block_ptrs[blockIdx.x];
-  TsdfVoxel* tsdf_voxel =
-      &tsdf_block->voxels[threadIdx.z][threadIdx.y][threadIdx.x];
-  // If voxel not observed set it to the constant value input to the kernel.
-  constexpr float kMinObservedWeight = 0.001;
-  if (tsdf_voxel->weight < kMinObservedWeight) {
-    *tsdf_voxel = voxel_value;
-  }
-}
-
 void ProjectiveTsdfIntegrator::markUnobservedFreeInsideRadius(
     const Vector3f& center, float radius, TsdfLayer* layer,
     std::vector<Index3D>* updated_blocks_ptr) {
-  CHECK_NOTNULL(layer);
-  CHECK_GT(radius, 0.0f);
-  // First get blocks in AABB
-  const Vector3f min = center.array() - radius;
-  const Vector3f max = center.array() + radius;
-  const AxisAlignedBoundingBox aabb(min, max);
-  const std::vector<Index3D> blocks_touched_by_aabb =
-      getBlockIndicesTouchedByBoundingBox(layer->block_size(), aabb);
-  // Narrow to radius
-  const std::vector<Index3D> blocks_inside_radius = getBlocksWithinRadius(
-      blocks_touched_by_aabb, layer->block_size(), center, radius);
-  // Allocate (if they're not already);
-  std::for_each(
-      blocks_inside_radius.begin(), blocks_inside_radius.end(),
-      [layer](const Index3D& idx) { layer->allocateBlockAtIndex(idx); });
+  markUnobservedFreeInsideRadiusTemplate(center, radius, layer,
+                                         updated_blocks_ptr);
+}
 
-  // TsdfBlock pointers to GPU
-  const std::vector<TsdfBlock*> block_ptrs_host =
-      getBlockPtrsFromIndices(blocks_inside_radius, layer);
-  device_vector<TsdfBlock*> block_ptrs_device(block_ptrs_host);
+parameters::ParameterTreeNode ProjectiveTsdfIntegrator::getParameterTree(
+    const std::string& name_remap) const {
+  using parameters::ParameterTreeNode;
+  const std::string name =
+      (name_remap.empty()) ? "projective_tsdf_integrator" : name_remap;
+  // NOTE(alexmillane): Wrapping our weighting function to_string version in the
+  // std::function for passing to the parameter tree node constructor because it
+  // seems to have trouble with template deduction.
+  std::function<std::string(const WeightingFunctionType&)>
+      weighting_function_to_string =
+          [](const WeightingFunctionType& w) { return to_string(w); };
 
-  // The value given to "observed" voxels
-  constexpr float kSlightlyObservedVoxelWeight = 0.1;
-  const TsdfVoxel slightly_observed_tsdf_voxel{
-      .distance = get_truncation_distance_m(layer->voxel_size()),
-      .weight = kSlightlyObservedVoxelWeight};
-
-  // Kernel launch
-  const int num_thread_blocks = block_ptrs_device.size();
-  constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
-  const dim3 num_threads_per_block(kVoxelsPerSide, kVoxelsPerSide,
-                                   kVoxelsPerSide);
-  setUnobservedVoxelsKernel<<<num_thread_blocks, num_threads_per_block, 0,
-                              integration_stream_>>>(
-      slightly_observed_tsdf_voxel, block_ptrs_device.data());
-  cudaStreamSynchronize(integration_stream_);
-  checkCudaErrors(cudaPeekAtLastError());
-
-  // Return blocks affected
-  if (updated_blocks_ptr != nullptr) {
-    *updated_blocks_ptr = blocks_inside_radius;
-  }
+  return ParameterTreeNode(
+      name,
+      {ParameterTreeNode("max_weight:", max_weight_),
+       ParameterTreeNode("marked_unobserved_voxels_distance_m:",
+                         marked_unobserved_voxels_distance_m_),
+       ParameterTreeNode("marked_unobserved_voxels_weight:",
+                         marked_unobserved_voxels_weight_),
+       ParameterTreeNode("weighting_function_type:", weighting_function_type_,
+                         weighting_function_to_string),
+       ProjectiveIntegrator<TsdfVoxel>::getParameterTree()});
 }
 
 }  // namespace nvblox
