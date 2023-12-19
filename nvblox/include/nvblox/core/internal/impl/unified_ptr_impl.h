@@ -59,17 +59,19 @@ typename _Unified_if<T>::_Single_object make_unified(MemoryType memory_type,
 // Array
 template <typename T>
 typename _Unified_if<T>::_Unknown_bound make_unified(std::size_t size) {
-  return make_unified<T>(size, unified_ptr<T>::kDefaultMemoryType);
+  return make_unified_async<T>(size, unified_ptr<T>::kDefaultMemoryType,
+                               CudaStreamOwning());
 }
 
 template <typename T>
-typename _Unified_if<T>::_Unknown_bound make_unified(std::size_t size,
-                                                     MemoryType memory_type) {
+typename _Unified_if<T>::_Unknown_bound make_unified_async(
+    std::size_t size, MemoryType memory_type, const CudaStream& cuda_stream) {
   typedef typename std::remove_extent<T>::type TNonArray;
   TNonArray* cuda_ptr = nullptr;
   if (memory_type == MemoryType::kDevice) {
     // No constructor
-    checkCudaErrors(cudaMalloc(&cuda_ptr, sizeof(TNonArray) * size));
+    checkCudaErrors(
+        cudaMallocAsync(&cuda_ptr, sizeof(TNonArray) * size, cuda_stream));
     return unified_ptr<T>(cuda_ptr, memory_type, size);
   } else if (memory_type == MemoryType::kUnified) {
     // Default constructor
@@ -81,6 +83,12 @@ typename _Unified_if<T>::_Unknown_bound make_unified(std::size_t size,
     checkCudaErrors(cudaMallocHost(&cuda_ptr, sizeof(TNonArray) * size));
     return unified_ptr<T>(new (cuda_ptr) TNonArray[size], memory_type, size);
   }
+}
+
+template <typename T>
+typename _Unified_if<T>::_Unknown_bound make_unified(std::size_t size,
+                                                     MemoryType memory_type) {
+  return make_unified_async<T>(size, memory_type, CudaStreamOwning());
 }
 
 // Default constructor.
@@ -309,7 +317,7 @@ struct Cloner {
         << "Cloning between two unified memory areas is not allowed since "
            "it's not supported on all devices (need "
            "concurrentManagedAccess=1)";
-    auto other = make_unified<T_nonconst>(memory_type);
+    auto other = make_unified_async<T_nonconst>(memory_type, cuda_stream);
     checkCudaErrors(cudaMemcpyAsync(other.get(), original.get(), sizeof(T),
                                     cudaMemcpyDefault, cuda_stream));
     return other;
@@ -325,7 +333,8 @@ struct Cloner<T[]> {
                                               size_t size,
                                               const CudaStream cuda_stream) {
     CHECK(original.get() != nullptr);
-    auto other = make_unified<T_nonconst[]>(size, memory_type);
+    auto other =
+        make_unified_async<T_nonconst[]>(size, memory_type, cuda_stream);
     checkCudaErrors(cudaMemcpyAsync(other.get(), original.get(),
                                     sizeof(T_noextent) * size,
                                     cudaMemcpyDefault, cuda_stream));
@@ -357,13 +366,24 @@ unified_ptr<typename std::remove_cv<T>::type> unified_ptr<T>::cloneAsync(
 }
 
 template <typename T>
-void unified_ptr<T>::copyToAsync(unified_ptr<T_nonconst>& ptr,
+void unified_ptr<T>::copyToAsync(T_noextent* raw_ptr,
                                  const CudaStream cuda_stream) const {
-  CHECK(ptr.get() != nullptr);
-  CHECK(ptr.size_ >= size_);
-  checkCudaErrors(cudaMemcpyAsync(ptr.get(), this->get(),
+  CHECK(raw_ptr != nullptr);
+  checkCudaErrors(cudaMemcpyAsync(raw_ptr, this->get(),
                                   sizeof(T_noextent) * size_, cudaMemcpyDefault,
                                   cuda_stream));
+}
+
+template <typename T>
+void unified_ptr<T>::copyTo(T_noextent* raw_ptr) const {
+  copyToAsync(raw_ptr, CudaStreamOwning());
+}
+
+template <typename T>
+void unified_ptr<T>::copyToAsync(unified_ptr<T_nonconst>& ptr,
+                                 const CudaStream cuda_stream) const {
+  CHECK(ptr.size_ >= size_);
+  copyToAsync(ptr.get(), cuda_stream);
 }
 template <typename T>
 void unified_ptr<T>::copyTo(unified_ptr<T_nonconst>& ptr) const {

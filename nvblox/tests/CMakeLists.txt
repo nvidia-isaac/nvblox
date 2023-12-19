@@ -118,3 +118,12 @@ if(NOT USE_SANITIZER)
     )
   endif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
 endif(NOT USE_SANITIZER)
+
+
+# Benchmarking executable
+add_executable(benchmark benchmark.cpp
+)
+target_link_libraries(benchmark
+    nvblox_lib nvblox_datasets nvblox_test_utils benchmark::benchmark
+)
+set_target_properties(benchmark PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)

@@ -1,10 +1,15 @@
-FROM nvblox_deps
+ARG BASE_IMAGE=nvblox_deps
+ARG CMAKE_ARGS=""
+
+FROM $BASE_IMAGE
 
 SHELL ["/bin/bash", "-c"]
 
-# Copy over the nvblox (both as a standalone and into the catkin workspace)
+# Copy over nvblox
 COPY . nvblox
 
-# Build and test the standalone library, then build under catkin
+# Build the standalone library
 RUN cd nvblox/nvblox && mkdir build && cd build && \
-    cmake .. && make -j8
+    cmake .. $CMAKE_ARGS && make -j8
+
+RUN cd nvblox && pip install --editable python/evaluation python/scripts python/common

@@ -46,6 +46,8 @@ float WeightingFunction::operator()(float measured_depth, float voxel_depth,
                                   truncation_distance) *
              computeTsdfDistancePenalty(measured_depth, voxel_depth,
                                         truncation_distance);
+    case WeightingFunctionType::kLinearWithMax:
+      return computeLinearWithMax(voxel_depth);
     default:
       LOG(FATAL) << "Requested weighting function type not implemented";
       return 0.0;
@@ -106,6 +108,14 @@ float WeightingFunction::computeTsdfDistancePenalty(
   return 1.0f;
 }
 
+inline float WeightingFunction::computeLinearWithMax(float voxel_depth) const {
+  // Linear drop off after 1.0
+  if (voxel_depth > 1.0f) {
+    return 1.0f / voxel_depth;
+  }
+  return 1.0f;
+}
+
 // Useful so we can print the weighting function types.
 std::ostream& operator<<(std::ostream& os,
                          const WeightingFunctionType& weighting_function_type) {
@@ -124,6 +134,10 @@ std::ostream& operator<<(std::ostream& os,
       break;
     case WeightingFunctionType::kInverseSquareTsdfDistancePenalty:
       os << "kInverseSquareTsdfDistancePenalty";
+      break;
+    case WeightingFunctionType::kLinearWithMax:
+      os << "kLinearWithMax";
+      break;
     default:
       break;
   }

@@ -187,9 +187,11 @@ class PaddedBlock {
     const VoxelType* source_voxel_ptr =
         block_neighbors.getVoxel(source_block_index, source_voxel_index);
     if (source_voxel_ptr == nullptr) {
-      // if the voxel doesn't exist  ( because the block is outside the map) we
+      // if the voxel doesn't exist  (because the block is outside the map) we
       // duplicate an adjacent voxel insted.
-      assert(!isWithinBlockBounds(source_voxel_index));
+
+      // Sanity check that the input index was really on the border
+      assert(!isWithinBlockBounds(voxel_index));
       clamp(source_voxel_index, 0, kVoxelsPerSide - 1);
       source_voxel_ptr =
           block_neighbors.getVoxel(center_block_index, source_voxel_index);
@@ -486,7 +488,8 @@ void FreespaceIntegrator::updateFreespaceLayer(
 
   // Allocate missing blocks
   timing::Timer allocate_timer("freespace/integrate/allocate");
-  freespace_layer_ptr->allocateBlocksAtIndices(block_indices_to_update, *cuda_stream_);
+  freespace_layer_ptr->allocateBlocksAtIndices(block_indices_to_update,
+                                               *cuda_stream_);
   allocate_timer.Stop();
 
   timing::Timer update_timer("freespace/integrate/update_blocks");

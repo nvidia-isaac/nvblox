@@ -1,4 +1,4 @@
-//#pragma once
+// #pragma once
 
 #include <cuda_runtime.h>
 
@@ -70,5 +70,5 @@ __device__ void calculateVertices(
   }
 }
 
-}
-}
+}  // namespace marching_cubes
+}  // namespace nvblox

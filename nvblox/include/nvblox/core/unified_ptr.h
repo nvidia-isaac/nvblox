@@ -124,7 +124,9 @@ class unified_ptr {
   void copyFromAsync(unified_ptr<T_nonconst>& ptr,
                      const CudaStream cuda_stream);
 
-  /// Copy from a raw pointer
+  /// Copy to/from a raw pointer.
+  void copyTo(T_noextent* raw_ptr) const;
+  void copyToAsync(T_noextent* raw_ptr, const CudaStream cuda_stream) const;
   void copyFrom(const T_noextent* const raw_ptr, const size_t num_elements);
   void copyFromAsync(const T_noextent* const raw_ptr, const size_t num_elements,
                      const CudaStream cuda_stream);

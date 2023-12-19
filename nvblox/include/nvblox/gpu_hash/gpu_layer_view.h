@@ -83,4 +83,4 @@ class GPULayerView {
 // - The problem is that we don't want the GPULayerView implementation, which
 //   contains CUDA calls and stdgpu code, bleeding into into layer.h, one of our
 //   main interace headers.
-//#include "nvblox/gpu_hash/internal/cuda/impl/gpu_layer_view_impl.cuh"
+// #include "nvblox/gpu_hash/internal/cuda/impl/gpu_layer_view_impl.cuh"

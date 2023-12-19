@@ -1,0 +1,169 @@
+// NVBLOX Development Pipeline
+//
+// This will take care of building and doing basic tests for merge requests
+// It will help to give developers faster feedback and for code reviewers
+// to verify the compliance of the commit
+//
+// Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto. Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+@Library('ci-lib@b63ac7624366ee4cf683cd77efeb80e1a9b20fb0')
+import com.nvidia.isaac.ci.utils.WorkflowScriptUtil
+
+// Environment variable
+env.REPO_NAME = 'nvblox'
+env.DOCKER_URL = 'urm.nvidia.com'
+env.DOCKER_REGISTERY = 'https://urm.nvidia.com'
+env.DOCKER_REPO = 'sw-isaac-public-docker'
+env.DOCKER_BASE = "${env.DOCKER_URL}/${env.DOCKER_REPO}"
+
+// Replace url-encoded '/' with '_' to make docker happy
+env.BUILD_TAG_SANITIZED = "${env.BUILD_TAG}".replaceAll("%2F", "_")
+
+// Docker images produced by this pipeline
+env.DOCKER_IMAGE_DEPS_X86 = "${env.DOCKER_BASE}/deps-x86_64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_RELEASE_X86 = "${env.DOCKER_BASE}/release-x86_64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEBUG_X86 = "${env.DOCKER_BASE}/debug-x86_64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEPS_AARCH = "${env.DOCKER_BASE}/deps-aarch64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_RELEASE_AARCH = "${env.DOCKER_BASE}/release-aarch64:${env.BUILD_TAG_SANITIZED}"
+
+
+String driver_version = '535.104.05'
+String image_pull_secret = 'vault-artifactory'
+
+
+blossom.init()
+common.init()
+
+// Build, tag and push a docker image
+def buildAndPushImage(dockerfile_path, docker_tag, docker_build_args="") {
+    script {
+        blossom.with_docker {
+            checkout scm
+            withCredentials([
+                usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+            ]) {
+                sh  """
+                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                        docker login -u '${URM_USERNAME}' -p $URM_PASSWORD https://urm.nvidia.com && \
+                        docker build . \
+                          ${docker_build_args} \
+                          --tag ${docker_tag} \
+                          --file ${dockerfile_path} \
+                          --network host && \
+
+                        docker push ${docker_tag}
+                    """
+            }
+        }
+    }
+}
+
+// Main pipeline
+pipeline {
+    agent none
+    options {
+        gitLabConnection('gitlab-master')
+    }
+    triggers {
+        gitlab(triggerOnMergeRequest: true, branchFilterType: 'All')
+    }
+    stages {
+        // Stage that creates docker images containing dependencies for the build
+        stage('Build base images') {
+            steps {
+                parallel (
+                    'X86: build deps': {
+                        buildAndPushImage("docker/Dockerfile.deps",
+                                          "${env.DOCKER_IMAGE_DEPS_X86}")
+                    },
+                    'AARCH: build deps': {
+                        buildAndPushImage("docker/Dockerfile.jetson_deps",
+                                          "${env.DOCKER_IMAGE_DEPS_AARCH}")
+                    }
+                )
+            }
+        }
+        // Stage for building the source code into images used for testing
+        stage('Build source') {
+            steps {
+                parallel (
+                    'X86: build release': {
+                        buildAndPushImage("docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_RELEASE_X86}",
+                                          "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DWARNING_AS_ERROR\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_X86}")
+                    },
+                    'X86: build debug + sanitizer': {
+                        buildAndPushImage("docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_DEBUG_X86}",
+                                          "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=DEBUG -DUSE_SANITIZER=yes -DWARNING_AS_ERROR\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_X86}")
+                    },
+                    'AARCH: build release': {
+                        buildAndPushImage("docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_RELEASE_AARCH}",
+                                          "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DWARNING_AS_ERROR\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_AARCH}")
+                    }
+                )
+            }
+        }
+        // Various testing stages that execute in parallel
+        stage('Tests') {
+            steps {
+                script {
+                    parallel(
+                        'Lint': {
+                            blossom.run_container("${env.DOCKER_IMAGE_RELEASE_X86}", image_pull_secret, driver_version) {
+                                sh '''bash /nvblox/ci/lint_nvblox_h.sh'''
+                                sh '''bash /nvblox/ci/lint_cpp.sh RUNNING_IN_CI'''
+                                sh '''bash /nvblox/ci/lint_py.sh RUNNING_IN_CI'''
+                            }
+                        },
+                        'Unit tests: X86': {
+                            blossom.run_container("${env.DOCKER_IMAGE_RELEASE_X86}", image_pull_secret, driver_version) {
+                                sh '''cd /nvblox/nvblox/build/tests && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                        },
+                        'Unit tests: X86 debug + sanitizer': {
+                            blossom.run_container("${env.DOCKER_IMAGE_DEBUG_X86}", image_pull_secret, driver_version) {
+                                sh '''cd /nvblox/nvblox/build/tests && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                        },
+                        'Unit tests: AARCH': {
+                            blossom.run_on_static_node("${env.DOCKER_REGISTERY}", "${env.DOCKER_IMAGE_RELEASE_AARCH}", image_pull_secret,
+                                                       'jp-5.1.1', '-u root') {
+                                sh '''cd /nvblox/nvblox/build/tests && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                        },
+                        'Pytest': {
+                            blossom.run_container("${env.DOCKER_IMAGE_RELEASE_X86}", image_pull_secret, driver_version) {
+                                sh '''cd /nvblox && pytest --capture=no'''
+                            }
+                        },
+                        'Cuda Compute-sanitizer': {
+                            blossom.run_container("${env.DOCKER_IMAGE_RELEASE_X86}", image_pull_secret, driver_version) {
+                                sh '''bash /nvblox/ci/compute_sanitizer.sh'''
+                            }
+                       },
+                    )
+                }
+            }
+        }
+    }
+    post {
+        failure { script {
+            updateGitlabCommitStatus name: 'build', state: 'failed'
+        }}
+        success { script {
+            updateGitlabCommitStatus name: 'build', state: 'success'
+        }}
+    }
+}

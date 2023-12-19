@@ -72,35 +72,30 @@ __global__ void getVoxelsAtPositionsKernel(
   }
 }
 
-std::pair<std::vector<TsdfVoxel>, std::vector<bool>> getVoxelsAtPositionsOnGPU(
-    const GPULayerView<TsdfBlock>& gpu_layer,
-    const std::vector<Vector3f>& p_L_vec) {
+void getVoxelsAtPositionsOnGPU(const GPULayerView<TsdfBlock>& gpu_layer,
+                               const std::vector<Vector3f>& p_L_vec,
+                               host_vector<TsdfVoxel>* host_voxels,
+                               host_vector<bool>* host_flags) {
   // CPU -> GPU
-  thrust::device_vector<Vector3f> device_positions(p_L_vec);
+  device_vector<Vector3f> device_positions;
+  device_positions.copyFrom(p_L_vec);
 
   // Output space
-  thrust::device_vector<TsdfVoxel> device_voxels(device_positions.size());
-  thrust::device_vector<bool> device_flags(device_positions.size());
+  device_vector<TsdfVoxel> device_voxels(device_positions.size());
+  device_vector<bool> device_flags(device_positions.size());
 
   // Kernel
   constexpr int kNumThreadsPerBlock = 32;
   const int num_blocks = device_positions.size() / kNumThreadsPerBlock + 1;
   getVoxelsAtPositionsKernel<<<num_blocks, kNumThreadsPerBlock>>>(
-      gpu_layer.getHash().impl_, device_positions.data().get(),
-      gpu_layer.block_size(), device_positions.size(),
-      device_voxels.data().get(), device_flags.data().get());
-  checkCudaErrors(cudaDeviceSynchronize());
+      gpu_layer.getHash().impl_, device_positions.data(),
+      gpu_layer.block_size(), device_positions.size(), device_voxels.data(),
+      device_flags.data());
   checkCudaErrors(cudaPeekAtLastError());
 
   // GPU -> CPU
-  std::vector<TsdfVoxel> host_voxels(device_voxels.size());
-  thrust::copy(device_voxels.begin(), device_voxels.end(), host_voxels.begin());
-  std::vector<bool> host_flags(device_flags.size());
-  thrust::copy(device_flags.begin(), device_flags.end(), host_flags.begin());
-  checkCudaErrors(cudaDeviceSynchronize());
-  checkCudaErrors(cudaPeekAtLastError());
-
-  return {std::move(host_voxels), std::move(host_flags)};
+  host_voxels->copyFrom(device_voxels);
+  host_flags->copyFrom(device_flags);
 }
 
 }  // namespace test_utils

@@ -17,12 +17,12 @@ limitations under the License.
 
 #include "nvblox/utils/logging.h"
 
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <unordered_map>
-#include <filesystem>
 
 #include "nvblox/utils/timing.h"
 
@@ -106,7 +106,7 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
 }  // namespace internal
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path) {
-  auto data_loader = DataLoader::create(base_path);
+  auto data_loader = DataLoader::create(base_path, false);
   if (!data_loader) {
     return std::unique_ptr<Fuser>();
   }
@@ -142,7 +142,7 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
   constexpr int height = 480;
   camera_ = Camera(fu, fv, width, height);
   // If the base path doesn't exist return fail
-  if(!std::filesystem::exists(base_path)) {
+  if (!std::filesystem::exists(base_path)) {
     LOG(WARNING) << "Tried to create a dataloader with a non-existant path.";
     setup_success_ = false;
   }

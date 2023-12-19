@@ -48,9 +48,6 @@ TAGS
 **/*.egg-info
 **/__pycache__
 
-# Reconstructions
-*.ply
-
 # Documentation
 *docs/_build
 *docs/doxyoutput

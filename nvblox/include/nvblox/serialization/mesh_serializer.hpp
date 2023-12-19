@@ -41,9 +41,34 @@ struct SerializedMesh {
   host_vector<int32_t> vertex_block_offsets;
   host_vector<int32_t> triangle_index_block_offsets;
 
-  /// Unique identifier for each block that remain consistent between calls
-  /// consecutive calls to the serializer.
-  std::vector<std::string> block_identifiers;
+  /// Indices of serialized mesh blocks
+  std::vector<Index3D> block_indices;
+
+  /// Get an iterator to the given triangle block
+  host_vector<int32_t>::const_iterator triangleBlockItr(
+      size_t block_index) const {
+    CHECK(block_index < vertex_block_offsets.size());
+    return std::next(triangle_indices.begin(),
+                     triangle_index_block_offsets[block_index]);
+  }
+
+  /// Get a vertex given a block index and a vertex index inside the block
+  const Vector3f& getVertex(size_t block_index, size_t vertex_index) const {
+    CHECK(block_index < vertex_block_offsets.size() - 1);
+    return vertices[vertex_block_offsets[block_index] + vertex_index];
+  }
+
+  /// Get a Color given a block index and a vertex index inside the block
+  const Color& getColor(size_t block_index, size_t vertex_index) const {
+    CHECK(block_index < vertex_block_offsets.size() - 1);
+    return colors[vertex_block_offsets[block_index] + vertex_index];
+  }
+
+  /// Get a Triangle index given a block index and a triangle index inside the block
+  const int& getTriangleIndex(size_t block_index, size_t triangle_index) const {
+    CHECK(block_index < triangle_index_block_offsets.size() - 1);
+    return triangle_indices[triangle_index_block_offsets[block_index] + triangle_index];
+  }
 
   /// Helper function to get num vertices in a block
   size_t getNumVerticesInBlock(size_t block_index) const {

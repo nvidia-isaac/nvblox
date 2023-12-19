@@ -68,7 +68,8 @@ void MultiThreadedImageLoader<ImageType>::emptyLoadQueue() {
 }
 
 template <typename ImageType>
-void MultiThreadedImageLoader<ImageType>::addNextImageToQueue(MemoryType memory_type) {
+void MultiThreadedImageLoader<ImageType>::addNextImageToQueue(
+    MemoryType memory_type) {
   load_queue_.push_back(
       std::async(std::launch::async,
                  &MultiThreadedImageLoader<ImageType>::getImageAsOptional, this,
@@ -91,6 +92,11 @@ std::unique_ptr<ImageLoader<ImageType>> createImageLoader(
     IndexToFilepathFunction index_to_path_function, const bool multithreaded,
     const float depth_image_scaling_factor) {
   if (multithreaded) {
+    // NOTE(dtingdahl): We see race conditions inside the
+    // cuda-runtime lib when running multi-threaded. We disable multithreading
+    // until this issue is resolved.
+    LOG(FATAL) << "Multithreaded image loading is currently not supported";
+
     // NOTE(alexmillane): On my desktop the performance of threaded image
     // loading seems to saturate at around 6 threads. On machines with less
     // cores (I have 12 physical) presumably the saturation point will be less.

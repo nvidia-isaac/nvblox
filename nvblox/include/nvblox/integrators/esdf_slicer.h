@@ -37,10 +37,13 @@ class EsdfSlicer {
   /// Returns the combined AABB of two esdf layers at a specific height.
   /// @param layer_1 First input ESDF layer.
   /// @param layer_2 Second input ESDF layer.
-  /// @param slice_height The height where the AABB should be generated.
+  /// @param layer_1_slice_height The height where the AABB of layer 1 should be
+  /// generated.
+  /// @param layer_2_slice_height The height where the AABB of layer 2 should be
+  /// generated.
   AxisAlignedBoundingBox getCombinedAabbOfLayersAtHeight(
       const EsdfLayer& layer_1, const EsdfLayer& layer_2,
-      const float slice_height);
+      float layer_1_slice_height, float layer_2_slice_height);
 
   /// Slices an ESDF layer at a specific height to a distance image inside a
   /// custom AABB.
@@ -61,7 +64,8 @@ class EsdfSlicer {
   /// inside a custom AABB.
   /// @param layer_1 First input ESDF layer.
   /// @param layer_2 Second input ESDF layer.
-  /// @param slice_height The height of the slice to output.
+  /// @param layer_1_slice_height The height of the slice in layer 1.
+  /// @param layer_2_slice_height The height of the slice in layer 2.
   /// @param unobserved_value Floating-point value to use for unknown/unobserved
   /// points.
   /// @param aabb AABB to generate the distance image in. Used as-is; if it's
@@ -70,7 +74,8 @@ class EsdfSlicer {
   /// pixel.
   void sliceLayersToCombinedDistanceImage(const EsdfLayer& layer_1,
                                           const EsdfLayer& layer_2,
-                                          float slice_height,
+                                          float layer_1_slice_height,
+                                          float layer_2_slice_height,
                                           float unobserved_value,
                                           const AxisAlignedBoundingBox& aabb,
                                           Image<float>* output_image);

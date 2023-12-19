@@ -46,7 +46,7 @@ TEST(RatesTest, KnownRateTest) {
   // NOTE(alexmillane): sleep_for can be quite innaccurate. Especially if
   // there's high CPU usage on the machine running the test. This is why we have
   // a large tolerance here. We may even have to increase it further.
-  constexpr float kRateToleranceHz = 10.0;
+  constexpr float kRateToleranceHz = 20.0;
   // NOTE(alexmillane): On the jetson I observed differences of ~0.001 between
   // the two timers, during high loads. So I over estimate this parameter to not
   // generate a flakey test.

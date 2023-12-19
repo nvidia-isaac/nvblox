@@ -228,6 +228,55 @@ TEST(MapperTest, GenerateEsdfInFakeObservedAreas) {
   }
 }
 
+class MapperUpdateMeshTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // Make a scene 6x6x3 meters big.
+    primitives::Scene scene;
+
+    Camera camera(300, 300, 320, 240, 640, 480);
+    scene.addPrimitive(std::make_unique<primitives::Plane>(
+        Vector3f(0.0f, 0.0, 1.0), Vector3f(0, 0, -1)));
+    Transform T_S_C = Transform::Identity();
+    DepthImage depth_frame(camera.height(), camera.width(),
+                           MemoryType::kUnified);
+
+    constexpr float max_dist = 10.0;
+    scene.generateDepthImageFromScene(camera, T_S_C, max_dist, &depth_frame);
+
+    TsdfLayer tsdf_layer_host(kVoxelSizeM, MemoryType::kHost);
+    scene.generateLayerFromScene(1.0, &tsdf_layer_host);
+
+    mapper_.tsdf_layer().copyFrom(tsdf_layer_host);
+
+    mapper_.integrateDepth(depth_frame, T_S_C, camera);
+    EXPECT_GT(mapper_.tsdf_layer().numAllocatedBlocks(), 0);
+  }
+  static constexpr float kVoxelSizeM = 0.1F;
+  Mapper mapper_{kVoxelSizeM, MemoryType::kHost};
+};
+
+TEST_F(MapperUpdateMeshTest, updateMeshZeroMbps) {
+  mapper_.mesh_bandwidth_limit_mbps(0);
+  std::shared_ptr<const SerializedMesh> serialized_mesh = mapper_.updateMesh();
+  ASSERT_EQ(serialized_mesh->vertices.size(), 0);
+}
+
+TEST_F(MapperUpdateMeshTest, updateMeshUnLimited) {
+  mapper_.mesh_bandwidth_limit_mbps(-1.);
+  std::shared_ptr<const SerializedMesh> serialized_mesh = mapper_.updateMesh();
+  ASSERT_GT(serialized_mesh->vertices.size(), 0);
+}
+
+TEST_F(MapperUpdateMeshTest, updateMeshLimited) {
+  mapper_.mesh_bandwidth_limit_mbps(10);
+  mapper_.updateMesh();
+  std::shared_ptr<const SerializedMesh> serialized_mesh = mapper_.updateMesh();
+  // Since the mesh size is based on bandwidth estimation it's difficult to
+  // preduct how large it will be. Therefore we check for a nozero size here.
+  ASSERT_GT(serialized_mesh->vertices.size(), 0);
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

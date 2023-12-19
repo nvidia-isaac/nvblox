@@ -34,16 +34,6 @@ DEFINE_bool(mapping_type_static_occupancy, false,
 DEFINE_bool(mapping_type_dynamic, false, "mapping type: kDynamic");
 
 // Multi mapper params
-DEFINE_double(esdf_2d_min_height, MultiMapper::kDefaultEsdf2dMinHeight,
-              "The minimum height, in meters, to consider obstacles part of "
-              "the 2D ESDF slice.");
-DEFINE_double(esdf_2d_max_height, MultiMapper::kDefaultEsdf2dMaxHeight,
-              "The maximum height, in meters, to consider obstacles part of "
-              "the 2D ESDF slice.");
-DEFINE_double(
-    esdf_slice_height, MultiMapper::kDefaultEsdf2dSliceHeight,
-    "The *output* slice height for the distance slice and ESDF pointcloud. "
-    "Does not need to be within min and max height below. In units of meters.");
 DEFINE_int32(connected_mask_component_size_threshold,
              MultiMapper::kDefaultConnectedMaskComponentSizeThreshold,
              "The minimum number of pixels of a connected component in the "
@@ -120,21 +110,6 @@ inline void get_multi_mapper_params_from_gflags(float* voxel_size,
     LOG(INFO) << "Command line parameter found: use_2d_esdf_mode = "
               << FLAGS_use_2d_esdf_mode;
     *esdf_mode = EsdfMode::k2D;
-  }
-  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_2d_min_height").is_default) {
-    LOG(INFO) << "Command line parameter found: esdf_2d_min_height = "
-              << FLAGS_esdf_2d_min_height;
-    params->esdf_2d_min_height = static_cast<float>(FLAGS_esdf_2d_min_height);
-  }
-  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_2d_max_height").is_default) {
-    LOG(INFO) << "Command line parameter found: esdf_2d_max_height = "
-              << FLAGS_esdf_2d_max_height;
-    params->esdf_2d_max_height = static_cast<float>(FLAGS_esdf_2d_max_height);
-  }
-  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_slice_height").is_default) {
-    LOG(INFO) << "Command line parameter found: esdf_slice_height = "
-              << FLAGS_esdf_slice_height;
-    params->esdf_slice_height = static_cast<float>(FLAGS_esdf_slice_height);
   }
   if (!gflags::GetCommandLineFlagInfoOrDie(
            "connected_mask_component_size_threshold")

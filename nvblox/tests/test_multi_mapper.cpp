@@ -92,8 +92,7 @@ TEST(MultiMapperTest, MaskOnAndOff) {
   int num_non_zero_weight_voxels = 0;
   callFunctionOnAllVoxels<ColorVoxel>(
       multi_mapper.unmasked_mapper()->color_layer(),
-      [&](const Index3D&, const Index3D&,
-          const ColorVoxel* voxel) -> void {
+      [&](const Index3D&, const Index3D&, const ColorVoxel* voxel) -> void {
         EXPECT_NEAR(voxel->weight, 0.0f, kFloatEpsilon);
         if (voxel->weight) {
           ++num_non_zero_weight_voxels;

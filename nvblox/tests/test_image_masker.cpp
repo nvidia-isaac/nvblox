@@ -104,7 +104,8 @@ TEST_P(ParameterizedImageMaskerTest, RandomMask) {
           mask_col < mask.cols() && mask(mask_row, mask_col)) {
         EXPECT_NEAR(unmasked_depth_output(depth_row_idx, depth_col_idx), -1.0f,
                     kFloatEpsilon);
-        EXPECT_NEAR(masked_depth_output(depth_row_idx, depth_col_idx), 1.0f, kFloatEpsilon);
+        EXPECT_NEAR(masked_depth_output(depth_row_idx, depth_col_idx), 1.0f,
+                    kFloatEpsilon);
         ++num_valid_pixels_depth;
       } else {
         EXPECT_NEAR(unmasked_depth_output(depth_row_idx, depth_col_idx), 1.0f,
@@ -116,10 +117,14 @@ TEST_P(ParameterizedImageMaskerTest, RandomMask) {
     }
   }
 
-  std::cout << "num_valid_pixels_color: " << num_valid_pixels_color << std::endl;
-  std::cout << "num_invalid_pixels_color: " << num_invalid_pixels_color << std::endl;
-  std::cout << "num_valid_pixels_depth: " << num_valid_pixels_depth << std::endl;
-  std::cout << "num_invalid_pixels_depth: " << num_invalid_pixels_depth << std::endl;
+  std::cout << "num_valid_pixels_color: " << num_valid_pixels_color
+            << std::endl;
+  std::cout << "num_invalid_pixels_color: " << num_invalid_pixels_color
+            << std::endl;
+  std::cout << "num_valid_pixels_depth: " << num_valid_pixels_depth
+            << std::endl;
+  std::cout << "num_invalid_pixels_depth: " << num_invalid_pixels_depth
+            << std::endl;
 
   if (FLAGS_nvblox_test_file_output) {
     io::writeToPng("unmasked_output_image.png", unmasked_depth_output);
@@ -127,10 +132,11 @@ TEST_P(ParameterizedImageMaskerTest, RandomMask) {
   }
 }
 
-// We test the cases where the mask resolution is bigger, smaller and equal to the depth 
-// resolution 
+// We test the cases where the mask resolution is bigger, smaller and equal to
+// the depth resolution
 INSTANTIATE_TEST_CASE_P(ParameterizedImageMaskerTests,
-                        ParameterizedImageMaskerTest, ::testing::Values(0, 256, -256));
+                        ParameterizedImageMaskerTest,
+                        ::testing::Values(0, 256, -256));
 
 TEST(ImageMaskerTest, PerpendicularTransformMask) {
   const int rows = 481;  // must be odd to have a center pixel

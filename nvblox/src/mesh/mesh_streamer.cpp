@@ -189,29 +189,11 @@ void MeshStreamerBase::excludeBlocks(
   *mesh_block_indices = std::move(mesh_index_vec_not_excluded);
 }
 
-bool MeshStreamerOldestBlocks::exclude_blocks_above_height() const {
-  return exclude_blocks_above_height_;
-}
-
-void MeshStreamerOldestBlocks::exclude_blocks_above_height(
-    bool exclude_blocks_above_height) {
-  exclude_blocks_above_height_ = exclude_blocks_above_height;
-}
-
 float MeshStreamerOldestBlocks::exclusion_height_m() const {
   return exclusion_height_m_;
 }
 void MeshStreamerOldestBlocks::exclusion_height_m(float exclusion_height_m) {
   exclusion_height_m_ = exclusion_height_m;
-}
-
-bool MeshStreamerOldestBlocks::exclude_blocks_outside_radius() const {
-  return exclude_blocks_outside_radius_;
-}
-
-void MeshStreamerOldestBlocks::exclude_blocks_outside_radius(
-    bool exclude_blocks_outside_radius) {
-  exclude_blocks_outside_radius_ = exclude_blocks_outside_radius;
 }
 
 float MeshStreamerOldestBlocks::exclusion_radius_m() const {
@@ -297,7 +279,7 @@ void MeshStreamerOldestBlocks::setupExclusionFunctors(
   // If requested exclude blocks
   std::vector<ExcludeBlockFunctor> exclusion_functors;
   // Exclude based on height
-  if (exclude_blocks_above_height_) {
+  if (exclusion_height_m_ > 0.F) {
     if (block_size.has_value()) {
       exclusion_functors.push_back(
           getExcludeAboveHeightFunctor(exclusion_height_m_, *block_size));
@@ -307,7 +289,7 @@ void MeshStreamerOldestBlocks::setupExclusionFunctors(
     }
   }
   // Exclude based on radius
-  if (exclude_blocks_outside_radius_) {
+  if (exclusion_radius_m_ > 0.F) {
     if (block_size.has_value() && exclusion_center_m.has_value()) {
       exclusion_functors.push_back(getExcludeOutsideRadiusFunctor(
           exclusion_radius_m_, *exclusion_center_m, *block_size));
@@ -358,11 +340,7 @@ parameters::ParameterTreeNode MeshStreamerOldestBlocks::getParameterTree(
   using parameters::ParameterTreeNode;
   const std::string name = (name_remap.empty()) ? "mesh_streamer" : name_remap;
   return ParameterTreeNode(
-      name, {ParameterTreeNode("exclude_blocks_above_height:",
-                               exclude_blocks_above_height_),
-             ParameterTreeNode("exclusion_height_m:", exclusion_height_m_),
-             ParameterTreeNode("exclude_blocks_outside_radius:",
-                               exclude_blocks_outside_radius_),
+      name, {ParameterTreeNode("exclusion_height_m:", exclusion_height_m_),
              ParameterTreeNode("exclusion_radius_m:", exclusion_radius_m_)});
 }
 

@@ -104,12 +104,12 @@ AxisAlignedBoundingBox EsdfSlicer::getAabbOfLayerAtHeight(
 
 AxisAlignedBoundingBox EsdfSlicer::getCombinedAabbOfLayersAtHeight(
     const EsdfLayer& layer_1, const EsdfLayer& layer_2,
-    const float slice_height) {
+    float layer_1_slice_height, float layer_2_slice_height) {
   // Combined (enclosing) AABB
   const AxisAlignedBoundingBox aabb_1 =
-      getAabbOfLayerAtHeight(layer_1, slice_height);
+      getAabbOfLayerAtHeight(layer_1, layer_1_slice_height);
   const AxisAlignedBoundingBox aabb_2 =
-      getAabbOfLayerAtHeight(layer_2, slice_height);
+      getAabbOfLayerAtHeight(layer_2, layer_2_slice_height);
   return aabb_1.merged(aabb_2);
 }
 
@@ -144,17 +144,18 @@ void EsdfSlicer::sliceLayerToDistanceImage(const EsdfLayer& layer,
 }
 
 void EsdfSlicer::sliceLayersToCombinedDistanceImage(
-    const EsdfLayer& layer_1, const EsdfLayer& layer_2, float slice_height,
+    const EsdfLayer& layer_1, const EsdfLayer& layer_2,
+    float layer_1_slice_height, float layer_2_slice_height,
     float unobserved_value, const AxisAlignedBoundingBox& aabb,
     Image<float>* output_image) {
   CHECK_NOTNULL(output_image);
   CHECK_EQ(layer_1.voxel_size(), layer_2.voxel_size());
 
   Image<float> slice_image_1(MemoryType::kDevice);
-  sliceLayerToDistanceImage(layer_1, slice_height, unobserved_value, aabb,
-                            &slice_image_1);
-  sliceLayerToDistanceImage(layer_2, slice_height, unobserved_value, aabb,
-                            output_image);
+  sliceLayerToDistanceImage(layer_1, layer_1_slice_height, unobserved_value,
+                            aabb, &slice_image_1);
+  sliceLayerToDistanceImage(layer_2, layer_2_slice_height, unobserved_value,
+                            aabb, output_image);
 
   // Get the minimal distance between the two slices
   image::elementWiseMinInPlaceGPU(slice_image_1, output_image);

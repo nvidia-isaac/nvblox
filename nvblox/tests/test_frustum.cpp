@@ -336,9 +336,10 @@ TEST_F(FrustumTest, ThreeDMatch) {
   constexpr int kFrameNumber = 0;
   float max_distance = 10.0f;
 
+  constexpr bool kUseMultithreaded = false;
   std::unique_ptr<datasets::ImageLoader<DepthImage>> depth_image_loader =
-      datasets::threedmatch::internal::createDepthImageLoader(base_path_,
-                                                              kSequenceNum);
+      datasets::threedmatch::internal::createDepthImageLoader(
+          base_path_, kSequenceNum, kUseMultithreaded);
 
   // Get the first image.
   DepthImage depth_frame(MemoryType::kDevice);

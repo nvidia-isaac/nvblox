@@ -149,6 +149,10 @@ class Image : public ImageBase<_ElementType> {
   void copyFrom(const size_t rows, const size_t cols,
                 const ElementType* const buffer);
 
+  // Copy to a buffer. We assume the buffer has sufficient capacity.
+  void copyToAsync(ElementType* buffer, const CudaStream cuda_stream) const;
+  void copyTo(ElementType* buffer) const;
+
  protected:
   MemoryType memory_type_;
   unified_ptr<ElementType[]> owned_data_;

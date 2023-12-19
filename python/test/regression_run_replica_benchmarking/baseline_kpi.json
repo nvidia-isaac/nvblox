@@ -1,0 +1,20 @@
+{
+    "esdf_error_mean": 0.033980641687425976,
+    "esdf_error_median": 0.02058308404221859,
+    "esdf_error_max": 1.823426746789359,
+    "esdf_error_min": 1.1649521450968203e-07,
+    "esdf_error_percentile_1": 0.00035683635580610325,
+    "esdf_error_percentile_10": 0.003518459247775857,
+    "esdf_error_percentile_90": 0.0687380441176559,
+    "esdf_error_percentile_99": 0.24578584125202424,
+    "esdf_error_rms": 0.06161080405701883,
+    "surface_error_mean": 0.04508376620197996,
+    "surface_error_median": 0.03705227358796877,
+    "surface_error_max": 0.23607108397899415,
+    "surface_error_min": 0.0008758308124289699,
+    "surface_error_percentile_1": 0.005344573273153428,
+    "surface_error_percentile_10": 0.013903806201073617,
+    "surface_error_percentile_90": 0.08667923960404333,
+    "surface_error_percentile_99": 0.1387273615262171,
+    "surface_coverage": 0.13730168197542647
+}

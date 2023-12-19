@@ -89,7 +89,8 @@ void MeshComponentSerializer<LayerType, T>::serializeAsync(
     vector_ptrs_[i] = get_vector(block).data();
     total_num_elements += get_vector(block).size();
 
-    max_block_size = std::max<int32_t>(max_block_size, get_vector(block).size());
+    max_block_size =
+        std::max<int32_t>(max_block_size, get_vector(block).size());
   }
 
   // We'll need the total num of elements as well so we can compute the
@@ -103,13 +104,15 @@ void MeshComponentSerializer<LayerType, T>::serializeAsync(
   const int32_t num_threads = std::min(max_block_size, kMaxNumThreads);
 
   // Process one layer-block per cuda-block
-  const int32_t num_blocks = block_indices_to_serialize.size();
+  const int32_t num_cuda_blocks = block_indices_to_serialize.size();
 
   // Run serialization.
-  serialized_output.resize(total_num_elements);
-  SerializeVectorsKernel<<<num_blocks, num_threads, 0, cuda_stream>>>(
-      block_indices_to_serialize.size(), vector_ptrs_.data(),
-      offsets_output.data(), serialized_output.data());
+  serialized_output.resizeAsync(total_num_elements, cuda_stream);
+  if (num_threads > 0 && num_cuda_blocks > 0) {
+    SerializeVectorsKernel<<<num_cuda_blocks, num_threads, 0, cuda_stream>>>(
+        block_indices_to_serialize.size(), vector_ptrs_.data(),
+        offsets_output.data(), serialized_output.data());
+  }
 
   checkCudaErrors(cudaPeekAtLastError());
 }
@@ -135,7 +138,8 @@ std::shared_ptr<const SerializedMesh> MeshSerializer::serializeMesh(
       cuda_stream);
 
   triangle_index_serializer_.serializeAsync(
-      mesh_layer, block_indices_to_serialize, serialized_mesh_->triangle_indices,
+      mesh_layer, block_indices_to_serialize,
+      serialized_mesh_->triangle_indices,
       serialized_mesh_->triangle_index_block_offsets,
       [](const MeshBlock* mesh_block) -> const unified_vector<int>& {
         return mesh_block->triangles;
@@ -143,13 +147,7 @@ std::shared_ptr<const SerializedMesh> MeshSerializer::serializeMesh(
       cuda_stream);
 
   // Create an unique identifier for each block.
-  serialized_mesh_->block_identifiers.resize(block_indices_to_serialize.size());
-  for (size_t i = 0; i < block_indices_to_serialize.size(); ++i) {
-    const Index3D& block_idx = block_indices_to_serialize[i];
-    serialized_mesh_->block_identifiers[i] =
-        std::to_string(block_idx.x()) + "_" + std::to_string(block_idx.y()) +
-        "_" + std::to_string(block_idx.z());
-  }
+  serialized_mesh_->block_indices = block_indices_to_serialize;
 
   cuda_stream.synchronize();
 

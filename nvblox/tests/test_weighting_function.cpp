@@ -117,6 +117,39 @@ TEST_F(WeightingFunctionTest, TestInverseSquare) {
   EXPECT_NEAR(weight4, 1.0f, kEpsilon);
 }
 
+TEST_F(WeightingFunctionTest, TestLinearWithMax) {
+  weighting_function_ = test_utils::createWeightingFunction(
+      WeightingFunctionType::kLinearWithMax);
+
+  float surface_distance_from_camera = 10.0f;
+  float truncation_distance = 1.0f;
+
+  float voxel_distance_from_camera = 0.0f;
+  float weight1 = test_utils::computeWeight(
+      weighting_function_, surface_distance_from_camera,
+      voxel_distance_from_camera, truncation_distance);
+
+  voxel_distance_from_camera = 0.5f;
+  float weight2 = test_utils::computeWeight(
+      weighting_function_, surface_distance_from_camera,
+      voxel_distance_from_camera, truncation_distance);
+
+  voxel_distance_from_camera = 1.0f;
+  float weight3 = test_utils::computeWeight(
+      weighting_function_, surface_distance_from_camera,
+      voxel_distance_from_camera, truncation_distance);
+
+  voxel_distance_from_camera = 5.0f;
+  float weight4 = test_utils::computeWeight(
+      weighting_function_, surface_distance_from_camera,
+      voxel_distance_from_camera, truncation_distance);
+
+  EXPECT_NEAR(weight1, 1.0f, kEpsilon);
+  EXPECT_NEAR(weight2, 1.0f, kEpsilon);
+  EXPECT_NEAR(weight3, 1.0f, kEpsilon);
+  EXPECT_NEAR(weight4, 0.2f, kEpsilon);
+}
+
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;

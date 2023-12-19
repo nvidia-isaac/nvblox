@@ -22,7 +22,7 @@ limitations under the License.
 
 using namespace nvblox;
 
-class MeshSerializerTest : public ::testing::Test {
+class MeshSerializerTestFixture : public ::testing::Test {
  protected:
   void SetUp() override {
     std::srand(0);
@@ -127,7 +127,7 @@ class MeshSerializerTest : public ::testing::Test {
   MeshSerializer serializer_;
 };
 
-TEST_F(MeshSerializerTest, serializeAllBlocks) {
+TEST_F(MeshSerializerTestFixture, serializeAllBlocks) {
   const std::vector<Index3D> block_indices_to_serialize =
       mesh_layer_->getAllBlockIndices();
   EXPECT_FALSE(block_indices_to_serialize.empty());
@@ -138,7 +138,7 @@ TEST_F(MeshSerializerTest, serializeAllBlocks) {
   validateSerializedMesh(block_indices_to_serialize);
 }
 
-TEST_F(MeshSerializerTest, serializeSomeblocks) {
+TEST_F(MeshSerializerTestFixture, serializeSomeblocks) {
   // Shuffle the list of indices
   std::vector<Index3D> all_indices = mesh_layer_->getAllBlockIndices();
   std::random_shuffle(all_indices.begin(), all_indices.end());
@@ -157,7 +157,7 @@ TEST_F(MeshSerializerTest, serializeSomeblocks) {
   validateSerializedMesh(block_indices_to_serialize);
 }
 
-TEST_F(MeshSerializerTest, serializeFirstBlock) {
+TEST_F(MeshSerializerTestFixture, serializeFirstBlock) {
   const std::vector<Index3D> block_indices_to_serialize = {
       mesh_layer_->getAllBlockIndices().front()};
 
@@ -167,7 +167,7 @@ TEST_F(MeshSerializerTest, serializeFirstBlock) {
   validateSerializedMesh(block_indices_to_serialize);
 }
 
-TEST_F(MeshSerializerTest, serializeLastBlock) {
+TEST_F(MeshSerializerTestFixture, serializeLastBlock) {
   const std::vector<Index3D> block_indices_to_serialize = {
       mesh_layer_->getAllBlockIndices().back()};
 
@@ -177,7 +177,7 @@ TEST_F(MeshSerializerTest, serializeLastBlock) {
   validateSerializedMesh(block_indices_to_serialize);
 }
 
-TEST_F(MeshSerializerTest, serializeNoBlocks) {
+TEST_F(MeshSerializerTestFixture, serializeNoBlocks) {
   const std::vector<Index3D> block_indices_to_serialize;
 
   const std::shared_ptr<const SerializedMesh> result =
@@ -187,6 +187,16 @@ TEST_F(MeshSerializerTest, serializeNoBlocks) {
   ASSERT_TRUE(result->vertices.empty());
   ASSERT_TRUE(result->colors.empty());
   ASSERT_TRUE(result->triangle_indices.empty());
+}
+
+TEST(MeshSerializerTest, serializeOneEmptyBlock) {
+  MeshLayer mesh_layer(1.f, MemoryType::kDevice);
+
+  Index3D index(0.F, 0.F, 0.F);
+  mesh_layer.allocateBlockAtIndex(index);
+
+  MeshSerializer serializer;
+  serializer.serializeMesh(mesh_layer, {index}, CudaStreamOwning());
 }
 
 int main(int argc, char** argv) {

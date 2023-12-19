@@ -31,6 +31,17 @@ DEFINE_bool(do_depth_preprocessing, mapper::kDefaultDoDepthPreprocessing,
 DEFINE_int32(depth_preprocessing_num_dilations, -1,
              "Number of times to run the invalid region dilation in the depth "
              "preprocessing pipeline.");
+// 2D esdf slice
+DEFINE_double(esdf_slice_min_height, mapper::kDefaultEsdfSliceMinHeight,
+              "The minimum height, in meters, to consider obstacles part of "
+              "the 2D ESDF slice.");
+DEFINE_double(esdf_slice_max_height, mapper::kDefaultEsdfSliceMaxHeight,
+              "The maximum height, in meters, to consider obstacles part of "
+              "the 2D ESDF slice.");
+DEFINE_double(
+    esdf_slice_height, mapper::kDefaultEsdf2dSliceHeight,
+    "The *output* slice height for the distance slice and ESDF pointcloud. "
+    "Does not need to be within min and max height below. In units of meters.");
 
 // ======= PROJECTIVE INTEGRATOR (TSDF/COLOR/OCCUPANCY) =======
 // max integration distance
@@ -132,6 +143,26 @@ inline MapperParams get_mapper_params_from_gflags() {
               << FLAGS_depth_preprocessing_num_dilations;
     params.depth_preprocessing_num_dilations =
         FLAGS_depth_preprocessing_num_dilations;
+  }
+  // 2D esdf slice
+  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_slice_min_height")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: esdf_slice_min_height = "
+              << FLAGS_esdf_slice_min_height;
+    params.esdf_slice_min_height =
+        static_cast<float>(FLAGS_esdf_slice_min_height);
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_slice_max_height")
+           .is_default) {
+    LOG(INFO) << "Command line parameter found: esdf_slice_max_height = "
+              << FLAGS_esdf_slice_max_height;
+    params.esdf_slice_max_height =
+        static_cast<float>(FLAGS_esdf_slice_max_height);
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie("esdf_slice_height").is_default) {
+    LOG(INFO) << "Command line parameter found: esdf_slice_height = "
+              << FLAGS_esdf_slice_height;
+    params.esdf_slice_height = static_cast<float>(FLAGS_esdf_slice_height);
   }
 
   // ======= PROJECTIVE INTEGRATOR (TSDF/COLOR/OCCUPANCY) =======

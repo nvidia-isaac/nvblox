@@ -78,7 +78,7 @@ MultiMapper::MultiMapper(float voxel_size_m, MappingType mapping_type,
   masked_mapper_ = std::make_shared<Mapper>(voxel_size_m, memory_type,
                                             masked_layer_type, cuda_stream);
 
-  if (mapping_type_ == MappingType::kDynamic) {
+  if (isDynamicMapping(mapping_type_)) {
     // For dynamic mapping we integrate the full depth into the unmasked mapper
     // (see NOTE in the integrateDepth function). Therefore, we need to ignore
     // the esdf sites that fall into freespace because they are actually dynamic
@@ -117,7 +117,7 @@ void MultiMapper::integrateDepth(const DepthImage& depth_frame,
       << "Only use this function for static or dynamic mapping. For human "
          "mapping please pass a mask to integrateDepth.";
 
-  if (mapping_type_ == MappingType::kDynamic) {
+  if (isDynamicMapping(mapping_type_)) {
     CHECK(update_time_ms);
     unmasked_mapper_->updateFreespace(update_time_ms.value());
     dynamic_detector_.computeDynamics(
@@ -206,10 +206,11 @@ void MultiMapper::updateEsdf() {
   }
 }
 
-std::vector<Index3D> MultiMapper::updateMesh() {
+std::shared_ptr<const SerializedMesh> MultiMapper::updateMesh(
+    const std::optional<Transform>& maybe_T_L_C) {
   // At the moment we never have a mesh for the masked mapper as it alway uses a
   // occupancy layer.
-  return unmasked_mapper_->updateMesh();
+  return unmasked_mapper_->updateMesh(maybe_T_L_C);
 }
 
 const DepthImage& MultiMapper::getLastDepthFrameUnmasked() {
@@ -246,9 +247,7 @@ void MultiMapper::updateEsdfOfMapper(const std::shared_ptr<Mapper>& mapper) {
       mapper->updateEsdf();
       break;
     case EsdfMode::k2D:
-      mapper->updateEsdfSlice(params_.esdf_2d_min_height,
-                              params_.esdf_2d_max_height,
-                              params_.esdf_slice_height);
+      mapper->updateEsdfSlice();
       break;
   }
 }
@@ -258,15 +257,11 @@ parameters::ParameterTreeNode MultiMapper::getParameterTree(
   using parameters::ParameterTreeNode;
   const std::string name = (name_remap.empty()) ? "multi_mapper" : name_remap;
   return ParameterTreeNode(
-      name,
-      {ParameterTreeNode("esdf_2d_min_height", params_.esdf_2d_min_height),
-       ParameterTreeNode("esdf_2d_max_height", params_.esdf_2d_max_height),
-       ParameterTreeNode("esdf_slice_height", params_.esdf_slice_height),
-       ParameterTreeNode("connected_mask_component_size_threshold",
-                         params_.connected_mask_component_size_threshold),
-       unmasked_mapper_->getParameterTree("unmasked_mapper"),
-       masked_mapper_->getParameterTree("masked_mapper"),
-       image_masker_.getParameterTree()});
+      name, {ParameterTreeNode("connected_mask_component_size_threshold",
+                               params_.connected_mask_component_size_threshold),
+             unmasked_mapper_->getParameterTree("unmasked_mapper"),
+             masked_mapper_->getParameterTree("masked_mapper"),
+             image_masker_.getParameterTree()});
 }
 
 std::string MultiMapper::getParametersAsString() const {

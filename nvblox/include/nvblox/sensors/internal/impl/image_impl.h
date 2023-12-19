@@ -84,6 +84,18 @@ void Image<ElementType>::copyFromAsync(const size_t rows, const size_t cols,
 }
 
 template <typename ElementType>
+void Image<ElementType>::copyToAsync(ElementType* buffer,
+                                     const CudaStream cuda_stream) const {
+  CHECK_NOTNULL(buffer);
+  owned_data_.copyToAsync(static_cast<ElementType*>(buffer), cuda_stream);
+}
+
+template <typename ElementType>
+void Image<ElementType>::copyTo(ElementType* buffer) const {
+  copyToAsync(buffer, CudaStreamOwning());
+}
+
+template <typename ElementType>
 void Image<ElementType>::setZero() {
   owned_data_.setZero();
 }

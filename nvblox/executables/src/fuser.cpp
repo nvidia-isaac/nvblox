@@ -92,8 +92,7 @@ int Fuser::run() {
   }
 
   if (!tsdf_output_path_.empty()) {
-    if (mapping_type_ == MappingType::kStaticTsdf ||
-        mapping_type_ == MappingType::kDynamic) {
+    if (!isStaticOccupancy(mapping_type_)) {
       LOG(INFO) << "Outputting tsdf pointcloud ply file to "
                 << tsdf_output_path_;
       outputTsdfPointcloudPly();
@@ -118,7 +117,7 @@ int Fuser::run() {
   }
 
   if (!freespace_output_path_.empty()) {
-    if (mapping_type_ == MappingType::kDynamic) {
+    if (isDynamicMapping(mapping_type_)) {
       LOG(INFO) << "Outputting freespace pointcloud ply file to "
                 << freespace_output_path_;
       outputFreespacePointcloudPly();
@@ -186,8 +185,7 @@ bool Fuser::integrateFrame(const int frame_number) {
     timer_integrate.Stop();
 
     // Store the dynamic mask if required
-    if (mapping_type_ == MappingType::kDynamic &&
-        !dynamic_overlay_path_.empty()) {
+    if (isDynamicMapping(mapping_type_) && !dynamic_overlay_path_.empty()) {
       outputDynamicOverlayImage(frame_number);
     }
   }

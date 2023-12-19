@@ -140,10 +140,8 @@ class MeshStreamerBase {
 class MeshStreamerOldestBlocks : public MeshStreamerBase {
  public:
   // Parameter defaults
-  static constexpr bool kDefaultExcludeBlocksAboveHeight = false;
-  static constexpr float kDefaultExclusionHeightM = 2.0;
-  static constexpr bool kDefaultExcludeBlocksOutsideRadius = false;
-  static constexpr float kDefaultExclusionRadiusM = 10.0;
+  static constexpr float kDefaultExclusionHeightM = -1.F;
+  static constexpr float kDefaultExclusionRadiusM = -1.F;
 
   /// @brief Constructor
   MeshStreamerOldestBlocks() = default;
@@ -177,25 +175,19 @@ class MeshStreamerOldestBlocks : public MeshStreamerBase {
       std::optional<Vector3f> exclusion_center_m, const CudaStream cuda_stream);
 
   /// Getter
-  /// @return Flag indicating whether we should exclude blocks based on height.
-  bool exclude_blocks_above_height() const;
-  /// Getter
   /// @return The height above which blocks are excluded (if corresponding flag
   /// true). Note that block lower extremities are compared to this number.
+  /// A negative number means no exclusion.
   float exclusion_height_m() const;
-  /// Getter
-  /// @return Flag indicating whether we should exclude blocks outside a radius.
-  bool exclude_blocks_outside_radius() const;
+
   /// Getter
   /// @return The radius at which blocks are excluded from streaming (if
   /// corresponding flag is true). Note that block centers are compared to this
-  /// number.
+  /// number. A negative number means no exclusion.
   float exclusion_radius_m() const;
 
   // Setters
-  void exclude_blocks_above_height(bool exclude_blocks_above_height);
   void exclusion_height_m(float exclusion_height_m);
-  void exclude_blocks_outside_radius(bool exclude_blocks_outside_radius);
   void exclusion_radius_m(float exclusion_radius_m);
 
   /// Return the parameter tree.
@@ -227,12 +219,8 @@ class MeshStreamerOldestBlocks : public MeshStreamerBase {
       const float exclude_blocks_radius_m, const Vector3f& center_m,
       const float block_size_m);
 
-  // Height exclusion params
-  bool exclude_blocks_above_height_ = kDefaultExcludeBlocksAboveHeight;
+  // Exclusion params
   float exclusion_height_m_ = kDefaultExclusionHeightM;
-
-  // Radius exclusion params
-  bool exclude_blocks_outside_radius_ = kDefaultExcludeBlocksOutsideRadius;
   float exclusion_radius_m_ = kDefaultExclusionRadiusM;
 
   // The counts up with each call to getNMeshBlocks(). It is used to indicate

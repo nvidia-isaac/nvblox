@@ -468,6 +468,26 @@ TEST_F(DepthImageTest, ElementWiseBinaryOps) {
   EXPECT_EQ(image_3(1, 1), 1);
 }
 
+TEST_F(DepthImageTest, CopyToBuffer) {
+  MonoImage image_1(2, 2, MemoryType::kUnified);
+  image_1(0, 0) = 0;
+  image_1(0, 1) = 1;
+  image_1(1, 0) = 0;
+  image_1(1, 1) = 1;
+
+  uint8_t buffer[4];
+
+  image_1.copyTo(buffer);
+
+  MonoImage image_2(MemoryType::kUnified);
+  image_2.copyFrom(2, 2, buffer);
+
+  EXPECT_EQ(image_2(0, 0), 0);
+  EXPECT_EQ(image_2(0, 1), 1);
+  EXPECT_EQ(image_2(1, 0), 0);
+  EXPECT_EQ(image_2(1, 1), 1);
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

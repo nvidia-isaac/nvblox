@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <Eigen/Core>
 
-#include "nvblox/utils/timing.h"
 #include "nvblox/io/internal/thirdparty/stb_image.h"
+#include "nvblox/utils/timing.h"
 
 namespace nvblox {
 namespace datasets {

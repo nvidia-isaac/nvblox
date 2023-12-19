@@ -151,7 +151,8 @@ bool MeshIntegrator::integrateBlocksCPU(
     }
 
     // Allocate the mesh block.
-    MeshBlock::Ptr mesh_block = mesh_layer->allocateBlockAtIndexAsync(block_index, *cuda_stream_);
+    MeshBlock::Ptr mesh_block =
+        mesh_layer->allocateBlockAtIndexAsync(block_index, *cuda_stream_);
 
     // Then actually calculate the triangles.
     for (const marching_cubes::PerVoxelMarchingCubesResults& candidate :
@@ -618,13 +619,16 @@ void MeshIntegrator::meshBlocksGPU(const TsdfLayer& distance_layer,
         const int num_vertices_to_allocate =
             std::max(kMinimumMeshBlockVertices,
                      num_vertices * kMeshBlockOverallocationFactor);
-        output_block->vertices.reserve(num_vertices_to_allocate);
-        output_block->normals.reserve(num_vertices_to_allocate);
-        output_block->triangles.reserve(num_vertices_to_allocate);
+        output_block->vertices.reserveAsync(num_vertices_to_allocate,
+                                            *cuda_stream_);
+        output_block->normals.reserveAsync(num_vertices_to_allocate,
+                                           *cuda_stream_);
+        output_block->triangles.reserveAsync(num_vertices_to_allocate,
+                                             *cuda_stream_);
       }
-      output_block->vertices.resize(num_vertices);
-      output_block->normals.resize(num_vertices);
-      output_block->triangles.resize(num_vertices);
+      output_block->vertices.resizeAsync(num_vertices, *cuda_stream_);
+      output_block->normals.resizeAsync(num_vertices, *cuda_stream_);
+      output_block->triangles.resizeAsync(num_vertices, *cuda_stream_);
       mesh_blocks_host_[i] = CudaMeshBlock(output_block.get());
     }
   }

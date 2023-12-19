@@ -41,9 +41,11 @@ class Pointcloud {
   void copyFrom(const Pointcloud& other);
   void copyFromAsync(const Pointcloud& other, const CudaStream cuda_stream);
   void copyFrom(const std::vector<Vector3f>& points);
-  void copyFromAsync(const std::vector<Vector3f>& points, const CudaStream cuda_stream);
+  void copyFromAsync(const std::vector<Vector3f>& points,
+                     const CudaStream cuda_stream);
   void copyFrom(const unified_vector<Vector3f>& points);
-  void copyFromAsync(const unified_vector<Vector3f>& points, const CudaStream cuda_stream);
+  void copyFromAsync(const unified_vector<Vector3f>& points,
+                     const CudaStream cuda_stream);
 
   /// Deep copy constructor (second can be used to transition memory type)
   /// Pointcloud(const Pointcloud& other);

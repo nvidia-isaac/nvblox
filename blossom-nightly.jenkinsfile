@@ -1,0 +1,72 @@
+// NVBLOX Nightly Pipeline
+//
+// Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto. Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+@Library('ci-lib@b63ac7624366ee4cf683cd77efeb80e1a9b20fb0')
+import com.nvidia.isaac.ci.Notify
+import com.nvidia.isaac.ci.utils.WorkflowScriptUtil
+
+// Environment variable
+env.REPO_NAME = 'nvblox'
+env.DOCKER_URL = 'nvcr.io'
+env.DOCKER_REPO = 'nvstaging/isaac-amr'
+env.IMAGE_TAG_X86 = "${env.DOCKER_URL}/${env.DOCKER_REPO}/${env.REPO_NAME}-nightly-x86_64:latest"
+env.IMAGE_TAG_AARCH64 = "${env.DOCKER_URL}/${env.DOCKER_REPO}/${env.REPO_NAME}-nightly-aarch64:latest"
+
+String image_pull_secret = 'vault-artifactory'
+
+blossom.init()
+common.init()
+
+// Pipline that builds and tags the nvblox docker image
+pipeline {
+    agent none
+    triggers {
+        // 0AM UTC -> 4PM PST
+        cron('0 22 * * *')
+    }
+    stages {
+        stage('Build Base Images') {
+            steps { script {
+                parallel(
+                    'X86': {
+                        blossom.with_docker {
+                            checkout scm
+                            withCredentials([
+                                usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                                ]) {
+                                sh  """
+                                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                                        docker build -t nvblox_deps -f docker/Dockerfile.deps . --network host && \
+                                        docker build -t "${env.IMAGE_TAG_X86}" -f docker/Dockerfile.build . --network host && \
+                                        docker push "${env.IMAGE_TAG_X86}"
+                                    """
+                            }
+                        }
+                    },
+                    'AARCH64' : {
+                        blossom.with_docker {
+                            checkout scm
+                            withCredentials([
+                                usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                                ]) {
+                                sh  """
+                                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                                        docker build -t nvblox_deps -f docker/Dockerfile.jetson_deps . --network host && \
+                                        docker build -t "${env.IMAGE_TAG_AARCH64}" -f docker/Dockerfile.build . --network host && \
+                                        docker push "${env.IMAGE_TAG_AARCH64}"
+                                    """
+                            }
+                        }
+                    }
+                )
+            }}
+        }
+    }
+}

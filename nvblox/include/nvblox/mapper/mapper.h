@@ -155,26 +155,12 @@ class Mapper : public MapperBase {
                            const Transform& T_L_C, const Lidar& lidar);
 
   /// Decay the TSDF layer (reduce weights)
-  void decayTsdf();
-
-  /// Decay the TSDF layer (reduce weights)
-  /// @param block_to_exclude   Blocks to exclude when decaying
-  /// @param exclusion_center   Center of radial exclusion of blocks
-  /// @param exclusion_radius_m Radius of the radial exclusion
-  void decayTsdf(const std::vector<Index3D>& block_to_exclude,
-                 const std::optional<Vector3f>& exclusion_center,
-                 const std::optional<float>& exclusion_radius_m);
+  /// @return A list of deallocated blocks.
+  std::vector<Index3D> decayTsdf();
 
   /// Decay the full occupancy layer.
-  void decayOccupancy();
-
-  /// Decay the occupancy layer (approach 0.5 occupancy probability).
-  /// @param block_to_exclude  Blocks to exclude when decaying
-  /// @param camera_center     Center of radial exclusion of blocks
-  /// @param exclusion_radius_m Radius of the radial exclusion
-  void decayOccupancy(std::vector<Index3D> const& blocks_to_exclude,
-                      const std::optional<Vector3f>& exclusion_center,
-                      const std::optional<float>& exclusion_radius_m);
+  /// @return A list of deallocated blocks.
+  std::vector<Index3D> decayOccupancy();
 
   /// Updates the freespace blocks which require an update
   /// @param The time of the update in miliseconds.
@@ -182,8 +168,15 @@ class Mapper : public MapperBase {
   std::vector<Index3D> updateFreespace(Time update_time_ms);
 
   /// Updates the mesh blocks which require an update
-  /// @return The indices of the blocks that were updated in this call.
-  std::vector<Index3D> updateMesh();
+  /// @param maybe_T_L_C Pose of the camera, specified as a transform from
+  ///                    Camera-frame to Layer-frame transform. If given,
+  ///                    returned mesh blocks will be limited to the ones
+  ///                    surrounding the camera position.
+  /// @return A serialized mesh. If mesh_bandwidth_limit_mbps is positive,
+  ///         the size of the mesh is limited based on estimated bandwidth
+  ///         capacity.
+  std::shared_ptr<const SerializedMesh> updateMesh(
+      const std::optional<Transform>& maybe_T_L_C = std::nullopt);
 
   /// Generate (or re-generate) a mesh for the entire map. Useful if loading
   /// a layer cake without a mesh layer, for example.
@@ -206,20 +199,13 @@ class Mapper : public MapperBase {
   /// the 2D or 3D ESDF, not both. Which is to be calculated is determined by
   /// the first call to updateEsdf(). This function operates by collapsing a
   /// finite thickness slice of the 3D TSDF into a binary obstacle map, and
-  /// then generating the 2D ESDF. The input parameters define the limits of
+  /// then generating the 2D ESDF. The mapper parameters define the limits of
   /// the 3D slice that are considered. Note that the resultant 2D ESDF is
   /// stored in a single voxel thick layer in ESDF layer.
   /// @return The indices of the blocks that were updated in this call.
-  ///@param slice_input_z_min The minimum height of the 3D TSDF slice used to
-  ///                         generate the 2D binary obstacle map.
-  ///@param slice_input_z_max The minimum height of the 3D TSDF slice used to
-  ///                         generate the 2D binary obstacle map.
-  ///@param slice_output_z The height at which the 2D ESDF is stored.
   ///@return std::vector<Index3D>  The indices of the blocks that were updated
   ///        in this call.
-  std::vector<Index3D> updateEsdfSlice(float slice_input_z_min,
-                                       float slice_input_z_max,
-                                       float slice_output_z);
+  std::vector<Index3D> updateEsdfSlice();
 
   /// Clears the reconstruction outside a radius around a center point,
   /// deallocating the memory.
@@ -233,26 +219,6 @@ class Mapper : public MapperBase {
   /// @param center The center of allocation-sphere
   /// @param radius The radius of allocation-sphere
   void markUnobservedTsdfFreeInsideRadius(const Vector3f& center, float radius);
-
-  /// Return N bytes of MeshBlocks from the stream queue.
-  /// @param num_bytes The number of bytes of mesh blocks to stream
-  /// @param exclusion_center_m Optional center of radius-based exclusion.
-  /// This parameter is required if radius-based exclusion is requested.
-  /// @return The list of mesh block indices to stream
-  std::vector<Index3D> getNBytesOfMeshBlocksFromStreamQueue(
-      const size_t num_bytes,
-      const std::optional<Vector3f>& exclusion_center_m = std::nullopt);
-
-  /// Return N bytes of serialized MeshBlocks from the stream queue.
-  /// @param num_bytes The number of bytes of mesh blocks to stream
-  /// @param exclusion_center_m Optional center of radius-based exclusion.
-  /// This parameter is required if radius-based exclusion is requested.
-  /// @param cuda_stream Cuda stream.
-  /// @param Serialized mesh containing highest priority mesh blocks
-  const std::shared_ptr<const SerializedMesh>
-  getNBytesOfSerializedMeshBlocksFromStreamQueue(
-      const size_t num_bytes, const std::optional<Vector3f>& exclusion_center_m,
-      CudaStream cuda_stream);
 
   /// Gets the preprocessed version of the last depth image passed to
   /// integrateDepth(). Note that we return a shared_ptr to a buffered depth
@@ -342,8 +308,7 @@ class Mapper : public MapperBase {
   }
   /// Getter
   ///@return const ProjectiveOccupancyIntegrator& occupancy integrator used
-  /// for
-  ///        3D LiDAR scan integration.
+  /// for 3D LiDAR scan integration.
   const ProjectiveOccupancyIntegrator& lidar_occupancy_integrator() const {
     return lidar_occupancy_integrator_;
   }
@@ -409,7 +374,8 @@ class Mapper : public MapperBase {
     return occupancy_decay_integrator_;
   }
   /// Getter
-  ///@return TsdfDecayIntegrator& TSDF decay integrator used for decaying a TSDF
+  ///@return TsdfDecayIntegrator& TSDF decay integrator used for decaying a
+  /// TSDF
   ///        layer (through reduction of voxel weights).
   TsdfDecayIntegrator& tsdf_decay_integrator() {
     return tsdf_decay_integrator_;
@@ -430,7 +396,7 @@ class Mapper : public MapperBase {
   /// @return The voxel size in meters
   float voxel_size_m() const { return voxel_size_m_; };
   /// Getter
-  /// @return The type of projectivelayer we're mapping
+  /// @return The type of projective layer we're mapping
   ProjectiveLayerType projective_layer_type() const {
     return projective_layer_type_;
   };
@@ -445,20 +411,6 @@ class Mapper : public MapperBase {
   void ignore_esdf_sites_in_freespace(bool value) {
     ignore_esdf_sites_in_freespace_ = value;
   };
-
-  /// Getter
-  /// @return Whether we should build a MeshBlock stream queue such that N
-  /// bytes of mesh can be requested through
-  /// getNBytesOfMeshBlocksFromStreamQueue().
-  bool maintain_mesh_block_stream_queue() const {
-    return maintain_mesh_block_stream_queue_;
-  }
-  /// Setter
-  /// @param Whether we should build a MeshBlock stream queue.
-  void maintain_mesh_block_stream_queue(
-      const bool maintain_mesh_block_stream_queue) {
-    maintain_mesh_block_stream_queue_ = maintain_mesh_block_stream_queue;
-  }
 
   /// Getter
   /// @return Whether we should perform preprocessing on input DepthImages
@@ -483,16 +435,62 @@ class Mapper : public MapperBase {
     depth_preprocessing_num_dilations_ = depth_preprocessing_num_dilations;
   }
 
-  /// Getter for TSDF decay factor.
-  /// @return decay factor
-  int tsdf_decay_factor() const {
-    return tsdf_decay_integrator_.decay_factor();
+  /// Getter for mesh_bandwidth_limit_mbps that limits the mesh size returned by
+  /// updateMesh
+  /// @return mesh_bandwidth_limit_mbps
+  float mesh_bandwidth_limit_mbps() const { return mesh_bandwidth_limit_mbps_; }
+  /// Setter for mesh_bandwidth_limit_mbps that limits the mesh size returned by
+  /// updateMesh. Set to negative number for unlimited size.
+  /// @param mesh_bandwidth_limit_mbps
+  void mesh_bandwidth_limit_mbps(const float mesh_bandwidth_limit_mbps) {
+    mesh_bandwidth_limit_mbps_ = mesh_bandwidth_limit_mbps;
   }
-  /// Setter for TSDF decay factor
-  /// @param tsdf_factor decay factor.
-  /// @pre 0.0 < param < 1.0
-  void tsdf_decay_factor(const float tsdf_decay_factor) {
-    tsdf_decay_integrator_.decay_factor(tsdf_decay_factor);
+
+  /// A parameter getter
+  /// The minimum height, in meters, to consider obstacles part of the 2D ESDF
+  /// slice.
+  /// @returns esdf_slice_min_height
+  float esdf_slice_min_height() const { return esdf_slice_min_height_; }
+  /// A parameter setter
+  /// See esdf_slice_min_height().
+  /// @param esdf_slice_min_height
+  void esdf_slice_min_height(const float esdf_slice_min_height) {
+    esdf_slice_min_height_ = esdf_slice_min_height;
+  }
+  /// A parameter getter
+  /// The maximum height, in meters, to consider obstacles part of the 2D ESDF
+  /// slice.
+  /// @returns esdf_slice_max_height
+  float esdf_slice_max_height() const { return esdf_slice_max_height_; }
+  /// A parameter setter
+  /// See esdf_slice_max_height().
+  /// @param esdf_slice_max_height
+  void esdf_slice_max_height(const float esdf_slice_max_height) {
+    esdf_slice_max_height_ = esdf_slice_max_height;
+  }
+  /// A parameter getter
+  /// The output slice height for the distance slice and ESDF pointcloud. Does
+  /// not need to be within min and max height below. In units of meters.
+  /// @returns esdf_slice_height
+  float esdf_slice_height() const { return esdf_slice_height_; }
+  /// A parameter setter
+  /// See esdf_slice_height().
+  /// @param esdf_slice_height
+  void esdf_slice_height(const float esdf_slice_height) {
+    esdf_slice_height_ = esdf_slice_height;
+  }
+
+  /// A parameter getter
+  /// Whether to exclude voxel contained observed in the the last depth frame
+  /// passed to integrateDepth from the voxels which are decayed.
+  bool exclude_last_view_from_decay() const {
+    return exclude_last_view_from_decay_;
+  }
+  /// A parameter setter
+  /// See exclude_last_view_from_decay()
+  /// @param exclude_last_view_from_decay
+  void exclude_last_view_from_decay(const bool exclude_last_view_from_decay) {
+    exclude_last_view_from_decay_ = exclude_last_view_from_decay;
   }
 
   /// Saving and loading functions.
@@ -545,6 +543,11 @@ class Mapper : public MapperBase {
   /// Perform preprocessing on a depth image
   const DepthImage& preprocessDepthImageAsync(const DepthImage& depth_image);
 
+  /// Return a serialized mesh from the mesh streamer.
+  std::shared_ptr<const SerializedMesh> createSerializedMesh(
+      const std::vector<Index3D>& mesh_blocks_to_stream,
+      const std::optional<Transform>& maybe_T_L_C);
+
   /// The CUDA stream that mapper work is processed on
   std::shared_ptr<CudaStream> cuda_stream_;
 
@@ -574,6 +577,11 @@ class Mapper : public MapperBase {
   MeshIntegrator mesh_integrator_;
   EsdfIntegrator esdf_integrator_;
 
+  /// Esdf 2D slice parameters
+  float esdf_slice_min_height_ = mapper::kDefaultEsdfSliceMinHeight;
+  float esdf_slice_max_height_ = mapper::kDefaultEsdfSliceMaxHeight;
+  float esdf_slice_height_ = mapper::kDefaultEsdf2dSliceHeight;
+
   /// Preprocessing depth maps prior to integration.
   /// Currently, the only preprocessing step is to dilate the invalid regions
   /// of the input depth image. We have found this useful to reduce the
@@ -593,17 +601,21 @@ class Mapper : public MapperBase {
   Index3DSet freespace_blocks_to_update_;
   Index3DSet esdf_blocks_to_update_;
 
-  /// This object manages a queue of mesh blocks to be streamed when bandwidth
-  /// limiting is desired. Set maintain_mesh_block_stream_queue_ to true to
-  /// build the queue during mapping.
-  bool maintain_mesh_block_stream_queue_ =
-      mapper::kDefaultMaintainMeshBlockStreamQueue;
+  /// This object handles the bandwidth limiting of the mesh streamer.
   MeshStreamerOldestBlocks mesh_streamer_;
+  float mesh_bandwidth_limit_mbps_{mapper::kDefaultMeshBandwidthLimitMbps};
 
   /// Whether to ignore esdf sites that fall into freespace.
   /// When this flag is set, the freespace layer is passed to the esdf
   /// integrator for checking if candidate esdf sites fall into freespace.
   bool ignore_esdf_sites_in_freespace_ = kDefaultIgnoreEsdfSitesInFreespace;
+
+  /// Whether to exclude the last depth frustum from the decay
+  bool exclude_last_view_from_decay_ = mapper::kDefaultExcludeLastViewFromDecay;
+  /// Last known depth viewpoint for view-based decay exclusion
+  std::optional<DepthImage> last_depth_image_;
+  std::optional<Camera> last_depth_camera_;
+  std::optional<Transform> last_depth_T_L_C_;
 };
 
 }  // namespace nvblox

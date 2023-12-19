@@ -85,13 +85,11 @@ class Fuser {
   int num_frames_to_integrate_ = std::numeric_limits<int>::max();
   std::unique_ptr<datasets::RgbdDataLoaderInterface> data_loader_;
 
-  // Subsampling params
+  // Temporal subsampling params
   int projective_frame_subsampling_ = 1;
   int color_frame_subsampling_ = 1;
-  // By default we just do the mesh and esdf once at the end
-  // (if output paths exist)
-  int mesh_frame_subsampling_ = -1;
-  int esdf_frame_subsampling_ = -1;
+  int mesh_frame_subsampling_ = 1;
+  int esdf_frame_subsampling_ = 1;
 
   // Param for dynamics
   nvblox::Time frame_period_ms_{33};  // 30 Hz

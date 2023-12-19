@@ -101,7 +101,7 @@ cmake .. && make
 Run test and benchmark from build dir:
 ```
 ctest
-executables/benchmark
+tests/benchmark
 ```
 
 ## Run an example

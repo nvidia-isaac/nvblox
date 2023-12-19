@@ -17,16 +17,12 @@ using namespace nvblox;
 TEST(MeshStreamerTest, SetterAndGetter) {
   // Set
   MeshStreamerOldestBlocks mesh_streamer;
-  mesh_streamer.exclude_blocks_above_height(true);
   mesh_streamer.exclusion_height_m(1.0f);
-  mesh_streamer.exclude_blocks_outside_radius(true);
   mesh_streamer.exclusion_radius_m(2.0f);
 
   // Get
   constexpr float kEps = 1e-6;
-  EXPECT_TRUE(mesh_streamer.exclude_blocks_above_height());
   EXPECT_NEAR(mesh_streamer.exclusion_height_m(), 1.0f, kEps);
-  EXPECT_TRUE(mesh_streamer.exclude_blocks_outside_radius());
   EXPECT_NEAR(mesh_streamer.exclusion_radius_m(), 2.0f, kEps);
 }
 
@@ -359,7 +355,6 @@ TEST(MeshStreamerTest, ExcludeBlocksAboveHeight) {
   MeshStreamerOldestBlocks mesh_streamer;
 
   // Turn on above height exclusion
-  mesh_streamer.exclude_blocks_above_height(true);
   constexpr float kBlockHeightLimitM = 0.55;
   mesh_streamer.exclusion_height_m(kBlockHeightLimitM);
 
@@ -393,7 +388,6 @@ TEST(MeshStreamerTest, ExcludeBlocksOutsideRadius) {
   MeshStreamerOldestBlocks mesh_streamer;
 
   // Turn on above height exclusion
-  mesh_streamer.exclude_blocks_outside_radius(true);
   constexpr float kBlockRadiusLimitM = 0.5;
   mesh_streamer.exclusion_radius_m(kBlockRadiusLimitM);
 

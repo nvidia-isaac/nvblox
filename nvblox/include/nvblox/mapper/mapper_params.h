@@ -35,7 +35,11 @@ namespace mapper {
 // Mapper::kDefaultValue notation.
 constexpr bool kDefaultDoDepthPreprocessing = false;
 constexpr bool kDefaultDepthPreprocessingNumDilations = 4;
-constexpr bool kDefaultMaintainMeshBlockStreamQueue = false;
+constexpr float kDefaultMeshBandwidthLimitMbps = 25.0f;
+constexpr float kDefaultEsdfSliceMinHeight = 0.0f;
+constexpr float kDefaultEsdfSliceMaxHeight = 1.0f;
+constexpr float kDefaultEsdf2dSliceHeight = 1.0f;
+constexpr bool kDefaultExcludeLastViewFromDecay = false;
 }  // namespace mapper
 
 struct MapperParams {
@@ -44,9 +48,14 @@ struct MapperParams {
   bool do_depth_preprocessing = mapper::kDefaultDoDepthPreprocessing;
   int depth_preprocessing_num_dilations =
       mapper::kDefaultDepthPreprocessingNumDilations;
-  // Mesh block streaming
-  bool maintain_mesh_block_stream_queue =
-      mapper::kDefaultMaintainMeshBlockStreamQueue;
+  // mesh streaming
+  float mesh_bandwidth_limit_mbps = mapper::kDefaultMeshBandwidthLimitMbps;
+  // 2D esdf slice
+  float esdf_slice_min_height = mapper::kDefaultEsdfSliceMinHeight;
+  float esdf_slice_max_height = mapper::kDefaultEsdfSliceMaxHeight;
+  float esdf_slice_height = mapper::kDefaultEsdf2dSliceHeight;
+  // Decay
+  bool exclude_last_view_from_decay = mapper::kDefaultExcludeLastViewFromDecay;
 
   // ======= PROJECTIVE INTEGRATOR (TSDF/COLOR/OCCUPANCY) =======
   // max integration distance
@@ -107,12 +116,8 @@ struct MapperParams {
   bool check_neighborhood = FreespaceIntegrator::kDefaultCheckNeighborhood;
 
   // ======= MESH STREAMER =======
-  bool mesh_streamer_exclude_blocks_above_height{
-      MeshStreamerOldestBlocks::kDefaultExcludeBlocksAboveHeight};
   float mesh_streamer_exclusion_height_m{
       MeshStreamerOldestBlocks::kDefaultExclusionHeightM};
-  bool mesh_streamer_exclude_blocks_outside_radius{
-      MeshStreamerOldestBlocks::kDefaultExcludeBlocksOutsideRadius};
   float mesh_streamer_exclusion_radius_m{
       MeshStreamerOldestBlocks::kDefaultExclusionRadiusM};
 };

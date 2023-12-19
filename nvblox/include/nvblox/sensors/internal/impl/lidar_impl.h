@@ -168,8 +168,7 @@ Vector3f Lidar::vectorFromPixelIndices(const Index2D& u_C) const {
       pixelIndexToImagePlaneCoordsOfCenter(u_C));
 }
 
-AxisAlignedBoundingBox Lidar::getViewAABB(const Transform& T_L_C,
-                                          const float,
+AxisAlignedBoundingBox Lidar::getViewAABB(const Transform& T_L_C, const float,
                                           const float max_depth) const {
   // The AABB is a square centered at the lidars location where the height is
   // determined by the lidar FoV.
@@ -207,8 +206,10 @@ std::ostream& operator<<(std::ostream& os, const Lidar& lidar) {
   os << "Lidar with intrinsics:\n"
      << "\tnum_azimuth_divisions: " << lidar.num_azimuth_divisions() << "\n"
      << "\tnum_elevation_divisions: " << lidar.num_elevation_divisions() << "\n"
-     << "\tvertical_fov_deg: " << lidar.vertical_fov_rad() * kRadToDegrees << "\n"
-     << "\tstart_polar_angle_deg: " << lidar.start_polar_angle_rad() * kRadToDegrees;
+     << "\tvertical_fov_deg: " << lidar.vertical_fov_rad() * kRadToDegrees
+     << "\n"
+     << "\tstart_polar_angle_deg: "
+     << lidar.start_polar_angle_rad() * kRadToDegrees;
   return os;
 }
 

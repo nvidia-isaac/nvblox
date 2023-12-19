@@ -18,9 +18,7 @@ source_parsers = {
     '.md': 'recommonmark.parser.CommonMarkParser',
 }
 
-extensions = [
-    'sphinx.ext.autosectionlabel'
-]
+extensions = ['sphinx.ext.autosectionlabel']
 
 project = name
 master_doc = 'root'

@@ -41,12 +41,3 @@ target_link_libraries(fuse_redwood
     nvblox_lib nvblox_datasets
 )
 set_target_properties(fuse_redwood PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
-
-# Benchmarking executable
-add_executable(benchmark
-    src/benchmark.cpp
-)
-target_link_libraries(benchmark
-    nvblox_lib nvblox_datasets nvblox_test_utils benchmark::benchmark
-)
-set_target_properties(benchmark PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)

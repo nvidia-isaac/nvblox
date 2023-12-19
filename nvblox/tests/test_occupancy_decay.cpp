@@ -68,9 +68,11 @@ TEST(LayerDecayTest, EmptyLayerTest) {
   OccupancyLayer layer(KVoxelSize, MemoryType::kUnified);
 
   OccupancyDecayIntegrator decay_integrator;
-  decay_integrator.decay(&layer, CudaStreamOwning());
+  const std::vector<Index3D> deallocated_blocks =
+      decay_integrator.decay(&layer, CudaStreamOwning());
 
   EXPECT_EQ(layer.numAllocatedBlocks(), 0);
+  EXPECT_EQ(deallocated_blocks.size(), 0);
 }
 
 TEST(LayerDecayTest, SingleDecayTest) {
@@ -84,7 +86,9 @@ TEST(LayerDecayTest, SingleDecayTest) {
   // Decay the occupancy probabilities
   OccupancyDecayIntegrator decay_integrator;
   decay_integrator.deallocate_decayed_blocks(false);
-  decay_integrator.decay(&layer, CudaStreamOwning());
+  const std::vector<Index3D> deallocated_blocks =
+      decay_integrator.decay(&layer, CudaStreamOwning());
+  EXPECT_EQ(deallocated_blocks.size(), 0);
 
   // Check if this worked
   int num_checked_voxels = 0;
@@ -177,7 +181,8 @@ TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
 
   // Now test decay with deallocation
   decay_integrator.deallocate_decayed_blocks(true);
-  decay_integrator.decay(&layer, CudaStreamOwning());
+  const std::vector<Index3D> deallocated_blocks =
+      decay_integrator.decay(&layer, CudaStreamOwning());
   int num_allocated_voxels = 0;
   auto check_deallocation = [&num_allocated_voxels](const Index3D&,
                                                     const Index3D&,
@@ -186,7 +191,8 @@ TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
   };
   callFunctionOnAllVoxels<OccupancyVoxel>(&layer, check_deallocation);
   // All blocks should be deallocated
-  CHECK_EQ(num_allocated_voxels, 0);
+  EXPECT_EQ(num_allocated_voxels, 0);
+  EXPECT_EQ(deallocated_blocks.size(), kNumBlocksToAllocate);
 }
 
 // Run the above test with different values to decay to

@@ -15,12 +15,12 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/time.h"
 #include "nvblox/core/types.h"
 #include "nvblox/map/blox.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/map/layer.h"
-#include "nvblox/core/parameter_tree.h"
 
 namespace nvblox {
 
@@ -120,7 +120,7 @@ class FreespaceIntegrator {
   /// @return the parameter tree
   virtual parameters::ParameterTreeNode getParameterTree(
       const std::string& name_remap = std::string()) const;
- 
+
  protected:
   // Parameters (see getters for description)
   // Note: See comment behind each parameter for corresponding dynablox

@@ -102,10 +102,10 @@ TEST(GpuHashTest, SphereSceneAccessTest) {
   GPULayerView<TsdfBlock> gpu_layer = tsdf_layer.getGpuLayerView();
 
   // Lookup voxels (GPU)
-  std::vector<TsdfVoxel> gpu_lookup_voxels;
-  std::vector<bool> flags;
-  std::tie(gpu_lookup_voxels, flags) =
-      test_utils::getVoxelsAtPositionsOnGPU(gpu_layer, p_L_vec);
+  host_vector<TsdfVoxel> gpu_lookup_voxels;
+  host_vector<bool> flags;
+  test_utils::getVoxelsAtPositionsOnGPU(gpu_layer, p_L_vec, &gpu_lookup_voxels,
+                                        &flags);
 
   std::for_each(flags.begin(), flags.end(),
                 [](bool flag) { EXPECT_TRUE(flag); });
@@ -123,8 +123,8 @@ TEST(GpuHashTest, SphereSceneAccessTest) {
     return test_utils::getRandomVector3fInRange(bounds_max.array() + 1.0,
                                                 bounds_max.array() + 5.0);
   });
-  std::tie(gpu_lookup_voxels, flags) =
-      test_utils::getVoxelsAtPositionsOnGPU(gpu_layer, p_L_vec);
+  test_utils::getVoxelsAtPositionsOnGPU(gpu_layer, p_L_vec, &gpu_lookup_voxels,
+                                        &flags);
   std::for_each(flags.begin(), flags.end(),
                 [](bool flag) { EXPECT_FALSE(flag); });
 }

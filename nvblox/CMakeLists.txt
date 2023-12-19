@@ -155,6 +155,7 @@ add_library(nvblox_lib SHARED
     src/mapper/mapper.cpp
     src/mapper/multi_mapper.cpp
     src/integrators/view_calculator.cu
+    src/integrators/decay_integrator_base.cpp
     src/integrators/occupancy_decay_integrator.cu
     src/integrators/tsdf_decay_integrator.cu
     src/integrators/projective_occupancy_integrator.cu

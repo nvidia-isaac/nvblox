@@ -225,6 +225,20 @@ TEST(UnifiedPointerTest, CloneConstBlock) {
   callFunctionOnAllVoxels<TsdfVoxel>(*cloned_block, expect_voxel_zero_lambda);
 }
 
+TEST(UnifiedPointerTest, CopyToRaw) {
+  // Get the test value on device
+  constexpr int kTestValue = 123456;
+  auto ptr_host = make_unified<int>(MemoryType::kHost, kTestValue);
+  auto ptr_device = make_unified<int>(MemoryType::kDevice);
+  ptr_host.copyTo(ptr_device.get());
+
+  // Copy to a raw pointer
+  auto ptr_host_std = std::make_unique<int>();
+  ptr_device.copyTo(ptr_host_std.get());
+
+  EXPECT_EQ(*ptr_host_std, kTestValue);
+}
+
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;

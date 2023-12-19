@@ -1,0 +1,4 @@
+matplotlib
+numpy
+open3d
+plyfile

@@ -9,10 +9,12 @@ RUN apt-get install -y tzdata
 
 # Install basics.
 RUN apt-get update
-RUN apt-get install -y ssh git jq gnupg apt-utils software-properties-common build-essential
+RUN apt-get install -y ssh git jq gnupg apt-utils software-properties-common build-essential python3-pip
 
 # Install dependencies.
 RUN apt-get install -y libgoogle-glog-dev libgtest-dev libbenchmark-dev curl libsqlite3-dev
+
+RUN python3 -m pip install --no-cache-dir --upgrade pip
 
 # Upgrade cmake to 3.23.2
 # We need this to build with c++17 under CMAKE.

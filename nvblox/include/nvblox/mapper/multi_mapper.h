@@ -27,20 +27,27 @@ enum class MappingType {
   kHumanWithStaticOccupancy  /// static occupancy and human occupancy
 };
 
-/// Whether the masked mapper is used for dynamic/human mapping
-inline bool isUsingDynamicMapper(MappingType mapping_type) {
-  if (mapping_type == MappingType::kDynamic ||
-      mapping_type == MappingType::kHumanWithStaticTsdf ||
+/// Whether the masked mapper is used for human mapping
+inline bool isHumanMapping(MappingType mapping_type) {
+  if (mapping_type == MappingType::kHumanWithStaticTsdf ||
       mapping_type == MappingType::kHumanWithStaticOccupancy) {
     return true;
   }
   return false;
 }
 
-/// Whether the masked mapper is used for human mapping
-inline bool isHumanMapping(MappingType mapping_type) {
-  if (mapping_type == MappingType::kHumanWithStaticTsdf ||
-      mapping_type == MappingType::kHumanWithStaticOccupancy) {
+/// Whether the masked mapper is used for dynamic mapping
+inline bool isDynamicMapping(MappingType mapping_type) {
+  if (mapping_type == MappingType::kDynamic) {
+    return true;
+  }
+  return false;
+}
+
+/// Whether both the unmasked and masked mapper are active,
+/// i.e. the masked mapper is used for dynamic/human mapping
+inline bool isUsingBothMappers(MappingType mapping_type) {
+  if (isHumanMapping(mapping_type) || isDynamicMapping(mapping_type)) {
     return true;
   }
   return false;
@@ -88,21 +95,9 @@ inline std::string toString(MappingType mapping_type) {
 ///                    kDynamic.
 class MultiMapper {
  public:
-  static constexpr bool kDefaultEsdf2dMinHeight = 0.0f;
-  static constexpr bool kDefaultEsdf2dMaxHeight = 1.0f;
-  static constexpr bool kDefaultEsdf2dSliceHeight = 1.0f;
   static constexpr int kDefaultConnectedMaskComponentSizeThreshold = 2000;
 
   struct Params {
-    /// The minimum height, in meters, to consider obstacles part of the 2D ESDF
-    /// slice.
-    float esdf_2d_min_height = kDefaultEsdf2dMinHeight;
-    /// The maximum height, in meters, to consider obstacles part of the 2D ESDF
-    /// slice.
-    float esdf_2d_max_height = kDefaultEsdf2dMaxHeight;
-    /// The output slice height for the distance slice and ESDF pointcloud. Does
-    /// not need to be within min and max height below. In units of meters.
-    float esdf_slice_height = kDefaultEsdf2dSliceHeight;
     /// The minimum number of pixels of a connected component in the mask image
     /// to count as a dynamic detection.
     int connected_mask_component_size_threshold =
@@ -180,8 +175,11 @@ class MultiMapper {
 
   /// @brief Updating the mesh layers of the mappers depending on the mapping
   /// type.
-  /// @return The indices of the blocks that were updated in this call.
-  std::vector<Index3D> updateMesh();
+  /// @return A serialized mesh. If mesh_bandwidth_limit_mbps is positive,
+  ///         the size of the mesh is limited based on estimated
+  ///         bandwidth capacity.
+  std::shared_ptr<const SerializedMesh> updateMesh(
+      const std::optional<Transform>& maybe_T_L_C = std::nullopt);
 
   // Access to the internal mappers
   const Mapper& unmasked_mapper() const { return *unmasked_mapper_.get(); }

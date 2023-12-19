@@ -122,9 +122,9 @@ TEST_P(LoaderParameterizedTest, ImageLoaderObject) {
   EXPECT_NEAR(image::maxGPU(depth_image_1), 7.835, kTolerance);
 }
 
+// TODO(dtingdahl) Re-enable multi-threading when it is supported again
 INSTANTIATE_TEST_CASE_P(LoaderTests, LoaderParameterizedTest,
-                        ::testing::Values(LoaderType::kSingleThreaded,
-                                          LoaderType::kMultiThreaded));
+                        ::testing::Values(LoaderType::kSingleThreaded));
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

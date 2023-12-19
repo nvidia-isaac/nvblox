@@ -15,11 +15,11 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/map/layer.h"
 #include "nvblox/mesh/internal/marching_cubes.h"
 #include "nvblox/mesh/mesh_block.h"
-#include "nvblox/core/parameter_tree.h"
 
 namespace nvblox {
 
@@ -78,7 +78,8 @@ class MeshIntegrator {
 
   /// Return the parameter tree.
   /// @return the parameter tree
-  virtual parameters::ParameterTreeNode getParameterTree(const std::string& name_remap = std::string()) const;
+  virtual parameters::ParameterTreeNode getParameterTree(
+      const std::string& name_remap = std::string()) const;
 
  private:
   bool isBlockMeshable(const VoxelBlock<TsdfVoxel>::ConstPtr block,

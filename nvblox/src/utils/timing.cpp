@@ -112,16 +112,18 @@ void TimerChrono::Start() {
 }
 
 void TimerChrono::Stop() {
-  std::chrono::time_point<std::chrono::system_clock> now =
-      std::chrono::system_clock::now();
-  double dt =
-      static_cast<double>(
-          std::chrono::duration_cast<std::chrono::nanoseconds>(now - time_)
-              .count()) *
-      kNumSecondsPerNanosecond;
+  if (timing_) {
+    std::chrono::time_point<std::chrono::system_clock> now =
+        std::chrono::system_clock::now();
+    double dt =
+        static_cast<double>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now - time_)
+                .count()) *
+        kNumSecondsPerNanosecond;
 
-  Timing::Instance().AddTime(handle_, dt);
-  timing_ = false;
+    Timing::Instance().AddTime(handle_, dt);
+    timing_ = false;
+  }
 }
 
 bool TimerChrono::IsTiming() const { return timing_; }

@@ -32,7 +32,8 @@ namespace nvblox {
 /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
 /// points in the camera frame (C) to the layer frame (L).
 /// @param block_size The size of a VoxelBlock
-/// @param max_depth The maximum depth at which we consider projection sucessful.
+/// @param max_depth The maximum depth at which we consider projection
+/// sucessful.
 /// @param[out] u_px_ptr A pointer to the (floating point) image plane
 /// coordinates (u,v) of the voxel center projected on the image plane.
 /// @param[out] u_depth_ptr A pointer to the depth of the voxel center.

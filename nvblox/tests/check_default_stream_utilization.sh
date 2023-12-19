@@ -27,7 +27,7 @@ set -euxo pipefail
 NSYS=/usr/local/cuda-11.8/bin/nsys
 
 # Command to benchmark. We run a fixed number of iterations for to make it reproducable
-BENCHMARK_CMD="../executables/benchmark --benchmark_filter=benchmarkAll/iterations:100"
+BENCHMARK_CMD="../tests/benchmark --benchmark_filter=benchmarkAll/iterations:100"
 
 # Name of nsys profile output files
 REPORT_NAME="profile_report"

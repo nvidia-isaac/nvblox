@@ -9,13 +9,25 @@ RUN apt-get install -y tzdata
 
 # Install basics.
 RUN apt-get update
-RUN apt-get install -y ssh git jq gnupg apt-utils software-properties-common build-essential sudo
+RUN apt-get install -y ssh git jq gnupg apt-utils software-properties-common build-essential sudo python3-pip
+
+# Install Open3D system dependencies
+#NOTE(alexmillane): The lines below are taken from: http://www.open3d.org/docs/release/docker.html
+#NOTE(alexmillane): In the latest open3d version 0.17.0 the visualizer view control is broken (known issue)
+# so if you need this you may have to downgrade 0.16.0. For the time being I'm using 0.17.0.
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    libegl1 \
+    libgl1 \
+    libgomp1
 
 # Install dependencies.
 RUN apt-get install -y libgoogle-glog-dev libgtest-dev libbenchmark-dev curl libsqlite3-dev
 
 # Install devtools
-RUN apt-get install -y cuda-nsight-systems-11-8 bc
+RUN apt-get install -y cuda-nsight-systems-11-8 bc clang-format
+
+# Install python modules
+RUN python3 -m pip install --no-cache-dir --upgrade pip && pip install -U yapf==0.40.2 pylint==3.0.2 pytest
 
 # Upgrade cmake to 3.23.2
 # We need this to build with c++17 under CMAKE.

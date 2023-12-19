@@ -145,7 +145,7 @@ std::unique_ptr<ImageLoader<ColorImage>> createColorImageLoader(
 }  // namespace internal
 
 std::unique_ptr<Fuser> createFuser(const std::string base_path) {
-  auto data_loader = DataLoader::create(base_path);
+  auto data_loader = DataLoader::create(base_path, false);
   if (!data_loader) {
     return std::unique_ptr<Fuser>();
   }

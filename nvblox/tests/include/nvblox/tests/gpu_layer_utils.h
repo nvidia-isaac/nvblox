@@ -28,9 +28,10 @@ std::vector<bool> getContainsFlags(const GPULayerView<TsdfBlock>& gpu_layer,
                                    const std::vector<Index3D>& indices);
 
 // Retrieves Voxels on the GPU and brings them back to CPU.
-std::pair<std::vector<TsdfVoxel>, std::vector<bool>> getVoxelsAtPositionsOnGPU(
-    const GPULayerView<TsdfBlock>& gpu_layer,
-    const std::vector<Vector3f>& p_L_vec);
+void getVoxelsAtPositionsOnGPU(const GPULayerView<TsdfBlock>& gpu_layer,
+                               const std::vector<Vector3f>& p_L_vec,
+                               host_vector<TsdfVoxel>* voxels,
+                               host_vector<bool>* flags);
 
 }  // namespace test_utils
 }  // namespace nvblox
