@@ -115,7 +115,7 @@ class BlockLayer : public BaseLayer {
   size_t size() const { return blocks_.size(); }
 
   /// Clear the layer of all data
-  void clear() { blocks_.clear(); }
+  void clear();
 
   // Clear (deallocate) a single block
   bool clearBlock(const Index3D& index);
