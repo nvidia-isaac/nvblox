@@ -19,6 +19,7 @@ limitations under the License.
 
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 
 namespace nvblox {
 namespace io {

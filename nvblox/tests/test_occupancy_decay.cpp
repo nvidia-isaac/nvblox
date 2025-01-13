@@ -92,7 +92,7 @@ TEST(LayerDecayTest, SingleDecayTest) {
 
   // Check if this worked
   int num_checked_voxels = 0;
-  auto check_decay_lambda = [&decay_integrator, &num_checked_voxels](
+  auto check_decay_lambda = [&kEps, &decay_integrator, &num_checked_voxels](
                                 const Index3D& block_index,
                                 const Index3D& voxel_index,
                                 const OccupancyVoxel* voxel_ptr) {
