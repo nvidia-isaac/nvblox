@@ -207,5 +207,5 @@ install(
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     PATTERN "*/unsupported**" EXCLUDE
 )
-install(DIRECTORY ${ext_stdgpu_SOURCE_DIR}/include/
+install(DIRECTORY ${ext_stdgpu_SOURCE_DIR}/src/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/stdgpu)
