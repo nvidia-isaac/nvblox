@@ -59,7 +59,7 @@ add_nvblox_static_library(nvblox_gpu_hash
     src/gpu_hash/mesh_layer_specialization.cu
     src/gpu_hash/gpu_set.cu
   LINK_LIBRARIES_PUBLIC
-    stdgpu
+    nvblox_stdgpu
     nvblox_eigen
   LINK_LIBRARIES_PRIVATE
     glog::glog
@@ -208,4 +208,4 @@ install(
     PATTERN "*/unsupported**" EXCLUDE
 )
 install(DIRECTORY ${ext_stdgpu_SOURCE_DIR}/src/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/stdgpu)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
