@@ -9,7 +9,7 @@ The top level interface is the [Mapper](@ref nvblox::Mapper) class.
 ```bash
 const float voxel_size_m = 0.05;
 const MemoryType memory_type = MemoryType::kDevice;
-Mapper(voxel_size_s, memory_type);
+Mapper(voxel_size_m, memory_type);
 ```
 
 This creates a mapper, which also allocates an empty map. Here we specify that voxels will be 5cm is size, and will be stored on the GPU (device).
