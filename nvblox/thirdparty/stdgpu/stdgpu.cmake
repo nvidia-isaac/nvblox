@@ -43,5 +43,5 @@ add_library(nvblox_stdgpu INTERFACE)
   target_link_libraries(nvblox_stdgpu INTERFACE stdgpu)
   target_include_directories(nvblox_stdgpu INTERFACE
     $<BUILD_INTERFACE:${ext_stdgpu_SOURCE_DIR}/src>
-    $<INSTALL_INTERFACE:include/stdgpu>)
+    $<INSTALL_INTERFACE:include>)
 endif()
