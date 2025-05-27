@@ -19,7 +19,7 @@ endif()
 
 # Set the project name and version. Note that this will also set CMAKE_CUDA_ARCHITECTURES to a
 # default (potentially non-native) value
-project(nvblox VERSION 0.0.4 LANGUAGES CXX CUDA)
+project(nvblox VERSION 0.0.7 LANGUAGES CXX CUDA)
 
 ########################
 # OPTIONS AND SETTINGS #
@@ -50,7 +50,7 @@ configure_package_config_file(cmake/Config.cmake.in
 # generate the version file for the config file
 write_basic_package_version_file(
     "nvbloxConfigVersion.cmake"
-    VERSION "${nvblox_VERSION_MAJOR}.${nvblox_VERSION_MINOR}"
+    VERSION "${nvblox_VERSION_MAJOR}.${nvblox_VERSION_MINOR}.${nvblox_VERSION_PATCH}"
     COMPATIBILITY AnyNewerVersion
 )
 
