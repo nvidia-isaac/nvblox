@@ -74,7 +74,7 @@ __global__ void findDynamicPointsKernel(
   }
 
   // Update mask and overlay image
-  image::access(row_idx, col_idx, cols, dynamic_mask_image) = is_dynamic;
+  image::access(row_idx, col_idx, cols, dynamic_mask_image) = is_dynamic * image::kMaskedValue;
   image::access(row_idx, col_idx, cols, dynamic_overlay_image) =
       getOverlayColor(is_dynamic, depth);
 }
