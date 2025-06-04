@@ -28,7 +28,7 @@ class Time {
   constexpr Time() : time_(0UL) {}
 
   // Conversion operator to int64_t
-  explicit operator int64_t() const { return time_; }
+  explicit __host__ __device__ operator int64_t() const { return time_; }
   // Heaps of (trivial) operator overloading
   __host__ __device__ bool operator==(const Time& other) const {
     return time_ == other.time_;
