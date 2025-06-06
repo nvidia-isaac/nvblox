@@ -1,0 +1,20 @@
+Build a Redistributable Library
+===============================
+
+By default, the ``nvblox`` library only builds for the Compute Capability (CC)
+of the GPU in the machine it's being built on.
+Sometimes it is desirable to build a library that can be used across multiple
+machines that contain GPUs with different architectures.
+We, for example, build ``nvblox`` for several architectures for packaging
+into our ``pip`` package ``nvblox_torch``, such that it can be used on a
+variety of machines.
+
+To build binaries that can be used across multiple machines like this, you can
+use the ``CMAKE_CUDA_ARCHITECTURE`` flag and set it to a semicolon-separated
+list of architectures to support.
+
+For example, to build for Compute Capability (CC) 7.2 and 7.5, you would run:
+
+.. code-block:: bash
+
+    cmake .. -DCMAKE_CUDA_ARCHITECTURES=75;72

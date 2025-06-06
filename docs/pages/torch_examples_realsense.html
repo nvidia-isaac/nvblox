@@ -1,0 +1,680 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Realsense Live Example &#8212; nvblox_torch 0.0.8.dev1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=df3ac72c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=42eea36e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'pages/torch_examples_realsense';</script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Run an Example" href="core_library_run_an_example.html" />
+    <link rel="prev" title="Voxels Access Example" href="torch_examples_voxel_access.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.8.dev1</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.8.dev1</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">User's Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">python</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_reconstruction.html">3D Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_deep_features.html">Deep Feature-based Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_gradients.html">Trajectory Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_esdf.html">Euclidean Signed Distance Field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_voxel_access.html">Voxels Access Example</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Realsense Live Example</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">c++</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="core_library_run_an_example.html">Run an Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_more_examples.html">More Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_interface.html">Core Library Interface</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="todos.html">TODOS</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Realsense Live Example</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="realsense-live-example">
+<h1>Realsense Live Example<a class="headerlink" href="#realsense-live-example" title="Link to this heading">#</a></h1>
+<p>This example demonstrates running <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> for 3D mapping on live data from an
+<a class="reference external" href="https://www.intelrealsense.com/depth-camera-d435/">Intel RealSense camera</a>, using
+<a class="reference external" href="https://github.com/NVlabs/PyCuVSLAM">PyCuVSLAM</a> for visual odometry.
+The example demonstrates how to capture RGB-D data, track the camera pose,
+and build a live 3D reconstruction in python.</p>
+<a class="reference internal image-reference" href="../_images/nvblox_torch_realsense_live.gif"><img alt="Realsense Example Example" src="../_images/nvblox_torch_realsense_live.gif" style="width: 600px;" />
+</a>
+<p>The code for this example can be found at
+<a class="reference external" href="https://gitlab-master.nvidia.com/nvblox/nvblox/-/blob/main/nvblox_torch/nvblox_torch/examples/realsense/run_realsense_mapper.py">run_realsense_mapper.py</a></p>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">#</a></h2>
+<p>This script integrates three main components:</p>
+<ul class="simple">
+<li><p><strong>Intel RealSense Camera</strong>: Captures color, depth, and stereo greyscale images.</p></li>
+<li><p><strong>PyCuVSLAM</strong>: Provides real-time camera pose estimation using the stereo greyscale images.</p></li>
+<li><p><strong>nvblox_torch Mapper</strong>: Builds a 3D map (TSDF voxel grid and color mesh) from
+the live depth and color frames, using the tracked camera poses.</p></li>
+</ul>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At the time of publishing, this example only runs on Ubuntu 20.04, and 22.04.
+<a class="reference external" href="https://github.com/IntelRealSense/librealsense">librealsense</a> is
+not yet officially supported on on 24.04.</p>
+</div>
+<p>You will need a RealSense camera. We have tested on the <code class="docutils literal notranslate"><span class="pre">D435i</span></code> and <code class="docutils literal notranslate"><span class="pre">D455</span></code>.
+Other realsense cameras may or may not work.
+We have tested on realsense camera firmware version <code class="docutils literal notranslate"><span class="pre">5.13.0.50</span></code>.</p>
+<p>The example runs inside a docker container, however,
+we require <code class="docutils literal notranslate"><span class="pre">librealsense</span></code> to be installed outside of the docker container, on the host system.
+To do so we run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>/etc/apt/keyrings<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+curl<span class="w"> </span>-sSf<span class="w"> </span>https://librealsense.intel.com/Debian/librealsense.pgp<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>/etc/apt/keyrings/librealsense.pgp<span class="w"> </span>&gt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+tee<span class="w"> </span>/etc/apt/sources.list.d/librealsense.list<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>librealsense2-utils<span class="w"> </span>librealsense2-dkms
+</pre></div>
+</div>
+<p>To check that the installation is successful you can run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lsusb
+</pre></div>
+</div>
+<p>The realsense camera should be listed amongst the connected devices.
+For the D455 it is listed as:</p>
+<p><code class="docutils literal notranslate"><span class="pre">Bus</span> <span class="pre">002</span> <span class="pre">Device</span> <span class="pre">101:</span> <span class="pre">ID</span> <span class="pre">8086:0b5c</span> <span class="pre">Intel</span> <span class="pre">Corp.</span> <span class="pre">Intel(R)</span> <span class="pre">RealSense(TM)</span> <span class="pre">Depth</span> <span class="pre">Camera</span> <span class="pre">455</span></code></p>
+<p>If this works you should then be able to run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>realsense-viewer
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">realsense-viewer</span></code> window should open with which you can enable various image streams.</p>
+<a class="reference internal image-reference" href="../_images/realsense_viewer.png"><img alt="Realsense Viewer" src="../_images/realsense_viewer.png" style="width: 600px;" />
+</a>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The realsense depends on the particulars of your system outside of our docker.
+Furthermore, the camera has several firmware versions (we recommend <code class="docutils literal notranslate"><span class="pre">5.13.0.50</span></code>).
+We have had success, however, many people have issues with the camera.
+For camera issues check the <a class="reference external" href="https://github.com/IntelRealSense/realsense-ros/issues">realsense issues page</a></p>
+</div>
+</section>
+<section id="how-to-run">
+<h2>How to run<a class="headerlink" href="#how-to-run" title="Link to this heading">#</a></h2>
+<p>This example requires additional dependencies.
+We provide example-specific <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> which wraps the dependencies of this example,
+along with <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code>, into a container.</p>
+<p>To run this example we first build the docker image. From the root of the <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>
+repository run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>docker/build_images.py<span class="w"> </span>--build-realsense-example
+</pre></div>
+</div>
+<p>Then launch the container:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker/run_docker.sh<span class="w">  </span>-i<span class="w"> </span>nvblox_realsense_example_cu12_u22
+</pre></div>
+</div>
+<p>Now we launch the example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>nvblox_torch.examples.realsense.run_realsense_mapper
+</pre></div>
+</div>
+<p>The example should open a window for visualization, begin processing the live data,
+and visualizing the 3D reconstruction.</p>
+<a class="reference internal image-reference" href="../_images/nvblox_torch_realsense_live.gif"><img alt="Realsense Example Example" src="../_images/nvblox_torch_realsense_live.gif" style="width: 600px;" />
+</a>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">#</a></h2>
+<p>The example offers a number of command-line parameters to control the behavior of the mapper.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--voxel_size</span> <span class="pre">&lt;VOXEL_SIZE_IN_METERS&gt;</span></code>: The side-length of each voxel in the map.
+Smaller values will result in a higher resolution map. The default is <code class="docutils literal notranslate"><span class="pre">0.01</span></code> meters,
+i.e. 1cm.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--max_integration_distance_m</span> <span class="pre">&lt;MAX_INTEGRATION_DISTANCE_IN_METERS&gt;</span></code>: The maximum distance
+from the camera that <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> will map out to. The default is <code class="docutils literal notranslate"><span class="pre">1.0</span></code> meter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--visualization_mesh_hz</span> <span class="pre">&lt;FREQUENCY_OF_MESH_UPDATES&gt;</span></code>: The rate at which the mesh is updated
+and sent to the visualizer. The default is <code class="docutils literal notranslate"><span class="pre">5</span></code> hz.</p></li>
+</ul>
+<p>The default settings are appropriate for reconstructing a small scene, like the desk
+shown in the animation above.
+For larger scenes you may want to increase the maximum integration range.</p>
+<p>A couple of things to keep in mind:</p>
+<ul class="simple">
+<li><p>Increasing the resolution and integration range increase the compute usage.
+At some point (which depends on your system) <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> will not be able to keep up
+and will begin to drop camera images, which can have a severe negative impact on
+VSLAM tracking performance, and therefore the map quality.</p></li>
+<li><p>The depth quality of stereo cameras decreases with the distance from the camera.</p></li>
+<li><p>In this example we’re running <code class="docutils literal notranslate"><span class="pre">PyCuVSLAM</span></code> in odometry mode (i.e. not SLAM mode).
+Therefore drift accumulates with time. You will notice this drift when reobserving
+parts of the environment after having moved around the scene.</p></li>
+</ul>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading">#</a></h2>
+<p>See our <a class="reference internal" href="torch_examples_reconstruction.html"><span class="doc">3D Reconstruction</span></a> Example, for a full explanation
+of performing reconstruction with <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code>.</p>
+<p>In this example we create a <code class="docutils literal notranslate"><span class="pre">RealsenseDataloader</span></code> object.
+This wraps the RealSense driver into a <code class="docutils literal notranslate"><span class="pre">torch</span></code> <code class="docutils literal notranslate"><span class="pre">DataLoader</span></code>.
+Each iteration through this dataloader, requests a new frame from the camera.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">realsense_dataloader</span> <span class="o">=</span> <span class="n">RealsenseDataloader</span><span class="p">(</span><span class="n">max_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">max_frames</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We then create a <code class="docutils literal notranslate"><span class="pre">PyCuVSLAM</span></code> tracker, which will provide us with poses.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cfg</span> <span class="o">=</span> <span class="n">vslam</span><span class="o">.</span><span class="n">TrackerConfig</span><span class="p">(</span><span class="n">async_sba</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                          <span class="n">enable_final_landmarks_export</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">odometry_mode</span><span class="o">=</span><span class="n">vslam</span><span class="o">.</span><span class="n">TrackerOdometryMode</span><span class="o">.</span><span class="n">Multicamera</span><span class="p">,</span>
+                          <span class="n">horizontal_stereo_camera</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">rig</span> <span class="o">=</span> <span class="n">get_vslam_stereo_rig</span><span class="p">(</span><span class="n">realsense_dataloader</span><span class="o">.</span><span class="n">left_infrared_intrinsics</span><span class="p">(),</span>
+                           <span class="n">realsense_dataloader</span><span class="o">.</span><span class="n">right_infrared_intrinsics</span><span class="p">(),</span>
+                           <span class="n">realsense_dataloader</span><span class="o">.</span><span class="n">T_C_left_infrared_C_right_infrared</span><span class="p">())</span>
+<span class="n">cuvslam_tracker</span> <span class="o">=</span> <span class="n">vslam</span><span class="o">.</span><span class="n">Tracker</span><span class="p">(</span><span class="n">rig</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We then create an <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> <code class="docutils literal notranslate"><span class="pre">Mapper</span></code> object to build the reconstruction:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create some parameters</span>
+<span class="n">projective_integrator_params</span> <span class="o">=</span> <span class="n">ProjectiveIntegratorParams</span><span class="p">()</span>
+<span class="n">projective_integrator_params</span><span class="o">.</span><span class="n">projective_integrator_max_integration_distance_m</span> <span class="o">=</span> \
+    <span class="n">args</span><span class="o">.</span><span class="n">max_integration_distance_m</span>
+<span class="n">mapper_params</span> <span class="o">=</span> <span class="n">MapperParams</span><span class="p">()</span>
+<span class="n">mapper_params</span><span class="o">.</span><span class="n">set_projective_integrator_params</span><span class="p">(</span><span class="n">projective_integrator_params</span><span class="p">)</span>
+
+<span class="c1"># Initialize nvblox mapper</span>
+<span class="n">nvblox_mapper</span> <span class="o">=</span> <span class="n">Mapper</span><span class="p">(</span><span class="n">voxel_sizes_m</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">voxel_size_m</span><span class="p">,</span>
+                       <span class="n">integrator_types</span><span class="o">=</span><span class="n">ProjectiveIntegratorType</span><span class="o">.</span><span class="n">TSDF</span><span class="p">,</span>
+                       <span class="n">mapper_parameters</span><span class="o">=</span><span class="n">mapper_params</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We then enter the processing loop.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">realsense_dataloader</span><span class="p">):</span>
+    <span class="c1"># Do some proccessing</span>
+</pre></div>
+</div>
+<p>At each iteration we get new data from the dataloader.
+Each of these frames contains:</p>
+<ul class="simple">
+<li><p>(Optional) left + right infrared images</p></li>
+<li><p>(Optional) color image</p></li>
+<li><p>(Optional) depth image</p></li>
+</ul>
+<p>If left and right infrared images are present we pass them to the <code class="docutils literal notranslate"><span class="pre">PyCuVSLAM</span></code> tracker
+to get the camera pose.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">frame</span><span class="p">[</span><span class="s1">&#39;left_infrared_image&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">frame</span><span class="p">[</span>
+        <span class="s1">&#39;right_infrared_image&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">T_W_C_left_infrared</span> <span class="o">=</span> <span class="n">cuvslam_tracker</span><span class="o">.</span><span class="n">track</span><span class="p">(</span>
+        <span class="n">frame</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">],</span>
+        <span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;left_infrared_image&#39;</span><span class="p">],</span>
+          <span class="n">frame</span><span class="p">[</span><span class="s1">&#39;right_infrared_image&#39;</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>The returned value here <code class="docutils literal notranslate"><span class="pre">T_W_C_left_infrared</span></code> is a <code class="docutils literal notranslate"><span class="pre">SE3</span></code> pose which contains the
+camera pose in world coordinates.</p>
+<p>If the depth image is present, and we have a camera pose, we pass them to the
+<code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> to add the depth data to the map.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">frame</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+    <span class="n">T_W_C_left_infrared</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">nvblox_mapper</span><span class="o">.</span><span class="n">add_depth_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">],</span> <span class="n">T_W_C_left_infrared</span><span class="p">,</span> <span class="n">depth_intrinsics</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We perform a similar process with the color image</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">T_W_C_left_infrared</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+    <span class="n">frame</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># Convert the left infrared camera pose to the color camera frame</span>
+    <span class="n">T_W_C_color</span> <span class="o">=</span> <span class="n">T_W_C_left_infrared</span> <span class="o">@</span> <span class="n">T_C_left_infrared_C_color</span>
+    <span class="n">nvblox_mapper</span><span class="o">.</span><span class="n">add_color_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">],</span> <span class="n">T_W_C_color</span><span class="p">,</span> <span class="n">color_intrinsics</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that here we have to calculate the pose of the color camera in the world frame
+by applying the extrinsic calibration matrix to the left infrared camera pose.</p>
+<p>Lastly, we visualize the map by updating the mesh, transfering it to the CPU,
+and sending it to rerun for visualization.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nvblox_mapper</span><span class="o">.</span><span class="n">update_color_mesh</span><span class="p">()</span>
+<span class="n">color_mesh</span> <span class="o">=</span> <span class="n">nvblox_mapper</span><span class="o">.</span><span class="n">get_color_mesh</span><span class="p">()</span>
+<span class="n">visualizer</span><span class="o">.</span><span class="n">visualize_nvblox</span><span class="p">(</span><span class="n">color_mesh</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">#</a></h2>
+<p>This example is annotated with <code class="docutils literal notranslate"><span class="pre">nvtx</span></code> markers, which allows one to profile the performance
+of the example.</p>
+<p>To run a profile, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nsys<span class="w"> </span>profile<span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>nvblox_torch.examples.realsense.run_realsense_mapper
+</pre></div>
+</div>
+<p>To view the resulting report, assuming a generated report name of <code class="docutils literal notranslate"><span class="pre">report1.nsys-rep</span></code>, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nsys-ui<span class="w"> </span>report1.nsys-rep
+</pre></div>
+</div>
+<p>You should see a report with the performance of the example.</p>
+<a class="reference internal image-reference" href="../_images/nvblox_torch_realsense_nsys.png"><img alt="Realsense Profile" src="../_images/nvblox_torch_realsense_nsys.png" style="width: 600px;" />
+</a>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torch_examples_voxel_access.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Voxels Access Example</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="core_library_run_an_example.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Run an Example</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description">Description</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-run">How to run</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameters">Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#details">Details</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025, NVIDIA.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

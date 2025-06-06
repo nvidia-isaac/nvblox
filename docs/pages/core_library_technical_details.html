@@ -1,0 +1,556 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Technical Details &#8212; nvblox_torch 0.0.8.dev1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=df3ac72c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=42eea36e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'pages/core_library_technical_details';</script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Build a Redistributable Library" href="core_library_build_redistributable.html" />
+    <link rel="prev" title="Core Library Interface" href="core_library_interface.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.0.8.dev1" />
+
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.8.dev1</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.8.dev1 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.8.dev1</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">User's Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_reconstruction.html">3D Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_deep_features.html">Deep Feature-based Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_gradients.html">Trajectory Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_esdf.html">Euclidean Signed Distance Field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_voxel_access.html">Voxels Access Example</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Core Library</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="core_library_run_an_example.html">Run an Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_more_examples.html">More Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_interface.html">Core Library Interface</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Technical Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_build_redistributable.html">Build a Redistributable Library</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="todos.html">TODOS</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Technical Details</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="technical-details">
+<h1>Technical Details<a class="headerlink" href="#technical-details" title="Link to this heading">#</a></h1>
+<p>This page gives some technical details about the operation of <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> under the hood.</p>
+<p>This page is a poor substitute for the scientific papers which describe the underpinnings
+of the methods we rely on.
+The most important papers to read in chronological order are:</p>
+<ul class="simple">
+<li><p><strong>KinectFusion</strong> <a class="footnote-reference brackets" href="#id6" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> Describes TSDF mapping from depth images.</p></li>
+<li><p><strong>Real-time 3D reconstruction at scale using voxel hashing</strong> <a class="footnote-reference brackets" href="#id7" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> Introduces voxel hashing (on the CPU) which is the map structure used by <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>.</p></li>
+<li><p><strong>Voxblox</strong> <a class="footnote-reference brackets" href="#id8" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a> Introduces the use of a voxel-hashed TSDF map for robotics (on the CPU)</p></li>
+<li><p><strong>nvblox</strong> <a class="footnote-reference brackets" href="#id9" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a> Describes <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>, which combines the preceeding papers but moves the algorithms to the GPU.</p></li>
+</ul>
+<section id="map-representation">
+<h2>Map Representation<a class="headerlink" href="#map-representation" title="Link to this heading">#</a></h2>
+<p>By default <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> builds the reconstructed map in the form of a Truncated Signed
+Distance Function (TSDF) stored in a 3D voxel grid. We also support occupancy
+grids.</p>
+<p>The TSDF approach is similar to 3D occupancy grid mapping approaches in which
+occupancy probabilities are stored at each voxel. In contrast however, TSDF-based
+approaches (like nvblox) store the (signed) distance to the closest surface at each voxel.
+The surface of the environment can then be extracted as the zero-level set of this
+voxelized function.</p>
+<p>Typically TSDF-based reconstructions provide higher quality surface reconstructions.
+In addition, distance fields are also useful for path planning because they provide
+an immediate means of checking whether potential future robot positions are in collision.
+This fact, the utility of distance functions for both reconstruction and planning,
+motivates their use in nvblox (a reconstruction library for path planning).</p>
+</section>
+<section id="map-structure">
+<h2>Map Structure<a class="headerlink" href="#map-structure" title="Link to this heading">#</a></h2>
+<a class="reference internal image-reference" href="../_images/map_structure.png"><img alt="Map structure" class="align-right" src="../_images/map_structure.png" style="width: 400px;" />
+</a>
+<p>We implement a hierarchical sparse voxel grid for storing data.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LayerCake</span></code>: At the top level we have the <code class="docutils literal notranslate"><span class="pre">LayerCake</span></code>, which contains several <code class="docutils literal notranslate"><span class="pre">Layers</span></code>,
+which are colocated voxel grids.
+Each <code class="docutils literal notranslate"><span class="pre">Layer</span></code> (voxel-grid) contains a different type of mapped quantity (eg TSDF and ESDF).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Layer</span></code>: A <code class="docutils literal notranslate"><span class="pre">Layer</span></code> is a sparse voxel grid that contains a single type of mapped quantity (eg TSDF).
+Inside a <code class="docutils literal notranslate"><span class="pre">Layer</span></code> we have a sparse collection of <code class="docutils literal notranslate"><span class="pre">(Voxel)Blocks</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(Voxel)Blocks</span></code>: A grid element in a layer. Each <code class="docutils literal notranslate"><span class="pre">Block</span></code> block defines the map in
+a small cubical region of space. With a <code class="docutils literal notranslate"><span class="pre">Block</span></code> voxels are densely allocated in an
+8x8x8 grid.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Voxels</span></code>: The smallest unit of resolution. Holds a single value of the mapped quantity (eg the TSDF).</p></li>
+</ul>
+<p>Details of how to interact with the map can be found in <a class="reference internal" href="core_library_interface.html"><span class="doc">Core Library Interface</span></a> (c++),
+and TODO (python).</p>
+<div class="admonition-todo admonition" id="id5">
+<p class="admonition-title">Todo</p>
+<p>Add link to python voxels example.</p>
+</div>
+<p>This hierarchy allows us several useful properties:</p>
+<ul class="simple">
+<li><p><strong>Sparsity:</strong> We only allocate memory for the voxels that are mapped. The map
+can grow and shrink dynamically as needed.</p></li>
+<li><p><strong>Data Locality:</strong> A <code class="docutils literal notranslate"><span class="pre">Block</span></code> is stored in a contiguous chunk of memory. Our GPU kernels
+are often implemented such that CUDA <em>ThreadBlocks</em> process single <code class="docutils literal notranslate"><span class="pre">VoxelBlocks</span></code>. Within
+such kernels we benefit from coalesced access to global GPU memory.</p></li>
+<li><p><strong>Extensibility:</strong> New mapped quantities can be added to the map by new <code class="docutils literal notranslate"><span class="pre">Layer</span></code>s.
+Users can define their own <code class="docutils literal notranslate"><span class="pre">Layers</span></code> to map custom quantities alongside those
+built into the <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> library.</p></li>
+</ul>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id6" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Newcombe, Richard A., Shahram Izadi, Otmar Hilliges, David Molyneaux, David Kim,
+Andrew J. Davison, Pushmeet Kohi, Jamie Shotton, Steve Hodges, and Andrew Fitzgibbon.
+“Kinectfusion: Real-time dense surface mapping and tracking.” In 2011 10th IEEE
+international symposium on mixed and augmented reality, pp. 127-136. Ieee, 2011.</p>
+</aside>
+<aside class="footnote brackets" id="id7" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>Nießner, Matthias, Michael Zollhöfer, Shahram Izadi, and Marc Stamminger.
+“Real-time 3D reconstruction at scale using voxel hashing.” ACM Transactions
+on Graphics (ToG) 32, no. 6 (2013): 1-11.</p>
+</aside>
+<aside class="footnote brackets" id="id8" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">3</a><span class="fn-bracket">]</span></span>
+<p>Oleynikova, Helen, Zachary Taylor, Marius Fehr, Roland Siegwart, and Juan Nieto.
+“Voxblox: Incremental 3d euclidean signed distance fields for on-board mav planning.”
+In 2017 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS),
+pp. 1366-1373. IEEE, 2017.</p>
+</aside>
+<aside class="footnote brackets" id="id9" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">4</a><span class="fn-bracket">]</span></span>
+<p>Millane, Alexander, Helen Oleynikova, Emilie Wirbel, Remo Steiner, Vikram Ramasamy,
+David Tingdahl, and Roland Siegwart. “nvblox: Gpu-accelerated incremental signed distance
+field mapping.” In 2024 IEEE International Conference on Robotics and Automation (ICRA),
+pp. 2698-2705. IEEE, 2024.</p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="core_library_interface.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Core Library Interface</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="core_library_build_redistributable.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Build a Redistributable Library</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#map-representation">Map Representation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#map-structure">Map Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025, NVIDIA.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
