@@ -1,5 +1,21 @@
 # Release Notes
 
+
+## [v.0.0.8] - Date: 2025-06-17
+
+This release introduces a major new feature that makes **nvblox** significantly easier to use: a
+fast, zero-copy **Python/PyTorch interface**. It is available via **pip install**, which greatly
+simplifies installation and setup.
+
+To further open the door for integration with AI workflows, we have also added support for **deep
+feature integration** into the nvblox map. This enables the use of general-purpose spatial feature
+extractors such as [RADIO-AM](https://github.com/NVlabs/RADIO).
+
+![](docs/images/desk_radio_x2_600px.gif)
+
+*Deep Feature-based Reconstruction using RADIO-AM*
+
+
 ## [v.0.0.7] - Date: 2024-12-05
 
 In this release, several runtime optimizations increased the efficiency of nvblox.

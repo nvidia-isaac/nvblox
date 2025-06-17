@@ -10,7 +10,7 @@ taking full advantage of `CUDA` and `NVIDIA` hardware.
 Depending on your use-case, you may interact with `nvblox` through
 either
 [Python](https://nvidia-isaac.github.io/nvblox/),
-[C++]((https://nvidia-isaac.github.io/nvblox/)), or
+[C++](https://nvidia-isaac.github.io/nvblox/), or
 [ROS2](https://nvidia-isaac-ros.github.io/concepts/scene_reconstruction/nvblox/index.html).
 
 To get started with `nvblox`, see our [documentation site](https://nvidia-isaac.github.io/nvblox/)

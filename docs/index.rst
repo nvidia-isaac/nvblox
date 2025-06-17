@@ -108,4 +108,3 @@ If you find this library useful for your research, please consider citing our pa
 
    pages/technical_details
    pages/limitations
-   pages/todos
