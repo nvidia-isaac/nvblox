@@ -22,7 +22,7 @@ endif()
 # CMAKE_CUDA_ARCHITECTURES to a default (potentially non-native) value
 project(
   nvblox
-  VERSION 0.0.7
+  VERSION 0.0.8
   LANGUAGES CXX CUDA)
 
 # ##############################################################################
@@ -32,6 +32,11 @@ project(
 option(BUILD_EXPERIMENTS "Build performance experimentation binaries" OFF)
 option(BUILD_TESTING "Build tests" ON)
 option(BUILD_PYTORCH_WRAPPER "Wheter to build the pytorch wrapper" ON)
+
+if(BUILD_TESTING)
+  include(CTest)
+  enable_testing()
+endif()
 
 # Include file that defines functions for adding nvblox binary targets
 include(cmake/cuda/setup_compute_capability.cmake)

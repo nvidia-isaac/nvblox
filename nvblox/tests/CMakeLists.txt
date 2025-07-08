@@ -70,7 +70,8 @@ function(add_nvblox_test test_name is_cuda_test)
   # Sanitizer ASAN option to avoid crash during cuda init
   gtest_discover_tests(
     ${test_name} ${TEST_OPTIONS} PROPERTIES ENVIRONMENT
-                                            "ASAN_OPTIONS=protect_shadow_gap=0")
+                                            "ASAN_OPTIONS=protect_shadow_gap=0"
+					    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
   # gcc13 discovers warnings in third-party libs which we suppress here.
   target_compile_options(${test_name} PRIVATE -Wno-maybe-uninitialized)

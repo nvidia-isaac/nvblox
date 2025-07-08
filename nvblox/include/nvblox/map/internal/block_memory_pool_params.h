@@ -43,3 +43,5 @@ struct BlockMemoryPoolParams {
   Param<int> num_preallocated_blocks{kNumPreallocatedBlocksParamDesc};
   Param<float> expansion_factor{kExpansionFactor};
 };
+
+} // namespace nvblox

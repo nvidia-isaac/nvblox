@@ -20,6 +20,8 @@ limitations under the License.
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/map/internal/block_memory_pool_params.h"
 
+namespace nvblox {
+
 /// Storage class for pre-allcoated blocks
 ///
 /// Maintains a large number of blocks (unified pointers) that are pre-allocated

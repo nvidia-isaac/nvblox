@@ -46,7 +46,7 @@ __global__ void splitColorImageKernel(const Color* input, const uint8_t* mask,
   if (masked_depth_overlay) {
     const Color input_color = image::access(row_idx, col_idx, cols, input);
     image::access(row_idx, col_idx, cols, masked_depth_overlay) =
-        Color(fmax(input_color.r(), is_masked * 255u), input_color.g(),
+        Color(std::fmax(input_color.r(), is_masked * 255u), input_color.g(),
               input_color.b());
   }
 

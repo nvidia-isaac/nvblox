@@ -55,6 +55,10 @@ TAGS
 *docs/doxyoutput
 *docs/api
 
+# Test artifacts
+nvblox/tests/*.png
+nvblox/tests/*.nvblx
+
 # Built py distribution
 nvblox_torch/dist
 

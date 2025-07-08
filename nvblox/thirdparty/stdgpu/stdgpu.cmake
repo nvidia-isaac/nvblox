@@ -1,5 +1,6 @@
 if(USE_SYSTEM_STDGPU)
   find_package(stdgpu REQUIRED)
+  add_library(nvblox_stdgpu ALIAS stdgpu::stdgpu)
 else()
   include(FetchContent)
 
