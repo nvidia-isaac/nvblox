@@ -1,8 +1,8 @@
 Realsense Live Example
 ======================
 
-This example demonstrates running ``nvblox_torch`` for 3D mapping on live data from an
-`Intel RealSense camera <https://www.intelrealsense.com/depth-camera-d435/>`_, using
+This example demonstrates running ``nvblox_torch`` for 3D mapping on live data from a
+`RealSense camera <https://realsenseai.com/stereo-depth-cameras/stereo-depth-camera-d435/>`_, using
 `PyCuVSLAM <https://github.com/NVlabs/PyCuVSLAM>`_ for visual odometry.
 The example demonstrates how to capture RGB-D data, track the camera pose,
 and build a live 3D reconstruction in python.
@@ -20,7 +20,7 @@ Description
 
 This script integrates three main components:
 
-- **Intel RealSense Camera**: Captures color, depth, and stereo greyscale images.
+- **RealSense Camera**: Captures color, depth, and stereo greyscale images.
 - **PyCuVSLAM**: Provides real-time camera pose estimation using the stereo greyscale images.
 - **nvblox_torch Mapper**: Builds a 3D map (TSDF voxel grid and color mesh) from
   the live depth and color frames, using the tracked camera poses.
