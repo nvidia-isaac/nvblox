@@ -19,7 +19,7 @@ endif()
 
 # Set the project name and version. Note that this will also set CMAKE_CUDA_ARCHITECTURES to a
 # default (potentially non-native) value
-project(nvblox VERSION 0.0.4 LANGUAGES CXX CUDA)
+project(nvblox VERSION 0.0.7 LANGUAGES CXX C CUDA)
 
 ########################
 # OPTIONS AND SETTINGS #
