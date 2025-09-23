@@ -13,8 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <filesystem>
 #include "nvblox/utils/logging.h"
 
 #include "nvblox/core/types.h"
@@ -300,6 +302,48 @@ TEST_F(MapperLayerStreamerTest, ColorAndTsdfHasSameNumberOfBlocks) {
   ASSERT_GT(mapper_.serializedColorLayer()->block_indices.size(), 0);
   ASSERT_EQ(mapper_.serializedColorLayer()->block_indices.size(),
             mapper_.serializedTsdfLayer()->block_indices.size());
+}
+
+TEST(MapperTest, SaveAndLoad) {
+  // Create a scene with a sphere
+  const Vector3f sphere_center(0.0f, 0.0f, 5.0f);
+  const float sphere_radius = 2.0f;
+  primitives::Scene scene = getSphereInABoxScene(sphere_center, sphere_radius);
+
+  constexpr float voxel_size_m = 0.1;
+  Mapper mapper(voxel_size_m, MemoryType::kDevice);
+
+  TsdfLayer tsdf_layer_host(voxel_size_m, MemoryType::kHost);
+
+  scene.generateLayerFromScene(1.0, &tsdf_layer_host);
+  mapper.tsdf_layer().copyFrom(tsdf_layer_host);
+
+  EXPECT_GT(mapper.tsdf_layer().numAllocatedBlocks(), 0);
+
+  mapper.updateMesh(UpdateFullLayer::kYes);
+  mapper.updateEsdf(UpdateFullLayer::kYes);
+
+  // Save map to a temp file
+  std::string fname =
+      (std::filesystem::temp_directory_path() / "test_mapper.map").string();
+  mapper.saveLayerCake(fname);
+
+  // Load and validate
+  Mapper mapper2(voxel_size_m, MemoryType::kDevice);
+  mapper2.loadMap(fname);
+
+  EXPECT_EQ(mapper.tsdf_layer().numAllocatedBlocks(),
+            mapper2.tsdf_layer().numAllocatedBlocks());
+  EXPECT_EQ(mapper.esdf_layer().numAllocatedBlocks(),
+            mapper2.esdf_layer().numAllocatedBlocks());
+  EXPECT_EQ(mapper.color_layer().numAllocatedBlocks(),
+            mapper2.color_layer().numAllocatedBlocks());
+  EXPECT_EQ(mapper.mesh_layer().numAllocatedBlocks(),
+            mapper2.mesh_layer().numAllocatedBlocks());
+  EXPECT_EQ(mapper.occupancy_layer().numAllocatedBlocks(),
+            mapper2.occupancy_layer().numAllocatedBlocks());
+  EXPECT_EQ(mapper.freespace_layer().numAllocatedBlocks(),
+            mapper2.freespace_layer().numAllocatedBlocks());
 }
 
 int main(int argc, char** argv) {

@@ -148,7 +148,7 @@ class BlockLayer : public BaseLayer {
   int numAllocatedBlocks() const { return blocks_.size(); }
 
   /// Get the number of allocated blocks
-  /// @return The total number of allocated blocks.
+  /// @return The total number of blocks.
   size_t size() const { return blocks_.size(); }
 
   /// Clear the layer of all data. Deallocate all blocks.

@@ -80,6 +80,8 @@ void registerCommonTypes() {
                                   bindDefaultFunctions<ColorLayer>());
   LayerTypeRegister::registerType("occupancy_layer", typeid(OccupancyLayer),
                                   bindDefaultFunctions<OccupancyLayer>());
+  LayerTypeRegister::registerType("freespace_layer", typeid(FreespaceLayer),
+                                  bindDefaultFunctions<FreespaceLayer>());
 }
 
 }  // namespace nvblox
