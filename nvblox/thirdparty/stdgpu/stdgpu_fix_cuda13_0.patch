@@ -1,0 +1,53 @@
+diff --git a/src/stdgpu/cuda/impl/device.cpp b/src/stdgpu/cuda/impl/device.cpp
+index 03dd3bb..4260a55 100644
+--- a/src/stdgpu/cuda/impl/device.cpp
++++ b/src/stdgpu/cuda/impl/device.cpp
+@@ -76,8 +76,6 @@ print_device_information()
+     printf("|%*s%*s%*s|\n", gpu_name_space_left, " ", gpu_name_size, gpu_name.c_str(), gpu_name_space_right, " ");
+     printf("+---------------------------------------------------------+\n");
+     printf("| Compute Capability        :   %1d.%1d                       |\n", properties.major, properties.minor);
+-    printf("| Clock rate                :   %-6.0f MHz                |\n",
+-           static_cast<double>(detail::kilo_to_mega_hertz(static_cast<float>(properties.clockRate))));
+     printf("| Global Memory             :   %-6.3f GiB / %-6.3f GiB   |\n",
+            static_cast<double>(detail::byte_to_gibi_byte(static_cast<float>(free_memory))),
+            static_cast<double>(detail::byte_to_gibi_byte(static_cast<float>(total_memory))));
+diff --git a/src/stdgpu/hip/impl/device.cpp b/src/stdgpu/hip/impl/device.cpp
+index 26b4176..be6b113 100644
+--- a/src/stdgpu/hip/impl/device.cpp
++++ b/src/stdgpu/hip/impl/device.cpp
+@@ -80,8 +80,6 @@ print_device_information()
+     printf("|%*s%*s%*s|\n", gpu_name_space_left, " ", gpu_name_size, gpu_name.c_str(), gpu_name_space_right, " ");
+     printf("+---------------------------------------------------------+\n");
+     printf("| GCN Architecture          :   %s%*s|\n", arch_name.c_str(), arch_name_space_right, " ");
+-    printf("| Clock rate                :   %-6.0f MHz                |\n",
+-           static_cast<double>(detail::kilo_to_mega_hertz(static_cast<float>(properties.clockRate))));
+     printf("| Global Memory             :   %-6.3f GiB / %-6.3f GiB   |\n",
+            static_cast<double>(detail::byte_to_gibi_byte(static_cast<float>(free_memory))),
+            static_cast<double>(detail::byte_to_gibi_byte(static_cast<float>(total_memory))));
+diff --git a/src/stdgpu/impl/unordered_base_detail.cuh b/src/stdgpu/impl/unordered_base_detail.cuh
+index a772f24..fd6c529 100644
+--- a/src/stdgpu/impl/unordered_base_detail.cuh
++++ b/src/stdgpu/impl/unordered_base_detail.cuh
+@@ -500,7 +500,7 @@ public:
+     STDGPU_DEVICE_ONLY void
+     operator()(const index_t i)
+     {
+-        _base.erase(*(_begin + i));
++        _base.erase(*(_begin.get() + i));
+     }
+ 
+ private:
+diff --git a/cmake/cuda/determine_thrust_paths.cmake b/cmake/cuda/determine_thrust_paths.cmake
+index 5857d6b..4aac3d2 100644
+--- a/cmake/cuda/determine_thrust_paths.cmake
++++ b/cmake/cuda/determine_thrust_paths.cmake
+@@ -4,7 +4,8 @@ function(stdgpu_determine_thrust_paths STDGPU_OUTPUT_THRUST_PATHS)
+ 
+     find_package(CUDAToolkit QUIET)
+ 
+-    set(${STDGPU_OUTPUT_THRUST_PATHS} "${CUDAToolkit_INCLUDE_DIRS}")
++    # In CUDA13, torch includes are located under the cccl dir
++    set(${STDGPU_OUTPUT_THRUST_PATHS} "${CUDAToolkit_INCLUDE_DIRS};${CUDAToolkit_INCLUDE_DIRS}/cccl")
+ 
+     # Make output variable visible
+     set(${STDGPU_OUTPUT_THRUST_PATHS} ${${STDGPU_OUTPUT_THRUST_PATHS}} PARENT_SCOPE)

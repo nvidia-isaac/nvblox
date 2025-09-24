@@ -62,6 +62,16 @@ constexpr Param<
     "sensor data. A negative value for this parameter disables the effect,"
     "i.e. no decay takes place."};
 
+constexpr Param<float>::Description
+    kProjectiveAppearanceIntegratorMeasurementWeightParamDesc{
+        "projective_appearance_integrator_measurement_weight", 0.8f,
+        "How much weight that should be given to the measurement when fusing "
+        "with an existing estimate in color and feature integrators."
+        "With alpha as the value of this parameter, a new estimate x is "
+        "computed "
+        "as follows:"
+        "x_new = alpha * x_measured + (1 - alpha) * x_old"};
+
 struct ProjectiveIntegratorParams {
   Param<float> projective_integrator_max_integration_distance_m{
       kProjectiveIntegratorMaxIntegrationDistanceMParamDesc};
@@ -75,6 +85,8 @@ struct ProjectiveIntegratorParams {
       kProjectiveIntegratorMaxWeightParamDesc};
   Param<float> projective_tsdf_integrator_invalid_depth_decay_factor{
       kProjectiveTsdfIntegratorInvalidDepthDecayFactor};
+  Param<float> projective_appearance_integrator_measurement_weight{
+      kProjectiveAppearanceIntegratorMeasurementWeightParamDesc};
 };
 
 }  // namespace nvblox

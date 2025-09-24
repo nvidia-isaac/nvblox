@@ -23,7 +23,7 @@ endif()
 project(
   nvblox
   VERSION 0.0.8
-  LANGUAGES CXX CUDA)
+  LANGUAGES CXX C CUDA)
 
 # ##############################################################################
 # OPTIONS AND SETTINGS #

@@ -35,24 +35,23 @@ __global__ void getContainsFlagsKernel(
 std::vector<bool> getContainsFlags(const GPULayerView<TsdfBlock>& gpu_layer,
                                    const std::vector<Index3D>& indices) {
   // CPU -> GPU
-  thrust::device_vector<Index3D> device_indices(indices);
+  device_vector<Index3D> device_indices;
+  device_indices.copyFromAsync(indices, CudaStreamOwning());
 
   // Output space
-  thrust::device_vector<bool> device_flags(device_indices.size());
+  device_vector<bool> device_flags(device_indices.size());
 
   // Kernel
   constexpr int kNumThreadsPerBlock = 32;
   const int num_blocks = device_indices.size() / kNumThreadsPerBlock + 1;
   getContainsFlagsKernel<<<num_blocks, kNumThreadsPerBlock>>>(
-      gpu_layer.getHash().impl_, device_indices.data().get(),
-      device_indices.size(), device_flags.data().get());
+      gpu_layer.getHash().impl_, device_indices.data(), device_indices.size(),
+      device_flags.data());
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaPeekAtLastError());
 
   // GPU -> CPU
-  std::vector<bool> host_flags(device_flags.size());
-  thrust::copy(device_flags.begin(), device_flags.end(), host_flags.begin());
-
+  std::vector<bool> host_flags = device_flags.toVectorAsync(CudaStreamOwning());
   return host_flags;
 }
 

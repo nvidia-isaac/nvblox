@@ -45,7 +45,7 @@ FeatureImage createConstantFeatureImage(const int rows, const int cols,
   for (int y = 0; y < rows; ++y) {
     for (int x = 0; x < cols; ++x) {
       for (size_t c = 0; c < image(y, x).size(); ++c) {
-        image(y, x)[c] = value;
+        image(y, x)[c] = __float2half(value);
       }
     }
   }
@@ -157,44 +157,49 @@ TEST_F(FeatureIntegratorTest, IntegrateSingleFeatureImage) {
   EXPECT_GT(num_active_voxels, 0);
 }
 
-TEST_F(FeatureIntegratorTest, IntegrateTwoFeatureImages) {
-  // Integrate two feature images where the second has its values offset
-  // by one
-  FeatureImage image0 =
-      createFeatureImageWithValueEqualToIndexPlusOffset(kHeight, kWidth, 0);
-  FeatureImage image1 =
-      createFeatureImageWithValueEqualToIndexPlusOffset(kHeight, kWidth, 1);
+TEST_F(FeatureIntegratorTest, IntegrateThreeTimes) {
+  // Integrate constant images and check that the fused values are
+  // as expected
+  constexpr float kValue1 = 2.5F;
+  constexpr float kValue2 = 1.3F;
+  constexpr float kValue3 = 0.9F;
+  constexpr float kW = 0.3F;
+  constexpr float kExpected1 = kValue1;
+  constexpr float kExpected2 = kW * kValue2 + (1.F - kW) * kExpected1;
+  constexpr float kExpected3 = kW * kValue3 + (1.F - kW) * kExpected2;
 
-  // Integrate both of them
-  feature_integrator_.integrateFrame(
-      MaskedFeatureImageConstView(image0, kMaskActiveEverywhere),
-      Transform::Identity(), camera_, tsdf_layer_, &feature_layer_,
-      &updated_blocks_);
+  FeatureImage image1 = createConstantFeatureImage(kHeight, kWidth, kValue1);
+  FeatureImage image2 = createConstantFeatureImage(kHeight, kWidth, kValue2);
+  FeatureImage image3 = createConstantFeatureImage(kHeight, kWidth, kValue3);
+
+  feature_integrator_.measurement_weight(kW);
+
+  // Integrate them
   feature_integrator_.integrateFrame(
       MaskedFeatureImageConstView(image1, kMaskActiveEverywhere),
       Transform::Identity(), camera_, tsdf_layer_, &feature_layer_,
       &updated_blocks_);
-  // Check that voxel values equal the average between the two
-  int num_active_voxels = 0;
-  auto check_voxel_lambda = [&num_active_voxels](
-                                const Index3D&, const Index3D&,
-                                const FeatureVoxel* voxel) -> void {
-    if (voxel->weight > __float2half(0.F)) {
-      ++num_active_voxels;
-      int expected = 0;
-      for (const auto& item : voxel->feature) {
-        // We compare relative error since float16 used for feature elements
-        // becomes inaccurate for large values, e.g. 1024.0 + 0.5 = 1024.0
-        const float relative_error =
-            std::abs(1.0F - __half2float(item) / (expected + 0.5));
+  feature_integrator_.integrateFrame(
+      MaskedFeatureImageConstView(image2, kMaskActiveEverywhere),
+      Transform::Identity(), camera_, tsdf_layer_, &feature_layer_,
+      &updated_blocks_);
+  feature_integrator_.integrateFrame(
+      MaskedFeatureImageConstView(image3, kMaskActiveEverywhere),
+      Transform::Identity(), camera_, tsdf_layer_, &feature_layer_,
+      &updated_blocks_);
 
-        EXPECT_LE(relative_error, 1E-3);
-        ++expected;
+  int num_active = 0;
+  auto check_voxel_lambda = [&num_active](const Index3D&, const Index3D&,
+                                          const FeatureVoxel* voxel) -> void {
+    if (voxel->weight > __float2half(0.F)) {
+      for (const auto& item : voxel->feature) {
+        ASSERT_NEAR(__half2float(item), kExpected3, 5.0E-3);
+        ++num_active;
       }
     }
   };
   callFunctionOnAllVoxels<FeatureVoxel>(feature_layer_, check_voxel_lambda);
-  EXPECT_GT(num_active_voxels, 0);
+  EXPECT_GT(num_active, 0);
 }
 
 TEST_F(FeatureIntegratorTest, CornerCaseZeroFlt) { testConstantImage(0.F); }

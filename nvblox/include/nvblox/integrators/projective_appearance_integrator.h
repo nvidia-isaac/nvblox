@@ -113,6 +113,17 @@ class ProjectiveAppearanceIntegrator
   void max_weight(float max_weight);
 
   /// A parameter getter
+  /// Get the weight for the exponential filter used when fusing appearance
+  /// vectors.
+  /// @return The measurement weight
+  float measurement_weight() const;
+
+  /// A parameter setter
+  /// See measurement_weight()
+  /// @param measurement_weight The measurement weight
+  void measurement_weight(float measurement_weight);
+
+  /// A parameter getter
   /// The type of weighting function used to fuse observations
   /// @returns The weighting function type used.
   WeightingFunctionType weighting_function_type() const;
@@ -154,6 +165,8 @@ class ProjectiveAppearanceIntegrator
   float max_weight_ = kProjectiveIntegratorMaxWeightParamDesc.default_value;
   WeightingFunctionType weighting_function_type_ =
       kProjectiveIntegratorWeightingModeParamDesc.default_value;
+  float measurement_weight_ =
+      kProjectiveAppearanceIntegratorMeasurementWeightParamDesc.default_value;
 
   // Frustum calculation.
   mutable ViewCalculator view_calculator_;

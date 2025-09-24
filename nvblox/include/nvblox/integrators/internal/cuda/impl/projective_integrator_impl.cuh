@@ -292,11 +292,11 @@ void ProjectiveIntegrator<VoxelType>::integrateFrameTemplate(
   // Move blocks to GPU for update
   timing::Timer transfer_blocks_timer(integrator_name_ +
                                       "/integrate/transfer_blocks");
-  transferBlockPointersToDevice<BlockType>(block_indices, *cuda_stream_,
-                                           layer_ptr, &block_ptrs_host_,
-                                           &block_ptrs_device_);
-  transferBlocksIndicesToDevice(block_indices, *cuda_stream_,
-                                &block_indices_host_, &block_indices_device_);
+  transferBlockPointersToDeviceAsync<BlockType>(
+      block_indices, layer_ptr, &block_ptrs_host_, &block_ptrs_device_,
+      *cuda_stream_);
+  transferBlockIndicesToDeviceAsync(block_indices, &block_indices_host_,
+                                    &block_indices_device_, *cuda_stream_);
   transfer_blocks_timer.Stop();
 
   // Update identified blocks

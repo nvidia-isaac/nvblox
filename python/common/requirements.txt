@@ -1,4 +1,4 @@
-numpy
-open3d
-plyfile
-matplotlib
+numpy>=1.26,<=2.3
+open3d>=0.18,<=0.19
+plyfile==1.1
+matplotlib==3.10

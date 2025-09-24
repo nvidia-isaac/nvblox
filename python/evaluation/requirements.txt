@@ -1,10 +1,8 @@
-matplotlib
-numpy
-plotly
-open3d
-pandas
-scipy
+matplotlib==3.10
+numpy>=1.26,<=2.3
+plotly==6.3
+open3d>=0.18,<=0.19
+pandas==2.3
+scipy>=1.15,<=1.16
 trimesh==4.4.0 # Fixed version of trimesh to avoid a incompatible version getting pulled in
-GitPython
-moviepy
-kaleido
+moviepy==2.1

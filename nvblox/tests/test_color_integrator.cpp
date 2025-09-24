@@ -540,7 +540,9 @@ TEST_F(ColorIntegrationTest, WeightingFunction) {
   }
 
   // Integrate a frame
+  constexpr float kWeight = 0.3;
   std::vector<Index3D> updated_blocks;
+  integrator.measurement_weight(kWeight);
   integrator.integrateFrame(
       MaskedColorImageConstView(color_image, kMaskActiveEverywhere),
       Transform::Identity(), camera_, tsdf_layer, &color_layer,
@@ -564,19 +566,8 @@ TEST_F(ColorIntegrationTest, WeightingFunction) {
           const ColorVoxel& voxel = block_ptr->voxels[x][y][z];
           constexpr float kFloatEps = 1e-4;
           if (voxel.weight > kFloatEps) {
-            // Get the depth of the voxel
-            const Index3D voxel_idx(x, y, z);
-            const Vector3f voxel_center =
-                getCenterPositionFromBlockIndexAndVoxelIndex(
-                    color_layer.block_size(), block_idx, voxel_idx);
-            const float voxel_depth = voxel_center.z();
-
-            // Hand computing the inverse square weight
-            const float weight_hand_computed =
-                1.0f / (voxel_depth * voxel_depth);
-
             // Check
-            EXPECT_NEAR(voxel.weight, weight_hand_computed, kFloatEps);
+            EXPECT_NEAR(voxel.weight, kWeight, kFloatEps);
             ++num_voxels_observed;
           }
         }

@@ -11,7 +11,7 @@ if [ "$ubuntu_version" == "22.04" ] || [ "$ubuntu_version" == "24.04" ]
 then
     # On Ubuntu 24 & 22 we're obtaining the correct version from apt
     echo "Installing cmake for Ubuntu$ubuntu_version"
-    apt-get install -y cmake
+    apt-get update && apt-get install -y cmake
 
 elif [ "$ubuntu_version" == "20.04" ]
 then

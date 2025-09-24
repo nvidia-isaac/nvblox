@@ -4,6 +4,12 @@ All releases of the nvblox library will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased (public branch)
+
+- nvblox_torch supported for Jetpack 6. (#1036)
+- Support CUDA13 and Blackwell architectures. (#1042)
+- Color and Feature integrators use exponential filter instead of weighted average. (#1025)
+
 ## [v.0.0.8] - Date: 2025-06-17
 
 - Bugfix in blocks-to-update to prevent occasional segfaults for high-res reconstructions. (#898)

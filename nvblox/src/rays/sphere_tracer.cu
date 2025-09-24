@@ -13,14 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include <thrust/device_malloc.h>
-#include <thrust/device_new.h>
-#include <thrust/device_ptr.h>
 
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
-#include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
+
 #include "nvblox/rays/sphere_tracer.h"
 #include "nvblox/utils/timing.h"
+
+#include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
 
 namespace nvblox {
 

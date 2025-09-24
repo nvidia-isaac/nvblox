@@ -58,10 +58,11 @@ void allocateBlocksWhereRequired(const std::vector<Index3D>& block_indices,
 }
 
 template <typename BlockType>
-void transferBlockPointersToDevice(
-    const std::vector<Index3D>& block_indices, const CudaStream& cuda_stream,
-    BlockLayer<BlockType>* layer_ptr, host_vector<BlockType*>* block_ptrs_host,
-    device_vector<BlockType*>* block_ptrs_device) {
+void transferBlockPointersToDeviceAsync(
+    const std::vector<Index3D>& block_indices, BlockLayer<BlockType>* layer_ptr,
+    host_vector<BlockType*>* block_ptrs_host,
+    device_vector<BlockType*>* block_ptrs_device,
+    const CudaStream& cuda_stream) {
   if (block_indices.empty()) {
     return;
   }
@@ -79,11 +80,12 @@ void transferBlockPointersToDevice(
 }
 
 template <typename BlockType>
-void transferBlockPointersToDevice(
-    const std::vector<Index3D>& block_indices, const CudaStream& cuda_stream,
+void transferBlockPointersToDeviceAsync(
+    const std::vector<Index3D>& block_indices,
     const BlockLayer<BlockType>& layer,
     host_vector<const BlockType*>* block_ptrs_host,
-    device_vector<const BlockType*>* block_ptrs_device) {
+    device_vector<const BlockType*>* block_ptrs_device,
+    const CudaStream& cuda_stream) {
   if (block_indices.empty()) {
     return;
   }
@@ -100,10 +102,11 @@ void transferBlockPointersToDevice(
   block_ptrs_device->copyFromAsync(*block_ptrs_host, cuda_stream);
 }
 
-inline void transferBlocksIndicesToDevice(
-    const std::vector<Index3D>& block_indices, const CudaStream& cuda_stream,
+inline void transferBlockIndicesToDeviceAsync(
+    const std::vector<Index3D>& block_indices,
     host_vector<Index3D>* block_indices_host,
-    device_vector<Index3D>* block_indices_device) {
+    device_vector<Index3D>* block_indices_device,
+    const CudaStream& cuda_stream) {
   if (block_indices.empty()) {
     return;
   }

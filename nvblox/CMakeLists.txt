@@ -59,7 +59,6 @@ add_nvblox_static_library(
   src/gpu_hash/color_layer_specialization.cu
   src/gpu_hash/occupancy_layer_specialization.cu
   src/gpu_hash/mesh_layer_specialization.cu
-  src/gpu_hash/gpu_set.cu
   LINK_LIBRARIES_PUBLIC
   nvblox_eigen
   LINK_LIBRARIES_PRIVATE
@@ -148,6 +147,7 @@ add_nvblox_shared_library(
   CUDA::nppim
   CUDA::nppidei
   INCLUDE_DIRECTORIES_PUBLIC
+  ${THRUST_INCLUDE_DIR}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 

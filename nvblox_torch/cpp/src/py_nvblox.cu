@@ -107,7 +107,13 @@ TORCH_LIBRARY(pynvblox, m) {
                get_projective_tsdf_integrator_invalid_depth_decay_factor)
       .def("set_projective_tsdf_integrator_invalid_depth_decay_factor",
            &ProjectiveIntegratorParams::
-               set_projective_tsdf_integrator_invalid_depth_decay_factor);
+               set_projective_tsdf_integrator_invalid_depth_decay_factor)
+      .def("get_projective_appearance_integrator_measurement_weight",
+           &ProjectiveIntegratorParams::
+               get_projective_appearance_integrator_measurement_weight)
+      .def("set_projective_appearance_integrator_measurement_weight",
+           &ProjectiveIntegratorParams::
+               set_projective_appearance_integrator_measurement_weight);
 
   m.class_<MeshIntegratorParams>("MeshIntegratorParams")
       .def(torch::init())

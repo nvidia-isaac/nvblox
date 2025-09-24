@@ -20,7 +20,9 @@ else()
       # hash.
       ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_expose_occupied.patch
       # Patch that prepends stdgpu namespace to conflicting cuda functions.
-      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cuda12_6.patch)
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cuda12_6.patch
+      # Patch that fixes deprecated calls in CUDA13
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cuda13_0.patch)
 
   FetchContent_Declare(
     ext_stdgpu

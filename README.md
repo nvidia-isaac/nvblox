@@ -9,11 +9,11 @@ taking full advantage of `CUDA` and `NVIDIA` hardware.
 
 Depending on your use-case, you may interact with `nvblox` through
 either
-[Python](https://nvidia-isaac.github.io/nvblox/),
-[C++](https://nvidia-isaac.github.io/nvblox/), or
+[Python](https://nvblox.gitlab-master-pages.nvidia.com/nvblox/),
+[C++](https://nvblox.gitlab-master-pages.nvidia.com/nvblox/), or
 [ROS2](https://nvidia-isaac-ros.github.io/concepts/scene_reconstruction/nvblox/index.html).
 
-To get started with `nvblox`, see our [documentation site](https://nvidia-isaac.github.io/nvblox/)
+To get started with `nvblox`, see our [documentation site](https://nvblox.gitlab-master-pages.nvidia.com/nvblox/)
 
 <p align="center">
   <img src="docs/images/3dmatch.gif" alt="3D reconstruction" width="400"/>

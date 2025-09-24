@@ -18,8 +18,8 @@ dependencies = [
     # * On Jetson, the pypi version does not support CUDA. we instead rely on CUDA-enabled versions being pre-installed on the system.
     #   These are specified in Dockerfile.jetson_deps. In order for these ones to not be overridden here, the version specifications
     #   below has to encompass the pre-installed versions
-    "torch==2.3.0", # The CUDA version is 2.3.0
-    "torchvision (>0.17.2,<=0.18.0)", # The CUDA version (0.18.0a0+6043bc2) is between 0.17.x and 0.18.0
+    "torch==2.*", # 2.3.0 for jetson and 2.4 for x86.
+    "torchvision (>0.17.2,<=0.19.0)", # 0.18.0a0+6043bc2 for jetson and 0.19 for x86.
     "matplotlib==3.10",
     # Torch 2.3 require numpy 1.X
     "numpy==1.26"

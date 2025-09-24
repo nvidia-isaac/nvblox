@@ -71,16 +71,18 @@ void allocateBlocksWhereRequired(const std::vector<Index3D>& block_indices,
 /// @param block_ptrs_host The host pinned memory buffer for the indices.
 /// @param block_ptrs_device The device memory buffer for the indices.
 template <typename BlockType>
-void transferBlockPointersToDevice(
-    const std::vector<Index3D>& block_indices, const CudaStream& cuda_stream,
-    BlockLayer<BlockType>* layer_ptr, host_vector<BlockType*>* block_ptrs_host,
-    device_vector<BlockType*>* block_ptrs_device);
+void transferBlockPointersToDeviceAsync(
+    const std::vector<Index3D>& block_indices, BlockLayer<BlockType>* layer_ptr,
+    host_vector<BlockType*>* block_ptrs_host,
+    device_vector<BlockType*>* block_ptrs_device,
+    const CudaStream& cuda_stream);
 template <typename BlockType>
-void transferBlockPointersToDevice(
-    const std::vector<Index3D>& block_indices, const CudaStream& cuda_stream,
+void transferBlockPointersToDeviceAsync(
+    const std::vector<Index3D>& block_indices,
     const BlockLayer<BlockType>& layer,
     host_vector<const BlockType*>* block_ptrs_host,
-    device_vector<const BlockType*>* block_ptrs_device);
+    device_vector<const BlockType*>* block_ptrs_device,
+    const CudaStream& cuda_stream);
 
 /// Copies a vector of block indices to the device.
 ///
@@ -88,15 +90,16 @@ void transferBlockPointersToDevice(
 /// to the device, as we found it to be faster than copying from system memory
 /// directly.
 /// @param block_indices The block indices to transfer to device.
-/// @param cuda_stream The cuda stream to run on.
 /// @param block_indices_host The host pinned memory buffer for the block
 /// pointers.
 /// @param block_indices_device  The device memory buffer for the block
 /// pointers.
-void transferBlocksIndicesToDevice(
-    const std::vector<Index3D>& block_indices, const CudaStream& cuda_stream,
+/// @param cuda_stream The cuda stream to run on.
+void transferBlockIndicesToDeviceAsync(
+    const std::vector<Index3D>& block_indices,
     host_vector<Index3D>* block_indices_host,
-    device_vector<Index3D>* block_indices_device);
+    device_vector<Index3D>* block_indices_device,
+    const CudaStream& cuda_stream);
 
 }  // namespace nvblox
 

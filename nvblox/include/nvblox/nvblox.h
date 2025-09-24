@@ -18,6 +18,7 @@ limitations under the License.
 #include "nvblox/core/array.h"
 #include "nvblox/core/bitmask.h"
 #include "nvblox/core/color.h"
+#include "nvblox/core/cuda.h"
 #include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/feature_array.h"
 #include "nvblox/core/hash.h"

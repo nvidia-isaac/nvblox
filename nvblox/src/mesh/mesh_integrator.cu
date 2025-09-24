@@ -21,6 +21,7 @@ limitations under the License.
 #include <thrust/sort.h>
 #include <thrust/unique.h>
 
+#include "nvblox/core/cuda.h"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/map/accessors.h"
 #include "nvblox/map/common_names.h"
@@ -765,7 +766,7 @@ __global__ void weldVerticesCubKernel(
   __syncthreads();
   // We remove duplicates by find when the discontinuities happen.
   BlockDiscontinuityT(temp_storage.discontinuity)
-      .FlagHeads(head_flags, thread_keys, cub::Inequality());
+      .FlagHeads(head_flags, thread_keys, nvblox::not_equal_to<uint64_t>());
   __syncthreads();
   // Get the indices that'll be assigned to the new unique values.
   BlockScanT(temp_storage.scan)

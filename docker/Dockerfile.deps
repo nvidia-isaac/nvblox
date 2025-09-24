@@ -31,7 +31,7 @@ RUN . /opt/venv/bin/activate && \
     python3 -m pip install --ignore-installed --upgrade pip && \
     python3 -m pip install \
     # Pytorch. Note that this version is only compatible with pre-cxx11 ABI binaries. \
-    torch==2.3
+    torch==2.4
 
 # Install python deps.
 RUN . /opt/venv/bin/activate && \

@@ -24,6 +24,7 @@ limitations under the License.
 #include <thrust/sort.h>
 #include <thrust/unique.h>
 
+#include "nvblox/core/cuda.h"
 #include "nvblox/core/hash.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/tests/mesh_utils.h"
@@ -216,7 +217,7 @@ __global__ void blockUniqueKernel(int num_vals, Vector3f* d_in, int* num_out,
   __syncthreads();  // Barrier for smem reuse
   // Collectively sort the keys
   BlockDiscontinuityT(temp_storage.sort)
-      .FlagHeads(head_flags, thread_keys, cub::Inequality());
+      .FlagHeads(head_flags, thread_keys, nvblox::not_equal_to<uint64_t>());
   __syncthreads();  // Barrier for smem reuse
 
   // Cool now write only 1 instance of the unique entries to the output.
@@ -317,7 +318,7 @@ __global__ void combinedSingleBlockKernel(int num_vals, Vector3f* d_in,
   __syncthreads();
   // Find when the discontinuities happen.
   BlockDiscontinuityT(temp_storage.discontinuity)
-      .FlagHeads(head_flags, thread_keys, cub::Inequality());
+      .FlagHeads(head_flags, thread_keys, nvblox::not_equal_to<uint64_t>());
   __syncthreads();
   // Get the indices that'll be assigned.
   BlockScanT(temp_storage.scan)

@@ -39,18 +39,12 @@ void incrementOnCPU(const int num_elements, int ints[]) {
 
 template <typename T>
 void expect_cuda_freed(T* ptr) {
-  // Note(alexmillane): Whether or not this call returns an error seems to vary
-  // between machines... Hopefully the checks below indicate that the memory has
-  // been freed.
   cudaPointerAttributes attributes;
   checkCudaErrors(cudaPointerGetAttributes(&attributes, ptr));
   EXPECT_EQ(attributes.type, cudaMemoryType::cudaMemoryTypeUnregistered);
-  EXPECT_EQ(attributes.devicePointer, nullptr);
-  // NOTE(alexmillane, 21.10.2024): We experienced that this conditions no
-  // longer remains true on NVIDIA driver 560 (and potentially higher, not
-  // sure). In other words, it's no longer guarunteed that
-  // `attributes.hostPointer == nullptr` after CUDA memory is freed.
-  // EXPECT_EQ(attributes.hostPointer, nullptr);
+  // NOTE(dtingdahl): One some platforms/drivers, attributes.devicePointer and
+  // attributes.hostPointer are nullptr after memory is released. However this
+  // behavior is not consistent enough to assert.
 }
 
 template <typename T>

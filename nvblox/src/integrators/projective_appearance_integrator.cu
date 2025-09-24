@@ -141,12 +141,12 @@ void ProjectiveAppearanceIntegrator<LayerType>::integrateFrame(
 
   timing::Timer transfer_blocks_timer(getIntegratorName() +
                                       "/integrate/transfer_blocks");
-  transferBlockPointersToDevice<BlockType>(block_indices, *this->cuda_stream_,
-                                           layer, &this->block_ptrs_host_,
-                                           &this->block_ptrs_device_);
-  transferBlocksIndicesToDevice(block_indices, *this->cuda_stream_,
-                                &this->block_indices_host_,
-                                &this->block_indices_device_);
+  transferBlockPointersToDeviceAsync<BlockType>(
+      block_indices, layer, &this->block_ptrs_host_, &this->block_ptrs_device_,
+      *this->cuda_stream_);
+  transferBlockIndicesToDeviceAsync(block_indices, &this->block_indices_host_,
+                                    &this->block_indices_device_,
+                                    *this->cuda_stream_);
 
   // We need the inverse transform in the kernel
   const Transform T_C_L = T_L_C.inverse();
@@ -192,6 +192,19 @@ template <class LayerType>
 void ProjectiveAppearanceIntegrator<LayerType>::max_weight(float max_weight) {
   CHECK_GT(max_weight, 0.0f);
   max_weight_ = max_weight;
+}
+
+template <class LayerType>
+float ProjectiveAppearanceIntegrator<LayerType>::measurement_weight() const {
+  return measurement_weight_;
+}
+
+template <class LayerType>
+void ProjectiveAppearanceIntegrator<LayerType>::measurement_weight(
+    float measurement_weight) {
+  CHECK_GT(measurement_weight, 0.0f);
+  CHECK_LE(measurement_weight, 1.0f);
+  measurement_weight_ = measurement_weight;
 }
 
 template <class LayerType>
@@ -242,6 +255,7 @@ ProjectiveAppearanceIntegrator<LayerType>::getParameterTree(
                 ParameterTreeNode("sphere_tracing_ray_subsampling_factor:",
                                   sphere_tracing_ray_subsampling_factor_),
                 ParameterTreeNode("max_weight:", max_weight_),
+                ParameterTreeNode("measurement_weight:", measurement_weight_),
                 ParameterTreeNode(
                     "weighting_function_type:", weighting_function_type_,
                     weighting_function_to_string),
@@ -310,23 +324,32 @@ struct UpdateAppearanceVoxelFunctor {
     const ArrayType voxel_appearance_current =
         getArrayFromAppearanceVoxel(*voxel_ptr);
     const float voxel_weight_current = voxel_ptr->weight;
-    // Fuse
-    const float measurement_weight = weighting_function_(
-        measured_depth_m, voxel_depth_m, truncation_distance_m_);
+
+    // Fuse measurement with current estimate
     ArrayType fused_appearance;
-    blendTwoArrays(voxel_appearance_current, voxel_weight_current,
-                   appearance_measured, measurement_weight, &fused_appearance);
-    const float weight =
-        fmin(measurement_weight + voxel_weight_current, max_weight_);
-    // Write NEW voxel values (to global GPU memory)
-    setArrayFromAppearanceVoxel(fused_appearance, voxel_ptr);
-    voxel_ptr->weight = weight;
+    if (__half2float(voxel_ptr->weight) == 0.f) {
+      // If this is the first measurement, we simply copy the measurement
+      setArrayFromAppearanceVoxel(appearance_measured, voxel_ptr);
+    } else {
+      // Exponential filter
+      blendTwoArrays(voxel_appearance_current, (1.0f - measurement_weight_),
+                     appearance_measured, measurement_weight_,
+                     &fused_appearance);
+      // Write NEW voxel values (to global GPU memory)
+      setArrayFromAppearanceVoxel(fused_appearance, voxel_ptr);
+    }
+
+    voxel_ptr->weight =
+        fmin(measurement_weight_ + voxel_weight_current, max_weight_);
+
     return true;
   }
   WeightingFunction weighting_function_ =
       kProjectiveIntegratorWeightingModeParamDesc.default_value;
   float truncation_distance_m_ = 0.2f;
   float max_weight_ = kProjectiveIntegratorMaxWeightParamDesc.default_value;
+  float measurement_weight_ =
+      kProjectiveAppearanceIntegratorMeasurementWeightParamDesc.default_value;
 };
 
 template <class LayerType>
@@ -338,6 +361,7 @@ ProjectiveAppearanceIntegrator<LayerType>::getAppearanceUpdateFunctorOnDevice(
   // bug-prone logic for detecting when params have changed etc.
   CHECK(update_functor_host_ptr_ != nullptr);
   update_functor_host_ptr_->max_weight_ = max_weight();
+  update_functor_host_ptr_->measurement_weight_ = measurement_weight();
   update_functor_host_ptr_->truncation_distance_m_ =
       get_truncation_distance_m(voxel_size);
   update_functor_host_ptr_->weighting_function_ =

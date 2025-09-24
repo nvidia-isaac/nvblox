@@ -427,19 +427,20 @@ void FreespaceIntegrator::updateFreespaceLayer(
   timing::Timer transfer_timer("freespace/integrate/transfer_blocks");
 
   // Transfer block indices
-  transferBlocksIndicesToDevice(block_indices_to_update, *cuda_stream_,
-                                &block_indices_to_update_host_,
-                                &block_indices_to_update_device_);
+  transferBlockIndicesToDeviceAsync(
+      block_indices_to_update, &block_indices_to_update_host_,
+      &block_indices_to_update_device_, *cuda_stream_);
 
   // Transfer freespace block pointers
-  transferBlockPointersToDevice(
-      block_indices_to_update, *cuda_stream_, freespace_layer_ptr,
-      &freespace_blocks_to_update_host_, &freespace_blocks_to_update_device_);
+  transferBlockPointersToDeviceAsync(
+      block_indices_to_update, freespace_layer_ptr,
+      &freespace_blocks_to_update_host_, &freespace_blocks_to_update_device_,
+      *cuda_stream_);
 
   // Transfer tsdf block pointers
-  transferBlockPointersToDevice<TsdfBlock>(
-      block_indices_to_update, *cuda_stream_, tsdf_layer,
-      &tsdf_blocks_to_update_host_, &tsdf_blocks_to_update_device_);
+  transferBlockPointersToDeviceAsync<TsdfBlock>(
+      block_indices_to_update, tsdf_layer, &tsdf_blocks_to_update_host_,
+      &tsdf_blocks_to_update_device_, *cuda_stream_);
   transfer_timer.Stop();
 
   timing::Timer update_timer("freespace/integrate/update_blocks");

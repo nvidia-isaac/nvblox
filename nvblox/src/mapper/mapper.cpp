@@ -156,6 +156,13 @@ void Mapper::setMapperParams(const MapperParams& params) {
       params.projective_integrator_params.projective_integrator_max_weight);
   feature_integrator().max_weight(
       params.projective_integrator_params.projective_integrator_max_weight);
+  // Measurement weight for appearance integrators
+  color_integrator().measurement_weight(
+      params.projective_integrator_params
+          .projective_appearance_integrator_measurement_weight);
+  feature_integrator().measurement_weight(
+      params.projective_integrator_params
+          .projective_appearance_integrator_measurement_weight);
   // invalid depth decay
   tsdf_integrator().invalid_depth_decay_factor(
       params.projective_integrator_params

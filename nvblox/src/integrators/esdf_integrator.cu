@@ -21,13 +21,13 @@ limitations under the License.
 #include "thrust/unique.h"
 
 #include "cub/block/block_radix_sort.cuh"
+#include "nvblox/core/cuda.h"
 #include "nvblox/core/internal/cuda/atomic_float.cuh"
 #include "nvblox/core/internal/cuda/device_function_utils.cuh"
 #include "nvblox/geometry/bounding_boxes.h"
 #include "nvblox/geometry/bounding_spheres.h"
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
 #include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
-#include "nvblox/gpu_hash/internal/cuda/gpu_set.cuh"
 #include "nvblox/integrators/internal/cuda/esdf_integrator_slicing.cuh"
 #include "nvblox/utils/timing.h"
 
@@ -1248,7 +1248,7 @@ __global__ void sortUniqueKernel(Index3D* indices, int* counters) {
   __syncthreads();
   // We remove duplicates by find when the discontinuities happen.
   BlockDiscontinuityT(temp_storage.discontinuity)
-      .FlagHeads(head_flags, thread_keys, cub::Inequality());
+      .FlagHeads(head_flags, thread_keys, nvblox::not_equal_to<uint64_t>());
   __syncthreads();
   // Get the indices that'll be assigned to the new unique values.
   BlockScanT(temp_storage.scan)

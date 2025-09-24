@@ -11,7 +11,10 @@ its affiliates is strictly prohibited.
 
 include(GoogleTest)
 # Add some tests.
-set(TEST_OPTIONS DISCOVERY_TIMEOUT 30)
+set(TEST_OPTIONS
+    DISCOVERY_TIMEOUT 30 DISCOVERY_MODE
+    PRE_TEST # Avoid running test executables in the build step
+)
 function(add_nvblox_torch_test test_name)
   add_nvblox_executable(${test_name} SOURCE_FILES ${test_name}.cpp
                         LINK_LIBRARIES_PUBLIC gtest py_nvblox)

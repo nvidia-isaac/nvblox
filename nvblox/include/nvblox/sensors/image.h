@@ -263,7 +263,7 @@ class Image : public ImageBase<_ElementType> {
 
   Image(int rows, int cols, MemoryType memory_type = kDefaultImageMemoryType);
 
-  virtual ~Image() = default;
+  __host__ __device__ virtual ~Image() = default;
 
   /// Move constructor and assignment
   Image(Image&& other);

@@ -52,6 +52,9 @@ struct ProjectiveIntegratorParams : torch::CustomClassHolder {
   double get_projective_tsdf_integrator_invalid_depth_decay_factor() const;
   void set_projective_tsdf_integrator_invalid_depth_decay_factor(double value);
 
+  double get_projective_appearance_integrator_measurement_weight() const;
+  void set_projective_appearance_integrator_measurement_weight(double value);
+
   std::shared_ptr<nvblox::ProjectiveIntegratorParams> params_;
 };
 

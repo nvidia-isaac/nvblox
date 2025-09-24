@@ -117,6 +117,17 @@ void ProjectiveIntegratorParams::
       static_cast<float>(value);
 }
 
+double ProjectiveIntegratorParams::
+    get_projective_appearance_integrator_measurement_weight() const {
+  return static_cast<double>(
+      params_->projective_appearance_integrator_measurement_weight);
+}
+void ProjectiveIntegratorParams::
+    set_projective_appearance_integrator_measurement_weight(double value) {
+  params_->projective_appearance_integrator_measurement_weight =
+      static_cast<float>(value);
+}
+
 /*****************************
  * MESH INTEGRATOR PARAMS
  ******************************/

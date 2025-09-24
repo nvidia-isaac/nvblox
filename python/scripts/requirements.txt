@@ -1,1 +1,1 @@
-open3d # No common version exists for both x68 aarch64
+open3d>=0.18,<=0.19
