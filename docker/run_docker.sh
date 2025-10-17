@@ -2,7 +2,7 @@
 set -ex
 
 
-while getopts ":haid:" OPTION; do
+while getopts ":ha:i:d:" OPTION; do
     case $OPTION in
 
         a)

@@ -194,7 +194,7 @@ add_subdirectory(experiments)
 include(GNUInstallDirs)
 
 install(
-  TARGETS nvblox_lib nvblox_datasets nvblox_eigen fuse_3dmatch fuse_replica
+  TARGETS nvblox_lib nvblox_datasets nvblox_gpu_hash nvblox_stdgpu nvblox_eigen fuse_3dmatch fuse_replica
   EXPORT nvbloxTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
