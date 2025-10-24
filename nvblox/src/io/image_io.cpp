@@ -27,7 +27,7 @@ struct NumChannels<MonoImage> {
 
 template <>
 struct NumChannels<ColorImage> {
-  static const int value = 4;
+  static const int value = 3;
 };
 
 }  // namespace internal

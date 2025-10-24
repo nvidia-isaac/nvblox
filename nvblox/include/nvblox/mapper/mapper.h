@@ -21,6 +21,7 @@ limitations under the License.
 #include "nvblox/core/hash.h"
 #include "nvblox/core/parameter_tree.h"
 #include "nvblox/dynamics/dynamics_detection.h"
+#include "nvblox/integrators/depth_observation_space.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/freespace_integrator.h"
 #include "nvblox/integrators/occupancy_decay_integrator.h"
@@ -38,9 +39,8 @@ limitations under the License.
 #include "nvblox/mapper/mapper_params.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/semantics/image_masker.h"
-#include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/depth_preprocessing.h"
-#include "nvblox/sensors/lidar.h"
+#include "nvblox/sensors/type_indexed_store.h"
 #include "nvblox/serialization/layer_cake_streamer.h"
 #include "nvblox/serialization/layer_streamer.h"
 
@@ -161,45 +161,54 @@ class Mapper : public MapperBase {
   ///
   ///@param depth_frame Depth frame to integrate. Depth in the image is
   ///                   specified as a float representing meters.
-  ///@param T_L_C Pose of the camera, specified as a transform from
-  ///             Camera-frame to Layer-frame transform.
-  ///@param camera Intrinsics model of the camera.
+  ///@param T_L_C Pose of the Sensor, specified as a transform from
+  ///             Sensor-frame to Layer-frame transform.
+  ///@param sensor Intrinsics model of the sensor.
+  template <typename SensorType>
   void integrateDepth(const DepthImage& depth_frame, const Transform& T_L_C,
-                      const Camera& camera);
+                      const SensorType& sensor);
+  template <typename SensorType>
   void integrateDepth(const MaskedDepthImageConstView& depth_frame,
-                      const Transform& T_L_C, const Camera& camera);
+                      const Transform& T_L_C, const SensorType& sensor);
 
   /// Integrates a color frame into the reconstruction.
   ///@param color_frame Color image to integrate.
-  ///@param T_L_C Pose of the camera, specified as a transform from
-  ///             Camera-frame to Layer-frame transform.
-  ///@param camera Intrinsics model of the camera.
+  ///@param T_L_C Pose of the sensor, specified as a transform from
+  ///             Sensor-frame to Layer-frame transform.
+  ///@param sensor Intrinsics model of the sensor.
+  template <typename SensorType>
   void integrateColor(const MaskedColorImageConstView& color_frame,
-                      const Transform& T_L_C, const Camera& camera);
+                      const Transform& T_L_C, const SensorType& sensor);
+  template <typename SensorType>
   void integrateColor(const ColorImage& color_frame, const Transform& T_L_C,
-                      const Camera& camera);
+                      const SensorType& sensor);
 
   /// Integrates generic features into the reconstruction.
   ///@param feature_frame Feature image to integrate.
-  ///@param T_L_C Pose of the camera, specified as a transform from
-  ///             Camera-frame to Layer-frame transform.
-  ///@param camera Intrinsics model of the camera.
+  ///@param T_L_C Pose of the sensor, specified as a transform from
+  ///             Sensor-frame to Layer-frame transform.
+  ///@param sensor Intrinsics model of the sensor.
+  template <typename SensorType>
   void integrateFeatures(const MaskedFeatureImageConstView& feature_frame,
-                         const Transform& T_L_C, const Camera& camera);
+                         const Transform& T_L_C, const SensorType& sensor);
 
-  /// Integrates a 3D LiDAR scan into the reconstruction.
-  ///@param depth_frame Depth image representing the LiDAR scan.
-  ///@param T_L_C Pose of the LiDAR, specified as a transform from LiDAR-frame
-  ///             to Layer-frame transform.
-  ///@param lidar Intrinsics model of the LiDAR.
-  void integrateLidarDepth(const DepthImage& depth_frame,
-                           const Transform& T_L_C, const Lidar& lidar);
+  /// Decay the TSDF layer (reduce weights). Voxels that were observed in the
+  /// last view will be excluded from decay.
+  /// @tparam SensorType sensor for which the last view should be excluded.
+  template <typename SensorType>
+  void decayTsdfExcludeLastView();
 
-  /// Decay the TSDF layer (reduce weights)
-  void decayTsdf();
+  /// Decay the TSDF layer (reduce weights) for all voxels.
+  void decayTsdfAllVoxels();
 
-  /// Decay the full occupancy layer.
-  void decayOccupancy();
+  /// Decay the Occupancy layer (reduce weights). Voxels that were observed in
+  /// the last view will be excluded from decay.
+  /// @tparam SensorType sensor for which the last view should be excluded.
+  template <typename SensorType>
+  void decayOccupancyExcludeLastView();
+
+  /// Decay the occupancy layer (reduce weights) for all voxels.
+  void decayOccupancyAllVoxels();
 
   /// @brief Clear the TSDF layer inside the passed shapes.
   /// @param shapes Vector of shapes to clear.
@@ -214,13 +223,14 @@ class Mapper : public MapperBase {
 
   /// Updates the freespace blocks (in view).
   /// @param update_time_ms The time of the update in miliseconds.
-  /// @param T_L_C The pose of the camera.
-  /// @param camera The intrinsics of the camera.
+  /// @param T_L_C The pose of the sensor.
+  /// @param sensor The intrinsics of the sensor.
   /// @param depth_frame The depth image.
   /// @param update_full_layer Whether to update the full layer or only the
   /// blocks that require and update.
+  template <typename SensorType>
   void updateFreespace(
-      Time update_time_ms, const Transform& T_L_C, const Camera& camera,
+      Time update_time_ms, const Transform& T_L_C, const SensorType& sensor,
       const DepthImage& depth_frame,
       UpdateFullLayer update_full_layer = UpdateFullLayer::kNo);
 
@@ -410,11 +420,36 @@ class Mapper : public MapperBase {
   const ProjectiveTsdfIntegrator& tsdf_integrator() const {
     return tsdf_integrator_;
   }
+
+  /// Get the appropriate TSDF integrator based on sensor type
+  /// @tparam SensorType The sensor type
+  /// @return const ProjectiveTsdfIntegrator& The appropriate TSDF integrator
+  template <typename SensorType>
+  const ProjectiveTsdfIntegrator& getTsdfIntegrator() const {
+    if constexpr (SensorType::sensor_modality() == SensorModality::kLidar) {
+      return lidar_tsdf_integrator_;
+    } else {
+      return tsdf_integrator_;
+    }
+  }
   /// Getter
   ///@return const ProjectiveOccupancyIntegrator& occupancy integrator used
   /// for depth/rgbd frame integration.
   const ProjectiveOccupancyIntegrator& occupancy_integrator() const {
     return occupancy_integrator_;
+  }
+
+  /// Get the appropriate occupancy integrator based on sensor type
+  /// @tparam SensorType The sensor type
+  /// @return const ProjectiveOccupancyIntegrator& The appropriate occupancy
+  /// integrator
+  template <typename SensorType>
+  const ProjectiveOccupancyIntegrator& getOccupancyIntegrator() const {
+    if constexpr (SensorType::sensor_modality() == SensorModality::kLidar) {
+      return lidar_occupancy_integrator_;
+    } else {
+      return occupancy_integrator_;
+    }
   }
   /// Getter
   ///@return const FreespaceIntegrator& freespace integrator used for
@@ -435,7 +470,7 @@ class Mapper : public MapperBase {
     return lidar_occupancy_integrator_;
   }
   /// Getter
-  ///@return const OccupancyDecayIntegrator& occupancy integrator used for
+  ///@return const OccupancyDecayIntegrator& occupancy integrator used fior
   ///        decaying an occupancy layer towards 0.5 occupancy probability.
   const OccupancyDecayIntegrator& occupancy_decay_integrator() const {
     return occupancy_decay_integrator_;
@@ -480,11 +515,36 @@ class Mapper : public MapperBase {
   ///@return ProjectiveTsdfIntegrator& TSDF integrator used for
   ///        depth/rgbd frame integration.
   ProjectiveTsdfIntegrator& tsdf_integrator() { return tsdf_integrator_; }
+
+  /// Get the appropriate TSDF integrator based on sensor type
+  /// @tparam SensorType The sensor type
+  /// @return ProjectiveTsdfIntegrator& The appropriate TSDF integrator
+  template <typename SensorType>
+  ProjectiveTsdfIntegrator& getTsdfIntegrator() {
+    if constexpr (SensorType::sensor_modality() == SensorModality::kLidar) {
+      return lidar_tsdf_integrator_;
+    } else {
+      return tsdf_integrator_;
+    }
+  }
   /// Getter
   ///@return ProjectiveOccupancyIntegrator& occupancy integrator used for
   ///        depth/rgbd frame integration.
   ProjectiveOccupancyIntegrator& occupancy_integrator() {
     return occupancy_integrator_;
+  }
+
+  /// Get the appropriate occupancy integrator based on sensor type
+  /// @tparam SensorType The sensor type
+  /// @return ProjectiveOccupancyIntegrator& The appropriate occupancy
+  /// integrator
+  template <typename SensorType>
+  ProjectiveOccupancyIntegrator& getOccupancyIntegrator() {
+    if constexpr (SensorType::sensor_modality() == SensorModality::kLidar) {
+      return lidar_occupancy_integrator_;
+    } else {
+      return occupancy_integrator_;
+    }
   }
   /// Getter
   ///@return FreespaceIntegrator& freespace integrator used for
@@ -572,18 +632,6 @@ class Mapper : public MapperBase {
     depth_preprocessing_num_dilations_ = depth_preprocessing_num_dilations;
   }
 
-  /// Whether to exclude voxel contained observed in the the last depth frame
-  /// passed to integrateDepth from the voxels which are decayed.
-  bool exclude_last_view_from_decay() const {
-    return exclude_last_view_from_decay_;
-  }
-  /// A parameter setter
-  /// See exclude_last_view_from_decay()
-  /// @param exclude_last_view_from_decay
-  void exclude_last_view_from_decay(const bool exclude_last_view_from_decay) {
-    exclude_last_view_from_decay_ = exclude_last_view_from_decay;
-  }
-
   /// Saving and loading functions.
   /// Saving a map will serialize the TSDF and ESDF layers to a file.
   ///@param filename
@@ -652,9 +700,11 @@ class Mapper : public MapperBase {
 
  protected:
   /// Update the freespace layer, with an optional viewpoint.
-  void updateFreespace(Time update_time_ms,
-                       std::optional<ViewBasedInclusionData> view_to_update,
-                       UpdateFullLayer update_full_layer);
+  template <typename SensorType>
+  void updateFreespace(
+      Time update_time_ms,
+      std::optional<DepthObservationSpace<SensorType>> view_to_update,
+      UpdateFullLayer update_full_layer);
 
   // Template function to update the mesh layer (color or feature)
   template <typename AppearanceVoxelType>
@@ -686,6 +736,15 @@ class Mapper : public MapperBase {
   /// @brief Deallocate blocks int the esdf, mesh and freespace layer.
   /// @param blocks_to_clear Vector of blocks to clear.
   void clearBlocksInLayers(const std::vector<Index3D>& blocks_to_clear);
+
+ private:
+  /// Common function for decaying
+  template <typename SensorType>
+  void decayTsdfInternal(
+      const std::optional<DepthObservationSpace<SensorType>>& inclusion_data);
+  template <typename SensorType>
+  void decayOccupancyInternal(
+      const std::optional<DepthObservationSpace<SensorType>>& inclusion_data);
 
   /// The CUDA stream that mapper work is processed on
   std::shared_ptr<CudaStream> cuda_stream_;
@@ -739,13 +798,11 @@ class Mapper : public MapperBase {
   /// Keeping track of the mesh blocks that got deleted in the mesh layer.
   Index3DSet cleared_blocks_;
 
-  /// Whether to exclude the last depth frustum from the decay
-  bool exclude_last_view_from_decay_ =
-      kExcludeLastViewFromDecayParamDesc.default_value;
-  /// Last known depth viewpoint for view-based decay exclusion
-  std::optional<DepthImage> last_depth_image_;
-  std::optional<Camera> last_depth_camera_;
-  std::optional<Transform> last_depth_T_L_C_;
+  /// Last known depth view per sensor type for view-based decay exclusion.
+  /// Stores sensor, depth image, and pose together per sensor type.
+  TypeIndexedStore last_posed_depth_image_;
 };
 
 }  // namespace nvblox
+
+#include "nvblox/mapper/internal/impl/mapper_impl.h"

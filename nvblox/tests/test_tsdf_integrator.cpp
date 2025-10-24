@@ -23,8 +23,10 @@ limitations under the License.
 #include "nvblox/io/image_io.h"
 #include "nvblox/io/ply_writer.h"
 #include "nvblox/io/pointcloud_io.h"
+#include "nvblox/tests/custom_camera_sensor.h"
 #include "nvblox/tests/integrator_utils.h"
 #include "nvblox/tests/projective_tsdf_integrator_cpu.h"
+#include "nvblox/tests/sensor_fixture.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -42,11 +44,41 @@ constexpr float kInterpolatedSurfaceDistanceEpsilon = 1e-6;
 constexpr float kGPUvsCPUDifferenceThresholdM = 1e-3;      // 1mm
 constexpr float kAcceptablePercentageOverThreshold = 0.4;  // 0.4%
 
-class TsdfIntegratorTest : public ::testing::Test {
+// The tsdf test is templated on both sensor type and device type. Gtest typed
+// tests need a single template. Therefore we combine the two into a trait
+// struct
+struct CameraAndGPUTrait {
+  using SensorType = Camera;
+  static constexpr DeviceType device_type = DeviceType::kGPU;
+};
+struct CameraAndCPUTrait {
+  using SensorType = Camera;
+  static constexpr DeviceType device_type = DeviceType::kCPU;
+};
+
+struct CustomCameraAndGPUTrait {
+  using SensorType = test_utils::CustomCameraSensor;
+  static constexpr DeviceType device_type = DeviceType::kGPU;
+};
+struct CustomCameraAndCPUTrait {
+  using SensorType = test_utils::CustomCameraSensor;
+  static constexpr DeviceType device_type = DeviceType::kCPU;
+};
+
+struct LidarAndGPUTrait {
+  using SensorType = Lidar;
+  static constexpr DeviceType device_type = DeviceType::kGPU;
+};
+struct LidarAndCPUTrait {
+  using SensorType = Lidar;
+  static constexpr DeviceType device_type = DeviceType::kCPU;
+};
+
+template <typename TestTraits>
+class TsdfIntegratorTestFixture
+    : public test_utils::SensorFixture<typename TestTraits::SensorType> {
  protected:
-  TsdfIntegratorTest()
-      : layer_(voxel_size_m_, MemoryType::kUnified),
-        camera_(Camera(fu_, fv_, cu_, cv_, width_, height_)) {}
+  TsdfIntegratorTestFixture() : layer_(voxel_size_m_, MemoryType::kUnified) {}
 
   // Test layer
   constexpr static float voxel_size_m_ = 0.2;
@@ -58,45 +90,32 @@ class TsdfIntegratorTest : public ::testing::Test {
   constexpr static float surface_reconstruction_allowable_distance_error_m_ =
       surface_reconstruction_allowable_distance_error_vox_ * voxel_size_m_;
 
-  // Test camera
-  constexpr static float fu_ = 300;
-  constexpr static float fv_ = 300;
-  constexpr static int width_ = 640;
-  constexpr static int height_ = 480;
-  constexpr static float cu_ = static_cast<float>(width_) / 2.0f;
-  constexpr static float cv_ = static_cast<float>(height_) / 2.0f;
-  Camera camera_;
+  std::unique_ptr<ProjectiveTsdfIntegrator> create_integrator() {
+    if (TestTraits::device_type == DeviceType::kCPU) {
+      return std::make_unique<ProjectiveTsdfIntegratorCPU>();
+    } else {
+      return std::make_unique<ProjectiveTsdfIntegrator>();
+    }
+  }
 };
 
-class TsdfIntegratorTestParameterized
-    : public TsdfIntegratorTest,
-      public ::testing::WithParamInterface<DeviceType> {
-  // Add a param
-};
+using TsdfIntegratorTestTypes =
+    ::testing::Types<CameraAndGPUTrait, CameraAndCPUTrait, LidarAndGPUTrait,
+                     CustomCameraAndCPUTrait, CustomCameraAndGPUTrait>;
+TYPED_TEST_SUITE(TsdfIntegratorTestFixture, TsdfIntegratorTestTypes);
 
-// ProjectiveTsdfIntegrator child that gives the tests access to the internal
-// functions.
-class TestProjectiveTsdfIntegrator : public ProjectiveTsdfIntegrator {
- public:
-  TestProjectiveTsdfIntegrator() : ProjectiveTsdfIntegrator() {}
-  FRIEND_TEST(TsdfIntegratorTest, BlocksInView);
-};
-
-TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
+TYPED_TEST(TsdfIntegratorTestFixture, ReconstructPlane) {
   // Make sure this is deterministic.
   std::srand(0);
 
-  // Get the params
-  const DeviceType device_type = GetParam();
-
   // Plane centered at (0,0,depth) with random (slight) slant
-  const test_utils::Plane plane = test_utils::Plane(
-      Vector3f(0.0f, 0.0f, 5.0f),
-      Vector3f(test_utils::randomFloatInRange(-0.25, 0.25),
-               test_utils::randomFloatInRange(-0.25, 0.25), -1.0f));
+  Vector3f direction(test_utils::randomFloatInRange(-0.25, 0.25),
+                     test_utils::randomFloatInRange(-0.25, 0.25), -1.0f);
 
-  // Get a depth map of our view of the plane.
-  const DepthImage depth_frame = test_utils::getDepthImage(plane, camera_);
+  primitives::Plane plane(Vector3f(0.f, 0.0f, 5.0f), direction.normalized());
+  Transform T_L_C = Transform::Identity();
+  DepthImage depth_frame =
+      test_utils::getPlaneDepthImage(plane, this->sensor(), T_L_C);
 
   if (FLAGS_nvblox_test_file_output) {
     std::string filepath = "./depth_frame_tsdf_test.png";
@@ -104,25 +123,23 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   }
 
   // Integrate into a layer
-  std::unique_ptr<ProjectiveTsdfIntegrator> integrator_ptr;
-  if (device_type == DeviceType::kCPU) {
-    integrator_ptr = std::make_unique<ProjectiveTsdfIntegratorCPU>();
-  } else {
-    integrator_ptr = std::make_unique<ProjectiveTsdfIntegrator>();
-  }
-  const Transform T_L_C = Transform::Identity();
+  std::unique_ptr<ProjectiveTsdfIntegrator> integrator_ptr =
+      this->create_integrator();
 
+  integrator_ptr->max_integration_distance_m(10.F);
   integrator_ptr->truncation_distance_vox(10.0f);
+
   integrator_ptr->integrateFrame(
       MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
-      camera_, &layer_);
+      this->sensor(), &(this->layer_));
 
   // Sample some points on the plane, within the camera view.
   constexpr int kNumberOfPointsToCheck = 1000;
   const Eigen::MatrixX2f u_random_C =
-      test_utils::getRandomPixelLocations(kNumberOfPointsToCheck, camera_);
-  const Eigen::MatrixX3f p_check_L =
-      test_utils::backProjectToPlaneVectorized(u_random_C, plane, camera_);
+      test_utils::getRandomPixelLocationsWhereDepthIsValid(
+          kNumberOfPointsToCheck, this->sensor(), depth_frame);
+  const Eigen::MatrixX3f p_check_L = test_utils::backProjectVectorized(
+      u_random_C, depth_frame, this->sensor());
 
   // Get the distance of these surface points
   std::vector<Vector3f> points_L;
@@ -132,7 +149,8 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   }
   std::vector<float> distances;
   std::vector<bool> success_flags;
-  interpolation::interpolateOnCPU(points_L, layer_, &distances, &success_flags);
+  interpolation::interpolateOnCPU(points_L, this->layer_, &distances,
+                                  &success_flags);
   EXPECT_EQ(success_flags.size(), kNumberOfPointsToCheck);
   EXPECT_EQ(distances.size(), success_flags.size());
 
@@ -142,22 +160,26 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
                                 const TsdfVoxel* voxel) {
     if (voxel->distance > max_distance) max_distance = voxel->distance;
   };
-  callFunctionOnAllVoxels<TsdfVoxel>(layer_, lambda);
-  const float nothing_integrator_indicator = voxel_size_m_;
+  callFunctionOnAllVoxels<TsdfVoxel>(this->layer_, lambda);
+  const float nothing_integrator_indicator = this->voxel_size_m_;
   EXPECT_GT(max_distance, nothing_integrator_indicator);
 
   // Check that all interpolations worked and that the distance is close to zero
   int num_failures = 0;
   int num_bad_flags = 0;
   for (size_t i = 0; i < distances.size(); i++) {
-    EXPECT_TRUE(success_flags[i]);
-    if (!success_flags[i]) {
-      num_bad_flags++;
+    // We only interpolate with the camera. The produced lidar grid is too
+    // sparse.
+    if constexpr (std::is_same<typename TypeParam::SensorType, Camera>::value) {
+      EXPECT_TRUE(success_flags[i]);
+      if (!success_flags[i]) {
+        num_bad_flags++;
+      }
     }
     EXPECT_NEAR(distances[i], 0.0f,
-                surface_reconstruction_allowable_distance_error_m_);
+                this->surface_reconstruction_allowable_distance_error_m_);
     if (std::abs(distances[i]) >
-        surface_reconstruction_allowable_distance_error_m_) {
+        this->surface_reconstruction_allowable_distance_error_m_) {
       num_failures++;
     }
   }
@@ -165,13 +187,13 @@ TEST_P(TsdfIntegratorTestParameterized, ReconstructPlane) {
   LOG(INFO) << "num_bad_flags: " << num_bad_flags << " / " << distances.size();
 }
 
-TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
+TYPED_TEST(TsdfIntegratorTestFixture, SphereSceneTest) {
   constexpr float kTrajectoryRadius = 4.0f;
   constexpr float kTrajectoryHeight = 2.0f;
   constexpr int kNumTrajectoryPoints = 80;
   constexpr float kTruncationDistanceVox = 2;
   constexpr float kTruncationDistanceMeters =
-      kTruncationDistanceVox * voxel_size_m_;
+      kTruncationDistanceVox * this->voxel_size_m_;
   // Maximum distance to consider for scene generation.
   constexpr float kMaxDist = 10.0;
   constexpr float kMinWeight = 1.0;
@@ -181,7 +203,7 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
 
   // Get the ground truth SDF of a sphere in a box.
   primitives::Scene scene = test_utils::getSphereInBox();
-  TsdfLayer gt_layer(voxel_size_m_, MemoryType::kUnified);
+  TsdfLayer gt_layer(this->voxel_size_m_, MemoryType::kUnified);
   scene.generateLayerFromScene(kTruncationDistanceMeters, &gt_layer);
 
   // Create an integrator.
@@ -196,12 +218,12 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
 
   // Create a depth frame. We share this memory buffer for the entire
   // trajectory.
-  DepthImage depth_frame(camera_.height(), camera_.width(),
+  DepthImage depth_frame(this->sensor().height(), this->sensor().width(),
                          MemoryType::kUnified);
 
   // Two layers, one for CPU integration and one for GPU integration
-  TsdfLayer layer_cpu(layer_.voxel_size(), MemoryType::kUnified);
-  TsdfLayer layer_gpu(layer_.voxel_size(), MemoryType::kUnified);
+  TsdfLayer layer_cpu(this->layer_.voxel_size(), MemoryType::kUnified);
+  TsdfLayer layer_gpu(this->layer_.voxel_size(), MemoryType::kUnified);
 
   for (size_t i = 0; i < kNumTrajectoryPoints; i++) {
     const float theta = radians_increment * i;
@@ -220,15 +242,16 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
     T_S_C.pretranslate(cartesian_coordinates);
 
     // Generate a depth image of the scene.
-    scene.generateDepthImageFromScene(camera_, T_S_C, kMaxDist, &depth_frame);
+    scene.generateDepthImageFromScene(this->sensor(), T_S_C, kMaxDist,
+                                      &depth_frame);
 
     // Integrate this depth image.
     integrator_cpu.integrateFrame(
         MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_S_C,
-        camera_, &layer_cpu);
+        this->sensor(), &layer_cpu);
     integrator_gpu.integrateFrame(
         MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_S_C,
-        camera_, &layer_gpu);
+        this->sensor(), &layer_gpu);
   }
 
   // Now do some checks...
@@ -310,10 +333,7 @@ TEST_F(TsdfIntegratorTestParameterized, SphereSceneTest) {
             << std::endl;
 }
 
-INSTANTIATE_TEST_CASE_P(DeviceTests, TsdfIntegratorTestParameterized,
-                        ::testing::Values(DeviceType::kCPU, DeviceType::kGPU));
-
-TEST_F(TsdfIntegratorTest, MarkUnobservedFree) {
+TEST(TsdfIntegratorTest, MarkUnobservedFree) {
   constexpr float voxel_size_m = 0.1;
   TsdfLayer tsdf_layer(voxel_size_m, MemoryType::kUnified);
 
@@ -342,7 +362,7 @@ TEST_F(TsdfIntegratorTest, MarkUnobservedFree) {
       });
 }
 
-TEST_F(TsdfIntegratorTest, GettersAndSetters) {
+TEST(TsdfIntegratorTest, GettersAndSetters) {
   ProjectiveTsdfIntegrator integrator;
   integrator.max_weight(1.0);
   EXPECT_EQ(integrator.max_weight(), 1.0);
@@ -356,40 +376,44 @@ TEST_F(TsdfIntegratorTest, GettersAndSetters) {
             WeightingFunctionType::kInverseSquareWeight);
 }
 
-TEST_F(TsdfIntegratorTest, WeightingFunction) {
+TYPED_TEST(TsdfIntegratorTestFixture, WeightingFunction) {
   // Integrator
-  ProjectiveTsdfIntegrator integrator;
-  integrator.max_weight(100.0);
+  std::unique_ptr<ProjectiveTsdfIntegrator> integrator_ptr =
+      this->create_integrator();
+  integrator_ptr->max_weight(100.0);
 
   // Check that weighting function gets initialized to the default
-  EXPECT_EQ(integrator.weighting_function_type(),
+  EXPECT_EQ(integrator_ptr->weighting_function_type(),
             kProjectiveIntegratorWeightingModeParamDesc.default_value);
 
   // Change to constant weight
-  integrator.weighting_function_type(WeightingFunctionType::kConstantWeight);
+  integrator_ptr->weighting_function_type(
+      WeightingFunctionType::kConstantWeight);
 
-  // Plane centered at (0,0,depth)
+  // Plane centered at (0,0,5)
+  Transform T_L_C = Transform::Identity();
   const float kPlaneDistance = 5.0f;
-  const test_utils::Plane plane = test_utils::Plane(
-      Vector3f(0.0f, 0.0f, kPlaneDistance), Vector3f(0.0f, 0.0f, -1.0f));
-
-  // Get a depth map of our view of the plane.
-  const DepthImage depth_frame = test_utils::getDepthImage(plane, camera_);
+  primitives::Plane plane(Vector3f(0.0f, 0.0f, kPlaneDistance),
+                          Vector3f(0.0f, 0.0f, -1.0f));
+  DepthImage depth_frame =
+      test_utils::getPlaneDepthImage(plane, this->sensor(), T_L_C);
 
   // Integrate a frame
+
   std::vector<Index3D> updated_blocks;
-  integrator.integrateFrame(
-      MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere),
-      Transform::Identity(), camera_, &layer_, &updated_blocks);
+  integrator_ptr->integrateFrame(
+      MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
+      this->sensor(), &this->layer_, &updated_blocks);
+
   // Check that something actually happened
   EXPECT_GT(updated_blocks.size(), 0);
 
   // Go over the voxels and check that they have the constant weight that we
   // expect.
   int num_voxels_observed = 0;
-  for (const Index3D& block_idx : layer_.getAllBlockIndices()) {
+  for (const Index3D& block_idx : this->layer_.getAllBlockIndices()) {
     // Get each voxel and it's position
-    auto block_ptr = layer_.getBlockAtIndex(block_idx);
+    auto block_ptr = this->layer_.getBlockAtIndex(block_idx);
     constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
     for (int x = 0; x < kVoxelsPerSide; x++) {
       for (int y = 0; y < kVoxelsPerSide; y++) {
@@ -411,17 +435,18 @@ TEST_F(TsdfIntegratorTest, WeightingFunction) {
   // Integrate using a different weighting function
   constexpr WeightingFunctionType kTestedWeightFunctionType =
       WeightingFunctionType::kInverseSquareWeight;
-  integrator.weighting_function_type(kTestedWeightFunctionType);
-  layer_.clear();
+  integrator_ptr->weighting_function_type(kTestedWeightFunctionType);
+  this->layer_.clear();
   updated_blocks.clear();
-  EXPECT_EQ(layer_.numBlocks(), 0);
+  EXPECT_EQ(this->layer_.numBlocks(), 0);
   EXPECT_EQ(updated_blocks.size(), 0);
-  integrator.integrateFrame(
+  integrator_ptr->integrateFrame(
       MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere),
-      Transform::Identity(), camera_, &layer_, &updated_blocks);
+      Transform::Identity(), this->sensor(), &this->layer_, &updated_blocks);
   // Check that something actually happened
   EXPECT_GT(updated_blocks.size(), 0);
-  EXPECT_EQ(integrator.weighting_function_type(), kTestedWeightFunctionType);
+  EXPECT_EQ(integrator_ptr->weighting_function_type(),
+            kTestedWeightFunctionType);
 
   // Weighting function to test against
   auto weighting_function = WeightingFunction(kTestedWeightFunctionType);
@@ -429,9 +454,9 @@ TEST_F(TsdfIntegratorTest, WeightingFunction) {
            static_cast<int>(kTestedWeightFunctionType));
 
   num_voxels_observed = 0;
-  for (const Index3D& block_idx : layer_.getAllBlockIndices()) {
+  for (const Index3D& block_idx : this->layer_.getAllBlockIndices()) {
     // Get each voxel and it's position
-    auto block_ptr = layer_.getBlockAtIndex(block_idx);
+    auto block_ptr = this->layer_.getBlockAtIndex(block_idx);
     constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
     for (int x = 0; x < kVoxelsPerSide; x++) {
       for (int y = 0; y < kVoxelsPerSide; y++) {
@@ -446,13 +471,24 @@ TEST_F(TsdfIntegratorTest, WeightingFunction) {
             const Index3D voxel_idx(x, y, z);
             const Vector3f voxel_center =
                 getCenterPositionFromBlockIndexAndVoxelIndex(
-                    layer_.block_size(), block_idx, voxel_idx);
-            const float voxel_depth = voxel_center.z();
+                    this->layer_.block_size(), block_idx, voxel_idx);
+            const float voxel_depth = this->sensor().getDepth(voxel_center);
 
-            // Calculating
-            const float weight = weighting_function(
-                kPlaneDistance, voxel_depth,
-                integrator.get_truncation_distance_m(layer_.voxel_size()));
+            // Look up the depth
+            Vector2f uv;
+            ASSERT_TRUE(this->sensor().project(voxel_center, &uv));
+            const float surface_depth = depth_frame(uv.y(), uv.x());
+
+            // In the camera case, surface depth == plane distance
+            if constexpr (std::is_same<typename TypeParam::SensorType,
+                                       Camera>::value) {
+              ASSERT_NEAR(surface_depth, kPlaneDistance, 1E-5);
+            }
+
+            const float weight =
+                weighting_function(surface_depth, voxel_depth,
+                                   integrator_ptr->get_truncation_distance_m(
+                                       this->layer_.voxel_size()));
 
             // Weight
             EXPECT_NEAR(voxel.weight, weight, kFloatEps);
@@ -473,28 +509,27 @@ TEST_F(TsdfIntegratorTest, WeightingFunction) {
   EXPECT_GT(num_voxels_observed, 0);
 }
 
-TEST_F(TsdfIntegratorTest, mask) {
-  constexpr int kWidth = 320;
-  constexpr int kHeight = 200;
-
+TYPED_TEST(TsdfIntegratorTestFixture, mask) {
   // Depth image with a constant depth
   constexpr float kDepth = 5.F;
-  DepthImage depth_frame(kWidth, kHeight, MemoryType::kHost);
-  for (int i = 0; i < depth_frame.numel(); ++i) {
-    depth_frame(i) = kDepth;
-  }
+  primitives::Plane plane(Vector3f(0.f, 0.0f, kDepth),
+                          Vector3f(0.f, 0.f, -1.f));
+  DepthImage depth_frame =
+      test_utils::getPlaneDepthImage(plane, this->sensor());
 
   // First integrate without mask to create blocks
-  ProjectiveTsdfIntegrator integrator;
+  std::unique_ptr<ProjectiveTsdfIntegrator> integrator_ptr =
+      this->create_integrator();
+
   std::vector<Index3D> updated_blocks;
-  integrator.integrateFrame(
+  integrator_ptr->integrateFrame(
       MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere),
-      Transform::Identity(), camera_, &layer_, &updated_blocks);
+      Transform::Identity(), this->sensor(), &this->layer_, &updated_blocks);
   EXPECT_GT(updated_blocks.size(), 0);
 
   // Set distance of all blocks to some reference value
   constexpr float kReference = 99.F;
-  auto block_pointers = layer_.getAllBlockPointers();
+  auto block_pointers = this->layer_.getAllBlockPointers();
   for (auto block_ptr : block_pointers) {
     for (auto& voxel : (*block_ptr)) {
       voxel.distance = kReference;
@@ -503,35 +538,58 @@ TEST_F(TsdfIntegratorTest, mask) {
 
   // Now, integrate with empty mask. This should only affect voxels in front of
   // the surface
-  MonoImage mask_frame(kWidth, kHeight, MemoryType::kHost);
+  MonoImage mask_frame(this->sensor().height(), this->sensor().width(),
+                       MemoryType::kHost);
+  ASSERT_EQ(mask_frame.cols(), depth_frame.cols());
+  ASSERT_EQ(mask_frame.rows(), depth_frame.rows());
+
   mask_frame.setZeroAsync(CudaStreamOwning());
-  integrator.integrateFrame({depth_frame, mask_frame}, Transform::Identity(),
-                            camera_, &layer_, &updated_blocks);
+  integrator_ptr->integrateFrame({depth_frame, mask_frame},
+                                 Transform::Identity(), this->sensor(),
+                                 &this->layer_, &updated_blocks);
   EXPECT_GT(updated_blocks.size(), 0);
 
   // Distance of voxels beyond positive truncation distance should equal to
   // reference value
   const float truncation_distance_m =
-      integrator.truncation_distance_vox() * voxel_size_m_;
+      integrator_ptr->truncation_distance_vox() * this->voxel_size_m_;
+  int num_voxels = 0;
+  int num_projected = 0;
   callFunctionOnAllVoxels<TsdfVoxel>(
-      layer_,
+      this->layer_,
       [&](const Index3D& block_index, const Index3D& voxel_index,
           const TsdfVoxel* voxel) -> void {
         const Vector3f pos = getCenterPositionFromBlockIndexAndVoxelIndex(
-            layer_.block_size(), block_index, voxel_index);
+            this->layer_.block_size(), block_index, voxel_index);
         constexpr float kEps = 1E-3;
-        if (pos.z() > kDepth - truncation_distance_m) {
-          EXPECT_NEAR(voxel->distance, kReference, kEps);
-        } else {
-          EXPECT_LT(voxel->distance, kReference + kEps);
+        Vector2f uv;
+        ++num_voxels;
+        if (this->sensor().project(pos, &uv)) {
+          ++num_projected;
+          const float depth = depth_frame(uv.y(), uv.x());
+          if constexpr (std::is_same<typename TypeParam::SensorType,
+                                     Camera>::value) {
+            EXPECT_NEAR(depth, kDepth, 1E-5);
+          }
+
+          if (this->sensor().getDepth(pos) > depth - truncation_distance_m) {
+            EXPECT_NEAR(voxel->distance, kReference, kEps);
+          } else {
+            EXPECT_LT(voxel->distance, kReference + kEps);
+          }
         }
         return;
       });
+
+  // Sanity check that we actually checked some voxels
+  EXPECT_GT(static_cast<float>(num_projected) / num_voxels, 0.5F);
 }
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   testing::InitGoogleTest(&argc, argv);
+  ::gflags::ParseCommandLineFlags(&argc, &argv, true);
   return RUN_ALL_TESTS();
 }

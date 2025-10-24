@@ -27,32 +27,6 @@ ProjectiveIntegrator<VoxelType>::ProjectiveIntegrator(
     : cuda_stream_(cuda_stream), view_calculator_(cuda_stream) {}
 
 template <typename VoxelType>
-float ProjectiveIntegrator<VoxelType>::
-    lidar_linear_interpolation_max_allowable_difference_vox() const {
-  return lidar_linear_interpolation_max_allowable_difference_vox_;
-}
-
-template <typename VoxelType>
-float ProjectiveIntegrator<VoxelType>::
-    lidar_nearest_interpolation_max_allowable_dist_to_ray_vox() const {
-  return lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_;
-}
-
-template <typename VoxelType>
-void ProjectiveIntegrator<VoxelType>::
-    lidar_linear_interpolation_max_allowable_difference_vox(float value) {
-  CHECK_GT(value, 0.0f);
-  lidar_linear_interpolation_max_allowable_difference_vox_ = value;
-}
-
-template <typename VoxelType>
-void ProjectiveIntegrator<VoxelType>::
-    lidar_nearest_interpolation_max_allowable_dist_to_ray_vox(float value) {
-  CHECK_GT(value, 0.0f);
-  lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ = value;
-}
-
-template <typename VoxelType>
 float ProjectiveIntegrator<VoxelType>::truncation_distance_vox() const {
   return truncation_distance_vox_;
 }
@@ -100,20 +74,11 @@ parameters::ParameterTreeNode ProjectiveIntegrator<VoxelType>::getParameterTree(
   const std::string name =
       (name_remap.empty()) ? "projective_integrator" : name_remap;
   return ParameterTreeNode(
-      name,
-      {ParameterTreeNode(
-           "lidar_linear_interpolation_max_allowable_difference_vox:",
-           std::to_string(
-               lidar_linear_interpolation_max_allowable_difference_vox_)),
-       ParameterTreeNode(
-           "lidar_nearest_interpolation_max_allowable_dist_to_ray_vox:",
-           std::to_string(
-               lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_)),
-       ParameterTreeNode("truncation_distance_vox:",
-                         std::to_string(truncation_distance_vox_)),
-       ParameterTreeNode("max_integration_distance_m:",
-                         std::to_string(max_integration_distance_m_)),
-       view_calculator_.getParameterTree()});
+      name, {ParameterTreeNode("truncation_distance_vox:",
+                               std::to_string(truncation_distance_vox_)),
+             ParameterTreeNode("max_integration_distance_m:",
+                               std::to_string(max_integration_distance_m_)),
+             view_calculator_.getParameterTree()});
 }
 
 }  // namespace nvblox

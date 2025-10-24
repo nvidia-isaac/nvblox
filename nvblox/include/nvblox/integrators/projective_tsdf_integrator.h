@@ -26,10 +26,10 @@ struct UpdateTsdfVoxelFunctor;
 
 /// A class performing TSDF intregration
 ///
-/// Integrates depth images and lidar scans into TSDF layers. The "projective"
+/// Integrates depth images into TSDF layers. The "projective"
 /// describes one type of integration. Namely that voxels in view are projected
 /// into the depth image (the alternative being casting rays out from the
-/// camera).
+/// sensor).
 class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
  public:
   ProjectiveTsdfIntegrator();
@@ -38,29 +38,16 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
 
   /// Integrates a depth image in to the passed TSDF layer.
   /// @param depth_frame A depth image.
-  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
-  /// points in the camera frame (C) to the layer frame (L).
-  /// @param camera A the camera (intrinsics) model.
+  /// @param T_L_C The pose of the sensor. Supplied as a Transform mapping
+  /// points in the sensor frame (C) to the layer frame (L).
+  /// @param sensor The sensor model.
   /// @param layer A pointer to the layer into which this observation will be
   /// intergrated.
   /// @param updated_blocks Optional pointer to a vector which will contain the
   /// 3D indices of blocks affected by the integration.
+  template <typename SensorType>
   void integrateFrame(const MaskedDepthImageConstView& depth_frame,
-                      const Transform& T_L_C, const Camera& camera,
-                      TsdfLayer* layer,
-                      std::vector<Index3D>* updated_blocks = nullptr);
-
-  /// Integrates a depth image in to the passed TSDF layer.
-  /// @param depth_frame A depth image.
-  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
-  /// points in the camera frame (C) to the layer frame (L).
-  /// @param lidar A the LiDAR model.
-  /// @param layer A pointer to the layer into which this observation will be
-  /// intergrated.
-  /// @param updated_blocks Optional pointer to a vector which will contain the
-  /// 3D indices of blocks affected by the integration.
-  void integrateFrame(const MaskedDepthImageConstView& depth_frame,
-                      const Transform& T_L_C, const Lidar& lidar,
+                      const Transform& T_L_C, const SensorType& sensor,
                       TsdfLayer* layer,
                       std::vector<Index3D>* updated_blocks = nullptr);
 

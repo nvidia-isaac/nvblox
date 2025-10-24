@@ -14,61 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <nvblox/integrators/projective_occupancy_integrator.h>
+#include <nvblox/integrators/internal/cuda/impl/projective_occupancy_integrator_impl.cuh>
 
-#include <nvblox/integrators/internal/cuda/impl/projective_integrator_impl.cuh>
-
+#include "nvblox/integrators/internal/cuda/impl/projective_integrator_impl.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/integrators/occupancy_integrator_params.h"
 
 namespace nvblox {
-
-struct UpdateOccupancyVoxelFunctor {
-  UpdateOccupancyVoxelFunctor() {}
-
-  __device__ bool operator()(const float surface_depth_measured,
-                             const float voxel_depth_m, const bool is_active,
-                             OccupancyVoxel* voxel_ptr) {
-    if (surface_depth_measured <= 0.F) {
-      return false;
-    }
-
-    // Get the update summand depending on the measured depth
-    float log_odds_update;
-
-    // Unobserved if the voxel is behind the object or if depth pixel is
-    // inactive
-    if (!is_active || voxel_depth_m > surface_depth_measured +
-                                          occupied_region_half_width_m_) {
-      log_odds_update = unobserved_region_log_odds_;
-    } else if (voxel_depth_m >
-               surface_depth_measured - occupied_region_half_width_m_) {
-      log_odds_update = occupied_region_log_odds_;
-    } else {
-      log_odds_update = free_region_log_odds_;
-    }
-
-    // Update and clip
-    float updated_log_odds = voxel_ptr->log_odds + log_odds_update;
-    voxel_ptr->log_odds =
-        fmax(kMinLogOdds_, fmin(updated_log_odds, kMaxLogOdds_));
-
-    return true;
-  }
-
-  // Sensor model parameters
-  float free_region_log_odds_ = logOddsFromProbability(
-      kFreeRegionOccupancyProbabilityParamDesc.default_value);
-  float occupied_region_log_odds_ = logOddsFromProbability(
-      kFreeRegionOccupancyProbabilityParamDesc.default_value);
-  float unobserved_region_log_odds_ = logOddsFromProbability(
-      kUnobservedRegionOccupancyProbabilityParamDesc.default_value);
-  float occupied_region_half_width_m_ =
-      kOccupiedRegionHalfWidthMParamDesc.default_value;
-
-  // Min and max values for clipping
-  const float kMaxLogOdds_ = logOddsFromProbability(0.99);
-  const float kMinLogOdds_ = logOddsFromProbability(0.01);
-};
 
 ProjectiveOccupancyIntegrator::ProjectiveOccupancyIntegrator()
     : ProjectiveOccupancyIntegrator(std::make_shared<CudaStreamOwning>()) {}
@@ -85,30 +37,6 @@ ProjectiveOccupancyIntegrator::~ProjectiveOccupancyIntegrator() {
   // NOTE(alexmillane): We can't default this in the header file because to the
   // unified_ptr to a forward declared type. The type has to be defined where
   // the destructor is.
-}
-
-void ProjectiveOccupancyIntegrator::integrateFrame(
-    const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-    const Camera& camera, OccupancyLayer* layer,
-    std::vector<Index3D>* updated_blocks) {
-  setFunctorParameters(layer->voxel_size());
-  ProjectiveIntegrator<OccupancyVoxel>::integrateFrame(
-      depth_frame, T_L_C, camera,
-      update_functor_host_ptr_.cloneAsync(MemoryType::kDevice, *cuda_stream_)
-          .get(),
-      layer, updated_blocks);
-}
-
-void ProjectiveOccupancyIntegrator::integrateFrame(
-    const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-    const Lidar& lidar, OccupancyLayer* layer,
-    std::vector<Index3D>* updated_blocks) {
-  setFunctorParameters(layer->voxel_size());
-  ProjectiveIntegrator<OccupancyVoxel>::integrateFrame(
-      depth_frame, T_L_C, lidar,
-      update_functor_host_ptr_.cloneAsync(MemoryType::kDevice, *cuda_stream_)
-          .get(),
-      layer, updated_blocks);
 }
 
 void ProjectiveOccupancyIntegrator::setFunctorParameters(

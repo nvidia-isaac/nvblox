@@ -138,18 +138,19 @@ class MultiMapper {
                            foreground_mapper_params = std::nullopt);
 
   /// @brief Integrates a depth frame into the reconstruction (for mapping type
-  /// kStaticTsdf/kStaticOccupancy/kDynamic).
-  /// @param depth_frameDepth frame to integrate.
-  /// @param T_L_CD Pose of the depth camera, specified as a transform from
-  ///              camera frame to layer frame transform.
-  /// @param depth_camera Intrinsics model of the depth camera.
+  /// kStaticTsdf/kStataicOccupancy/kDynamic).
+  /// @param depth_frame Depth frame to integrate.
+  /// @param T_L_CD Pose of the depth sensor, specified as a transform from
+  ///              sensor frame to layer frame transform.
+  /// @param depth_sensor Intrinsics model of the depth sensor.
   /// @param update_time_ms Current update time in millisecond.
+  template <typename SensorType>
   void integrateDepth(const DepthImage& depth_frame, const Transform& T_L_CD,
-                      const Camera& depth_camera,
+                      const SensorType& depth_sensor,
                       const std::optional<Time>& update_time_ms = std::nullopt);
 
-  /// @brief Integrates a depth frame into the reconstruction (for mapping type
-  /// kStaticTsdf/kStaticOccupancy/kDynamic).
+  /// @brief Integrates a depth camera with detection boxes into the
+  /// reconstruction (for mapping type kStaticTsdf/kStaticOccupancy/kDynamic).
   ///
   /// @param depth_frame Depth frame to integrate.
   /// @param detection_boxes Bounding boxes.
@@ -168,14 +169,16 @@ class MultiMapper {
   ///@param depth_frame Depth frame to integrate. Depth in the image is
   ///                   specified as a float representing meters.
   ///@param mask Mask. Interpreted as 0=background, >0=foreground.
-  ///@param T_L_CD Pose of the depth camera, specified as a transform from
-  ///              camera frame to layer frame transform.
-  ///@param T_CM_CD Transform from depth camera to mask camera frame.
-  ///@param depth_camera Intrinsics model of the depth camera.
-  ///@param mask_camera Intrinsics model of the mask camera.
+  ///@param T_L_CD Pose of the depth sensor, specified as a transform from
+  ///              sensor frame to layer frame transform.
+  ///@param T_CM_CD Transform from depth sensor to mask sensor frame.
+  ///@param depth_sensor Intrinsics model of the depth sensor.
+  ///@param mask_sensor Intrinsics model of the mask sensor.
+  template <typename SensorType>
   void integrateDepth(const DepthImage& depth_frame, const MonoImage& mask,
                       const Transform& T_L_CD, const Transform& T_CM_CD,
-                      const Camera& depth_camera, const Camera& mask_camera);
+                      const SensorType& depth_sensor,
+                      const SensorType& mask_sensor);
 
   /// @brief Integrates a depth frame into the reconstruction
   /// using the transformation between depth and bounding box frame and their
@@ -201,21 +204,23 @@ class MultiMapper {
   /// @brief Integrates a color frame into the reconstruction (for mapping
   /// type kStaticTsdf/kStaticOccupancy/kDynamic).
   /// @param color_frame Color image to integrate.
-  /// @param T_L_C Pose of the camera, specified as a transform from camera
+  /// @param T_L_C Pose of the sensor, specified as a transform from sensor
   /// frame to the layer frame.
-  /// @param camera Intrinsics model of the camera.
+  /// @param sensor Intrinsics model of the sensor.
+  template <typename SensorType>
   void integrateColor(const ColorImage& color_frame, const Transform& T_L_C,
-                      const Camera& camera);
+                      const SensorType& sensor);
 
   /// @brief Integrates a color frame into the reconstruction (for mapping
   /// type kHumanWithStaticTsdf/kHumanWithStaticOccupancy).
   ///@param color_frame Color image to integrate.
   ///@param mask Mask. Interpreted as 0=foreground, >0=background.
-  ///@param T_L_C Pose of the camera, specified as a transform from camera
+  ///@param T_L_C Pose of the sensor, specified as a transform from sensor
   ///             frame to the layer frame.
-  ///@param camera Intrinsics model of the camera.
+  ///@param sensor Intrinsics model of the sensor.
+  template <typename SensorType>
   void integrateColor(const ColorImage& color_frame, const MonoImage& mask,
-                      const Transform& T_L_C, const Camera& camera);
+                      const Transform& T_L_C, const SensorType& sensor);
 
   /// Integrated a color frame with a list of detection boxes.
   /// NOTE: Right now the detection boxes are ignored and the whole color frame
@@ -317,3 +322,5 @@ class MultiMapper {
 };
 
 }  // namespace nvblox
+
+#include "nvblox/mapper/internal/impl/multi_mapper_impl.h"

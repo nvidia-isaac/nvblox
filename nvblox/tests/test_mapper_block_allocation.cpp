@@ -249,9 +249,9 @@ struct MapperTestBlocksInLayers : public testing::Test {
   /// @brief Decay the projective layer.
   void decayLayers() {
     if (std::is_same<LayerType, TsdfLayer>::value) {
-      mapper_.decayTsdf();
+      mapper_.decayTsdfAllVoxels();
     } else {
-      mapper_.decayOccupancy();
+      mapper_.decayOccupancyAllVoxels();
     }
   }
 

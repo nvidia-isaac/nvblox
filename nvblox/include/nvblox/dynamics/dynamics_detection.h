@@ -1,5 +1,5 @@
 /*
-Copyright 2023 NVIDIA CORPORATION
+Copyright 2025 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,11 +37,13 @@ class DynamicsDetection {
   /// @brief Detect dynamics on the depth frames by comparing it to the tsdf
   /// @param depth_frame_C The depth frame.
   /// @param tsdf_layer_L  The tsdf layer.
-  /// @param camera The camera that belongs to the depth frame.
-  /// @param T_L_C  The transform from camera to tsdf layer.
+  /// @param sensor The sensor (camera or lidar) that belongs to the depth
+  /// frame.
+  /// @param T_L_C  The transform from sensor to tsdf layer.
+  template <typename SensorType>
   void computeDynamics(const DepthImage& depth_frame_C,
-                       const FreespaceLayer& tsdf_layer_L, const Camera& camera,
-                       const Transform& T_L_C);
+                       const FreespaceLayer& tsdf_layer_L,
+                       const SensorType& sensor, const Transform& T_L_C);
 
   /// @brief Gets the 3D points detected as dynamics on the last depth frame.
   /// @return The dynamic points as a 3*X matrix on host.

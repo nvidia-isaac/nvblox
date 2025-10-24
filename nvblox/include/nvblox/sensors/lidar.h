@@ -17,14 +17,16 @@ limitations under the License.
 
 #include "nvblox/core/types.h"
 #include "nvblox/sensors/image.h"
+#include "nvblox/sensors/sensor.h"
 
 namespace nvblox {
 
 /// Helper class for handling input LIDAR pointclouds and storing the LIDAR
 /// intrinsics. This helps convert a LIDAR pointcloud into a depth image.
-class Lidar {
+class Lidar : public SensorBase {
  public:
-  Lidar() = delete;
+  __host__ __device__ inline Lidar() = default;
+  __host__ __device__ inline ~Lidar() = default;
 
   /// LiDAR constructor. This constructor assumes beams distributed evenly
   /// around zero.
@@ -56,18 +58,19 @@ class Lidar {
                                    float max_valid_range_m,
                                    float min_angle_below_zero_elevation_rad,
                                    float max_angle_above_zero_elevation_rad);
-  __host__ __device__ inline ~Lidar() = default;
 
   /// Returns if the point is in the valid range of the lidar
   __host__ __device__ inline bool isInValidRange(const Vector3f& p_C) const;
 
   /// Projects a 3D point to the (floating-point) image plane
-  __host__ __device__ inline bool project(const Vector3f& p_C,
-                                          Vector2f* u_C) const;
+  __host__ __device__ inline bool project(
+      const Vector3f& p_C, Vector2f* u_C, const float unused = -1.F,
+      const bool check_viewport = true) const;
 
   /// Projects a 3D point to the (index-based) image plane
-  __host__ __device__ inline bool project(const Vector3f& p_C,
-                                          Index2D* u_C) const;
+  __host__ __device__ inline bool project(
+      const Vector3f& p_C, Index2D* u_C, const float unused = -1.F,
+      const bool check_viewport = true) const;
 
   /// Gets the depth of a point
   __host__ __device__ inline float getDepth(const Vector3f& p_C) const;
@@ -97,6 +100,13 @@ class Lidar {
       const float,  // for compatibility with camera interface
       const float max_depth) const;
 
+  /// Interpolation that takes the sparsity of a lidar-generated depth image
+  /// into account.
+  __host__ __device__ inline bool interpolateDepthImage(
+      const DepthImageConstView frame, const Vector2f& u_px,
+      const Vector3f& p_voxel_center_C, const float voxel_size,
+      float* image_value, Index2D* u_px_closest_ptr = nullptr) const;
+
   __host__ __device__ inline int num_azimuth_divisions() const;
   __host__ __device__ inline int num_elevation_divisions() const;
   __host__ __device__ inline float min_valid_range_m() const;
@@ -106,6 +116,38 @@ class Lidar {
   __host__ __device__ inline int numel() const;
   __host__ __device__ inline int rows() const;
   __host__ __device__ inline int cols() const;
+  __host__ __device__ inline int height() const;
+  __host__ __device__ inline int width() const;
+
+  /// Get the sensor modality identifier
+  /// @return The sensor modality (kLidar).
+  __host__ __device__ static constexpr SensorModality sensor_modality() {
+    return SensorModality::kLidar;
+  }
+
+  /// A parameter getter
+  __host__ __device__ float linear_interpolation_max_allowable_difference_vox()
+      const {
+    return linear_interpolation_max_allowable_difference_vox_;
+  }
+
+  /// A parameter setter
+  __host__ __device__ void linear_interpolation_max_allowable_difference_vox(
+      const float value) {
+    linear_interpolation_max_allowable_difference_vox_ = value;
+  }
+
+  /// A parameter getter
+  __host__ __device__ float
+  nearest_interpolation_max_allowable_dist_to_ray_vox() const {
+    return nearest_interpolation_max_allowable_dist_to_ray_vox_;
+  }
+
+  /// A parameter setter
+  __host__ __device__ void nearest_interpolation_max_allowable_dist_to_ray_vox(
+      const float value) {
+    nearest_interpolation_max_allowable_dist_to_ray_vox_ = value;
+  }
 
   /// Equality
   __host__ inline friend bool operator==(const Lidar& lhs, const Lidar& rhs);
@@ -117,19 +159,23 @@ class Lidar {
 
  private:
   // Core parameters
-  int num_azimuth_divisions_;
-  int num_elevation_divisions_;
-  float min_valid_range_m_;
-  float max_valid_range_m_;
-  float vertical_fov_rad_;
-  float start_polar_angle_rad_;
+  int num_azimuth_divisions_ = 0;
+  int num_elevation_divisions_ = 0;
+  float min_valid_range_m_ = 0.F;
+  float max_valid_range_m_ = 0.F;
+  float vertical_fov_rad_ = 0.F;
+  float start_polar_angle_rad_ = 0.F;
 
   // Dependent parameters
-  float start_azimuth_angle_rad_;
-  float elevation_pixels_per_rad_;
-  float azimuth_pixels_per_rad_;
-  float rads_per_pixel_elevation_;
-  float rads_per_pixel_azimuth_;
+  float start_azimuth_angle_rad_ = 0.F;
+  float elevation_pixels_per_rad_ = 0.F;
+  float azimuth_pixels_per_rad_ = 0.F;
+  float rads_per_pixel_elevation_ = 0.F;
+  float rads_per_pixel_azimuth_ = 0.F;
+
+  // Interpolation parameters
+  float linear_interpolation_max_allowable_difference_vox_ = 2.0f;
+  float nearest_interpolation_max_allowable_dist_to_ray_vox_ = 0.5f;
 };
 
 // Equality
@@ -137,19 +183,6 @@ __host__ inline bool operator==(const Lidar& lhs, const Lidar& rhs);
 
 // Stream LiDAR as text
 __host__ inline std::ostream& operator<<(std::ostream& os, const Lidar& camera);
-
-// Tests for equality of both intrinsics and extrinsics.
-__host__ inline bool areLidarsEqual(const Lidar& lidar_1, const Lidar& lidar_2,
-                                    const Transform& T_L_C1,
-                                    const Transform& T_L_C2);
-
-// LiDAR GPU interpolation
-__device__ inline bool interpolateLidarImage(
-    const Lidar& lidar, const Vector3f& p_voxel_center_C,
-    const DepthImageConstView frame, const Vector2f& u_px,
-    const float linear_interpolation_max_allowable_difference_m,
-    const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
-    float* image_value, Index2D* u_px_closest_ptr);
 
 }  // namespace nvblox
 

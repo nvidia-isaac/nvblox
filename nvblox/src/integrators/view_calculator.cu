@@ -18,6 +18,7 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_vector.h"
 #include "nvblox/geometry/bounding_boxes.h"
+#include "nvblox/geometry/transforms.h"
 #include "nvblox/integrators/view_calculator.h"
 #include "nvblox/rays/ray_caster.h"
 #include "nvblox/utils/timing.h"
@@ -29,7 +30,7 @@ ViewCalculator::ViewCalculator()
 
 ViewCalculator::ViewCalculator(std::shared_ptr<CudaStream> cuda_stream)
     : raycasting_viewpoint_cache_(std::make_shared<ViewpointCache>()),
-      planes_viewpoint_cache_(std::make_shared<ViewpointCache>()),
+      projection_viewpoint_cache_(std::make_shared<ViewpointCache>()),
       cuda_stream_(cuda_stream) {}
 
 unsigned int ViewCalculator::raycast_subsampling_factor() const {
@@ -91,7 +92,7 @@ std::shared_ptr<ViewpointCache> ViewCalculator::get_viewpoint_cache(
     case CalculationType::kRaycasting:
       return raycasting_viewpoint_cache_;
     case CalculationType::kPlanes:
-      return planes_viewpoint_cache_;
+      return projection_viewpoint_cache_;
     default:
       CHECK(false)
           << "Requested viewpoint calculation type is not implemented.";
@@ -107,7 +108,7 @@ void ViewCalculator::set_viewpoint_cache(
       raycasting_viewpoint_cache_ = viewpoint_cache;
       break;
     case CalculationType::kPlanes:
-      planes_viewpoint_cache_ = viewpoint_cache;
+      projection_viewpoint_cache_ = viewpoint_cache;
       break;
     default:
       CHECK(false)
@@ -225,13 +226,17 @@ __global__ void combinedBlockIndicesInImageKernel(
   if (depth <= 0.0f) {
     return;
   }
-  if (max_integration_distance_m > 0.0f && depth > max_integration_distance_m) {
-    depth = max_integration_distance_m;
-  }
 
   // Ok now project this thing into space.
-  Vector3f p_C = (depth + max_integration_distance_behind_surface_m) *
-                 camera.vectorFromPixelIndices(Index2D(pixel_col, pixel_row));
+  Vector3f p_C = camera.unprojectFromPixelIndices(
+      Index2D(pixel_col, pixel_row),
+      depth + max_integration_distance_behind_surface_m);
+
+  // Truncate if we're exceeding max integration distance
+  if (max_integration_distance_m > 0.0f &&
+      p_C.norm() > max_integration_distance_m) {
+    p_C = p_C.normalized() * max_integration_distance_m;
+  }
   Vector3f p_L = T_L_C * p_C;
 
   // Now we have the position of the thing in space. Now we need the block
@@ -242,15 +247,16 @@ __global__ void combinedBlockIndicesInImageKernel(
   // Ok raycast to the correct point in the block.
   RayCaster raycaster(T_L_C.translation() / block_size, p_L / block_size);
   Index3D ray_index = Index3D::Zero();
+
   while (raycaster.nextRayIndex(&ray_index)) {
     setIndexUpdated(ray_index, aabb_min, aabb_size, aabb_updated);
   }
 }
 
 template <typename SensorType>
-std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
+std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
     const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-    const SensorType& camera, const float block_size,
+    const SensorType& sensor, const float block_size,
     const float max_integration_distance_behind_surface_m,
     const float max_integration_distance_m) {
   timing::Timer total_timer("view_calculator/raycast");
@@ -258,7 +264,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   CHECK_NOTNULL(raycasting_viewpoint_cache_);
   if (cache_last_viewpoint_) {
     if (auto cached_result =
-            raycasting_viewpoint_cache_->getCachedResult(T_L_C, camera);
+            raycasting_viewpoint_cache_->getCachedResult(T_L_C, sensor);
         cached_result.has_value()) {
       return cached_result.value();
     }
@@ -268,7 +274,10 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
 
   // Aight so first we have to get the AABB of this guy.
   AxisAlignedBoundingBox aabb_L =
-      camera.getViewAABB(T_L_C, 0.0f, max_integration_distance_m);
+      sensor.getViewAABB(T_L_C, 0.0f, max_integration_distance_m);
+  NVBLOX_CHECK(aabb_L.volume() > 0, "Empty bounding box");
+  NVBLOX_CHECK(!std::isinf(aabb_L.volume()), "Infinite bounding box");
+  NVBLOX_CHECK(!std::isnan(aabb_L.volume()), "Nan bounding box");
 
   // Apply the workspace bounds,
   // i.e. make sure we only return blocks that are within the workspace limits.
@@ -305,7 +314,7 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
   setup_timer.Stop();
 
   // Raycast
-  getBlocksByRaycastingPixelsAsync(T_L_C, camera, depth_frame, block_size,
+  getBlocksByRaycastingPixelsAsync(T_L_C, sensor, depth_frame, block_size,
                                    max_integration_distance_behind_surface_m,
                                    max_integration_distance_m, min_index,
                                    aabb_size, aabb_device_buffer_.data());
@@ -324,37 +333,15 @@ std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycastTemplate(
 
   // Cache
   if (cache_last_viewpoint_) {
-    raycasting_viewpoint_cache_->storeResultInCache(T_L_C, camera,
+    raycasting_viewpoint_cache_->storeResultInCache(T_L_C, sensor,
                                                     output_vector);
   }
   return output_vector;
 }
 
-// Camera
-std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
-    const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-    const Camera& camera, const float block_size,
-    const float max_integration_distance_behind_surface_m,
-    const float max_integration_distance_m) {
-  return getBlocksInImageViewRaycastTemplate(
-      depth_frame, T_L_C, camera, block_size,
-      max_integration_distance_behind_surface_m, max_integration_distance_m);
-}
-
-// Lidar
-std::vector<Index3D> ViewCalculator::getBlocksInImageViewRaycast(
-    const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-    const Lidar& lidar, const float block_size,
-    const float max_integration_distance_behind_surface_m,
-    const float max_integration_distance_m) {
-  return getBlocksInImageViewRaycastTemplate(
-      depth_frame, T_L_C, lidar, block_size,
-      max_integration_distance_behind_surface_m, max_integration_distance_m);
-}
-
 template <typename SensorType>
 void ViewCalculator::getBlocksByRaycastingPixelsAsync(
-    const Transform& T_L_C, const SensorType& camera,
+    const Transform& T_L_C, const SensorType& sensor,
     const MaskedDepthImageConstView& depth_frame, float block_size,
     const float max_integration_distance_behind_surface_m,
     const float max_integration_distance_m, const Index3D& min_index,
@@ -381,7 +368,7 @@ void ViewCalculator::getBlocksByRaycastingPixelsAsync(
 
   combinedBlockIndicesInImageKernel<<<block_dim, thread_dim, 0,
                                       *cuda_stream_>>>(
-      T_L_C, camera, depth_frame.dataConstPtr(), depth_frame.rows(),
+      T_L_C, sensor, depth_frame.dataConstPtr(), depth_frame.rows(),
       depth_frame.cols(), block_size, max_integration_distance_m,
       max_integration_distance_behind_surface_m, raycast_subsampling_factor_,
       min_index, aabb_size, aabb_updated_cuda);
@@ -389,171 +376,44 @@ void ViewCalculator::getBlocksByRaycastingPixelsAsync(
   combined_kernel_timer.Stop();
 }
 
-std::vector<Index3D> ViewCalculator::getBlocksInViewPlanes(
-    const Transform& T_L_C, const Camera& camera, const float block_size,
-    const float max_distance) {
-  CHECK_GT(max_distance, 0.0f);
-  timing::Timer("view_calculator/get_blocks_in_view_planes");
-  // Check cache
-  CHECK_NOTNULL(planes_viewpoint_cache_);
-  if (cache_last_viewpoint_) {
-    if (auto cached_result =
-            planes_viewpoint_cache_->getCachedResult(T_L_C, camera);
-        cached_result.has_value()) {
-      return cached_result.value();
-    }
-  }
-
-  // Project all block centers into the image and check if they are
-  // inside the image viewport.
-
-  // View frustum with small positive min distance to avoid div-by-zero
-  constexpr float kMinDistance = 1E-6f;
-  const Frustum frustum =
-      camera.getViewFrustum(T_L_C, kMinDistance, max_distance);
-
-  // Coarse bound: AABB
-  AxisAlignedBoundingBox aabb_L = frustum.getAABB();
-
-  // Apply the workspace bounds,
-  // i.e. make sure we only return blocks that are within the workspace limits.
-  if (!applyWorkspaceBounds(aabb_L, workspace_bounds_type_,
-                            workspace_bounds_min_corner_m(),
-                            workspace_bounds_max_corner_m(), &aabb_L)) {
-    // Return an empty vector of blocks to update if the workspace is not valid
-    // (i.e. empty).
-    return std::vector<Index3D>();
-  }
-
-  const std::vector<Index3D> block_indices_in_aabb =
-      getBlockIndicesTouchedByBoundingBox(block_size, aabb_L);
+// Specialization for Camera that speeds up computation by making use of
+// normalized image coordinates.
+template <>
+std::vector<Index3D> ViewCalculator::getVisibleBlocksByProjection<Camera>(
+    const std::vector<Index3D>& block_indices, const Camera& camera,
+    const Transform& T_C_L, const float block_size, const float min_distance) {
+  // Extract rotation and translation component
+  const Eigen::Matrix3f rotation_C_L = T_C_L.rotation();
+  const Eigen::Vector3f translation_C_L = T_C_L.translation();
 
   // Get the 2D viewport of the camera. We use normalized image
   // coordinates rather than pixels to avoid having to apply the
   // camera intrinsics to each point we want to check. A small margin
   // is added to also capture blocks which intersect a frustum plane
   // but have their center point outside the plane.
-  constexpr float kMargin{10.F};
-  CameraViewport normalized_viewport = camera.getNormalizedViewport(kMargin);
+  const CameraViewport normalized_viewport =
+      camera.getNormalizedViewport(getViewportMargin(camera.height()));
 
-  // Get the transform to camera from layer. To save some extra
-  // cycles, we extract the rotation and translation components rather
-  // than multiplying with the whole 4x4 matrix.
-  const Transform T_C_L = T_L_C.inverse();
-  const Eigen::Matrix3f rotation_C_L = T_C_L.rotation();
-  const Eigen::Vector3f translation_C_L = T_C_L.translation();
+  std::vector<Index3D> block_indices_in_view;
 
-  std::vector<Index3D> block_indices_in_frustum;
-  for (const Index3D& block_index : block_indices_in_aabb) {
+  for (const Index3D& block_index : block_indices) {
     // Transform the block center into camera frame
     const Eigen::Vector3f p3d_layer =
         getCenterPositionFromBlockIndex(block_size, block_index);
     const Eigen::Vector3f p3d_cam = rotation_C_L * p3d_layer + translation_C_L;
 
-    if (p3d_cam[2] > kMinDistance) {
+    if (p3d_cam[2] > min_distance) {
       // Project into normalized camera coordinates
       Eigen::Vector2f p2d_normalized_cam;
-      camera.projectToNormalizedCoordinates(p3d_cam, &p2d_normalized_cam);
-
-      // Check if the projected point is inside the viewport
-      if (normalized_viewport.contains(p2d_normalized_cam)) {
-        block_indices_in_frustum.push_back(block_index);
+      if (camera.projectToNormalizedCoordinates(p3d_cam, &p2d_normalized_cam)) {
+        // Check if the projected point is inside the viewport
+        if (normalized_viewport.contains(p2d_normalized_cam)) {
+          block_indices_in_view.push_back(block_index);
+        }
       }
     }
   }
-  // Cache
-  if (cache_last_viewpoint_) {
-    planes_viewpoint_cache_->storeResultInCache(T_L_C, camera,
-                                                block_indices_in_frustum);
-  }
-  return block_indices_in_frustum;
-}
-
-std::optional<std::vector<Index3D>> ViewpointCache::getCachedResult(
-    const Transform& T_L_C, const Camera& camera) const {
-  CHECK_EQ(camera_cache_.size(), pose_cache_.size());
-  CHECK_EQ(camera_cache_.size(), blocks_in_view_cache_.size());
-
-  if (pose_cache_.empty() || camera_cache_.empty()) {
-    return std::nullopt;
-  }
-
-  // Iterate through the cache and check if anything fits the
-  // current pose and camera.
-  bool cache_hit = false;
-  size_t cache_hit_idx = 0;
-  for (size_t i = 0; i < camera_cache_.size(); i++) {
-    if (areCamerasEqual(camera, camera_cache_[i], T_L_C, pose_cache_[i])) {
-      cache_hit = true;
-      cache_hit_idx = i;
-      break;
-    }
-  }
-
-  // Return the cached result if there is any.
-  if (!cache_hit) {
-    return std::nullopt;
-  }
-  return blocks_in_view_cache_[cache_hit_idx];
-}
-
-std::optional<std::vector<Index3D>> ViewpointCache::getCachedResult(
-    const Transform& T_L_C, const Lidar& lidar) const {
-  CHECK_EQ(lidar_cache_.size(), pose_cache_.size());
-  CHECK_EQ(lidar_cache_.size(), blocks_in_view_cache_.size());
-  if (pose_cache_.empty() || lidar_cache_.empty()) {
-    return std::nullopt;
-  }
-
-  // Iterate through the cache and check if anything fits the current
-  // pose and lidar.
-  bool cache_hit = false;
-  size_t cache_hit_idx = 0;
-  for (size_t i = 0; i < lidar_cache_.size(); i++) {
-    if (areLidarsEqual(lidar, lidar_cache_[i], T_L_C, pose_cache_[i])) {
-      cache_hit = true;
-      cache_hit_idx = i;
-      break;
-    }
-  }
-
-  // Return the cached result if there is any.
-  if (!cache_hit) {
-    return std::nullopt;
-  }
-  return blocks_in_view_cache_[cache_hit_idx];
-}
-
-void ViewpointCache::storeResultInCache(
-    const Transform& T_L_C, const Camera& camera,
-    const std::vector<Index3D>& blocks_in_view) {
-  CHECK_EQ(camera_cache_.size(), pose_cache_.size());
-  CHECK_EQ(camera_cache_.size(), blocks_in_view_cache_.size());
-  if (camera_cache_.size() == kMaxCacheSize) {
-    // Remove the oldest element.
-    pose_cache_.pop_back();
-    camera_cache_.pop_back();
-    blocks_in_view_cache_.pop_back();
-  }
-  pose_cache_.push_front(T_L_C);
-  camera_cache_.push_front(camera);
-  blocks_in_view_cache_.push_front(blocks_in_view);
-}
-
-void ViewpointCache::storeResultInCache(
-    const Transform& T_L_C, const Lidar& lidar,
-    const std::vector<Index3D>& blocks_in_view) {
-  CHECK_EQ(lidar_cache_.size(), pose_cache_.size());
-  CHECK_EQ(lidar_cache_.size(), blocks_in_view_cache_.size());
-  if (lidar_cache_.size() == kMaxCacheSize) {
-    // Remove the oldest element.
-    pose_cache_.pop_back();
-    lidar_cache_.pop_back();
-    blocks_in_view_cache_.pop_back();
-  }
-  pose_cache_.push_front(T_L_C);
-  lidar_cache_.push_front(lidar);
-  blocks_in_view_cache_.push_front(blocks_in_view);
+  return block_indices_in_view;
 }
 
 }  // namespace nvblox

@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include <Eigen/Core>
+#include <cmath>
 
 namespace nvblox {
 namespace interpolation {
@@ -98,7 +99,7 @@ template <typename ElementType>
 struct PixelNotNan {
   __host__ __device__ constexpr static inline bool check(
       const ElementType& pixel_value) {
-    return !isnan(pixel_value);
+    return !std::isnan(pixel_value);
   }
 };
 struct FloatPixelGreaterThanZero {

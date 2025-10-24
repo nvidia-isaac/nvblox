@@ -104,9 +104,6 @@ void Mapper::setMapperParams(const MapperParams& params) {
   esdf_integrator().max_site_distance_vox(
       params.esdf_integrator_params.esdf_integrator_max_site_distance_vox);
 
-  // Decay
-  exclude_last_view_from_decay(params.exclude_last_view_from_decay);
-
   // ======= PROJECTIVE INTEGRATOR (TSDF/COLOR/OCCUPANCY)
   // max integration distance
   tsdf_integrator().max_integration_distance_m(
@@ -146,6 +143,8 @@ void Mapper::setMapperParams(const MapperParams& params) {
   color_integrator().weighting_function_type(
       params.projective_integrator_params.projective_integrator_weighting_mode);
   feature_integrator().weighting_function_type(
+      params.projective_integrator_params.projective_integrator_weighting_mode);
+  lidar_tsdf_integrator().weighting_function_type(
       params.projective_integrator_params.projective_integrator_weighting_mode);
   // max weight
   tsdf_integrator().max_weight(
@@ -193,6 +192,8 @@ void Mapper::setMapperParams(const MapperParams& params) {
 
   // ======= VIEW CALCULATOR =======
   tsdf_integrator().view_calculator().raycast_subsampling_factor(
+      params.view_calculator_params.raycast_subsampling_factor);
+  lidar_tsdf_integrator().view_calculator().raycast_subsampling_factor(
       params.view_calculator_params.raycast_subsampling_factor);
   tsdf_integrator().view_calculator().workspace_bounds_type(
       params.view_calculator_params.workspace_bounds_type);
@@ -280,6 +281,9 @@ void Mapper::setMapperParams(const MapperParams& params) {
           .min_consecutive_occupancy_duration_for_reset_ms);
   freespace_integrator().check_neighborhood(
       params.freespace_integrator_params.check_neighborhood);
+  freespace_integrator().initialize_to_high_confidence_freespace(
+      params.freespace_integrator_params
+          .initialize_to_high_confidence_freespace);
 }
 
 TsdfLayer& Mapper::tsdf_layer() {
@@ -349,232 +353,20 @@ const DepthImage& Mapper::preprocessDepthImageAsync(
   return *preprocessed_depth_image_;
 }
 
-void Mapper::integrateDepth(const DepthImage& depth_frame,
-                            const Transform& T_L_C, const Camera& camera) {
-  integrateDepth(MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere),
-                 T_L_C, camera);
+void Mapper::decayTsdfAllVoxels() {
+  using DummySensor = Camera;
+  decayTsdfInternal<DummySensor>(std::nullopt);
 }
 
-void Mapper::integrateDepth(const MaskedDepthImageConstView& depth_frame,
-                            const Transform& T_L_C, const Camera& camera) {
-  CHECK(projective_layer_type_ != ProjectiveLayerType::kNone)
-      << "You are trying to update on an inexistent projective layer.";
-  // If requested, we perform preprocessing of the depth image. At the moment
-  // this is just (optional) dilation of the invalid regions.
-  MaskedDepthImageConstView depth_image_for_integration = depth_frame;
-  if (do_depth_preprocessing_) {
-    depth_image_for_integration = MaskedDepthImageConstView(
-        preprocessDepthImageAsync(depth_frame), depth_frame.mask());
-  }
-
-  // Call the integrator.
-  std::vector<Index3D> updated_blocks;
-  if (hasTsdfLayer(projective_layer_type_)) {
-    tsdf_integrator_.integrateFrame(
-        MaskedDepthImageConstView(depth_image_for_integration), T_L_C, camera,
-        layers_.getPtr<TsdfLayer>(), &updated_blocks);
-
-    layers_.getPtr<TsdfLayer>()->updateGpuHash(*cuda_stream_);
-  } else if (projective_layer_type_ == ProjectiveLayerType::kOccupancy) {
-    occupancy_integrator_.integrateFrame(
-        depth_image_for_integration, T_L_C, camera,
-        layers_.getPtr<OccupancyLayer>(), &updated_blocks);
-
-    layers_.getPtr<OccupancyLayer>()->updateGpuHash(*cuda_stream_);
-  }
-
-  // Save the viewpoint for use in viewpoint exclusion.
-  if (exclude_last_view_from_decay_) {
-    if (!last_depth_image_.has_value()) {
-      LOG(INFO) << "Allocating space for last depth image";
-      last_depth_image_ =
-          DepthImage(depth_image_for_integration.rows(),
-                     depth_image_for_integration.cols(), MemoryType::kDevice);
-    } else {
-      last_depth_image_.value().resizeAsync(depth_image_for_integration.rows(),
-                                            depth_image_for_integration.cols(),
-                                            *cuda_stream_);
-    }
-
-    // NOTE(alexmillane): We could get rid this copy by using a double buffer.
-    last_depth_image_.value().copyFromAsync(depth_image_for_integration,
-                                            *cuda_stream_);
-    last_depth_camera_ = camera;
-    last_depth_T_L_C_ = T_L_C;
-  }
-
-  blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
-}
-
-void Mapper::integrateLidarDepth(const DepthImage& depth_frame,
-                                 const Transform& T_L_C, const Lidar& lidar) {
-  CHECK(projective_layer_type_ != ProjectiveLayerType::kNone)
-      << "You are trying to update on an inexistent projective layer.";
-  // Call the integrator.
-  std::vector<Index3D> updated_blocks;
-  if (hasTsdfLayer(projective_layer_type_)) {
-    lidar_tsdf_integrator_.integrateFrame(
-        MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
-        lidar, layers_.getPtr<TsdfLayer>(), &updated_blocks);
-
-    layers_.getPtr<TsdfLayer>()->updateGpuHash(*cuda_stream_);
-  } else if (projective_layer_type_ == ProjectiveLayerType::kOccupancy) {
-    lidar_occupancy_integrator_.integrateFrame(
-        MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
-        lidar, layers_.getPtr<OccupancyLayer>(), &updated_blocks);
-
-    layers_.getPtr<OccupancyLayer>()->updateGpuHash(*cuda_stream_);
-  }
-
-  blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
-}
-
-void Mapper::integrateColor(const ColorImage& color_frame,
-                            const Transform& T_L_C, const Camera& camera) {
-  integrateColor(MaskedColorImageConstView(color_frame, kMaskActiveEverywhere),
-                 T_L_C, camera);
-}
-
-void Mapper::integrateColor(const MaskedColorImageConstView& color_frame,
-                            const Transform& T_L_C, const Camera& camera) {
-  // Color is only integrated for Tsdf layers (not for occupancy)
-  if (hasTsdfLayer(projective_layer_type_)) {
-    std::vector<Index3D> updated_blocks;
-    color_integrator_.integrateFrame(
-        color_frame, T_L_C, camera, layers_.get<TsdfLayer>(),
-        layers_.getPtr<ColorLayer>(), &updated_blocks);
-
-    layers_.getPtr<ColorLayer>()->updateGpuHash(*cuda_stream_);
-    blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
-  }
-}
-
-void Mapper::integrateFeatures(const MaskedFeatureImageConstView& feature_frame,
-                               const Transform& T_L_C, const Camera& camera) {
-  // Features are only integrated for Tsdf layers (not for occupancy)
-  if (hasTsdfLayer(projective_layer_type_)) {
-    std::vector<Index3D> updated_blocks;
-    feature_integrator_.integrateFrame(
-        feature_frame, T_L_C, camera, layers_.get<TsdfLayer>(),
-        layers_.getPtr<FeatureLayer>(), &updated_blocks);
-
-    layers_.getPtr<FeatureLayer>()->updateGpuHash(*cuda_stream_);
-    blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
-  }
-}
-
-void Mapper::decayTsdf() {
-  // TODO(remos): In the future we could exclude the blocks not decayed, from
-  // the blocks requiring an update.
-  const std::vector<Index3D> all_blocks =
-      layers_.get<TsdfLayer>().getAllBlockIndices();
-  blocks_to_update_tracker_.addBlocksToUpdate(all_blocks);
-
-  // Decay - either all blocks or exclude a view
-  std::vector<Index3D> removed_blocks;
-  if (exclude_last_view_from_decay_) {
-    if (last_depth_image_.has_value() && last_depth_camera_.has_value() &&
-        last_depth_T_L_C_.has_value()) {
-      removed_blocks = tsdf_decay_integrator_.decay(
-          layers_.getPtr<TsdfLayer>(),
-          ViewBasedInclusionData(
-              last_depth_T_L_C_.value(), last_depth_camera_.value(),
-              last_depth_image_, tsdf_integrator_.max_integration_distance_m(),
-              tsdf_integrator_.get_truncation_distance_m(voxel_size_m_)),
-          *cuda_stream_);
-    }
-  } else {
-    removed_blocks = tsdf_decay_integrator_.decay(layers_.getPtr<TsdfLayer>(),
-                                                  *cuda_stream_);
-  }
-
-  // Clear the blocks that got removed in the tsdf layer also in the esdf,
-  // freespace and mesh layers.
-  clearBlocksInLayers(removed_blocks);
-  layers_.getPtr<TsdfLayer>()->updateGpuHash(*cuda_stream_);
-}
-
-void Mapper::decayOccupancy() {
-  // TODO(remos): In the future we could exclude the blocks not decayed, from
-  // the blocks requiring an update.
-  const std::vector<Index3D> all_blocks =
-      layers_.get<OccupancyLayer>().getAllBlockIndices();
-  blocks_to_update_tracker_.addBlocksToUpdate(all_blocks);
-
-  // Decay - either all blocks or exclude a view
-  std::vector<Index3D> removed_blocks;
-  if (exclude_last_view_from_decay_) {
-    if (last_depth_image_ && last_depth_camera_ && last_depth_T_L_C_) {
-      removed_blocks = occupancy_decay_integrator_.decay(
-          layers_.getPtr<OccupancyLayer>(), std::nullopt,
-          ViewBasedInclusionData(
-              last_depth_T_L_C_.value(), last_depth_camera_.value(),
-              last_depth_image_,
-              occupancy_integrator_.max_integration_distance_m(),
-              occupancy_integrator_.get_truncation_distance_m(voxel_size_m_)),
-          *cuda_stream_);
-    }
-  } else {
-    removed_blocks = occupancy_decay_integrator_.decay(
-        layers_.getPtr<OccupancyLayer>(), *cuda_stream_);
-  }
-
-  // Clear the blocks that got removed in the occupancy layer also in the
-  // esdf, freespace and mesh layers.
-  clearBlocksInLayers(removed_blocks);
-  layers_.getPtr<OccupancyLayer>()->updateGpuHash(*cuda_stream_);
+void Mapper::decayOccupancyAllVoxels() {
+  using DummySensor = Camera;
+  decayOccupancyInternal<DummySensor>(std::nullopt);
 }
 
 void Mapper::clearTsdfInsideShapes(const std::vector<BoundingShape>& shapes) {
   const std::vector<Index3D> updated_blocks =
       tsdf_shape_clearer_.clear(shapes, layers_.getPtr<TsdfLayer>());
   blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
-}
-
-void Mapper::updateFreespace(Time update_time_ms,
-                             UpdateFullLayer update_full_layer) {
-  updateFreespace(update_time_ms, std::nullopt, update_full_layer);
-}
-
-void Mapper::updateFreespace(Time update_time_ms, const Transform& T_L_C,
-                             const Camera& camera,
-                             const DepthImage& depth_frame,
-                             UpdateFullLayer update_full_layer) {
-  // The freespace integrator only updates voxel that are in view and within the
-  // negative truncation distance. Due to noisy depth measurements, a voxel
-  // might occasionaly end up on the "wrong" side of the truncation distance
-  // and would thus not be updated. To mitigate the effect of this on/off
-  // switching, we inflate the truncation distance.
-  constexpr float kTruncationDistanceMultipler = 2.F;
-
-  updateFreespace(
-      update_time_ms,
-      ViewBasedInclusionData(
-          T_L_C, camera, depth_frame,
-          tsdf_integrator_.max_integration_distance_m(),
-          kTruncationDistanceMultipler *
-              tsdf_integrator_.get_truncation_distance_m(voxel_size_m_)),
-      update_full_layer);
-}
-
-void Mapper::updateFreespace(
-    Time update_time_ms, std::optional<ViewBasedInclusionData> view_to_update,
-    UpdateFullLayer update_full_layer) {
-  CHECK(hasFreespaceLayer(projective_layer_type_))
-      << "Trying to update the freespace layer while it is not enabled.";
-
-  // Get the freespace blocks that need an update
-  std::vector<Index3D> blocks_to_update =
-      getBlocksToUpdate(BlocksToUpdateType::kFreespace, update_full_layer);
-
-  // Call the integrator.
-  freespace_integrator_.updateFreespaceLayer(
-      blocks_to_update, update_time_ms, layers_.get<TsdfLayer>(),
-      view_to_update, layers_.getPtr<FreespaceLayer>());
-
-  // Mark blocks as updated
-  blocks_to_update_tracker_.markBlocksAsUpdated(BlocksToUpdateType::kFreespace);
-  layers_.getPtr<FreespaceLayer>()->updateGpuHash(*cuda_stream_);
 }
 
 template <typename AppearanceVoxelType>
@@ -937,8 +729,6 @@ parameters::ParameterTreeNode Mapper::getParameterTree(
        ParameterTreeNode("do_depth_preprocessing", do_depth_preprocessing_),
        ParameterTreeNode("depth_preprocessing_num_dilations",
                          depth_preprocessing_num_dilations_),
-       ParameterTreeNode("exclude_last_view_from_decay",
-                         exclude_last_view_from_decay_),
        tsdf_integrator_.getParameterTree("camera_tsdf_integrator"),
        lidar_tsdf_integrator_.getParameterTree("lidar_tsdf_integrator"),
        color_integrator_.getParameterTree(),
@@ -1098,6 +888,12 @@ void Mapper::serializeSelectedLayers(
 
 void Mapper::markBlocksForUpdate(const std::vector<Index3D>& blocks) {
   blocks_to_update_tracker_.addBlocksToUpdate(blocks);
+}
+
+void Mapper::updateFreespace(Time update_time_ms,
+                             UpdateFullLayer update_full_layer) {
+  using DummySensor = Camera;
+  updateFreespace<DummySensor>(update_time_ms, std::nullopt, update_full_layer);
 }
 
 }  // namespace nvblox

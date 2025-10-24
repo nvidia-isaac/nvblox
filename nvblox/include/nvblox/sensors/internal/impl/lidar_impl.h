@@ -102,6 +102,10 @@ int Lidar::cols() const { return num_azimuth_divisions_; }
 
 int Lidar::rows() const { return num_elevation_divisions_; }
 
+int Lidar::width() const { return cols(); }
+
+int Lidar::height() const { return rows(); }
+
 bool Lidar::isInValidRange(const Vector3f& p_C) const {
   const float r = p_C.norm();
   if (r < min_valid_range_m_ || r > max_valid_range_m_) {
@@ -111,7 +115,8 @@ bool Lidar::isInValidRange(const Vector3f& p_C) const {
   }
 }
 
-bool Lidar::project(const Vector3f& p_C, Vector2f* u_C) const {
+bool Lidar::project(const Vector3f& p_C, Vector2f* u_C, const float,
+                    const bool check_viewport) const {
   // Check if the range is valid
   if (!isInValidRange(p_C)) {
     return false;
@@ -135,7 +140,8 @@ bool Lidar::project(const Vector3f& p_C, Vector2f* u_C) const {
   // Points out of FOV
   // NOTE(alexmillane): It should be impossible to escape the -pi-to-pi range in
   // azimuth due to wrap around this. Therefore we don't check.
-  if (v_float < 0.0f || v_float >= num_elevation_divisions_) {
+  if (check_viewport &&
+      (v_float < 0.0f || v_float >= num_elevation_divisions_)) {
     return false;
   }
 
@@ -144,9 +150,10 @@ bool Lidar::project(const Vector3f& p_C, Vector2f* u_C) const {
   return true;
 }
 
-bool Lidar::project(const Vector3f& p_C, Index2D* u_C) const {
+bool Lidar::project(const Vector3f& p_C, Index2D* u_C, const float,
+                    const bool check_viewport) const {
   Vector2f u_C_float;
-  bool res = project(p_C, &u_C_float);
+  bool res = project(p_C, &u_C_float, -1.F, check_viewport);
   *u_C = u_C_float.array().floor().matrix().cast<int>();
   return res;
 }
@@ -243,27 +250,21 @@ std::ostream& operator<<(std::ostream& os, const Lidar& lidar) {
   return os;
 }
 
-bool areLidarsEqual(const Lidar& lidar_1, const Lidar& lidar_2,
-                    const Transform& T_L_C1, const Transform& T_L_C2) {
-  // Check that the cameras have the same extrinsics
-  constexpr float kTranslationToleranceM = 0.001f;
-  constexpr float kAngularToleranceDeg = 0.1f;
-  const bool same_extrinsics = arePosesClose(
-      T_L_C1, T_L_C2, kTranslationToleranceM, kAngularToleranceDeg);
+bool Lidar::interpolateDepthImage(const DepthImageConstView frame,
+                                  const Vector2f& u_px,
+                                  const Vector3f& p_voxel_center_C,
+                                  const float voxel_size, float* image_value,
+                                  Index2D* u_px_closest_ptr) const {
+  // Convert thresholds to metric
+  const float linear_interpolation_max_allowable_difference_m =
+      linear_interpolation_max_allowable_difference_vox_ * voxel_size;
+  const float nearest_interpolation_max_allowable_squared_dist_to_ray_m =
+      std::pow(
+          nearest_interpolation_max_allowable_dist_to_ray_vox_ * voxel_size, 2);
 
-  // Check that the cameras have the same intrinsics
-  const bool same_intrinsics = (lidar_1 == lidar_2);
-  return same_extrinsics && same_intrinsics;
-}
+  // Set the closest image point
+  Index2D u_px_closest = u_px.array().floor().cast<int>();
 
-__device__ bool interpolateLidarImage(
-    const Lidar& lidar, const Vector3f& p_voxel_center_C,
-    const DepthImageConstView frame, const Vector2f& u_px,
-    const float linear_interpolation_max_allowable_difference_m,
-    const float nearest_interpolation_max_allowable_squared_dist_to_ray_m,
-    float* image_value, Index2D* u_px_closest_ptr) {
-  NVBLOX_CHECK(u_px_closest_ptr != nullptr,
-               "passing nullptr to interpolateLidarImage");
   // Try linear interpolation first
   interpolation::Interpolation2DNeighbours<float> neighbours;
   bool linear_interpolation_success = interpolation::interpolate2DLinear<
@@ -290,16 +291,16 @@ __device__ bool interpolateLidarImage(
   if (!linear_interpolation_success) {
     if (!interpolation::interpolate2DClosest<
             float, interpolation::checkers::FloatPixelGreaterThanZero>(
-            frame, u_px, image_value, u_px_closest_ptr)) {
+            frame, u_px, image_value, &u_px_closest)) {
       // If we can't successfully do closest, fail to intgrate this voxel.
       return false;
     }
+
     // Additional check
     // Check that this voxel is close to the ray passing through the pixel.
     // Note(alexmillane): This is to prevent large numbers of voxels
     // being integrated by a single pixel at long ranges.
-    const Vector3f closest_ray =
-        lidar.vectorFromPixelIndices(*u_px_closest_ptr);
+    const Vector3f closest_ray = vectorFromPixelIndices(u_px_closest);
     const float off_ray_squared_distance =
         (p_voxel_center_C - p_voxel_center_C.dot(closest_ray) * closest_ray)
             .squaredNorm();
@@ -308,9 +309,13 @@ __device__ bool interpolateLidarImage(
       return false;
     }
   }
-
   // TODO(alexmillane): We should add clearing rays, even in the case both
   // interpolations fail.
+
+  // Set the closest image point if requested
+  if (u_px_closest_ptr != nullptr) {
+    *u_px_closest_ptr = u_px_closest;
+  }
 
   return true;
 }

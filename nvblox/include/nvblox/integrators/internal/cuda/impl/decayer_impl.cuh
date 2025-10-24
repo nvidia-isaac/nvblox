@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#pragma once
 #include <nvblox/integrators/internal/decayer.h>
 
 #include "nvblox/integrators/internal/cuda/projective_integrators_common.cuh"
@@ -124,12 +125,12 @@ __global__ void decayKernel(BlockType** block_ptrs,
   decay(block_ptrs, voxel_decayer, kDoDecay, is_block_fully_decayed);
 }
 
-template <typename BlockType, typename DecayFunctorType>
-__global__ void decayTsdfExcludeImageKernel(
+template <typename BlockType, typename DecayFunctorType, typename SensorType>
+__global__ void decayBlocksExcludeImageKernel(
     BlockType** block_ptrs,                 // NOLINT
     const DecayFunctorType voxel_decayer,   // NOLINT
     const Index3D* block_indices,           // NOLINT
-    const Camera camera,                    // NOLINT
+    const SensorType sensor,                // NOLINT
     const DepthImageConstView depth_image,  // NOLINT
     const Transform T_C_L,                  // NOLINT
     const float block_size_m,               // NOLINT
@@ -139,20 +140,23 @@ __global__ void decayTsdfExcludeImageKernel(
   // We do the decay step, only if the voxel is not in view.
   Index3D block_idx, voxel_idx;
   voxelAndBlockIndexFromCudaThreadIndex(block_indices, &block_idx, &voxel_idx);
+
   const bool do_decay = (!doesVoxelHaveDepthMeasurement(
-      block_idx, voxel_idx, camera, depth_image, T_C_L, block_size_m,
-      max_distance_m, truncation_distance_m));
+      block_idx, voxel_idx, sensor, depth_image, T_C_L,
+      voxelSize<BlockType>(block_size_m), block_size_m, max_distance_m,
+      truncation_distance_m));
   decay(block_ptrs, voxel_decayer, do_decay, is_block_fully_decayed);
 }
 
 template <class LayerType>
-template <typename DecayFunctorType>
+template <typename DecayFunctorType, typename SensorType>
 std::vector<Index3D> VoxelDecayer<LayerType>::decay(
     LayerType* layer_ptr,                         // NOLINT
     const DecayFunctorType& voxel_decay_functor,  // NOLINT
     const bool deallocate_decayed_blocks,         // NOLINT
     const std::optional<DecayBlockExclusionOptions>& block_exclusion_options,
-    const std::optional<ViewBasedInclusionData>& view_exclusion_options,
+    const std::optional<DepthObservationSpace<SensorType>>&
+        view_exclusion_options,
     const CudaStream& cuda_stream) {
   CHECK_NOTNULL(layer_ptr);
 
@@ -211,12 +215,12 @@ std::vector<Index3D> VoxelDecayer<LayerType>::decay(
             : std::numeric_limits<float>::max();
     CHECK(view_exclusion_options->depth_image.has_value())
         << "At the moment we only support view exclusion *with* a DepthImage.";
-    decayTsdfExcludeImageKernel<<<num_thread_blocks, kThreadsPerBlock, 0,
-                                  cuda_stream>>>(
+    decayBlocksExcludeImageKernel<<<num_thread_blocks, kThreadsPerBlock, 0,
+                                    cuda_stream>>>(
         allocated_block_ptrs_device_.data(),          // NOLINT
         voxel_decay_functor,                          // NOLINT
         allocated_block_indices_device_.data(),       // NOLINT
-        view_exclusion_options->camera,               // NOLINT
+        view_exclusion_options->sensor,               // NOLINT
         view_exclusion_options->depth_image.value(),  // NOLINT
         view_exclusion_options->T_L_C.inverse(),      // NOLINT
         layer_ptr->block_size(),                      // NOLINT

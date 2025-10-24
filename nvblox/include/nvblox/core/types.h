@@ -67,6 +67,11 @@ inline bool isGpuMemory(const MemoryType memory_type) {
           (memory_type == MemoryType::kUnified));
 }
 
+inline bool isHostAccessibleMemory(const MemoryType memory_type) {
+  return ((memory_type == MemoryType::kHost) ||
+          (memory_type == MemoryType::kUnified));
+}
+
 /// Return true if T is either a native float type or a half-precision float
 /// type
 template <typename T>
@@ -138,6 +143,9 @@ typedef Eigen::Vector2i Index2D;
 
 typedef Eigen::Vector3f Vector3f;
 typedef Eigen::Vector2f Vector2f;
+
+typedef Eigen::Matrix3f Matrix3f;
+typedef Eigen::Matrix2f Matrix2f;
 
 typedef Eigen::AlignedBox3f AxisAlignedBoundingBox;
 typedef Eigen::AlignedBox2i ImageBoundingBox;

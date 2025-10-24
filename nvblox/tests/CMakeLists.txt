@@ -32,6 +32,7 @@ add_nvblox_static_library(
   lib/cuda/test_utils_cuda.cu
   lib/cuda/weighting_utils.cu
   lib/cuda/test_layer.cu
+  lib/custom_camera_sensor_inst.cu
   lib/projective_tsdf_integrator_cpu.cpp
   lib/tsdf_zero_crossings_extractor_cpu.cpp
   lib/utils.cpp
@@ -97,7 +98,6 @@ add_nvblox_cpp_test(test_bounding_spheres)
 add_nvblox_cpp_test(test_mask_preprocessor)
 add_nvblox_cpp_test(test_mask_from_detections)
 add_nvblox_cpp_test(test_cake)
-add_nvblox_cpp_test(test_camera)
 add_nvblox_cpp_test(test_color_image)
 add_nvblox_cpp_test(test_color_integrator)
 add_nvblox_cpp_test(test_feature_integrator)
@@ -158,7 +158,9 @@ add_nvblox_cpp_test(test_ransac_plane_fitter)
 add_nvblox_cpp_test(test_layer_cake_streamer)
 add_nvblox_cpp_test(test_replica)
 add_nvblox_cpp_test(test_checks)
+add_nvblox_cpp_test(test_type_indexed_store)
 add_nvblox_cuda_test(regression_test_query_after_clear)
+add_nvblox_cuda_test(test_camera)
 add_nvblox_cuda_test(test_layer_to_3d_grid)
 add_nvblox_cuda_test(test_gpu_hash_interface)
 add_nvblox_cuda_test(test_masked_image_view)
@@ -202,3 +204,7 @@ endif(NOT USE_SANITIZER)
 add_nvblox_executable(
   nvblox_benchmark SOURCE_FILES benchmark.cpp LINK_LIBRARIES_PUBLIC
   nvblox_test_utils benchmark::benchmark)
+
+add_nvblox_executable(
+  nvblox_benchmark_camera SOURCE_FILES benchmark_camera.cpp
+  LINK_LIBRARIES_PUBLIC nvblox_test_utils benchmark::benchmark)

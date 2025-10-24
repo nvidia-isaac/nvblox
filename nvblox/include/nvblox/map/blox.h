@@ -91,10 +91,17 @@ void initializeBlocksAsync(host_vector<BlockType*>& blocks,
                            const CudaStream& cuda_stream,
                            const MemoryType memory_type = MemoryType::kHost);
 
-// Return the max number of cuda threads needed to process a VoxelBlock
+/// Return the max number of cuda threads needed to process a VoxelBlock
 template <typename VoxelType>
 constexpr int kMaxNumThreadsPerBlock() {
   return VoxelBlock<VoxelType>::kNumVoxels;
+}
+
+/// Get the voxel size for a block
+/// @param block_size_m The side-length of a block.
+template <typename BlockType>
+__host__ __device__ float voxelSize(const float block_size_m) {
+  return block_size_m / BlockType::kVoxelsPerSide;
 }
 
 }  // namespace nvblox

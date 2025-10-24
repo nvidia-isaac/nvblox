@@ -237,14 +237,14 @@ void benchmarkFreespaceUpdate(benchmark::State& state) {
   nvblox::Time time(1);
   // Let's first run a warmup round to avoid measuring the intial memory
   // reset/transfer
-  freespace_integrator.updateFreespaceLayer(all_blocks, time, tsdf_layer, {},
-                                            &freespace_layer);
+  freespace_integrator.updateFreespaceLayer<Camera>(
+      all_blocks, time, tsdf_layer, {}, &freespace_layer);
 
   for (auto _ : state) {
     time += Time(100000);
 
-    freespace_integrator.updateFreespaceLayer(all_blocks, time, tsdf_layer, {},
-                                              &freespace_layer);
+    freespace_integrator.updateFreespaceLayer<Camera>(
+        all_blocks, time, tsdf_layer, {}, &freespace_layer);
   }
 }
 

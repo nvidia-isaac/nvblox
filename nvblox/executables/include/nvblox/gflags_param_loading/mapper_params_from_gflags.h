@@ -222,6 +222,10 @@ DEFINE_int64(
 DEFINE_bool(check_neighborhood, kCheckNeighborhoodParamDesc.default_value,
             kCheckNeighborhoodParamDesc.help_string);
 
+DEFINE_bool(initialize_to_high_confidence_freespace,
+            kInitializeToHighConfidenceFreespaceParamDesc.default_value,
+            kInitializeToHighConfidenceFreespaceParamDesc.help_string);
+
 // <<<<<<<<<<<<<<<<<<<<<<<<<< GET THE PARAMS >>>>>>>>>>>>>>>>>>>>>>>>>>
 
 inline MultiMapperParams get_multi_mapper_params_from_gflags() {
@@ -644,6 +648,15 @@ inline MapperParams get_mapper_params_from_gflags() {
               << FLAGS_check_neighborhood;
     params.freespace_integrator_params.check_neighborhood =
         FLAGS_check_neighborhood;
+  }
+  if (!gflags::GetCommandLineFlagInfoOrDie(
+           "initialize_to_high_confidence_freespace")
+           .is_default) {
+    LOG(INFO) << "command line parameter found: "
+                 "initialize_to_high_confidence_freespace = "
+              << FLAGS_initialize_to_high_confidence_freespace;
+    params.freespace_integrator_params.initialize_to_high_confidence_freespace =
+        FLAGS_initialize_to_high_confidence_freespace;
   }
 
   // return the written params

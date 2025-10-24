@@ -263,22 +263,22 @@ void Mapper::fullUpdate(torch::Tensor depth_frame_t,
 
 void Mapper::decayTsdf(long mapper_id) {
   if (mapper_id >= 0) {
-    mappers_[mapper_id]->decayTsdf();
+    mappers_[mapper_id]->decayTsdfAllVoxels();
 
   } else {
     for (auto& mapper : mappers_) {
-      mapper->decayTsdf();
+      mapper->decayTsdfAllVoxels();
     }
   }
 }
 
 void Mapper::decayOccupancy(long mapper_id) {
   if (mapper_id >= 0) {
-    mappers_[mapper_id]->decayOccupancy();
+    mappers_[mapper_id]->decayOccupancyAllVoxels();
 
   } else {
     for (auto& mapper : mappers_) {
-      mapper->decayOccupancy();
+      mapper->decayOccupancyAllVoxels();
     }
   }
 }

@@ -1,3 +1,4 @@
+
 /*
 Copyright 2022 NVIDIA CORPORATION
 
@@ -19,48 +20,110 @@ limitations under the License.
 #include "nvblox/io/image_io.h"
 #include "nvblox/primitives/scene.h"
 
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/lidar.h"
+#include "nvblox/sensors/type_indexed_store.h"
+#include "nvblox/tests/sensor_fixture.h"
+
 using namespace nvblox;
 
 constexpr float kFloatEpsilon = 1e-4;
 
-class SceneTest : public ::testing::Test {
+template <typename SensorType>
+class SceneTest : public test_utils::SensorFixture<SensorType> {
  protected:
-  SceneTest() : camera_(Camera(fu_, fv_, cu_, cv_, width_, height_)) {}
-
   void SetUp() override {
     // Make the scene 6x6x3 meters big.
     scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-3.0f, -3.0f, 0.0f),
                                            Vector3f(3.0f, 3.0f, 3.0f));
   }
 
+  // sensor dependent max dist
+  float getMaxDist();
+
+  // sensor dependent check function
+  void assertDepthValid(const DepthImage& depth_frame,
+                        const float target_depth);
+
+  constexpr static float kInvalidDepth = -1.F;
+
+  // Generate a depth image of a plane
+  DepthImage createPlaneDepthImge(const primitives::Plane& plane,
+                                  const Transform& T_S_C,
+                                  const SensorType& sensor) {
+    scene_.addPrimitive(std::make_unique<primitives::Plane>(plane));
+
+    DepthImage depth_frame(sensor.height(), sensor.width(),
+                           MemoryType::kUnified);
+    scene_.generateDepthImageFromScene(sensor, T_S_C, getMaxDist(),
+                                       &depth_frame, kInvalidDepth);
+    return depth_frame;
+  }
+
   // A simulation scene.
   primitives::Scene scene_;
-
-  // Camera parameters.
-  constexpr static float fu_ = 300;
-  constexpr static float fv_ = 300;
-  constexpr static int width_ = 640;
-  constexpr static int height_ = 480;
-  constexpr static float cu_ = static_cast<float>(width_) / 2.0f;
-  constexpr static float cv_ = static_cast<float>(height_) / 2.0f;
-  Camera camera_;
 };
 
-TEST_F(SceneTest, BlankMap) {
+// Depth images store z-depth, so the distance is bounded
+template <>
+float SceneTest<Camera>::getMaxDist() {
+  return 4.F;
+}
+// Lidar images store range, so distance is unbounded
+template <>
+float SceneTest<Lidar>::getMaxDist() {
+  return 1E6;
+}
+
+// Camera depth image is expected have a constant depth for these tests.
+template <>
+void SceneTest<Camera>::assertDepthValid(const DepthImage& depth_frame,
+                                         const float target_depth) {
+  for (int lin_idx = 0; lin_idx < depth_frame.numel(); lin_idx++) {
+    EXPECT_NEAR(depth_frame(lin_idx), target_depth, kFloatEpsilon);
+  }
+}
+
+// Lidar depth image store ranges, so we test it differently.
+template <>
+void SceneTest<Lidar>::assertDepthValid(const DepthImage& depth_frame,
+                                        const float target_depth) {
+  int num_valid = 0;
+  for (int x = 0; x < depth_frame.cols(); ++x)
+    for (int y = 0; y < depth_frame.rows(); ++y) {
+      Vector3f ray = this->sensor().vectorFromPixelIndices({x, y});
+      // If the ray points to the upper hemishphere, we expect it to intersect
+      // with the plane
+      if (ray.z() > 0) {
+        EXPECT_GE(depth_frame(y, x), target_depth);
+        ++num_valid;
+      } else {
+        EXPECT_EQ(depth_frame(y, x), this->kInvalidDepth);
+      }
+    }
+  // Since the sensor is symmetric, we expect half the points to intersect.
+  EXPECT_EQ(num_valid, depth_frame.numel() / 2);
+}
+
+using SensorTypes = ::testing::Types<Camera, Lidar>;
+TYPED_TEST_SUITE(SceneTest, SensorTypes);
+
+TYPED_TEST(SceneTest, BlankMap) {
   constexpr float max_dist = 1.0;
 
   // Ensure that we don't get any distances back.
   Vector3f point = Vector3f::Zero();
 
-  float dist = scene_.getSignedDistanceToPoint(point, max_dist);
+  float dist = this->scene_.getSignedDistanceToPoint(point, max_dist);
 
   EXPECT_NEAR(dist, max_dist, kFloatEpsilon);
 
   // Ensure that we get a blank image.
-  DepthImage depth_frame(camera_.height(), camera_.width(),
+  DepthImage depth_frame(this->sensor().height(), this->sensor().width(),
                          MemoryType::kUnified);
   Transform T_S_C = Transform::Identity();
-  scene_.generateDepthImageFromScene(camera_, T_S_C, max_dist, &depth_frame);
+  this->scene_.generateDepthImageFromScene(this->sensor(), T_S_C, max_dist,
+                                           &depth_frame);
 
   // Check all the pixels.
   for (int lin_idx = 0; lin_idx < depth_frame.numel(); lin_idx++) {
@@ -68,80 +131,64 @@ TEST_F(SceneTest, BlankMap) {
   }
 }
 
-TEST_F(SceneTest, PlaneScene) {
-  constexpr float max_dist = 2.0;
-
+TYPED_TEST(SceneTest, PlaneScene) {
   // Create a scene that's just a plane.
   // Plane at 1.0 in the positive z direction, pointing in -z.
-  scene_.addPrimitive(std::make_unique<primitives::Plane>(
-      Vector3f(0.0f, 0.0, 1.0), Vector3f(0, 0, -1)));
+  constexpr float kPlaneDist = 1.F;
+  DepthImage depth_frame = this->createPlaneDepthImge(
+      primitives::Plane(Vector3f(0.0f, 0.0, kPlaneDist), Vector3f(0, 0, -1)),
+      Transform::Identity(), this->sensor());
 
-  // Get a camera pointing to this plane from the origin.
-  Transform T_S_C = Transform::Identity();
-
-  DepthImage depth_frame(camera_.height(), camera_.width(),
-                         MemoryType::kUnified);
-  scene_.generateDepthImageFromScene(camera_, T_S_C, max_dist, &depth_frame);
-
-  // Check all the pixels.
-  for (int lin_idx = 0; lin_idx < depth_frame.numel(); lin_idx++) {
-    EXPECT_NEAR(depth_frame(lin_idx), 1.0f, kFloatEpsilon);
-  }
+  // Check all the pixels. Note that we do this differently depending on the
+  // sensor type.
+  this->assertDepthValid(depth_frame, kPlaneDist);
 }
 
-TEST_F(SceneTest, PlaneSceneVertical) {
-  constexpr float max_dist = 2.0;
-
+TYPED_TEST(SceneTest, PlaneSceneVertical) {
   // Create a scene that's just a plane.
-  // Plane at 1.0 in the positive x direction, pointing in -x.
-  scene_.addPrimitive(std::make_unique<primitives::Plane>(
-      Vector3f(1.0f, 0.0, 0.0), Vector3f(-1, 0, 0)));
+  // Plane at 1.0 in the positive z direction, pointing in -z.
+  constexpr float kPlaneDist = 1.F;
 
   // Get a camera pointing to this plane from the origin.
   Eigen::Quaternionf rotation =
       Eigen::Quaternionf::FromTwoVectors(Vector3f(0, 0, 1), Vector3f(1, 0, 0));
-
   Transform T_S_C = Transform::Identity();
   T_S_C.prerotate(rotation);
 
-  DepthImage depth_frame(camera_.height(), camera_.width(),
-                         MemoryType::kUnified);
-  scene_.generateDepthImageFromScene(camera_, T_S_C, max_dist, &depth_frame);
-  io::writeToPng("test_plane_scene_vertical.png", depth_frame);
+  DepthImage depth_frame = this->createPlaneDepthImge(
+      primitives::Plane(Vector3f(kPlaneDist, 0, 0), Vector3f(-1, 0, 0)), T_S_C,
+      this->sensor());
 
-  // Check all the pixels.
-  for (int lin_idx = 0; lin_idx < depth_frame.numel(); lin_idx++) {
-    EXPECT_NEAR(depth_frame(lin_idx), 1.0f, kFloatEpsilon);
-  }
+  // Check all the pixels. Note that we do this differently depending on the
+  // sensor type.
+  this->assertDepthValid(depth_frame, kPlaneDist);
 }
 
-TEST_F(SceneTest, PlaneSceneVerticalOffset) {
-  constexpr float max_dist = 4.0;
-
+TYPED_TEST(SceneTest, PlaneSceneVerticalOffset) {
   // Create a scene that's just a plane.
-  // Plane at 1.0 in the positive x direction, pointing in -x.
-  scene_.addPrimitive(std::make_unique<primitives::Plane>(
-      Vector3f(1.0f, 0.0, 0.0), Vector3f(-1, 0, 0)));
+  // Plane at 1.0 in the positive z direction, pointing in -z.
+  constexpr float kPlaneDist = 1.F;
+  constexpr float kTranslation = 1.F;
 
-  // Get a camera pointing to this plane from (-1, 0, 0).
+  // Get a camera pointing to this plane from the origin.
   Eigen::Quaternionf rotation =
       Eigen::Quaternionf::FromTwoVectors(Vector3f(0, 0, 1), Vector3f(1, 0, 0));
-  Vector3f translation(-1, 0, 0);
+  Vector3f translation(-kTranslation, 0, 0);
   Transform T_S_C = Transform::Identity();
   T_S_C.prerotate(rotation.normalized());
   T_S_C.pretranslate(translation);
 
-  DepthImage depth_frame(camera_.height(), camera_.width(),
-                         MemoryType::kUnified);
-  scene_.generateDepthImageFromScene(camera_, T_S_C, max_dist, &depth_frame);
+  DepthImage depth_frame = this->createPlaneDepthImge(
+      primitives::Plane(Vector3f(kPlaneDist, 0, 0), Vector3f(-1, 0, 0)), T_S_C,
+      this->sensor());
 
-  // Check all the pixels.
-  for (int lin_idx = 0; lin_idx < depth_frame.numel(); lin_idx++) {
-    EXPECT_NEAR(depth_frame(lin_idx), 2.0f, kFloatEpsilon);
-  }
+  // Check all the pixels. Note that we do this differently depending on the
+  // sensor type.
+  this->assertDepthValid(depth_frame, kPlaneDist + kTranslation);
 }
 
-TEST_F(SceneTest, TypesList) {
+using SceneTestCamera = SceneTest<Camera>;
+TEST_F(SceneTestCamera, TypesList) {
   scene_.addPrimitive(std::make_unique<primitives::Plane>(
       Vector3f(1.0f, 0.0, 0.0), Vector3f(-1, 0, 0)));
   scene_.addPrimitive(

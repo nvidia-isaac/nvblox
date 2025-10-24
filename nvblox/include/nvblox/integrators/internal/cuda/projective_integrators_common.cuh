@@ -68,22 +68,24 @@ __device__ inline void voxelAndBlockIndexFromCudaThreadIndex(
 /// out of max range, and has a valid depth measurment.
 /// @param block_idx The block index of the voxel in question.
 /// @param voxel_idx The voxel index of the voxel in question.
-/// @param camera The intrinsics of the camera viewing
+/// @param sensor The intrinsics of the sensor viewing the voxel.
 /// @param depth_image The depth image.
 /// @param rows The number of rows in the depth image.
 /// @param cols The number of cols in the depth image.
 /// @param T_C_L The pose of the viewing camera.
+/// @param voxel_size The side-length of a voxel.
 /// @param block_size The side-length of a block.
 /// @param max_integration_distance The maximum distance at which we consider a
 /// voxel in view.
 /// @param truncation_distance_m The distance behind a surface, after which we
 /// consider a voxel out-of-view.
 /// @return True if the voxel is in view.
+template <typename SensorType>
 __device__ inline bool doesVoxelHaveDepthMeasurement(
-    const Index3D& block_idx, const Index3D& voxel_idx, const Camera camera,
-    const DepthImageConstView depth_image, const Transform T_C_L,
-    const float block_size, const float max_integration_distance,
-    const float truncation_distance_m);
+    const Index3D& block_idx, const Index3D& voxel_idx,
+    const SensorType& sensor, const DepthImageConstView depth_image,
+    const Transform T_C_L, const float voxel_size, const float block_size,
+    const float max_integration_distance, const float truncation_distance_m);
 
 }  // namespace nvblox
 

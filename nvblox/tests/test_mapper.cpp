@@ -147,7 +147,7 @@ TEST(MapperTest, IntegrateDepthWithMask) {
   T_S_C.pretranslate(translation);
 
   // Synthetic view of dreams
-  DepthImage depth_image(height, width, MemoryType::kUnified);
+  DepthImage depth_image(height, width, MemoryType::kHost);
   constexpr float kSyntheticViewMaxDist = 20.0f;
   scene.generateDepthImageFromScene(camera, T_S_C, kSyntheticViewMaxDist,
                                     &depth_image);
@@ -156,13 +156,13 @@ TEST(MapperTest, IntegrateDepthWithMask) {
   const float voxel_size_m = 0.1;
   const float truncation_distance_vox = 2.F;
 
-  Mapper mapper(voxel_size_m, MemoryType::kUnified);
+  Mapper mapper(voxel_size_m, MemoryType::kHost);
   MapperParams params;
   params.projective_integrator_params
       .projective_integrator_truncation_distance_vox = truncation_distance_vox;
   mapper.setMapperParams(params);
 
-  MonoImage mask(depth_image.rows(), depth_image.cols(), MemoryType::kUnified);
+  MonoImage mask(depth_image.rows(), depth_image.cols(), MemoryType::kHost);
   mask.setZeroAsync(CudaStreamOwning());
   mapper.integrateDepth(MaskedDepthImageConstView(depth_image, mask), T_S_C,
                         camera);

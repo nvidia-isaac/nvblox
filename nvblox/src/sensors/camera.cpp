@@ -28,26 +28,6 @@ std::ostream& operator<<(std::ostream& os, const Camera& camera) {
   return os;
 }
 
-bool areCamerasEqual(const Camera& camera_1, const Camera& camera_2,
-                     const Transform& T_L_C1, const Transform& T_L_C2) {
-  // Check that the cameras have the same extrinsics
-  constexpr float kTranslationToleranceM = 0.001f;
-  constexpr float kAngularToleranceDeg = 0.1f;
-  const bool same_extrinsics = arePosesClose(
-      T_L_C1, T_L_C2, kTranslationToleranceM, kAngularToleranceDeg);
-
-  // Check that the cameras have the same intrinsics
-  bool same_intrinsics = true;
-  same_intrinsics &= std::abs(camera_1.fu() - camera_2.fu()) <= 0.1;
-  same_intrinsics &= std::abs(camera_1.fv() - camera_2.fv()) <= 0.1;
-  same_intrinsics &= std::abs(camera_1.cu() - camera_2.cu()) <= 0.1;
-  same_intrinsics &= std::abs(camera_1.cv() - camera_2.cv()) <= 0.1;
-  same_intrinsics &= camera_1.width() == camera_2.width();
-  same_intrinsics &= camera_1.height() == camera_2.height();
-
-  return same_extrinsics && same_intrinsics;
-}
-
 AxisAlignedBoundingBox Camera::getViewAABB(const Transform& T_L_C,
                                            const float min_depth,
                                            const float max_depth) const {
@@ -93,7 +73,7 @@ Eigen::Matrix<float, 8, 3> Camera::getViewCorners(const float min_depth,
   Eigen::Matrix<float, 8, 3> corners_C;
   corners_C.row(0) = min_depth * ray_2_C;
   corners_C.row(1) = min_depth * ray_1_C;
-  corners_C.row(2) = min_depth * ray_0_C,
+  corners_C.row(2) = min_depth * ray_0_C;
   corners_C.row(3) = min_depth * ray_3_C;
   corners_C.row(4) = max_depth * ray_2_C;
   corners_C.row(5) = max_depth * ray_1_C;
@@ -151,8 +131,8 @@ void Frustum::computeBoundingPlanes(const Eigen::Matrix<float, 8, 3>& corners_C,
   // Calculate AABB.
   Vector3f aabb_min, aabb_max;
 
-  aabb_min.setConstant(std::numeric_limits<double>::max());
-  aabb_max.setConstant(std::numeric_limits<double>::lowest());
+  aabb_min.setConstant(std::numeric_limits<float>::max());
+  aabb_max.setConstant(std::numeric_limits<float>::lowest());
 
   for (int i = 0; i < corners_L.cols(); i++) {
     for (int j = 0; j < corners_L.rows(); j++) {

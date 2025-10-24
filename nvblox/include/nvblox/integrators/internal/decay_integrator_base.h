@@ -21,8 +21,8 @@ limitations under the License.
 #include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/types.h"
+#include "nvblox/integrators/depth_observation_space.h"
 #include "nvblox/integrators/internal/decay_integrator_base_params.h"
-#include "nvblox/integrators/viewpoint.h"
 #include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
 
@@ -52,48 +52,6 @@ class DecayIntegratorBase {
   DecayIntegratorBase& operator=(const DecayIntegratorBase&) const = delete;
   DecayIntegratorBase(DecayIntegratorBase&&) = delete;
   DecayIntegratorBase& operator=(const DecayIntegratorBase&&) const = delete;
-
-  /// Decay all blocks. Fully decayed blocks (weight close to zero) will be
-  /// deallocated if deallocate_decayed_blocks is true.
-  ///
-  /// @param layer_ptr    Layer to decay
-  /// @param cuda_stream  Cuda stream for GPU work
-  /// @return A vector containing the indices of the blocks deallocated.
-  virtual std::vector<Index3D> decay(LayerType* layer_ptr,
-                                     const CudaStream& cuda_stream) = 0;
-  /// Decay blocks. Blocks to decay can be excluded based on block index and/or
-  /// distance to point.
-  ///
-  /// @param layer_ptr                 Layer to decay
-  /// @param block_exclusion_options   Blocks to be excluded from decay
-  /// @param cuda_stream               Cuda stream for GPU work
-  /// @return A vector containing the indices of the blocks deallocated.
-  virtual std::vector<Index3D> decay(
-      LayerType* layer_ptr,
-      const DecayBlockExclusionOptions& block_exclusion_options,
-      const CudaStream& cuda_stream) = 0;
-
-  /// Decay blocks. Voxels can be excluded based on being in view.
-  /// @param layer_ptr              Layer to decay
-  /// @param view_exclusion_options Specifies view in which to exclude voxels
-  /// @param cuda_stream            Cuda stream for GPU work.
-  /// @return A vector containing the indices of the blocks deallocated.
-  virtual std::vector<Index3D> decay(
-      LayerType* layer_ptr,
-      const ViewBasedInclusionData& view_exclusion_options,
-      const CudaStream& cuda_stream) = 0;
-
-  /// Decay blocks. Optional block and voxel view exclusion.
-  /// @param layer_ptr               Layer to decay
-  /// @param block_exclusion_options Specifies blocks to be excluded from decay
-  /// @param view_exclusion_options  Specifies view in which to exclude voxels
-  /// @param cuda_stream             Cuda stream for GPU work.
-  /// @return A vector containing the indices of the blocks deallocated.
-  virtual std::vector<Index3D> decay(
-      LayerType* layer_ptr,
-      const std::optional<DecayBlockExclusionOptions>& block_exclusion_options,
-      const std::optional<ViewBasedInclusionData>& view_exclusion_options,
-      const CudaStream& cuda_stream) = 0;
 
   /// A parameter getter
   /// The flag that controls if fully decayed block should be deallocated or

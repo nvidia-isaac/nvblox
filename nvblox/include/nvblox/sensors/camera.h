@@ -16,6 +16,10 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/core/types.h"
+#include "nvblox/interpolation/interpolation_2d.h"
+#include "nvblox/sensors/distortion.h"
+#include "nvblox/sensors/image.h"
+#include "nvblox/sensors/sensor.h"
 
 namespace nvblox {
 
@@ -26,10 +30,11 @@ class BoundingPlane;
 using CameraViewport = Eigen::AlignedBox<float, 2>;
 
 /// Class that describes the parameters and FoV of a camera.
-class Camera {
+class Camera : public SensorBase {
  public:
-  /// Constructor
   __host__ __device__ inline Camera() = default;
+  __host__ __device__ inline ~Camera() = default;
+
   /// Constructor
   /// @param fu Focal length (in pixels) in the u (x/width) direction.
   /// @param fv Focal length (in pixels) in the v (y/height) direction.
@@ -39,6 +44,23 @@ class Camera {
   /// @param height Height (in pixels) of the image plane.
   __host__ __device__ inline Camera(float fu, float fv, float cu, float cv,
                                     int width, int height);
+
+  /// Constructor with distortion parameters
+  /// @param fu Focal length (in pixels) in the u (x/width) direction.
+  /// @param fv Focal length (in pixels) in the v (y/height) direction.
+  /// @param cu Principal point position in the u (x/width) direction.
+  /// @param cv Principal point position in the v (y/height) direction.
+  /// @param width Width (in pixels) of the image plane.
+  /// @param height Height (in pixels) of the image plane.
+  /// @param k1 First radial distortion coefficient.
+  /// @param k2 Second radial distortion coefficient.
+  /// @param k3 Third radial distortion coefficient.
+  /// @param p1 First tangential distortion coefficient.
+  /// @param p2 Second tangential distortion coefficient.
+  __host__ __device__ inline Camera(float fu, float fv, float cu, float cv,
+                                    int width, int height, float k1, float k2,
+                                    float k3, float p1, float p2);
+
   /// Constructor
   /// Principal point is assumed to be in the center of the image plane.
   /// @param fu Focal length (in pixels) in the u (x/width) direction.
@@ -50,10 +72,14 @@ class Camera {
   /// Project a 3D point in camera image space to a 2D pixel coordinate.
   /// @param p_C Input 3D point coordinate in image space.
   /// @param u_C Output 2D pixel coordinate.
-  /// @return Whether the pixel is on the image.
+  /// @param min_depth Min allowed depth
+  /// @param check_viewport Whether viewport check should be performed
+  /// @return True if the projected depth is larger than min_depth AND the point
+  /// is inside the camera viewport
   __host__ __device__ inline bool project(
       const Vector3f& p_C, Vector2f* u_C,
-      const float min_depth = kDefaultMinProjectionDepth) const;
+      const float min_depth = kDefaultMinProjectionDepth,
+      const bool check_viewport = true) const;
 
   /// Project p_C into a normalized camera (camera that has identity
   /// calibration matrix).
@@ -61,7 +87,7 @@ class Camera {
   /// @param u_C Output 2D normalized image coordinate.
   /// @return Whether the pixel is on the image.
   inline static __host__ __device__ bool projectToNormalizedCoordinates(
-      const Eigen::Vector3f& p_C, Eigen::Vector2f* u_C,
+      const Vector3f& p_C, Vector2f* u_C,
       const float min_depth = kDefaultMinProjectionDepth);
 
   /// Get the depth of a 3D point (just the z component).
@@ -136,6 +162,16 @@ class Camera {
   __host__ __device__ inline Vector3f vectorFromPixelIndices(
       const Index2D& u_C) const;
 
+  /// Define how this sensor interpolates on a depth image.
+  __host__ __device__ inline bool static interpolateDepthImage(
+      const DepthImageConstView depth_image, const Vector2f& u_px,
+      const Vector3f& p_voxel_center_C_unused, const float voxel_size_unused,
+      float* value_interpolated_ptr, Index2D* u_px_closest_ptr = nullptr);
+
+  /// Check if camera has distortion parameters
+  /// @return True if camera was created with distortion parameters.
+  __host__ __device__ inline bool hasDistortion() const;
+
   /// Accessors
   __host__ __device__ inline float fu() const { return fu_; }
   __host__ __device__ inline float fv() const { return fv_; }
@@ -146,32 +182,63 @@ class Camera {
   __host__ __device__ inline int cols() const { return width_; }
   __host__ __device__ inline int rows() const { return height_; }
 
+  __host__ __device__ inline const BrownConradyDistortionParams&
+  distortion_params() const {
+    return distortion_params_;
+  }
+
+  /// Get the sensor modality identifier
+  /// @return The sensor modality (kCamera).
+  __host__ __device__ static constexpr SensorModality sensor_modality() {
+    return SensorModality::kCamera;
+  }
+
   /// Camera factory.
   /// @param mat Matrix representation of the camera intrinsics.
   /// @param width The width (in pixels) of the image plane.
   /// @param height The height (in pixels) of the image plane.
   /// @return A Camera object representation of the intrinsics.
-  inline static Camera fromIntrinsicsMatrix(const Eigen::Matrix3f& mat,
-                                            int width, int height);
+  inline static Camera fromIntrinsicsMatrix(const Matrix3f& mat, int width,
+                                            int height);
+
+  /// Camera factory with distortion parameters.
+  /// @param mat Matrix representation of the camera intrinsics.
+  /// @param width The width (in pixels) of the image plane.
+  /// @param height The height (in pixels) of the image plane.
+  /// @param k1 First radial distortion coefficient.
+  /// @param k2 Second radial distortion coefficient.
+  /// @param k3 Third radial distortion coefficient.
+  /// @param p1 First tangential distortion coefficient.
+  /// @param p2 Second tangential distortion coefficient.
+  /// @return A Camera object representation of the intrinsics with distortion.
+  inline static Camera fromIntrinsicsMatrixWithDistortion(const Matrix3f& mat,
+                                                          int width, int height,
+                                                          float k1, float k2,
+                                                          float k3, float p1,
+                                                          float p2);
+
+  /// Equality
+  __host__ inline friend bool operator==(const Camera& lhs, const Camera& rhs);
 
  private:
-  static constexpr float kDefaultMinProjectionDepth = 1E-6;
+  float fu_ = 0.F;
+  float fv_ = 0.F;
+  float cu_ = 0.F;
+  float cv_ = 0.F;
 
-  float fu_;
-  float fv_;
-  float cu_;
-  float cv_;
+  int width_ = 0;
+  int height_ = 0;
 
-  int width_;
-  int height_;
+  BrownConradyDistortionParams distortion_params_;
+  // Whether the camera was created with distortion parameters
+  bool has_distortion_ = false;
 };
+
+/// Equality
+__host__ inline bool operator==(const Camera& lhs, const Camera& rhs);
 
 // Stream Camera as text
 std::ostream& operator<<(std::ostream& os, const Camera& camera);
-
-// Check if two cameras have the same intrinsics/extrinsics
-bool areCamerasEqual(const Camera& camera_1, const Camera& camera_2,
-                     const Transform& T_L_C1, const Transform& T_L_C2);
 
 /// A bounding plane which has one "inside" direction and the other direction is
 /// "outside." Allows to query for which side of the plane you are on.
@@ -214,8 +281,8 @@ class BoundingPlane {
   float distance_;
 };
 
-/// Class that allows checking for whether objects are within the field of view
-/// of a camera or not.
+/// Class that allows checking for whether objects are within the field of
+/// view of a camera or not.
 class Frustum {
  public:
   /// Constructor to initialize the frustum with camera parameters and depth
@@ -244,7 +311,8 @@ class Frustum {
  private:
   /// Compute the bounding planes of the frustum.
   /// @param corners_C The corners of the frustum in camera coordinates.
-  /// @param T_L_C Transformation from the camera to the Layer coordinate frame.
+  /// @param T_L_C Transformation from the camera to the Layer coordinate
+  /// frame.
   void computeBoundingPlanes(const Eigen::Matrix<float, 8, 3>& corners_C,
                              const Transform& T_L_C);
 

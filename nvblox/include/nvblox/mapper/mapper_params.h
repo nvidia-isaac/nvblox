@@ -41,20 +41,12 @@ constexpr Param<int>::Description kDepthPreprocessingNumDilationsParamDesc{
     "Number of times to run the invalid region dilation in the depth "
     "preprocessing pipeline (if do_depth_preprocessing is enabled)."};
 
-// ======= DECAY =======
-constexpr Param<bool>::Description kExcludeLastViewFromDecayParamDesc{
-    "exclude_last_view_from_decay", false,
-    "Whether contributions from the last depth frame should be excluded when "
-    "decaying"};
-
 /// A structure containing the mapper parameters. This object can be used to set
 /// all parameters of a mapper.
 struct MapperParams {
   Param<bool> do_depth_preprocessing{kDoDepthPrepocessingParamDesc};
   Param<int> depth_preprocessing_num_dilations{
       kDepthPreprocessingNumDilationsParamDesc};
-  Param<bool> exclude_last_view_from_decay{kExcludeLastViewFromDecayParamDesc};
-
   EsdfIntegratorParams esdf_integrator_params;
   ProjectiveIntegratorParams projective_integrator_params;
   ViewCalculatorParams view_calculator_params;

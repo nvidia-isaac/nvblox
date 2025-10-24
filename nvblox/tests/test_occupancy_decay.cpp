@@ -18,6 +18,9 @@ limitations under the License.
 #include "nvblox/core/log_odds.h"
 #include "nvblox/integrators/occupancy_decay_integrator.h"
 
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/lidar.h"
+#include "nvblox/tests/custom_camera_sensor.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -62,20 +65,31 @@ OccupancyLayer initLayer(float KVoxelSize, int kNumBlocksToAllocate,
   return layer;
 }
 
-TEST(LayerDecayTest, EmptyLayerTest) {
+using SensorTypes =
+    ::testing::Types<Camera, Lidar, nvblox::test_utils::CustomCameraSensor>;
+
+template <typename SensorType>
+class OccupancyDecayTestFixture : public ::testing::Test {
+  // Empty fixture. Just so we can create a templated test.
+};
+
+TYPED_TEST_SUITE(OccupancyDecayTestFixture, SensorTypes);
+
+TYPED_TEST(OccupancyDecayTestFixture, EmptyLayerTest) {
   // Empty layer (check that integrator does not crash)
   constexpr float KVoxelSize = 0.05;
   OccupancyLayer layer(KVoxelSize, MemoryType::kUnified);
 
   OccupancyDecayIntegrator decay_integrator;
   const std::vector<Index3D> deallocated_blocks =
-      decay_integrator.decay(&layer, CudaStreamOwning());
+      decay_integrator.decay<TypeParam>(&layer, std::nullopt, std::nullopt,
+                                        CudaStreamOwning());
 
   EXPECT_EQ(layer.numBlocks(), 0);
   EXPECT_EQ(deallocated_blocks.size(), 0);
 }
 
-TEST(LayerDecayTest, SingleDecayTest) {
+TYPED_TEST(OccupancyDecayTestFixture, SingleDecayTest) {
   // Test that a single decay does what we would expect.
   constexpr float kEps = 1.0e-6;
   constexpr int kNumBlocksToAllocate = 100;
@@ -87,7 +101,8 @@ TEST(LayerDecayTest, SingleDecayTest) {
   OccupancyDecayIntegrator decay_integrator;
   decay_integrator.deallocate_decayed_blocks(false);
   const std::vector<Index3D> deallocated_blocks =
-      decay_integrator.decay(&layer, CudaStreamOwning());
+      decay_integrator.decay<TypeParam>(&layer, std::nullopt, std::nullopt,
+                                        CudaStreamOwning());
   EXPECT_EQ(deallocated_blocks.size(), 0);
 
   // Check if this worked
@@ -130,12 +145,7 @@ TEST(LayerDecayTest, SingleDecayTest) {
   CHECK_EQ(num_checked_voxels, kNumVoxels);
 }
 
-class OccupancyDecayParameterizedTestFixture
-    : public ::testing::TestWithParam<float> {
-  // Empty fixture. Just to expose the parameter.
-};
-
-TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
+void testOccupancyDecayAll(const float decay_to_probability) {
   // Test that a all voxels decay eventually
   constexpr int kNumBlocksToAllocate = 100;
   constexpr int kNumVoxels =
@@ -155,12 +165,12 @@ TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
   decay_integrator.deallocate_decayed_blocks(false);
 
   // The value to decay to
-  const float decay_to_probability = GetParam();
   decay_integrator.decay_to_probability(decay_to_probability);
 
   // Decay everything
   for (size_t i = 0; i < num_decays_until_converged; i++) {
-    decay_integrator.decay(&layer, CudaStreamOwning());
+    decay_integrator.decay<Camera>(&layer, std::nullopt, std::nullopt,
+                                   CudaStreamOwning());
   }
 
   // Fully decayed value
@@ -182,7 +192,8 @@ TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
   // Now test decay with deallocation
   decay_integrator.deallocate_decayed_blocks(true);
   const std::vector<Index3D> deallocated_blocks =
-      decay_integrator.decay(&layer, CudaStreamOwning());
+      decay_integrator.decay<Camera>(&layer, std::nullopt, std::nullopt,
+                                     CudaStreamOwning());
   int num_allocated_voxels = 0;
   auto check_deallocation = [&num_allocated_voxels](const Index3D&,
                                                     const Index3D&,
@@ -195,9 +206,12 @@ TEST_P(OccupancyDecayParameterizedTestFixture, DecayAll) {
   EXPECT_EQ(deallocated_blocks.size(), kNumBlocksToAllocate);
 }
 
-// Run the above test with different values to decay to
-INSTANTIATE_TEST_CASE_P(DecayAll, OccupancyDecayParameterizedTestFixture,
-                        ::testing::Values(0.5f, 0.4f));
+TYPED_TEST(OccupancyDecayTestFixture, decayAllTo05) {
+  testOccupancyDecayAll(0.5f);
+}
+TYPED_TEST(OccupancyDecayTestFixture, decayAllTo04) {
+  testOccupancyDecayAll(0.4f);
+}
 
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;

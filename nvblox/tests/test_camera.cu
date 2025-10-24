@@ -15,9 +15,14 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
+#include "nvblox/core/internal/error_check.h"
 #include "nvblox/core/types.h"
 #include "nvblox/geometry/bounding_boxes.h"
+#include "nvblox/io/image_io.h"
+#include "nvblox/primitives/primitives.h"
+#include "nvblox/primitives/scene.h"
 #include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/image.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -47,6 +52,24 @@ Camera getTestCamera() {
   constexpr float cu = static_cast<float>(width) / 2.0f;
   constexpr float cv = static_cast<float>(height) / 2.0f;
   return Camera(fu, fv, cu, cv, width, height);
+}
+
+Camera getCameraRandomDistortion() {
+  // Upper limits on distortion parameters.
+  constexpr float k1Max = 0.8;
+  constexpr float k2Max = 0.5;
+  constexpr float k3Max = 0.3;
+  constexpr float p1Max = 0.01;
+  constexpr float p2Max = 0.02;
+  Camera camera = getTestCamera();
+
+  return Camera(camera.fu(), camera.fv(), camera.cu(), camera.cv(),
+                camera.width(), camera.height(),
+                test_utils::randomFloatInRange(0.F, k1Max),
+                test_utils::randomFloatInRange(0.F, k2Max),
+                test_utils::randomFloatInRange(0.F, k3Max),
+                test_utils::randomFloatInRange(0.F, p1Max),
+                test_utils::randomFloatInRange(0.F, p2Max));
 }
 
 TEST(CameraTest, PointsInView) {
@@ -379,6 +402,184 @@ TEST(CameraTest, CameraViewport) {
               kFloatEpsilon);
   EXPECT_NEAR(viewport.max()[1], (camera.height() - camera.cv()) / camera.fv(),
               kFloatEpsilon);
+}
+
+// Check that radial distortion is correct for random pixels.
+TEST(CameraTest, RadialDistortionScale_PixelsAreDistorted) {
+  constexpr int kNumIterations = 100000;
+  for (int i = 0; i < kNumIterations; i++) {
+    const Camera camera = getCameraRandomDistortion();
+
+    const float k1 = camera.distortion_params().radial.k1;
+    const float k2 = camera.distortion_params().radial.k2;
+    const float k3 = camera.distortion_params().radial.k3;
+
+    const float r2 = test_utils::randomFloatInRange(0.F, 10.F);
+    const float actual =
+        radialDistortionScale<float>(r2, camera.distortion_params().radial);
+    const float expected = 1.F + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2;
+    EXPECT_NEAR(actual, expected, kFloatEpsilon);
+  }
+}
+
+// Center pixel has no tangential distortion.
+TEST(CameraTest, TangentialDistortion_CenterPixelNotDistorted) {
+  const Vector2f u_normalized(0.F, 0.F);
+  const float r2 = 0.F;
+  const Vector2f tangential_distortion = applyTangentialDistortion<float>(
+      u_normalized, r2, TangentialDistortionParams{0.1, 0.2});
+
+  EXPECT_TRUE(tangential_distortion.isApprox(Vector2f::Zero(), kFloatEpsilon));
+}
+
+// Check that tangential distortion is correct for random pixels.
+TEST(CameraTest, TangentialDistortion_PixelsAreDistorted) {
+  constexpr int kNumIterations = 100000;
+  for (int i = 0; i < kNumIterations; i++) {
+    const Camera camera = getCameraRandomDistortion();
+    const float p1 = camera.distortion_params().tangential.p1;
+    const float p2 = camera.distortion_params().tangential.p2;
+    const float x = test_utils::randomFloatInRange(-2.F, 2.F);
+    const float y = test_utils::randomFloatInRange(-2.F, 2.F);
+    const Vector2f u_normalized(x, y);
+    const float r2 = x * x + y * y;
+
+    const Vector2f actual = applyTangentialDistortion<float>(
+        u_normalized, r2, camera.distortion_params().tangential);
+
+    const float expected_x = 2.F * p1 * x * y + p2 * (r2 + 2.F * x * x);
+    const float expected_y = 2.F * p2 * x * y + p1 * (r2 + 2.F * y * y);
+    const Vector2f expected(expected_x, expected_y);
+
+    EXPECT_TRUE(actual.isApprox(expected, kFloatEpsilon));
+  }
+}
+
+TEST(CameraTest, DistortionUndistortion_P3dRoundtrip) {
+  constexpr int kNumIterations = 100000;
+  for (int i = 0; i < kNumIterations; i++) {
+    const Camera camera_with_distortion = getCameraRandomDistortion();
+
+    Vector3f ray_C;
+    Vector2f u_C;
+    std::tie(ray_C, u_C) =
+        getRandomVisibleRayAndImagePoint(camera_with_distortion);
+
+    // Create a 3D point at random depth
+    const Vector3f p_gt = test_utils::randomFloatInRange(1.0, 1000.0) * ray_C;
+
+    // Project with distortion
+    Vector2f u_distorted_C;
+    EXPECT_TRUE(camera_with_distortion.project(p_gt, &u_distorted_C));
+
+    // Unproject back (should handle undistortion)
+    Vector3f p_undistorted_C =
+        camera_with_distortion.unprojectFromImagePlaneCoordinates(u_distorted_C,
+                                                                  p_gt.z());
+
+    // The undistorted point should match the original (within tolerance)
+    EXPECT_TRUE(p_gt.isApprox(p_undistorted_C, kFloatEpsilon * p_gt.z()));
+  }
+}
+
+TEST(CameraTest, DistortionUndistortion_P2dRoundtrip) {
+  constexpr int kNumIterations = 100000;
+  for (int i = 0; i < kNumIterations; i++) {
+    const Camera camera_with_distortion = getCameraRandomDistortion();
+
+    Vector2f u_px = Vector2f(
+        test_utils::randomFloatInRange(0.0, camera_with_distortion.width()),
+        test_utils::randomFloatInRange(0.0, camera_with_distortion.height()));
+
+    constexpr float kDepth = 10.0;
+
+    const Vector3f p_C =
+        camera_with_distortion.unprojectFromImagePlaneCoordinates(u_px, kDepth);
+
+    Vector2f u_reprojected_px;
+    EXPECT_TRUE(camera_with_distortion.project(p_C, &u_reprojected_px));
+
+    EXPECT_TRUE(u_px.isApprox(u_reprojected_px, kFloatEpsilon));
+  }
+}
+
+__global__ void cudaDistortionUndistortionP2dRoundtripKernel(
+    const Camera camera) {
+  const int x = threadIdx.x;
+  const int y = blockIdx.x;
+
+  // Skip the border pixels. They might end up slightly outside the viewport
+  // when reprojecting them.
+  if (x > 0 && x < camera.width() - 1 && y > 0 && y < camera.height() - 1) {
+    {
+      Vector2f u_px(x, y);
+      const Vector3f p_C =
+          camera.unprojectFromImagePlaneCoordinates(u_px, 10.0);
+      Vector2f u_reprojected_px;
+
+      NVBLOX_CHECK(camera.project(p_C, &u_reprojected_px), "Failed to project");
+      NVBLOX_CHECK(u_px.isApprox(u_reprojected_px, 1e-4f),
+                   "Failed to unproject");
+    }
+  }
+}
+
+// Roundtrip test on CUDA. iterates over all image pixels.
+TEST(CameraTest, DistortionUndistortion_P2dRoundtrip_CUDA) {
+  const Camera camera = getCameraRandomDistortion();
+
+  const int num_threads = camera.width();
+  const int num_blocks = camera.height();
+  cudaDistortionUndistortionP2dRoundtripKernel<<<num_blocks, num_threads, 0,
+                                                 CudaStreamOwning().get()>>>(
+      camera);
+  checkCudaErrors(cudaPeekAtLastError());
+}
+
+void renderAndWriteDepthImage(const Camera& camera,
+                              const primitives::Scene& scene,
+                              const std::string& filename) {
+  DepthImage depth_image(camera.height(), camera.width(), MemoryType::kUnified);
+  scene.generateDepthImageFromScene(camera, Transform::Identity(), 10.0,
+                                    &depth_image);
+  io::writeToPng(filename, depth_image);
+}
+
+TEST(CameraTest, RenderSampleImages) {
+  // create a scene with a cube
+  primitives::Scene scene;
+  constexpr float kDepth = 3.f;
+
+  constexpr float kSide = 0.75f;
+  for (int x = -3; x < 3; ++x) {
+    for (int y = -3; y < 3; ++y) {
+      scene.addPrimitive(std::make_unique<primitives::Cube>(
+          Vector3f(x, y, kDepth), Vector3f(kSide, kSide, kSide)));
+    }
+  }
+
+  // create a camera without distortion
+  constexpr int kWidth = 640;
+  constexpr int kHeight = 480;
+
+  // linear camera
+  Camera camera(kWidth / 2, kHeight / 2, kWidth / 2, kHeight / 2, kWidth,
+                kHeight);
+  renderAndWriteDepthImage(camera, scene, "depth_image_linear.png");
+
+  // camera with radial distortion
+  Camera camera_with_radial_distortion(kWidth / 2, kHeight / 2, kWidth / 2,
+                                       kHeight / 2, kWidth, kHeight, 0.8, 0.5,
+                                       0.3, 0.0, 0.0);
+  renderAndWriteDepthImage(camera_with_radial_distortion, scene,
+                           "depth_image_radial_distorted.png");
+
+  // camera with tangential distortion
+  Camera camera_with_tangential_distortion(kWidth / 2, kHeight / 2, kWidth / 2,
+                                           kHeight / 2, kWidth, kHeight, 0.0,
+                                           0.0, 0.0, 0.01, 0.02);
+  renderAndWriteDepthImage(camera_with_tangential_distortion, scene,
+                           "depth_image_tangential_distorted.png");
 }
 
 int main(int argc, char** argv) {

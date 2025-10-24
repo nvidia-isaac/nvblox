@@ -20,12 +20,16 @@ limitations under the License.
 #include "nvblox/interpolation/interpolation_2d.h"
 #include "nvblox/io/image_io.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/tests/custom_camera_sensor.h"
 #include "nvblox/tests/integrator_utils.h"
+#include "nvblox/tests/sensor_fixture.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
-class TsdfDecayIntegratorTest : public ::testing::Test {
+template <typename SensorType>
+class TsdfDecayIntegratorTestFixture
+    : public test_utils::SensorFixture<SensorType> {
  protected:
   static constexpr float kVoxelSizeM{0.2};
   static constexpr float kTruncationDistanceVox{2};
@@ -41,44 +45,41 @@ class TsdfDecayIntegratorTest : public ::testing::Test {
 
   primitives::Scene scene_;
   TsdfLayer layer_{kVoxelSizeM, MemoryType::kHost};
-
-  // Test camera
-  constexpr static float fu_ = 300;
-  constexpr static float fv_ = 300;
-  constexpr static int width_ = 640;
-  constexpr static int height_ = 480;
-  constexpr static float cu_ = static_cast<float>(width_) / 2.0f;
-  constexpr static float cv_ = static_cast<float>(height_) / 2.0f;
-  Camera camera_ = Camera(fu_, fv_, cu_, cv_, width_, height_);
 };
 
+using SensorTypes =
+    ::testing::Types<Camera, Lidar, test_utils::CustomCameraSensor>;
+TYPED_TEST_SUITE(TsdfDecayIntegratorTestFixture, SensorTypes);
+
 // Test behaviour of the corner case of empty layer
-TEST(TsdfDecayIntegrator, EmptyLayer) {
+TYPED_TEST(TsdfDecayIntegratorTestFixture, EmptyLayer) {
   constexpr float KVoxelSize = 0.05;
   TsdfLayer layer(KVoxelSize, MemoryType::kHost);
 
   TsdfDecayIntegrator decay_integrator;
   const std::vector<Index3D> dellocated_blocks =
-      decay_integrator.decay(&layer, CudaStreamOwning());
+      decay_integrator.decay<TypeParam>(&layer, std::nullopt, std::nullopt,
+                                        CudaStreamOwning());
 
   EXPECT_EQ(layer.numBlocks(), 0);
   EXPECT_TRUE(dellocated_blocks.empty());
 }
 
 // Test that a single decay does what we would expect.
-TEST_F(TsdfDecayIntegratorTest, SingleDecay) {
-  std::vector<TsdfBlock*> block_ptrs = layer_.getAllBlockPointers();
+TYPED_TEST(TsdfDecayIntegratorTestFixture, SingleDecay) {
+  std::vector<TsdfBlock*> block_ptrs = this->layer_.getAllBlockPointers();
 
   constexpr float kDecayFactor{0.75};
 
-  // Create a decayed copy of the tsdf layer
-  TsdfLayer layer_decayed(kVoxelSizeM, MemoryType::kHost);
-  layer_decayed.copyFrom(layer_);
+  // Create a decayed copy of the tsdif layer
+  TsdfLayer layer_decayed(this->kVoxelSizeM, MemoryType::kHost);
+  layer_decayed.copyFrom(this->layer_);
 
   TsdfDecayIntegrator decay_integrator;
   decay_integrator.deallocate_decayed_blocks(false);
   decay_integrator.decay_factor(kDecayFactor);
-  decay_integrator.decay(&layer_decayed, CudaStreamOwning());
+  decay_integrator.decay<TypeParam>(&layer_decayed, std::nullopt, std::nullopt,
+                                    CudaStreamOwning());
 
   // Check that weight decay is as expected
   auto check_weight_decay = [&layer_decayed](const Index3D& block_index,
@@ -92,18 +93,18 @@ TEST_F(TsdfDecayIntegratorTest, SingleDecay) {
     EXPECT_NEAR(original_weight * kDecayFactor, decayed_weight, 1.0E-6);
   };
 
-  callFunctionOnAllVoxels<TsdfVoxel>(&layer_, check_weight_decay);
+  callFunctionOnAllVoxels<TsdfVoxel>(&this->layer_, check_weight_decay);
 }
 
 // Test that a single decay does what we would expect.
-TEST_F(TsdfDecayIntegratorTest, SingleDecayWithExclusionList) {
-  std::vector<TsdfBlock*> block_ptrs = layer_.getAllBlockPointers();
+TYPED_TEST(TsdfDecayIntegratorTestFixture, SingleDecayWithExclusionList) {
+  std::vector<TsdfBlock*> block_ptrs = this->layer_.getAllBlockPointers();
 
   constexpr float kDecayFactor{0.75};
 
   // Create a decayed copy of the tsdf layer
-  TsdfLayer layer_decayed(kVoxelSizeM, MemoryType::kHost);
-  layer_decayed.copyFrom(layer_);
+  TsdfLayer layer_decayed(this->kVoxelSizeM, MemoryType::kHost);
+  layer_decayed.copyFrom(this->layer_);
 
   TsdfDecayIntegrator decay_integrator;
   decay_integrator.deallocate_decayed_blocks(false);
@@ -111,22 +112,22 @@ TEST_F(TsdfDecayIntegratorTest, SingleDecayWithExclusionList) {
 
   // Exclude even indices
   std::vector<Index3D> excluded_indices =
-      layer_.getBlockIndicesIf([](const Index3D& index) {
+      this->layer_.getBlockIndicesIf([](const Index3D& index) {
         return static_cast<int>((index[0]) % 2) == 0 ||
                static_cast<int>((index[1]) % 2) == 0 ||
                static_cast<int>((index[2]) % 2) == 0;
       });
   ASSERT_TRUE(excluded_indices.size() > 0);
 
-  decay_integrator.decay(
+  decay_integrator.decay<TypeParam>(
       &layer_decayed,
       DecayBlockExclusionOptions{.block_indices_to_exclude = excluded_indices},
-      CudaStreamOwning());
+      std::nullopt, CudaStreamOwning());
 
   // Check that weight has not changed for blocks in exclusion list
   for (const auto& block_index : excluded_indices) {
     callFunctionOnAllVoxels<TsdfVoxel>(
-        layer_.getBlockAtIndex(block_index).get(),
+        this->layer_.getBlockAtIndex(block_index).get(),
         [&block_index, &layer_decayed](const Index3D& voxel_index,
                                        const TsdfVoxel* voxel_ptr) {
           const float decayed_weight =
@@ -139,14 +140,14 @@ TEST_F(TsdfDecayIntegratorTest, SingleDecayWithExclusionList) {
   }
 }
 
-TEST_F(TsdfDecayIntegratorTest, SingleDecayWithRadialExclusion) {
-  std::vector<TsdfBlock*> block_ptrs = layer_.getAllBlockPointers();
+TYPED_TEST(TsdfDecayIntegratorTestFixture, SingleDecayWithRadialExclusion) {
+  std::vector<TsdfBlock*> block_ptrs = this->layer_.getAllBlockPointers();
 
   constexpr float kDecayFactor{0.75};
 
   // Create a decayed copy of the tsdf layer
-  TsdfLayer layer_decayed(kVoxelSizeM, MemoryType::kHost);
-  layer_decayed.copyFrom(layer_);
+  TsdfLayer layer_decayed(this->kVoxelSizeM, MemoryType::kHost);
+  layer_decayed.copyFrom(this->layer_);
 
   TsdfDecayIntegrator decay_integrator;
   decay_integrator.deallocate_decayed_blocks(false);
@@ -159,8 +160,8 @@ TEST_F(TsdfDecayIntegratorTest, SingleDecayWithRadialExclusion) {
       .block_indices_to_exclude = {},
       .exclusion_center = exclusion_center,
       .exclusion_radius_m = kExclusionRadius};
-  decay_integrator.decay(&layer_decayed, exclusions_options,
-                         CudaStreamOwning());
+  decay_integrator.decay<TypeParam>(&layer_decayed, exclusions_options,
+                                    std::nullopt, CudaStreamOwning());
 
   // Check that weight has not changed for blocks inside radius
   auto check_weight_decay = [&layer_decayed, &exclusion_center](
@@ -175,31 +176,31 @@ TEST_F(TsdfDecayIntegratorTest, SingleDecayWithRadialExclusion) {
     if ((getPositionFromBlockIndex(layer_decayed.block_size(), block_index) -
          exclusion_center)
             .squaredNorm() < kExclusionRadiusSq) {
-      CHECK_EQ(original_weight, decayed_weight);
+      ASSERT_EQ(original_weight, decayed_weight);
     } else {
-      CHECK_NEAR(original_weight * kDecayFactor, decayed_weight, 1.0E-6);
+      ASSERT_NEAR(original_weight * kDecayFactor, decayed_weight, 1.0E-6);
     }
   };
 
-  callFunctionOnAllVoxels<TsdfVoxel>(&layer_, check_weight_decay);
+  callFunctionOnAllVoxels<TsdfVoxel>(&this->layer_, check_weight_decay);
 }
 
 // Test that all blocks eventually decay
-TEST_F(TsdfDecayIntegratorTest, DecayUntilRemoved) {
+TYPED_TEST(TsdfDecayIntegratorTestFixture, DecayUntilRemoved) {
   TsdfDecayIntegrator decay_integrator;
   constexpr size_t kMaxNumIterations{1000};
   size_t num_iterations = 0;
-  const int num_blocks = layer_.numBlocks();
+  const int num_blocks = this->layer_.numBlocks();
   int num_dellocated_blocks = 0;
-  while (layer_.numBlocks() > 0 && num_iterations < kMaxNumIterations) {
-    const auto decayed_this_iteration =
-        decay_integrator.decay(&layer_, CudaStreamOwning());
+  while (this->layer_.numBlocks() > 0 && num_iterations < kMaxNumIterations) {
+    const auto decayed_this_iteration = decay_integrator.decay<TypeParam>(
+        &this->layer_, std::nullopt, std::nullopt, CudaStreamOwning());
     num_dellocated_blocks += decayed_this_iteration.size();
     ++num_iterations;
   }
 
   EXPECT_GT(num_iterations, 0);
-  EXPECT_EQ(layer_.numBlocks(), 0);
+  EXPECT_EQ(this->layer_.numBlocks(), 0);
   EXPECT_EQ(num_blocks, num_dellocated_blocks);
 }
 
@@ -231,14 +232,14 @@ std::pair<int, int> countObservedVoxels(const TsdfLayer& tsdf_layer) {
   return {observed_count, unobserved_count};
 }
 
-TEST_F(TsdfDecayIntegratorTest, TsdfDecayToFree) {
+TYPED_TEST(TsdfDecayIntegratorTestFixture, TsdfDecayToFree) {
   TsdfDecayIntegrator decay_integrator;
   constexpr size_t kMaxNumIterations{1000};
   size_t num_iterations = 0;
 
   // Check number of (un)observed voxels before decay
   const auto [observed_count_before, unobserved_count_before] =
-      countObservedVoxels(layer_);
+      countObservedVoxels(this->layer_);
 
   // Settings under-test
   decay_integrator.set_free_distance_on_decayed(true);
@@ -246,26 +247,27 @@ TEST_F(TsdfDecayIntegratorTest, TsdfDecayToFree) {
 
   const float weight_at_decayed = decay_integrator.decayed_weight_threshold();
   const float distance_at_decayed_when_decay_to_free =
-      decay_integrator.free_distance_vox() * layer_.voxel_size();
+      decay_integrator.free_distance_vox() * this->layer_.voxel_size();
 
   EXPECT_TRUE(isAtLeastOneVoxelAboveWeight(
-      layer_, decay_integrator.decayed_weight_threshold()));
+      this->layer_, decay_integrator.decayed_weight_threshold()));
 
   int num_dellocated_blocks = 0;
-  while (isAtLeastOneVoxelAboveWeight(layer_, weight_at_decayed) &&
+  while (isAtLeastOneVoxelAboveWeight(this->layer_, weight_at_decayed) &&
          num_iterations < kMaxNumIterations) {
-    const auto deallocated_this_iteration =
-        decay_integrator.decay(&layer_, CudaStreamOwning());
+    const auto deallocated_this_iteration = decay_integrator.decay<TypeParam>(
+        &this->layer_, std::nullopt, std::nullopt, CudaStreamOwning());
     ++num_iterations;
     num_dellocated_blocks += deallocated_this_iteration.size();
   }
-  EXPECT_GT(layer_.numBlocks(), 0);
+  EXPECT_GT(this->layer_.numBlocks(), 0);
 
   // All voxels/blocks are fully decayed: Check
   // - Weight fully decayed
   // - Distance is set to free
   callFunctionOnAllVoxels<TsdfVoxel>(
-      layer_, [&](const Index3D&, const Index3D&, const TsdfVoxel* voxel) {
+      this->layer_,
+      [&](const Index3D&, const Index3D&, const TsdfVoxel* voxel) {
         // Only check observed voxels
         if (voxel->weight > 0.f) {
           constexpr float kEps = 1e-6;
@@ -277,16 +279,18 @@ TEST_F(TsdfDecayIntegratorTest, TsdfDecayToFree) {
 
   // Need to check that unobserved voxels are still unobserved
   const auto [observed_count_after, unobserved_count_after] =
-      countObservedVoxels(layer_);
+      countObservedVoxels(this->layer_);
 
   EXPECT_EQ(observed_count_before, observed_count_after);
   EXPECT_EQ(unobserved_count_before, unobserved_count_after);
 }
 
+template <typename SensorType>
 bool isVoxelInView(const DepthImage& depth_image, const Index3D& block_idx,
-                   const Index3D& voxel_idx, const float block_size_m,
-                   const Camera& camera, const Transform& T_L_C,
-                   const float max_depth_m, const float truncation_distance_m) {
+                   const Index3D& voxel_idx, const float voxel_size,
+                   const float block_size_m, const SensorType& sensor,
+                   const Transform& T_L_C, const float max_depth_m,
+                   const float truncation_distance_m) {
   // Project the voxel onto the image plane, failing if the voxel is too far
   // away or outside the bounds of the image.
   const Vector3f p_L = getCenterPositionFromBlockIndexAndVoxelIndex(
@@ -296,19 +300,17 @@ bool isVoxelInView(const DepthImage& depth_image, const Index3D& block_idx,
     return false;
   }
   Vector2f u_C;
-  const bool on_image = camera.project(p_C, &u_C);
+  const bool on_image = sensor.project(p_C, &u_C);
   if (!on_image) {
     return false;
   }
   // Interpolate the measurement for the depth.
   float surface_depth_measured;
-  if (!interpolation::interpolate2DClosest<
-          float, interpolation::checkers::FloatPixelGreaterThanZero>(
-          depth_image, u_C, &surface_depth_measured)) {
-    return false;
-  }
+  sensor.interpolateDepthImage(depth_image, u_C, p_C, voxel_size,
+                               &surface_depth_measured);
+
   // Get the projective SDF value
-  const float voxel_depth_m = p_C.z();
+  const float voxel_depth_m = sensor.getDepth(p_C);
   const float voxel_to_surface_distance =
       surface_depth_measured - voxel_depth_m;
   const bool occluded = (voxel_to_surface_distance < -truncation_distance_m);
@@ -316,9 +318,9 @@ bool isVoxelInView(const DepthImage& depth_image, const Index3D& block_idx,
   return !occluded;
 }
 
-TEST_F(TsdfDecayIntegratorTest, TsdfDecayExcludeView) {
+TYPED_TEST(TsdfDecayIntegratorTestFixture, TsdfDecayExcludeView) {
   // Get a depth image of the scene
-  DepthImage depth_frame(camera_.height(), camera_.width(),
+  DepthImage depth_frame(this->sensor().height(), this->sensor().width(),
                          MemoryType::kUnified);
 
   // Generate a depth image of the scene.
@@ -333,23 +335,26 @@ TEST_F(TsdfDecayIntegratorTest, TsdfDecayExcludeView) {
   T_L_C.pretranslate(Vector3f(-4.0f, 0.0f, 2.0f));
   // This value for max distance generates some invalid regions.
   constexpr float kMaxDist = 10.f;
-  scene_.generateDepthImageFromScene(camera_, T_L_C, kMaxDist, &depth_frame);
+  this->scene_.generateDepthImageFromScene(
+      this->sensor(), T_L_C, kMaxDist, &depth_frame, test_utils::kInvalidDepth);
 
   // Get the original weight (read it from a random voxel).
   const TsdfBlock::ConstPtr tsdf_block =
-      layer_.getBlockAtIndex(Index3D(0, 0, 0));
-  CHECK(tsdf_block);
+      this->layer_.getBlockAtIndex(Index3D(0, 0, 0));
+  ASSERT_TRUE(tsdf_block);
   const float original_weight = tsdf_block->voxels[0][0][0].weight;
-  CHECK(original_weight > 0.f);
+  ASSERT_TRUE(original_weight > 0.f);
 
   // Start to decay
   TsdfDecayIntegrator decay_integrator;
   const float kMaxViewDistanceM = kMaxDist;
-  const std::vector<Index3D> deallocated_blocks = decay_integrator.decay(
-      &layer_,
-      ViewBasedInclusionData(T_L_C, camera_, depth_frame, kMaxViewDistanceM,
-                             kTruncationDistanceMeters),
-      CudaStreamOwning());
+  const std::vector<Index3D> deallocated_blocks =
+      decay_integrator.decay<TypeParam>(
+          &this->layer_, std::nullopt,
+          DepthObservationSpace(T_L_C, this->sensor(), depth_frame,
+                                kMaxViewDistanceM,
+                                this->kTruncationDistanceMeters),
+          CudaStreamOwning());
   // We expect that no blocks are deallocated after a single decay.
   EXPECT_EQ(deallocated_blocks.size(), 0);
 
@@ -360,9 +365,9 @@ TEST_F(TsdfDecayIntegratorTest, TsdfDecayExcludeView) {
   int num_not_valid = 0;
   int num_in_view = 0;
   int num_not_in_view = 0;
-  callFunctionOnAllVoxels<TsdfVoxel>(layer_, [&](const Index3D& block_idx,
-                                                 const Index3D& voxel_idx,
-                                                 const TsdfVoxel* voxel) {
+  callFunctionOnAllVoxels<TsdfVoxel>(this->layer_, [&](const Index3D& block_idx,
+                                                       const Index3D& voxel_idx,
+                                                       const TsdfVoxel* voxel) {
     constexpr float kEps = 1e-3;
     // Some of the voxels in the scene are outside of the bounds and
     // therefore don't have a valid distance or a weight above zero. We
@@ -376,8 +381,9 @@ TEST_F(TsdfDecayIntegratorTest, TsdfDecayExcludeView) {
     const bool not_decayed = (original_weight - voxel->weight) < kEps;
     // In view
     const bool is_in_view = isVoxelInView(
-        depth_frame, block_idx, voxel_idx, layer_.block_size(), camera_, T_L_C,
-        kMaxViewDistanceM, kTruncationDistanceMeters);
+        depth_frame, block_idx, voxel_idx, this->layer_.voxel_size(),
+        this->layer_.block_size(), this->sensor(), T_L_C, kMaxViewDistanceM,
+        this->kTruncationDistanceMeters);
     // The check - A voxel is either:
     //   - decayed and out of view, or
     //   - not decayed and in view.

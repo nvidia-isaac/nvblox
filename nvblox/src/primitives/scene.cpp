@@ -120,44 +120,6 @@ bool Scene::getRayIntersection(const Vector3f& ray_origin,
   return ray_valid;
 }
 
-void Scene::generateDepthImageFromScene(const Camera& camera,
-                                        const Transform& T_S_C, float max_dist,
-                                        DepthImage* depth_frame,
-                                        const float invalid_depth) const {
-  CHECK_NOTNULL(depth_frame);
-  CHECK(depth_frame->memory_type() == MemoryType::kUnified)
-      << "For scene generation DepthImage with memory_type == kUnified is "
-         "required.";
-  CHECK_EQ(depth_frame->rows(), camera.height());
-  CHECK_EQ(depth_frame->cols(), camera.width());
-
-  const Transform T_C_S = T_S_C.inverse();
-
-  // Iterate over the entire image.
-  Index2D u_C;
-  for (u_C.x() = 0; u_C.x() < camera.width(); u_C.x()++) {
-    for (u_C.y() = 0; u_C.y() < camera.height(); u_C.y()++) {
-      // Get the ray going through this pixel.
-      const Vector3f ray_direction =
-          T_S_C.linear() * camera.vectorFromPixelIndices(u_C).normalized();
-      // Get the intersection point for this ray.
-      Vector3f ray_intersection;
-      float ray_dist;
-      if (getRayIntersection(T_S_C.translation(), ray_direction, max_dist,
-                             &ray_intersection, &ray_dist)) {
-        // The ray intersection is expressed in the world coordinate frame.
-        // We must transform it back to the camera coordinate frame.
-        const Vector3f p_C = T_C_S * ray_intersection;
-        // Then we use the z coordinate in the camera frame to set the depth.
-        (*depth_frame)(u_C.y(), u_C.x()) = p_C.z();
-      } else {
-        // Otherwise set the depth to invalid.
-        (*depth_frame)(u_C.y(), u_C.x()) = invalid_depth;
-      }
-    }
-  }
-}
-
 std::vector<Primitive::Type> Scene::getPrimitiveTypeList() const {
   std::vector<Primitive::Type> primitive_types;
   std::transform(primitives_.begin(), primitives_.end(),

@@ -28,14 +28,20 @@ limitations under the License.
 #include "nvblox/map/voxels.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/rays/ray_caster.h"
+#include "nvblox/tests/sensor_fixture.h"
 #include "nvblox/utils/timing.h"
 
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
-class FrustumTest : public ::testing::Test {
+template <typename SensorType>
+class FrustumTest : public test_utils::SensorFixture<SensorType> {
  protected:
+  FrustumTest()
+      : test_utils::SensorFixture<SensorType>(
+            Lidar(20, 20, 1E-2, 50.0F, 90.F * M_PI / 180.F),
+            Camera(300, 300, 320, 240, 640, 480)) {}
   void SetUp() override {
     timing::Timing::Reset();
     std::srand(0);
@@ -45,33 +51,26 @@ class FrustumTest : public ::testing::Test {
     scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-3.0f, -3.0f, 0.0f),
                                            Vector3f(3.0f, 3.0f, 3.0f));
 
-    // Arbitrary camera
-    constexpr float fu = 300;
-    constexpr float fv = 300;
-    constexpr int width = 640;
-    constexpr int height = 480;
-    constexpr float cu = static_cast<float>(width) / 2.0f;
-    constexpr float cv = static_cast<float>(height) / 2.0f;
-    camera_.reset(new Camera(fu, fv, cu, cv, width, height));
-
     base_path_ = "./data/3dmatch/";
 
     // NOTE(alexmillane): In the test we have situations where we expect
     // different results from exactly the same viewpoint so we turn off caching
     // here.
     view_calculator_.cache_last_viewpoint(false);
+
+    // Subsamling factor is different depending on sensor type.
+    view_calculator_.raycast_subsampling_factor(subsampling_factor());
   }
+
+  constexpr int subsampling_factor();
 
   static constexpr float kFloatEpsilon = 1e-4;
 
   float block_size_;
   float voxel_size_ = 0.05;
 
-  // A simulation scene.
   primitives::Scene scene_;
-
-  // A simulation camera.
-  std::unique_ptr<Camera> camera_;
+  TypeIndexedStore sensor_store_;
 
   // Base path for 3D Match dataset.
   std::string base_path_;
@@ -79,11 +78,27 @@ class FrustumTest : public ::testing::Test {
   ViewCalculator view_calculator_;
 };
 
-TEST_F(FrustumTest, FarPlaneImageTest) {
+// For Lidar we disable subsampling since the sensor is too sparse to handle it
+// well.
+template <>
+int FrustumTest<Lidar>::subsampling_factor() {
+  return 1;
+}
+
+// Camera uses default subsampling factor.
+template <>
+int FrustumTest<Camera>::subsampling_factor() {
+  return kRaycastSubsamplingFactorDesc.default_value;
+}
+
+using SensorTypes = ::testing::Types<Camera, Lidar>;
+TYPED_TEST_SUITE(FrustumTest, SensorTypes);
+
+TYPED_TEST(FrustumTest, FarPlaneImageTest) {
   // We create a scene that is a flat plane 10 meters from the origin.
   constexpr float kPlaneDistance = 10.0f;
-  float max_distance = kPlaneDistance;
-  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+
+  this->scene_.addPrimitive(std::make_unique<primitives::Plane>(
       Vector3f(kPlaneDistance, 0.0, 0.0), Vector3f(-1, 0, 0)));
 
   // Create a pose at the origin looking forward.
@@ -92,58 +107,76 @@ TEST_F(FrustumTest, FarPlaneImageTest) {
   T_S_C.prerotate(rotation_base);
 
   // Generate a depth frame with max distance == plane distance.
-  DepthImage depth_frame(camera_->height(), camera_->width(),
+  DepthImage depth_frame(this->sensor().height(), this->sensor().width(),
                          MemoryType::kUnified);
-  scene_.generateDepthImageFromScene(*camera_, T_S_C, 2 * kPlaneDistance,
-                                     &depth_frame);
+  constexpr float kInvalidDepth = -1.F;
+  this->scene_.generateDepthImageFromScene(
+      this->sensor(), T_S_C, 2 * kPlaneDistance, &depth_frame, kInvalidDepth);
 
-  // Now get the actual thing to test.
+  // We need to go integrate beyond the plane distance since lidar store ranges,
+  // not z-depths.
+  float max_distance = 10 * kPlaneDistance;
   std::vector<Index3D> blocks_in_cuda_view =
-      view_calculator_.getBlocksInImageViewRaycast(
+      this->view_calculator_.getBlocksInImageViewRaycast(
           MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_S_C,
-          *camera_, block_size_, 0.0f, max_distance + kFloatEpsilon);
+          this->sensor(), this->block_size_, 0.0f, max_distance);
 
   // Sort all of the entries.
   std::sort(blocks_in_cuda_view.begin(), blocks_in_cuda_view.end(),
             VectorCompare<Index3D>());
 
+  int num_valid_pixels = 0;
   // We will now raycast through every single pixel in the original image.
-  for (int u = 0; u < camera_->rows(); u++) {
-    for (int v = 0; v < camera_->cols(); v++) {
+  for (int u = 0; u < this->sensor().rows(); u++) {
+    for (int v = 0; v < this->sensor().cols(); v++) {
       // Get the depth at this image point.
       float depth = depth_frame(u, v);
-      Vector3f p_C = depth * camera_->vectorFromPixelIndices(Index2D(v, u));
+      Vector3f p_C =
+          depth * this->sensor().vectorFromPixelIndices(Index2D(v, u));
       Vector3f p_L = T_S_C * p_C;
 
-      Index3D block_index = getBlockIndexFromPositionInLayer(block_size_, p_L);
+      // the 360 lidar scan doesn't see the whole plane, hence some depth values
+      // will be invalid.
+      if (depth != kInvalidDepth) {
+        ++num_valid_pixels;
+        Index3D block_index =
+            getBlockIndexFromPositionInLayer(this->block_size_, p_L);
 
-      EXPECT_TRUE(std::binary_search(blocks_in_cuda_view.begin(),
-                                     blocks_in_cuda_view.end(), block_index,
-                                     VectorCompare<Index3D>()))
-          << block_index;
-      // Now raycast back to the center.
-      // Ok raycast to the correct point in the block.
-      RayCaster raycaster(T_S_C.translation() / block_size_, p_L / block_size_);
-      Index3D ray_index = Index3D::Zero();
-      while (raycaster.nextRayIndex(&ray_index)) {
         EXPECT_TRUE(std::binary_search(blocks_in_cuda_view.begin(),
-                                       blocks_in_cuda_view.end(), ray_index,
+                                       blocks_in_cuda_view.end(), block_index,
                                        VectorCompare<Index3D>()))
-            << ray_index;
+            << block_index;
+
+        // Now raycast back to the center.
+        // Ok raycast to the correct point in the block.
+        RayCaster raycaster(T_S_C.translation() / this->block_size_,
+                            p_L / this->block_size_);
+        Index3D ray_index = Index3D::Zero();
+        while (raycaster.nextRayIndex(&ray_index)) {
+          EXPECT_TRUE(std::binary_search(blocks_in_cuda_view.begin(),
+                                         blocks_in_cuda_view.end(), ray_index,
+                                         VectorCompare<Index3D>()))
+              << ray_index;
+        }
       }
     }
   }
 
+  EXPECT_GE(num_valid_pixels, std::max(10, depth_frame.numel() / 10));
+
   std::cout << timing::Timing::Print();
 }
 
-TEST_F(FrustumTest, PlaneWithGround) {
+TYPED_TEST(FrustumTest, PlaneWithGround) {
   // We create a scene that is a flat plane 10 meters from the origin.
   constexpr float kPlaneDistance = 10.0f;
-  float max_distance = kPlaneDistance;
-  scene_.addPrimitive(std::make_unique<primitives::Plane>(
+
+  // We need to go integrate beyond the plane distance since lidar store ranges,
+  // not z-depths.
+  float max_distance = 10.F * kPlaneDistance;
+  this->scene_.addPrimitive(std::make_unique<primitives::Plane>(
       Vector3f(kPlaneDistance, 0.0, 0.0), Vector3f(-1, 0, 0)));
-  scene_.addGroundLevel(-1.0f);
+  this->scene_.addGroundLevel(-1.0f);
 
   // Create a pose at the origin looking forward.
   Eigen::Quaternionf rotation_base(0.5, 0.5, 0.5, 0.5);
@@ -151,24 +184,26 @@ TEST_F(FrustumTest, PlaneWithGround) {
   T_S_C.prerotate(rotation_base);
 
   // Generate a depth frame with max distance == plane distance.
-  DepthImage depth_frame(camera_->height(), camera_->width(),
+  DepthImage depth_frame(this->sensor().height(), this->sensor().width(),
                          MemoryType::kUnified);
-  scene_.generateDepthImageFromScene(*camera_, T_S_C, 2 * kPlaneDistance,
-                                     &depth_frame);
+  this->scene_.generateDepthImageFromScene(this->sensor(), T_S_C,
+                                           2 * kPlaneDistance, &depth_frame);
 
   // Figure out what the GT should be.
   timing::Timer blocks_in_view_timer("blocks_in_view");
   ViewCalculator view_calculator;
-  std::vector<Index3D> blocks_in_view = view_calculator.getBlocksInViewPlanes(
-      T_S_C, *camera_, block_size_, max_distance);
+  std::vector<Index3D> blocks_in_view =
+      view_calculator.getBlocksInImageViewProjection(
+          T_S_C, this->sensor(), this->block_size_, max_distance);
   blocks_in_view_timer.Stop();
 
   // Now get the actual thing to test.
   timing::Timer blocks_in_cuda_view_timer("blocks_in_cuda_view");
   std::vector<Index3D> blocks_in_cuda_view =
-      view_calculator_.getBlocksInImageViewRaycast(
+      this->view_calculator_.getBlocksInImageViewRaycast(
           MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_S_C,
-          *camera_, block_size_, 0.0f, max_distance + kFloatEpsilon);
+          this->sensor(), this->block_size_, 0.0f,
+          max_distance + this->kFloatEpsilon);
   EXPECT_LT(blocks_in_cuda_view.size(), blocks_in_view.size());
   blocks_in_cuda_view_timer.Stop();
 
@@ -181,8 +216,8 @@ TEST_F(FrustumTest, PlaneWithGround) {
   // Ok now the hard part. We expect the raycast to EVERY PIXEL to succeed
   // in only going through allocated blocks.
   // We make this easy by just making a TSDF layer.
-  TsdfLayer tsdf_layer(voxel_size_, nvblox::MemoryType::kUnified);
-  TsdfLayer tsdf_layer_cuda(voxel_size_, nvblox::MemoryType::kUnified);
+  TsdfLayer tsdf_layer(this->voxel_size_, nvblox::MemoryType::kUnified);
+  TsdfLayer tsdf_layer_cuda(this->voxel_size_, nvblox::MemoryType::kUnified);
 
   for (const Index3D& block_index : blocks_in_cuda_view) {
     TsdfBlock::Ptr block = tsdf_layer_cuda.allocateBlockAtIndex(block_index);
@@ -196,20 +231,23 @@ TEST_F(FrustumTest, PlaneWithGround) {
   }
 
   // We will now raycast through every single pixel in the original image.
-  for (int u = 0; u < camera_->rows(); u++) {
-    for (int v = 0; v < camera_->cols(); v++) {
+  for (int u = 0; u < this->sensor().rows(); u++) {
+    for (int v = 0; v < this->sensor().cols(); v++) {
       // Get the depth at this image point.
       float depth = depth_frame(u, v);
-      Vector3f p_C = depth * camera_->vectorFromPixelIndices(Index2D(v, u));
+      Vector3f p_C =
+          depth * this->sensor().vectorFromPixelIndices(Index2D(v, u));
       Vector3f p_L = T_S_C * p_C;
 
-      Index3D block_index = getBlockIndexFromPositionInLayer(block_size_, p_L);
+      Index3D block_index =
+          getBlockIndexFromPositionInLayer(this->block_size_, p_L);
 
       EXPECT_TRUE(tsdf_layer_cuda.isBlockAllocated(block_index)) << block_index;
 
       // Now raycast back to the center.
       // Ok raycast to the correct point in the block.
-      RayCaster raycaster(T_S_C.translation() / block_size_, p_L / block_size_);
+      RayCaster raycaster(T_S_C.translation() / this->block_size_,
+                          p_L / this->block_size_);
       Index3D ray_index = Index3D::Zero();
       while (raycaster.nextRayIndex(&ray_index)) {
         EXPECT_TRUE(tsdf_layer_cuda.isBlockAllocated(ray_index)) << ray_index;
@@ -248,7 +286,9 @@ TEST_F(FrustumTest, PlaneWithGround) {
   std::cout << timing::Timing::Print();
 }
 
-TEST_F(FrustumTest, ThreeDMatch) {
+// 3DMatch is camera only
+using FrustumTestCamera = FrustumTest<Camera>;
+TEST_F(FrustumTestCamera, ThreeDMatch) {
   // Get the first frame, a camera, and a pose.
   constexpr int kSequenceNum = 1;
   constexpr int kFrameNumber = 0;
@@ -285,16 +325,17 @@ TEST_F(FrustumTest, ThreeDMatch) {
     // Now get the actual thing to test.
     timing::Timer blocks_in_cuda_view_timer("blocks_in_cuda_view");
     std::vector<Index3D> blocks_in_cuda_view =
-        view_calculator_.getBlocksInImageViewRaycast(
+        this->view_calculator_.getBlocksInImageViewRaycast(
             MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere),
-            T_L_C, camera, block_size_, 0.0f, max_distance);
+            T_L_C, camera, this->block_size_, 0.0f, max_distance);
     blocks_in_cuda_view_timer.Stop();
 
     // Figure out what the GT should be.
     timing::Timer blocks_in_view_timer("blocks_in_view");
     ViewCalculator view_calculator;
-    std::vector<Index3D> blocks_in_view = view_calculator.getBlocksInViewPlanes(
-        T_L_C, camera, block_size_, max_distance);
+    std::vector<Index3D> blocks_in_view =
+        view_calculator.getBlocksInImageViewProjection(
+            T_L_C, camera, this->block_size_, max_distance);
     blocks_in_view_timer.Stop();
   }
 
@@ -302,7 +343,7 @@ TEST_F(FrustumTest, ThreeDMatch) {
 }
 
 class FrustumRayTracingSubsamplingTest
-    : public FrustumTest,
+    : public FrustumTest<Camera>,
       public ::testing::WithParamInterface<int> {
  protected:
   // Yo dawg I heard you like params
@@ -374,7 +415,8 @@ TEST_P(FrustumRayTracingSubsamplingTest, RayTracePixels) {
 INSTANTIATE_TEST_CASE_P(FrustumTest, FrustumRayTracingSubsamplingTest,
                         ::testing::Values(1, 2));
 
-TEST_F(FrustumTest, ViewpointCache) {
+// 3DMatch is camera only
+TEST_F(FrustumTestCamera, ViewpointCache) {
   // Load some 3DMatch data
   constexpr int kSeqID = 1;
   constexpr bool kMultithreadedLoading = false;
@@ -388,7 +430,8 @@ TEST_F(FrustumTest, ViewpointCache) {
   Camera camera;
   data_loader->loadNext(&depth_frame, &T_L_C, &camera, &color_frame);
 
-  const float max_integration_distance_behind_surface_m = 4.0f * voxel_size_;
+  const float max_integration_distance_behind_surface_m =
+      4.0f * this->voxel_size_;
   const float max_integration_distance_m = 10.0f;
 
   // Two view calculators not sharing caches.
@@ -398,7 +441,7 @@ TEST_F(FrustumTest, ViewpointCache) {
   std::vector<Index3D> blocks_in_view_1 =
       view_calculator_1.getBlocksInImageViewRaycast(
           MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
-          camera, block_size_, max_integration_distance_behind_surface_m,
+          camera, this->block_size_, max_integration_distance_behind_surface_m,
           max_integration_distance_m);
 
   DepthImage zero_depth_image(MemoryType::kDevice);
@@ -408,7 +451,8 @@ TEST_F(FrustumTest, ViewpointCache) {
   std::vector<Index3D> blocks_in_view_2 =
       view_calculator_2.getBlocksInImageViewRaycast(
           MaskedDepthImageConstView(zero_depth_image, kMaskActiveEverywhere),
-          T_L_C, camera, block_size_, max_integration_distance_behind_surface_m,
+          T_L_C, camera, this->block_size_,
+          max_integration_distance_behind_surface_m,
           max_integration_distance_m);
 
   EXPECT_GT(blocks_in_view_1.size(), 0);
@@ -425,16 +469,54 @@ TEST_F(FrustumTest, ViewpointCache) {
   // calculations
   blocks_in_view_1 = view_calculator_1.getBlocksInImageViewRaycast(
       MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
-      camera, block_size_, max_integration_distance_behind_surface_m,
+      camera, this->block_size_, max_integration_distance_behind_surface_m,
       max_integration_distance_m);
 
   blocks_in_view_2 = view_calculator_2.getBlocksInImageViewRaycast(
       MaskedDepthImageConstView(zero_depth_image, kMaskActiveEverywhere), T_L_C,
-      camera, block_size_, max_integration_distance_behind_surface_m,
+      camera, this->block_size_, max_integration_distance_behind_surface_m,
       max_integration_distance_m);
 
   EXPECT_GT(blocks_in_view_1.size(), 0);
   EXPECT_EQ(blocks_in_view_1.size(), blocks_in_view_2.size());
+}
+
+// We have specialized (camera-optimized) version of
+// getBlocksInImageViewProjection(). We expect its output to be identical to the
+// general version.
+TEST_F(FrustumTestCamera, getBlocksInImageViewProjection_specialization) {
+  Transform T_S_C = Transform::Identity();
+
+  const float max_distance = 10.F;
+
+  // Run with the camera-specialized function.
+  std::vector<Index3D> blocks_in_cuda_view_specialization =
+      this->view_calculator_.getBlocksInImageViewProjection(
+          T_S_C, this->sensor(), this->block_size_, max_distance);
+
+  // Create a derived camera class that is identical to the other camera. Using
+  // this one will trigger the generic function since the type is different.
+  class GenericCamera : public Camera {};
+  GenericCamera generic_camera;
+  static_cast<Camera&>(generic_camera) = this->sensor();
+
+  std::vector<Index3D> blocks_in_cuda_view_generic =
+      this->view_calculator_.getBlocksInImageViewProjection(
+          T_S_C, generic_camera, this->block_size_, max_distance);
+
+  constexpr int kExpectedNumBlocks = 23042;
+  ASSERT_EQ(blocks_in_cuda_view_specialization.size(), kExpectedNumBlocks);
+  ASSERT_EQ(blocks_in_cuda_view_generic.size(), kExpectedNumBlocks);
+
+  // Sort all of the entries and compare
+  std::sort(blocks_in_cuda_view_specialization.begin(),
+            blocks_in_cuda_view_specialization.end(), VectorCompare<Index3D>());
+  std::sort(blocks_in_cuda_view_generic.begin(),
+            blocks_in_cuda_view_generic.end(), VectorCompare<Index3D>());
+  for (size_t i = 0; i < blocks_in_cuda_view_generic.size(); ++i) {
+    EXPECT_EQ(blocks_in_cuda_view_generic[i],
+              blocks_in_cuda_view_specialization[i]);
+  }
 }
 
 int main(int argc, char** argv) {

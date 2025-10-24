@@ -14,93 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include <nvblox/integrators/occupancy_decay_integrator.h>
+#include <nvblox/integrators/internal/cuda/impl/occupancy_decay_integrator_impl.cuh>
 
 #include "nvblox/integrators/internal/cuda/impl/decayer_impl.cuh"
 #include "nvblox/integrators/internal/integrators_common.h"
 
 namespace nvblox {
-
-struct OccupancyDecayFunctor {
-  __host__ __device__ OccupancyDecayFunctor(float free_space_decay_log_odds,
-                                            float occupied_space_decay_log_odds,
-                                            float decay_to_log_odds)
-      : free_space_decay_log_odds_(free_space_decay_log_odds),
-        occupied_space_decay_log_odds_(occupied_space_decay_log_odds),
-        decay_to_log_odds_(decay_to_log_odds) {}
-  __host__ __device__ ~OccupancyDecayFunctor() = default;
-
-  /// Return true if the passed voxel is fully decayed
-  /// @param voxel_ptr The voxel to check
-  /// @return True if fully decayed
-  __device__ bool isFullyDecayed(OccupancyVoxel* voxel_ptr) const {
-    // Check if the next decay step would pass the threshold value in either
-    // direction.
-    const float log_odds = voxel_ptr->log_odds;
-    if (log_odds >= decay_to_log_odds_) {
-      return log_odds + occupied_space_decay_log_odds_ < decay_to_log_odds_;
-    } else {
-      return log_odds + free_space_decay_log_odds_ >= decay_to_log_odds_;
-    }
-  }
-
-  /// Decays a single Occupancy voxel.
-  /// @param voxel_ptr voxel to decay
-  /// @return True if the voxel is fully decayed
-  __device__ void operator()(OccupancyVoxel* voxel_ptr) const {
-    // If fully decayed, set to decay-to probability
-    if (isFullyDecayed(voxel_ptr)) {
-      voxel_ptr->log_odds = decay_to_log_odds_;
-      return;
-    }
-
-    // Else decay
-    if (voxel_ptr->log_odds >= 0) {
-      voxel_ptr->log_odds += occupied_space_decay_log_odds_;
-    } else {
-      voxel_ptr->log_odds += free_space_decay_log_odds_;
-    }
-  }
-
- protected:
-  // Params
-  float free_space_decay_log_odds_;
-  float occupied_space_decay_log_odds_;
-  float decay_to_log_odds_;
-};
-
-std::vector<Index3D> OccupancyDecayIntegrator::decay(
-    OccupancyLayer* layer_ptr, const CudaStream& cuda_stream) {
-  return decay(layer_ptr, {}, {}, cuda_stream);
-}
-
-std::vector<Index3D> OccupancyDecayIntegrator::decay(
-    OccupancyLayer* layer_ptr,
-    const DecayBlockExclusionOptions& block_exclusion_options,
-    const CudaStream& cuda_stream) {
-  return decay(layer_ptr, block_exclusion_options, {}, cuda_stream);
-}
-
-std::vector<Index3D> OccupancyDecayIntegrator::decay(
-    OccupancyLayer* layer_ptr,
-    const ViewBasedInclusionData& view_exclusion_options,
-    const CudaStream& cuda_stream) {
-  return decay(layer_ptr, {}, view_exclusion_options, cuda_stream);
-}
-
-std::vector<Index3D> OccupancyDecayIntegrator::decay(
-    OccupancyLayer* layer_ptr,
-    const std::optional<DecayBlockExclusionOptions>& block_exclusion_options,
-    const std::optional<ViewBasedInclusionData>& view_exclusion_options,
-    const CudaStream& cuda_stream) {
-  // Build the functor which decays a single voxel.
-  OccupancyDecayFunctor voxel_decayer(free_space_decay_log_odds_,
-                                      occupied_space_decay_log_odds_,
-                                      decay_to_log_odds_);
-  // Run it on all voxels
-  return decayer_.decay(layer_ptr, voxel_decayer, deallocate_decayed_blocks_,
-                        block_exclusion_options, view_exclusion_options,
-                        cuda_stream);
-}
 
 float OccupancyDecayIntegrator::free_region_decay_probability() const {
   return probabilityFromLogOdds(free_space_decay_log_odds_);

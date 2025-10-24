@@ -54,28 +54,29 @@ __device__ inline void voxelAndBlockIndexFromCudaThreadIndex(
   *voxel_idx = Index3D(threadIdx.z, threadIdx.y, threadIdx.x);
 }
 
+template <typename SensorType>
 __device__ inline bool doesVoxelHaveDepthMeasurement(
-    const Index3D& block_idx, const Index3D& voxel_idx, const Camera camera,
-    const DepthImageConstView image, const Transform T_C_L,
-    const float block_size, const float max_integration_distance,
-    const float truncation_distance_m) {
+    const Index3D& block_idx, const Index3D& voxel_idx,
+    const SensorType& sensor, const DepthImageConstView image,
+    const Transform T_C_L, const float voxel_size, const float block_size,
+    const float max_integration_distance, const float truncation_distance_m) {
   // Project the voxel into the depth image
   Eigen::Vector2f u_px;
   float voxel_depth_m;
   Vector3f p_voxel_center_C;
-  if (!projectThreadVoxel(block_idx, voxel_idx, camera, T_C_L, block_size,
+  if (!projectThreadVoxel(block_idx, voxel_idx, sensor, T_C_L, block_size,
                           max_integration_distance, &u_px, &voxel_depth_m,
                           &p_voxel_center_C)) {
     return false;
   }
   // Interpolate on the image plane
-  // Note that the value of the depth image is the depth to the surface.
+  // This is done differently depending on the sensor type.
   float surface_depth_measured;
-  if (!interpolation::interpolate2DClosest<
-          float, interpolation::checkers::FloatPixelGreaterThanZero>(
-          image, u_px, &surface_depth_measured)) {
+  if (!sensor.interpolateDepthImage(image, u_px, p_voxel_center_C, voxel_size,
+                                    &surface_depth_measured)) {
     return false;
   }
+
   // Check the distance from the surface
   const float voxel_to_surface_distance =
       surface_depth_measured - voxel_depth_m;

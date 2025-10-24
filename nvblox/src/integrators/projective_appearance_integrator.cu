@@ -95,9 +95,10 @@ void ProjectiveAppearanceIntegrator<LayerType>::integrateFrame(
 
   timing::Timer blocks_in_view_timer(getIntegratorName() +
                                      "/integrate/get_blocks_in_view");
-  std::vector<Index3D> block_indices = view_calculator_.getBlocksInViewPlanes(
-      T_L_C, camera, layer->block_size(),
-      this->max_integration_distance_m_ + truncation_distance_m);
+  std::vector<Index3D> block_indices =
+      view_calculator_.getBlocksInImageViewProjection(
+          T_L_C, camera, layer->block_size(),
+          this->max_integration_distance_m_ + truncation_distance_m);
   blocks_in_view_timer.Stop();
 
   // Check which of these blocks are:
@@ -314,12 +315,15 @@ struct UpdateAppearanceVoxelFunctor {
   __device__ bool operator()(
       const float measured_depth_m, const float voxel_depth_m,
       const bool is_active,
-      const typename VoxelType::ArrayType& appearance_measured,
+      const std::optional<typename VoxelType::ArrayType>& appearance_measured,
       VoxelType* voxel_ptr) {
+    NVBLOX_CHECK(appearance_measured.has_value(), "Need measurement");
+
     // If the mask is inactive, we skip this measurement
     if (!is_active) {
       return false;
     }
+
     // Read CURRENT voxel values (from global GPU memory)
     const ArrayType voxel_appearance_current =
         getArrayFromAppearanceVoxel(*voxel_ptr);
@@ -329,11 +333,11 @@ struct UpdateAppearanceVoxelFunctor {
     ArrayType fused_appearance;
     if (__half2float(voxel_ptr->weight) == 0.f) {
       // If this is the first measurement, we simply copy the measurement
-      setArrayFromAppearanceVoxel(appearance_measured, voxel_ptr);
+      setArrayFromAppearanceVoxel(appearance_measured.value(), voxel_ptr);
     } else {
       // Exponential filter
       blendTwoArrays(voxel_appearance_current, (1.0f - measurement_weight_),
-                     appearance_measured, measurement_weight_,
+                     appearance_measured.value(), measurement_weight_,
                      &fused_appearance);
       // Write NEW voxel values (to global GPU memory)
       setArrayFromAppearanceVoxel(fused_appearance, voxel_ptr);

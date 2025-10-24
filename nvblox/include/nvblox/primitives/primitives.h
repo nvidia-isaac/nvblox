@@ -77,6 +77,8 @@ class Primitive {
                                   Vector3f* intersect_point,
                                   float* intersect_dist) const = 0;
 
+  const Vector3f& center() const { return center_; }
+
  protected:
   Vector3f center_;
   Type type_;
@@ -140,6 +142,8 @@ class Plane : public Primitive {
                                   const Vector3f& ray_direction, float max_dist,
                                   Vector3f* intersect_point,
                                   float* intersect_dist) const override;
+
+  const Vector3f& normal() const { return normal_; }
 
  protected:
   Vector3f normal_;

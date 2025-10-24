@@ -101,6 +101,7 @@ If you find this library useful for your research, please consider citing our pa
    pages/core_library_run_an_example
    pages/core_library_more_examples
    pages/core_library_interface
+   pages/core_library_sensors
 
 .. toctree::
    :maxdepth: 1

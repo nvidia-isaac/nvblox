@@ -20,8 +20,8 @@ limitations under the License.
 #include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/time.h"
 #include "nvblox/core/types.h"
+#include "nvblox/integrators/depth_observation_space.h"
 #include "nvblox/integrators/freespace_integrator_params.h"
-#include "nvblox/integrators/viewpoint.h"
 #include "nvblox/map/blox.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/map/layer.h"
@@ -61,10 +61,12 @@ class FreespaceIntegrator {
   /// @param view_to_update Describes the view of the scene in which voxels
   /// should be updated.
   /// @param freespace_layer_ptr The freespace layer that will be updated.
-  void updateFreespaceLayer(const std::vector<Index3D>& block_indices_to_update,
-                            Time update_time_ms, const TsdfLayer& tsdf_layer,
-                            const std::optional<ViewBasedInclusionData>& view,
-                            FreespaceLayer* freespace_layer_ptr);
+  template <typename SensorType>
+  void updateFreespaceLayer(
+      const std::vector<Index3D>& block_indices_to_update, Time update_time_ms,
+      const TsdfLayer& tsdf_layer,
+      const std::optional<DepthObservationSpace<SensorType>>& view,
+      FreespaceLayer* freespace_layer_ptr);
 
   /// A parameter getter
   /// Tsdf distance below which we assume a voxel to be occupied.
@@ -126,15 +128,27 @@ class FreespaceIntegrator {
   /// @param value whether to check the neighboring voxels
   void check_neighborhood(bool value);
 
+  /// A parameter getter
+  /// Whether to initialize voxels to high confidence freespace
+  /// @returns whether to initialize to high confidence freespace
+  bool initialize_to_high_confidence_freespace() const;
+
+  /// A parameter setter
+  /// See initialize_to_high_confidence_freespace().
+  /// @param value whether to initialize to high confidence freespace
+  void initialize_to_high_confidence_freespace(bool value);
+
   /// Return the parameter tree.
   /// @return the parameter tree
   virtual parameters::ParameterTreeNode getParameterTree(
       const std::string& name_remap = std::string()) const;
 
  protected:
-  void launchKernel(Time update_time_ms,
-                    const std::optional<ViewBasedInclusionData>& view,
-                    FreespaceLayer* freespace_layer_ptr);
+  template <typename SensorType>
+  void launchKernel(
+      Time update_time_ms,
+      const std::optional<DepthObservationSpace<SensorType>>& view,
+      FreespaceLayer* freespace_layer_ptr);
 
   // Parameters (see getters for description)
   // Note: See comment behind each parameter for corresponding dynablox
@@ -150,6 +164,8 @@ class FreespaceIntegrator {
       kMinConsecutiveOccupancyDurationForResetMsParamDesc
           .default_value};  // tau_r
   bool check_neighborhood_ = kCheckNeighborhoodParamDesc.default_value;
+  bool initialize_to_high_confidence_freespace_ =
+      kInitializeToHighConfidenceFreespaceParamDesc.default_value;
 
   // Time
   Time last_update_time_ms_{0};

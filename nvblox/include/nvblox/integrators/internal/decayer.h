@@ -20,7 +20,8 @@ limitations under the License.
 #include "nvblox/core/cuda_stream.h"
 #include "nvblox/core/log_odds.h"
 #include "nvblox/core/parameter_tree.h"
-#include "nvblox/integrators/viewpoint.h"
+#include "nvblox/integrators/depth_observation_space.h"
+#include "nvblox/integrators/internal/decay_integrator_base.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/map/layer.h"
 #include "nvblox/sensors/camera.h"
@@ -49,13 +50,14 @@ class VoxelDecayer {
   /// @param view_exclusion_options Specifies view-based voxel exclusion.
   /// @param cuda_stream The stream to do GPU work on.
   /// @return A vector containing the indices of the blocks deallocated.
-  template <typename DecayFunctorType>
+  template <typename DecayFunctorType, typename SensorType>
   std::vector<Index3D> decay(
       LayerType* layer_ptr,                         // NOLINT
       const DecayFunctorType& voxel_decay_functor,  // NOLINT
       const bool deallocate_decayed_blocks,         // NOLINT
       const std::optional<DecayBlockExclusionOptions>& block_exclusion_options,
-      const std::optional<ViewBasedInclusionData>& view_exclusion_options,
+      const std::optional<DepthObservationSpace<SensorType>>&
+          view_exclusion_options,
       const CudaStream& cuda_stream);
 
  protected:

@@ -52,20 +52,24 @@ def build_deps_image(base_image: Optional[str] = None, image_name_suffix: str = 
 def build_binaries_image(base_image: Optional[str] = None,
                          image_name_suffix: str = '',
                          cuda_arch: Optional[str] = None,
-                         skip_build_binaries_docker: bool = False) -> str:
+                         skip_build_binaries_docker: bool = False,
+                         max_num_build_jobs: Optional[int] = None) -> str:
     """Build nvblox binaries (.build) image"""
     image_name = 'nvblox_build' + image_name_suffix
 
     if cuda_arch is None:
         cuda_arch = get_cuda_arch()
 
+    extra_build_args = ['--build-arg', f"CMAKE_ARGS='-DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'"]
+
+    if max_num_build_jobs is not None:
+        extra_build_args.extend(['--build-arg', f'MAX_NUM_JOBS={max_num_build_jobs}'])
+
     if not skip_build_binaries_docker:
         build_image(dockerfile_path=os.path.join('docker', 'Dockerfile.build'),
                     image_name=image_name,
                     base_image=base_image,
-                    extra_build_args=[
-                        '--build-arg', f"CMAKE_ARGS='-DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'"
-                    ])
+                    extra_build_args=extra_build_args)
 
     return image_name
 
@@ -125,6 +129,10 @@ def parse_args() -> argparse.Namespace:
                         type=str,
                         help='Optionally input cuda architectures to build for as a '
                         'semicolon separated list. e.g. "90;89" ')
+    parser.add_argument('--max-num-build-jobs',
+                        type=int,
+                        help='Max number of build jobs',
+                        default=None)
     return parser.parse_args()
 
 
@@ -141,7 +149,8 @@ def main() -> int:
         build_binaries_image(base_image=deps_image,
                              image_name_suffix=args.image_name_suffix,
                              cuda_arch=args.cuda_arch,
-                             skip_build_binaries_docker=args.skip_build_binaries_docker)
+                             skip_build_binaries_docker=args.skip_build_binaries_docker,
+                             max_num_build_jobs=args.max_num_build_jobs)
 
     if args.build_realsense_example_image:
         # need deps + binaries
@@ -152,7 +161,8 @@ def main() -> int:
             base_image=deps_image,
             image_name_suffix=REALSENSE_IMAGE_NAME_SUFFIX,
             cuda_arch=args.cuda_arch,
-            skip_build_binaries_docker=args.skip_build_binaries_docker)
+            skip_build_binaries_docker=args.skip_build_binaries_docker,
+            max_num_build_jobs=args.max_num_build_jobs)
 
         build_realsense_example_image(base_image=binaries_image,
                                       image_name_suffix=REALSENSE_IMAGE_NAME_SUFFIX)

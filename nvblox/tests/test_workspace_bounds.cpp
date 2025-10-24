@@ -54,11 +54,11 @@ int checkWorkspaceIntegration(const Camera& camera,
 
   // Plane centered at (0,0,depth)
   const float kPlaneDistance = 5.0f;
-  const test_utils::Plane plane = test_utils::Plane(
+  const primitives::Plane plane = primitives::Plane(
       Vector3f(0.0f, 0.0f, kPlaneDistance), Vector3f(0.0f, 0.0f, -1.0f));
 
   // Get a depth map of our view of the plane.
-  const DepthImage depth_frame = test_utils::getDepthImage(plane, camera);
+  const DepthImage depth_frame = test_utils::getPlaneDepthImage(plane, camera);
 
   // Integrate a frame
   std::vector<Index3D> updated_blocks;

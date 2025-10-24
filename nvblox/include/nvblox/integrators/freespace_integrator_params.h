@@ -47,6 +47,11 @@ constexpr Param<bool>::Description kCheckNeighborhoodParamDesc{
     "Whether to check the occupancy of the neighboring voxels for the high "
     "confidence freespace update."};
 
+constexpr Param<bool>::Description
+    kInitializeToHighConfidenceFreespaceParamDesc{
+        "initialize_to_high_confidence_freespace", false,
+        "Whether to initialize voxels to high confidence freespace."};
+
 struct FreespaceIntegratorParams {
   Param<float> max_tsdf_distance_for_occupancy_m{
       kMaxTsdfDistanceForOccupancyMParamDesc};
@@ -57,6 +62,8 @@ struct FreespaceIntegratorParams {
   Param<Time> min_consecutive_occupancy_duration_for_reset_ms{
       kMinConsecutiveOccupancyDurationForResetMsParamDesc};
   Param<bool> check_neighborhood{kCheckNeighborhoodParamDesc};
+  Param<bool> initialize_to_high_confidence_freespace{
+      kInitializeToHighConfidenceFreespaceParamDesc};
 };
 
 }  // namespace nvblox

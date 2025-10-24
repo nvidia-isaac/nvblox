@@ -81,8 +81,10 @@ class Scene {
 
   /// Generates a synthetic view given camera parameters and a transformation
   /// of the camera to the scene.
-  void generateDepthImageFromScene(const Camera& camera, const Transform& T_S_C,
-                                   float max_dist, DepthImage* depth_frame,
+  template <typename SensorType>
+  void generateDepthImageFromScene(const SensorType& sensor,
+                                   const Transform& T_S_C, float max_dist,
+                                   DepthImage* depth_frame,
                                    const float invalid_depth = 0.f) const;
 
   /// Computes the ground truth SDFs (either TSDF or ESDF depending on template

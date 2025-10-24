@@ -42,44 +42,11 @@ class ProjectiveIntegrator {
   virtual ~ProjectiveIntegrator() = default;
 
   /// Update a generic layer using depth image
-  template <typename UpdateFunctor>
+  template <typename UpdateFunctor, typename SensorType>
   void integrateFrame(const MaskedDepthImageConstView& depth_frame,
-                      const Transform& T_L_C, const Camera& camera,
+                      const Transform& T_L_C, const SensorType& sensor,
                       UpdateFunctor* op, VoxelBlockLayer<VoxelType>* layer,
                       std::vector<Index3D>* updated_blocks);
-
-  /// Update a generic layer using a (potentially) sparse depth image from lidar
-  template <typename UpdateFunctor>
-  void integrateFrame(const MaskedDepthImageConstView& depth_frame,
-                      const Transform& T_L_C, const Lidar& lidar,
-                      UpdateFunctor* op, VoxelBlockLayer<VoxelType>* layer,
-                      std::vector<Index3D>* updated_blocks);
-
-  /// A parameter getter
-  /// The maximum allowable value for the maximum distance between the linearly
-  /// interpolated image value and its four neighbours. Above this value we
-  /// consider linear interpolation failed. This is to prevent interpolation
-  /// across boundaries in the lidar image, which causing bleeding in the
-  /// reconstructed 3D structure.
-  /// @returns the maximum allowable distance in voxels
-  float lidar_linear_interpolation_max_allowable_difference_vox() const;
-
-  /// A parameter getter
-  /// The maximum allowable distance between a reprojected voxel's center and
-  /// the ray performing this integration. Above this we consider nearest
-  /// neighbour interpolation to have failed.
-  /// @returns the maximum allowable distance in voxels
-  float lidar_nearest_interpolation_max_allowable_dist_to_ray_vox() const;
-
-  /// A parameter setter
-  /// see lidar_linear_interpolation_max_allowable_difference_vox()
-  /// @param the new parameter value
-  void lidar_linear_interpolation_max_allowable_difference_vox(float value);
-
-  /// A parameter setter
-  /// see lidar_nearest_interpolation_max_allowable_dist_to_ray_vox()
-  /// @param the new parameter value
-  void lidar_nearest_interpolation_max_allowable_dist_to_ray_vox(float value);
 
   /// A parameter getter
   /// The truncation distance parameter associated with this integrator. The
@@ -98,7 +65,7 @@ class ProjectiveIntegrator {
   /// A parameter getter
   /// The maximum distance at which voxels are updated. Voxels beyond this
   /// distance from the camera are not affected by integration.
-  /// @returns the maximum intragration distance
+  /// @returns the maximum integration distance
   float max_integration_distance_m() const;
 
   /// A parameter setter
@@ -108,7 +75,7 @@ class ProjectiveIntegrator {
 
   /// A parameter setter
   /// See max_integration_distance_m().
-  /// @param max_integration_distance_m the maximum intragration distance in
+  /// @param max_integration_distance_m the maximum integration distance in
   /// meters.
   void max_integration_distance_m(float max_integration_distance_m);
 
@@ -148,29 +115,21 @@ class ProjectiveIntegrator {
   // Methods below are specialized for different combinations of depth sensor +
   // appearance image type.
 
-  // Depth camera + color image
-  template <typename UpdateFunctor>
+  // Depth integration
+  template <typename UpdateFunctor, typename SensorType>
   void integrateBlocks(const MaskedDepthImageConstView& depth_frame,
-                       const MaskedColorImageConstView& color_frame,
-                       const Transform& T_C_L, const Camera& camera,
+                       const MaskedColorImageConstView&, /*unused*/
+                       const Transform& T_C_L, const SensorType& sensor,
                        UpdateFunctor* op,
                        VoxelBlockLayer<VoxelType>* layer_ptr);
 
   // Depth camera + feature image
-  template <typename UpdateFunctor>
+  template <typename UpdateFunctor, typename SensorType>
   void integrateBlocks(const MaskedDepthImageConstView& depth_frame,
                        const MaskedFeatureImageConstView& feature_frame,
-                       const Transform& T_C_L, const Camera& camera,
+                       const Transform& T_C_L, const SensorType& sensor,
                        UpdateFunctor* op,
                        VoxelBlockLayer<VoxelType>* layer_ptr);
-  // LIDAR + color
-  template <typename UpdateFunctor>
-  void integrateBlocks(const MaskedDepthImageConstView& depth_frame,
-                       const MaskedColorImageConstView& color_frame,
-                       const Transform& T_C_L, const Lidar& lidar,
-                       UpdateFunctor* op,
-                       VoxelBlockLayer<VoxelType>* layer_ptr);
-
   // Get the child integrator name
   virtual std::string getIntegratorName() const = 0;
   bool integrator_name_initialized_ = false;
@@ -178,8 +137,6 @@ class ProjectiveIntegrator {
 
   // Params
   // NOTE(alexmillane): See the getters above for a description.
-  float lidar_linear_interpolation_max_allowable_difference_vox_ = 2.0f;
-  float lidar_nearest_interpolation_max_allowable_dist_to_ray_vox_ = 0.5f;
   float truncation_distance_vox_ =
       kProjectiveIntegratorTruncationDistanceVoxParamDesc.default_value;
   float max_integration_distance_m_ =

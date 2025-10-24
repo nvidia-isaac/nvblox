@@ -21,32 +21,27 @@ limitations under the License.
 #include "nvblox/io/image_io.h"
 #include "nvblox/io/pointcloud_io.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/sensors/camera.h"
+#include "nvblox/sensors/lidar.h"
+#include "nvblox/tests/sensor_fixture.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
-
-class DynamicsTester : public ::testing::Test {
+template <typename SensorType>
+class DynamicsTester : public ::test_utils::SensorFixture<SensorType> {
  protected:
-  DynamicsTester() : camera_(Camera(fu_, fv_, cu_, cv_, width_, height_)) {}
-
   // Test layer
   constexpr static float voxel_size_m_ = 0.05;
   constexpr static float truncation_distance_vox_ = 4;
   constexpr static float truncation_distance_meters_ =
       truncation_distance_vox_ * voxel_size_m_;
   constexpr static float max_integration_distance_ = 20.0f;
-
-  // Test camera
-  constexpr static float fu_ = 300;
-  constexpr static float fv_ = 300;
-  constexpr static int width_ = 640;
-  constexpr static int height_ = 480;
-  constexpr static float cu_ = static_cast<float>(width_) / 2.0f;
-  constexpr static float cv_ = static_cast<float>(height_) / 2.0f;
-  Camera camera_;
 };
 
-TEST_F(DynamicsTester, PrimitiveScene) {
+using SensorTypes = ::testing::Types<Camera, Lidar>;
+TYPED_TEST_SUITE(DynamicsTester, SensorTypes);
+
+TYPED_TEST(DynamicsTester, PrimitiveScene) {
   // Overview of test steps:
   // (1) create a scene with a sphere in a box
   // (2) generate a freespace layer from the scene
@@ -58,33 +53,33 @@ TEST_F(DynamicsTester, PrimitiveScene) {
 
   // Get a sample scene
   primitives::Scene scene;
-  scene.aabb() = AxisAlignedBoundingBox(Vector3f(-3.0f, -3.0f, 0.0f),
+  scene.aabb() = AxisAlignedBoundingBox(Vector3f(-3.5f, -3.0f, 0.0f),
                                         Vector3f(5.0f, 3.0f, 3.0f));
   scene.addGroundLevel(0.0f);
   scene.addCeiling(3.0f);
   scene.addPrimitive(
       std::make_unique<primitives::Sphere>(Vector3f(0.0f, 0.2f, 1.0f), 1.0f));
-  scene.addPlaneBoundaries(-2.0f, 5.0f, -3.0f, 2.0f);
+  scene.addPlaneBoundaries(-3.5f, 5.0f, -3.0f, 2.0f);
 
   // Calculate the freespace layer of the scene
-  FreespaceLayer freespace_layer_L(voxel_size_m_, MemoryType::kUnified);
-  scene.generateLayerFromScene(truncation_distance_meters_, &freespace_layer_L);
+  FreespaceLayer freespace_layer_L(this->voxel_size_m_, MemoryType::kUnified);
+  scene.generateLayerFromScene(this->truncation_distance_meters_,
+                               &freespace_layer_L);
 
   // Define the camera to layer transform
-  Eigen::Quaternionf rotation_base(0.5, 0.5, 0.5, 0.5);
-  Transform T_L_C = Transform::Identity();
-  T_L_C.prerotate(Eigen::AngleAxisf(M_PI, Vector3f::UnitY()) * rotation_base);
-  T_L_C.pretranslate(Eigen::Vector3f(3.0f, 0.0f, 1.0f));
+  Transform T_L_C = test_utils::getSensorTLC<TypeParam>();
+  T_L_C.pretranslate(Vector3f(-3.f, 0.F, 1.0F));
 
   // Create a depth frame of the scene
-  DepthImage depth_frame_C(camera_.height(), camera_.width(),
+  DepthImage depth_frame_C(this->sensor().height(), this->sensor().width(),
                            MemoryType::kUnified);
-  scene.generateDepthImageFromScene(camera_, T_L_C, kMaxProjectionDist,
+  scene.generateDepthImageFromScene(this->sensor(), T_L_C, kMaxProjectionDist,
                                     &depth_frame_C);
 
   // Check that there are no dynamics detected
   DynamicsDetection detector(std::make_shared<CudaStreamOwning>());
-  detector.computeDynamics(depth_frame_C, freespace_layer_L, camera_, T_L_C);
+  detector.computeDynamics(depth_frame_C, freespace_layer_L, this->sensor(),
+                           T_L_C);
   auto dynamic_points = detector.getDynamicPointsHost();
   EXPECT_EQ(dynamic_points.cols(), 0);
 
@@ -95,15 +90,15 @@ TEST_F(DynamicsTester, PrimitiveScene) {
       std::make_unique<primitives::Cube>(cube_center, cube_size));
 
   // Create a depth frame of the scene including the cube
-  DepthImage depth_frame_cube_C(camera_.height(), camera_.width(),
+  DepthImage depth_frame_cube_C(this->sensor().height(), this->sensor().width(),
                                 MemoryType::kUnified);
-  scene.generateDepthImageFromScene(camera_, T_L_C, kMaxProjectionDist,
+  scene.generateDepthImageFromScene(this->sensor(), T_L_C, kMaxProjectionDist,
                                     &depth_frame_cube_C);
 
   // Check that the cube is detected as dynamic
   // as it was added after creating the layer
-  detector.computeDynamics(depth_frame_cube_C, freespace_layer_L, camera_,
-                           T_L_C);
+  detector.computeDynamics(depth_frame_cube_C, freespace_layer_L,
+                           this->sensor(), T_L_C);
   auto dynamic_points_cube = detector.getDynamicPointsHost();
   auto& dynamic_overlay_cube = detector.getDynamicOverlayImage();
   EXPECT_GT(dynamic_points_cube.cols(), 0);
@@ -137,13 +132,13 @@ TEST_F(DynamicsTester, PrimitiveScene) {
     io::writeToPng("dynamic_overlay_cube.png", dynamic_overlay_cube);
     io::outputPointMatrixToPly(dynamic_points_cube, "dynamic_points.ply");
     // Update the layer to include the cube (for visualization)
-    scene.generateLayerFromScene(truncation_distance_meters_,
+    scene.generateLayerFromScene(this->truncation_distance_meters_,
                                  &freespace_layer_L);
     io::outputVoxelLayerToPly(freespace_layer_L, "freespace_layer_L.ply");
   }
 }
 
-TEST_F(DynamicsTester, HumanDataset) {
+TYPED_TEST(DynamicsTester, HumanDataset) {
   // Overview of test steps:
   // (1) load two consecutive depth images that come from a static camera and
   //     show a human walking.
@@ -171,21 +166,21 @@ TEST_F(DynamicsTester, HumanDataset) {
 
   // Create the tsdf layer with the first depth frame
   ProjectiveTsdfIntegrator integrator;
-  integrator.truncation_distance_vox(truncation_distance_vox_);
-  integrator.max_integration_distance_m(max_integration_distance_);
-  TsdfLayer tsdf_layer_L(voxel_size_m_, MemoryType::kUnified);
+  integrator.truncation_distance_vox(this->truncation_distance_vox_);
+  integrator.max_integration_distance_m(this->max_integration_distance_);
+  TsdfLayer tsdf_layer_L(this->voxel_size_m_, MemoryType::kUnified);
   std::vector<Index3D> updated_blocks;
   integrator.integrateFrame(
       MaskedDepthImageConstView(depth_frame_L, kMaskActiveEverywhere),
       Transform::Identity(), camera, &tsdf_layer_L, &updated_blocks);
 
   // Prepare the freespace layer and integrator
-  FreespaceLayer freespace_layer_L(voxel_size_m_, MemoryType::kUnified);
+  FreespaceLayer freespace_layer_L(this->voxel_size_m_, MemoryType::kUnified);
   FreespaceIntegrator freespace_integrator;
   const Time duration_to_change_to_freespace_ms{1000};
   // This parameter must be smaller than truncation distance
   freespace_integrator.max_tsdf_distance_for_occupancy_m(
-      truncation_distance_meters_ * 0.75);
+      this->truncation_distance_meters_ * 0.75);
   freespace_integrator.min_duration_since_occupied_for_freespace_ms(
       duration_to_change_to_freespace_ms);
   freespace_integrator.check_neighborhood(false);  // make testing easier
@@ -193,11 +188,11 @@ TEST_F(DynamicsTester, HumanDataset) {
   // Calculate the freespace from the tsdf layer
   const Time start_time_ms{100};
   // Initialize layer
-  freespace_integrator.updateFreespaceLayer(tsdf_layer_L.getAllBlockIndices(),
-                                            start_time_ms, tsdf_layer_L, {},
-                                            &freespace_layer_L);
+  freespace_integrator.updateFreespaceLayer<Camera>(
+      tsdf_layer_L.getAllBlockIndices(), start_time_ms, tsdf_layer_L, {},
+      &freespace_layer_L);
   // Update to generate high confidence freespace in free areas
-  freespace_integrator.updateFreespaceLayer(
+  freespace_integrator.updateFreespaceLayer<Camera>(
       tsdf_layer_L.getAllBlockIndices(),
       start_time_ms + duration_to_change_to_freespace_ms, tsdf_layer_L, {},
       &freespace_layer_L);

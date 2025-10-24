@@ -31,7 +31,7 @@ void interpolateOnCPU(const std::vector<Vector3f>& points_L,
   distances_ptr->reserve(points_L.size());
   success_flags_ptr->reserve(points_L.size());
   for (const Vector3f& p_L : points_L) {
-    float distance;
+    float distance = 0.F;
     success_flags_ptr->push_back(interpolateOnCPU(p_L, layer, &distance));
     distances_ptr->push_back(distance);
   }

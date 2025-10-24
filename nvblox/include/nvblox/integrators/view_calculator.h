@@ -26,7 +26,8 @@ limitations under the License.
 #include "nvblox/integrators/view_calculator_params.h"
 #include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
-#include "nvblox/sensors/lidar.h"
+#include "nvblox/sensors/type_indexed_store.h"
+
 namespace nvblox {
 
 // Forward declare the cache. See below for the full definition.
@@ -44,54 +45,37 @@ class ViewCalculator {
   enum class CalculationType { kPlanes, kRaycasting };
 
   /// Gets blocks which fall into the camera view (without using an image)
-  /// Operates by checking if voxel block corners fall inside the pyramid formed
+  /// Operates by checking if voxel block corners fall inside the space formed
   /// by the 4 images sides and the max distance plane.
-  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
-  /// points in the camera frame (C) to the layer frame (L).
-  /// @param camera The camera (intrinsics) model.
+  /// @param T_L_C The pose of the sensor. Supplied as a Transform mapping
+  /// points in the sensor frame (C) to the layer frame (L).
+  /// @param sensor The sensor (intrinsics) model.
   /// @param block_size The size of the blocks in the layer.
   /// @param max_distance The maximum distance of blocks considered.
   /// @return a vector of the 3D indices of the blocks in view.
-  std::vector<Index3D> getBlocksInViewPlanes(const Transform& T_L_C,
-                                             const Camera& camera,
-                                             const float block_size,
-                                             const float max_distance);
+  template <typename SensorType>
+  std::vector<Index3D> getBlocksInImageViewProjection(const Transform& T_L_C,
+                                                      const SensorType& sensor,
+                                                      const float block_size,
+                                                      const float max_distance);
 
-  /// Gets blocks which fall into the camera view (using a depth image)
+  /// Gets blocks which fall into the sensor's view (using a depth image)
   /// Performs ray casting to get the blocks in view
   /// Operates by ray through the grid returning the blocks traversed in the ray
   /// casting process. The number of pixels on the image plane raycast is
   /// determined by the class parameter raycast_subsampling_factor.
   /// @param depth_frame the depth image.
-  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
-  /// points in the camera frame (C) to the layer frame (L).
-  /// @param camera The camera (intrinsics) model.
+  /// @param T_L_C The pose of the sensor. Supplied as a Transform mapping
+  /// points in the sensor frame (C) to the layer frame (L).
+  /// @param sensor The Image sensors's (intrinsic) model.
   /// @param block_size The size of the blocks in the layer.
   /// @param max_integration_distance_behind_surface_m The truncation distance.
   /// @param max_integration_distance_m The max integration distance.
   /// @return a vector of the 3D indices of the blocks in view.
+  template <typename SensorType>
   std::vector<Index3D> getBlocksInImageViewRaycast(
       const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-      const Camera& camera, const float block_size,
-      const float max_integration_distance_behind_surface_m,
-      const float max_integration_distance_m);
-
-  /// Gets blocks which fall into the lidar view (using a depth image)
-  /// Performs ray casting to get the blocks in view
-  /// Operates by ray through the grid returning the blocks traversed in the ray
-  /// casting process. The number of pixels on the image plane raycast is
-  /// determined by the class parameter raycast_subsampling_factor.
-  /// @param depth_frame the depth image.
-  /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
-  /// points in the camera frame (C) to the layer frame (L).
-  /// @param Lidar The lidar (intrinsics) model.
-  /// @param block_size The size of the blocks in the layer.
-  /// @param max_integration_distance_behind_surface_m The truncation distance.
-  /// @param max_integration_distance_m The max integration distance.
-  /// @return a vector of the 3D indices of the blocks in view.
-  std::vector<Index3D> getBlocksInImageViewRaycast(
-      const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-      const Lidar& lidar, const float block_size,
+      const SensorType& sensor, const float block_size,
       const float max_integration_distance_behind_surface_m,
       const float max_integration_distance_m);
 
@@ -170,7 +154,7 @@ class ViewCalculator {
   template <typename SensorType>
   void getBlocksByRaycastingPixelsAsync(
       const Transform& T_L_C,                                 // NOLINT
-      const SensorType& camera,                               // NOLINT
+      const SensorType& sensor,                               // NOLINT
       const MaskedDepthImageConstView& depth_frame,           // NOLINT
       float block_size,                                       // NOLINT
       const float max_integration_distance_behind_surface_m,  // NOLINT
@@ -179,15 +163,11 @@ class ViewCalculator {
       const Index3D& aabb_size,                               // NOLINT
       bool* aabb_updated_cuda);
 
-  // Templated version of the public getBlocksInImageViewRaycast() methods.
-  // Internally we use this templated version of this function called with
-  // Camera and Lidar classes.
+  // Filter out non-visible blocks by projecting them into the image plane.
   template <typename SensorType>
-  std::vector<Index3D> getBlocksInImageViewRaycastTemplate(
-      const MaskedDepthImageConstView& depth_frame, const Transform& T_L_C,
-      const SensorType& camera, const float block_size,
-      const float max_integration_distance_behind_surface_m,
-      const float max_integration_distance_m);
+  std::vector<Index3D> getVisibleBlocksByProjection(
+      const std::vector<Index3D>& block_indices, const SensorType& sensor,
+      const Transform& T_C_L, const float block_size, const float min_distance);
 
   // A 3D grid of bools, one for each block in the AABB, which indicates if it
   // is in the view. The 3D grid is represented as a flat vector.
@@ -215,49 +195,41 @@ class ViewCalculator {
   // Caching the last viewpoint calculation.
   bool cache_last_viewpoint_ = true;
   std::shared_ptr<ViewpointCache> raycasting_viewpoint_cache_;
-  std::shared_ptr<ViewpointCache> planes_viewpoint_cache_;
+  std::shared_ptr<ViewpointCache> projection_viewpoint_cache_;
 
   // CUDA stream on which to execute work.
   std::shared_ptr<CudaStream> cuda_stream_;
 };
 
+// Specialization for Camera that speeds up computation by making use of
+// normalized image coordinates.
+template <>
+std::vector<Index3D> ViewCalculator::getVisibleBlocksByProjection<Camera>(
+    const std::vector<Index3D>& block_indices, const Camera& camera,
+    const Transform& T_C_L, const float block_size, const float min_distance);
+
 class ViewpointCache {
  public:
   /// Gets a cached result of previous getBlocksInViewCalls, if the viewpoint
   /// and intrinsics were the same.
-  /// @param T_L_C The pose of the camera.
-  /// @param camera The intrinsics of the camera.
-  /// @return The cached blocks in view if the viewpoint is the same, otherwise
-  /// std::nullopt.
+  /// @param T_L_C The pose of the sensor.
+  /// @param sensor The intrinsics of the sensor.
+  /// @return The cached blocks in view if the viewpoint is the same,
+  /// otherwise std::nullopt.
+  template <typename SensorType>
   std::optional<std::vector<Index3D>> getCachedResult(
-      const Transform& T_L_C, const Camera& camera) const;
-
-  /// Gets a cached result of previous getBlocksInViewCalls, if the viewpoint
-  /// and intrinsics were the same.
-  /// @param T_L_C The pose of the lidar.
-  /// @param lidar The intrinsics of the lidar.
-  /// @return The cached blocks in view if the viewpoint is the same, otherwise
-  /// std::nullopt.
-  std::optional<std::vector<Index3D>> getCachedResult(const Transform& T_L_C,
-                                                      const Lidar& lidar) const;
+      const Transform& T_L_C, const SensorType& sensor) const;
 
   /// Stores the result of a call to getBlocksInView*() in the cache.
-  /// @param T_L_C The pose of the camera.
-  /// @param camera The intrinsics of the camera.
+  /// @param T_L_C The pose of the sensor.
+  /// @param sensor The intrinsics of the sensor.
   /// @param blocks_in_view The calculated blocks in view list.
-  void storeResultInCache(const Transform& T_L_C, const Camera& camera,
-                          const std::vector<Index3D>& blocks_in_view);
-
-  /// Stores the result of a call to getBlocksInView*() in the cache.
-  /// @param T_L_C The pose of the lidar.
-  /// @param lidar The intrinsics of the lidar.
-  /// @param blocks_in_view The calculated blocks in view list.
-  void storeResultInCache(const Transform& T_L_C, const Lidar& lidar,
+  template <typename SensorType>
+  void storeResultInCache(const Transform& T_L_C, const SensorType& sensor,
                           const std::vector<Index3D>& blocks_in_view);
 
  private:
-  std::deque<Camera> camera_cache_;
-  std::deque<Lidar> lidar_cache_;
+  std::deque<TypeIndexedStore> sensor_cache_;
   std::deque<Transform> pose_cache_;
   std::deque<std::vector<Index3D>> blocks_in_view_cache_;
 
@@ -265,10 +237,12 @@ class ViewpointCache {
   /// A cache size of 1 is sufficient to cache a view between the static and
   /// dynamic mapper as they are guaranteed to integrate the frame in
   /// sequence.
-  /// Currently we set cache size to 2 to also allow caching 2 static cameras.
-  /// If you want to support caching for n static cameras,
+  /// Currently we set cache size to 2 to also allow caching 2 static sensors.
+  /// If you want to support caching for n static sensors,
   /// you want to increase the maximum cache size to n.
   static constexpr int kMaxCacheSize = 2;
 };
 
 }  // namespace nvblox
+
+#include "nvblox/integrators/internal/impl/view_calculator_impl.h"

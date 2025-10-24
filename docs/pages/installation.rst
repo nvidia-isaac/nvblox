@@ -113,6 +113,14 @@ To build the library run
 
     ctest --test-dir /workspaces/nvblox/build/nvblox
 
+.. note::
+
+    We are using `ccache` to speed up the build process which may sometimes cause issues when the ccache directory is not writable.
+    If you see errors like "`/usr/local/bin/c++ is not able to compile a simple test`"" when building, make sure that the mounted `~/.ccache` is writable for the current user:
+
+    .. code-block:: bash
+
+        sudo chmod +rw ~/.ccache
 
 Install ``nvblox_torch`` python package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

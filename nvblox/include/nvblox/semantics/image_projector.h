@@ -22,7 +22,6 @@ limitations under the License.
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"
 #include "nvblox/core/unified_vector.h"
-#include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
 #include "nvblox/sensors/pointcloud.h"
 
@@ -35,15 +34,16 @@ class DepthImageBackProjector {
   DepthImageBackProjector(std::shared_ptr<CudaStream> cuda_stream);
   ~DepthImageBackProjector() = default;
 
-  /// Back projects a depth image to a pointcloud in the camera frame.
+  /// Back projects a depth image to a pointcloud in the sensor frame.
   ///@param image DepthImage to be back projected
-  ///@param camera Pinhole camera intrinsics model
+  ///@param sensor Sensor model
   ///@param pointcloud_C Pointer to the output pointcloud. Must be in either
   /// device or unified memory.
   ///@param max_back_projection_distance_m the maximum depth that is allowed for
   /// back projection. Pixel with bigger depth are not included in the outptut
   /// pointcloud.
-  void backProjectOnGPU(const DepthImage& image, const Camera& camera,
+  template <typename SensorType>
+  void backProjectOnGPU(const DepthImage& image, const SensorType& sensor,
                         Pointcloud* pointcloud_C_ptr,
                         const float max_back_projection_distance_m =
                             std::numeric_limits<float>::max());

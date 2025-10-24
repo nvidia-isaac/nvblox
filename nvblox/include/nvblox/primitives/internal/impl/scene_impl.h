@@ -105,9 +105,9 @@ inline float Scene::getVoxelGroundTruthValue(const Vector3f& position,
 template <typename VoxelType>
 void Scene::generateLayerFromScene(float max_dist,
                                    VoxelBlockLayer<VoxelType>* layer) const {
-  CHECK(layer->memory_type() != MemoryType::kDevice)
-      << "For scene generation the layer must be CPU accessible "
-         "(MemoryType::kUnified or MemoryType::kHost).";
+  CHECK(isHostAccessibleMemory(layer->memory_type()))
+      << "For scene generation, memory_type needs to be "
+         "accessible from the host";
 
   CHECK_NOTNULL(layer);
 
@@ -142,6 +142,46 @@ void Scene::generateLayerFromScene(float max_dist,
 
   // Call above lambda on every voxel in the layer.
   callFunctionOnAllVoxels<VoxelType>(layer, lambda);
+}
+
+template <typename SensorType>
+void Scene::generateDepthImageFromScene(const SensorType& sensor,
+                                        const Transform& T_S_C, float max_dist,
+                                        DepthImage* depth_frame,
+                                        const float invalid_depth) const {
+  CHECK_NOTNULL(depth_frame);
+  CHECK(isHostAccessibleMemory(depth_frame->memory_type()))
+      << "For scene generation, memory_type needs to be "
+         "accessible from the host";
+  CHECK_EQ(depth_frame->rows(), sensor.height());
+  CHECK_EQ(depth_frame->cols(), sensor.width());
+
+  const Transform T_C_S = T_S_C.inverse();
+
+  // Iterate over the entire image.
+  Index2D u_C;
+  for (u_C.x() = 0; u_C.x() < sensor.width(); u_C.x()++) {
+    for (u_C.y() = 0; u_C.y() < sensor.height(); u_C.y()++) {
+      // Get the ray going through this pixel.
+      const Vector3f ray_direction =
+          T_S_C.linear() * sensor.vectorFromPixelIndices(u_C).normalized();
+
+      // Get the intersection point for this ray.
+      Vector3f ray_intersection;
+      float ray_dist;
+      if (getRayIntersection(T_S_C.translation(), ray_direction, max_dist,
+                             &ray_intersection, &ray_dist)) {
+        // The ray intersection is expressed in the world coordinate frame.
+        // We must transform it back to the sensor coordinate frame.
+        const Vector3f p_C = T_C_S * ray_intersection;
+        // Get the sensor-specific depth and store it in the image.
+        (*depth_frame)(u_C.y(), u_C.x()) = sensor.getDepth(p_C);
+      } else {
+        // Otherwise set the depth to invalid.
+        (*depth_frame)(u_C.y(), u_C.x()) = invalid_depth;
+      }
+    }
+  }
 }
 
 }  // namespace primitives

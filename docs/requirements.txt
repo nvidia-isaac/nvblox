@@ -1,6 +1,6 @@
-sphinx==8.2.3
-sphinx_copybutton==0.5.2
-sphinx_tabs==3.4.7
-nvidia-sphinx-theme==0.0.8
-snowballstemmer==2.2.0
-setuptools
+sphinx==8.2.*
+sphinx_copybutton==0.5.*
+sphinx_tabs==3.4.*
+nvidia-sphinx-theme==0.0.*
+snowballstemmer==2.2.*
+setuptools==80.*
