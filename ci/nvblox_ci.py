@@ -126,7 +126,7 @@ class CppUnitTests(TestBase):
 
     def get_command(self) -> str:
         num_jobs = self.args.max_num_jobs
-        base_cmd = f'ctest -j{num_jobs} -T test ' f'--no-compress-output'
+        base_cmd = f'ctest -j{num_jobs} -T test --no-compress-output --output-on-failure'
 
         # When running tests with gcc sanitizers, we need to disable address space
         # randomization due to bug in libgcc that appears on certain platforms.

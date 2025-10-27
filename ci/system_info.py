@@ -160,6 +160,35 @@ def print_system_info() -> None:
         except (OSError, subprocess.SubprocessError, ValueError) as e:
             return [f'Failed to run nvidia-smi: {e}']
 
+    def _uname_lines() -> List[str]:
+        try:
+            result = subprocess.run(
+                ['uname', '-a'],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.stdout:
+                return [result.stdout.strip()]
+            err = (result.stderr or '').strip()
+            return [err or 'uname -a returned no output.']
+        except subprocess.TimeoutExpired:
+            return ['uname -a timed out.']
+        except (OSError, subprocess.SubprocessError, ValueError) as e:
+            return [f'Failed to run uname -a: {e}']
+
+    def _l4t_lines() -> List[str]:
+        nv_path = '/etc/nv_tegra_release'
+        if os.path.exists(nv_path):
+            try:
+                with open(nv_path, 'r', encoding='utf-8') as f:
+                    lines = [line.strip() for line in f if line.strip()]
+                return lines if lines else [f'{nv_path} is present but empty.']
+            except (OSError, IOError) as e:
+                return [f'Found {nv_path} but failed to read: {e}']
+        return [f'{nv_path} not present (likely non-Jetson).']
+
     # System section
     os_info = _read_os_release() or {}
     pretty_name = os_info.get('PRETTY_NAME')
@@ -180,6 +209,10 @@ def print_system_info() -> None:
         f'Num CPUs:   {os.cpu_count()}',
     ]
     _print_section('System Information', system_lines)
+
+    # Kernel / L4T sections
+    _print_section('Kernel (uname -a)', _uname_lines())
+    _print_section('Jetson L4T (nv_tegra_release)', _l4t_lines())
 
     # Memory section
     _print_section('Memory', _memory_lines())
