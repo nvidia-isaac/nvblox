@@ -1,0 +1,231 @@
+// NVBLOX deployment Pipeline
+//
+// Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto. Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+@Library('ci-lib@dab5e635315c343114eca42af8734edd1043340b')
+import com.nvidia.isaac.ci.Notify
+import com.nvidia.isaac.ci.utils.WorkflowScriptUtil
+
+// Environment variables
+env.REPO_NAME = 'nvblox'
+env.DOCKER_URL = 'urm.nvidia.com'
+env.DOCKER_REGISTERY = 'https://urm.nvidia.com'
+env.DOCKER_REPO = 'sw-isaac-public-docker'
+env.DOCKER_BASE = "${env.DOCKER_URL}/${env.DOCKER_REPO}"
+
+// Replace url-encoded '/' with '_' to make docker happy
+env.BUILD_TAG_SANITIZED = "${env.BUILD_TAG}".replaceAll("%2F", "_")
+
+// Cuda architectures supported for released artifacts
+env.CMAKE_CUDA_ARCHITECTURES_X86="90;89;86;80;75;70;61"
+
+// Initialize blossom and common libraries
+blossom.init()
+common.init()
+
+// Users that will be notified via Slack when the nightly pipeline fails or succeeds
+// TODO(dtingdahl): Figure out if we can send notifications to a slack channel instead of a user
+USERS_TO_NOTIFY = ["dtingdahl@nvidia.com", "amillane@nvidia.com", "remos@nvidia.com", "vramasamy@nvidia.com", "cvolk@nvidia.com"]
+
+// Slack notifications
+Notify notify = new Notify(this)
+// Build, tag and push a docker image
+def buildAndPushX86Image(dockerfile_path, docker_tag, docker_build_args="") {
+    script {
+        blossom.run_container_with_docker('docker:20.10.15', 'urm') {
+            checkout scm
+            withCredentials([
+                usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+            ]) {
+                sh  """
+                        # BUILD AND PUSH IMAGE
+                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                        docker login -u '${URM_USERNAME}' -p $URM_PASSWORD https://urm.nvidia.com && \
+                        docker build . \
+                          ${docker_build_args} \
+                          --tag ${docker_tag} \
+                          --file ${dockerfile_path} \
+                          --network host && \
+
+                        docker push ${docker_tag}
+                    """
+            }
+        }
+    }
+}
+
+// Build, test and deploy for the given base image and platform postfix
+def runDeploymentPipeline(String base_image, String platform_postfix) {
+    script {
+    // Image names
+    // N.B: don't forget to add "def" when declaring local variables. Otherwise they will become static
+    def deps_image = "${env.DOCKER_BASE}/deps-x86_64:${env.BUILD_TAG_SANITIZED}${platform_postfix}"
+    def build_image = "${env.DOCKER_BASE}/release-x86_64:${env.BUILD_TAG_SANITIZED}${platform_postfix}"
+    def test_image = "${env.DOCKER_BASE}/test-x86_64:${env.BUILD_TAG_SANITIZED}${platform_postfix}"
+    def image_pull_secret = 'vault-artifactory'
+
+
+    echo "Deps image:  ${deps_image}"
+    echo "Build image: ${build_image}"
+    echo "Test image:  ${test_image}"
+
+    // GPUs and drivers used during testing
+    def String driver_version = '535.104.05'
+    def gpu_list = [ "A10", "A40","A100_PCIE_40GB",
+                    "Tesla_T4", "Tesla_V100_PCIE_32GB",
+                    "QUADRO_GV100", "QUADRO_RTX_8000",
+    ]
+
+    // Build deps image
+    buildAndPushX86Image("docker/Dockerfile.deps",
+                         deps_image,
+                         "--build-arg BASE_IMAGE=" + base_image)
+
+    // Build binary image
+    buildAndPushX86Image("docker/Dockerfile.build",
+                         build_image,
+                         "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CUDA_ARCHITECTURES=\'${env.CMAKE_CUDA_ARCHITECTURES_X86}\'\" " +
+                         "--build-arg BASE_IMAGE=" + deps_image + " " +
+                         "--build-arg MAX_NUM_JOBS=2" // We tend to run out of memory with too many simultaneous jobs.
+        )
+
+    // Publish py wheel to staging area
+    blossom.run_container("${build_image}", "${image_pull_secret}") {
+        withCredentials([
+            usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+        ]) {
+            sh """
+                      # PUBLISH PY WHEEL TO STAGING AREA
+                      . /opt/venv/bin/activate &&  \
+                      pip install --upgrade setuptools && \
+                      python /nvblox/ci/ship_it.py --build-number ${env.BUILD_NUMBER} --publish-to-staging --username '${URM_USERNAME}' --password '${URM_PASSWORD}'
+               """
+
+        }
+    }
+
+
+    // Build image we're running the test in. It's just the base image with some basic deps installed
+    buildAndPushX86Image("docker/Dockerfile.test_nvblox_torch",
+                         test_image,
+                         "--build-arg BASE_IMAGE=" + base_image)
+
+
+    // Test the py wheel in the test image
+    // Note that we also checkout the source code. This is needed to run the deploy script which gives us an URL to the wheel.
+    // Nothing else in the test image depends on the source code.
+    blossom.run_container(test_image, image_pull_secret, driver_version, '10000m', '20Gi', '100Gi', gpu_list) {
+        checkout scm
+        sh """
+                  # TEST PY WHEEL IN TEST IMAGE
+                  # Get the URL of the wheel in the staging area
+                  . /opt/venv/bin/activate && \
+                      STAGING_URL=\$(python3 ci/ship_it.py --build-number ${env.BUILD_NUMBER} --print-staging-url)
+
+                  # Install the wheel
+                  . /opt/venv/bin/activate && python3 -m pip install \$STAGING_URL
+
+                  # Run the tests
+                  NVBLOX_TORCH_INSTALL_DIR=\$(. /opt/venv/bin/activate && python3 -c "import site; print(site.getsitepackages()[0])")/nvblox_torch
+                  . /opt/venv/bin/activate && pip install pytest && pytest -s \$NVBLOX_TORCH_INSTALL_DIR
+            """
+
+    }
+
+    // Publish to release area
+    blossom.run_container(build_image, image_pull_secret) {
+            withCredentials([
+                usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+            ]) {
+                sh """
+                       # PUBLISH PY WHEEL TO RELEASE AREA
+                       . /opt/venv/bin/activate && \
+                        python /nvblox/ci/ship_it.py --build-number ${env.BUILD_NUMBER} --publish-to-release --username '${URM_USERNAME}' --password '${URM_PASSWORD}'
+                   """
+            }
+        }
+    }
+} // end runDeploymentPipeline
+
+
+pipeline {
+    agent any
+    options {
+        gitLabConnection('gitlab-master')
+    } // end options
+    triggers {
+        gitlab(triggerOnMergeRequest: true, branchFilterType: 'All')
+    } // end triggers
+
+
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                sh 'rm -f .git/refs/remotes/origin/feature/weighting.lock'
+                cleanWs()
+            }
+        }
+
+        stage ('Cuda12 / Ubuntu24')
+        {
+            steps {
+                runDeploymentPipeline("nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu24.04", "cu12_u24")
+            }
+        }
+
+        stage ('Cuda12 / Ubuntu22')
+        {
+            steps {
+                runDeploymentPipeline("nvcr.io/nvidia/cuda:12.6.1-devel-ubuntu22.04", "cu12_u22")
+            }
+        }
+
+        stage ('Cuda11 / Ubuntu22')
+        {
+            steps {
+                runDeploymentPipeline("nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04", "cu11_u22")
+            }
+        }
+
+
+    } //end stages
+
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+                script {
+                    for (user in USERS_TO_NOTIFY) {
+                        notify.slack(user, """
+                        ❌❌ NVBLOX deployment pipeline failed ❌❌
+                        ❌❌ Build: #$BUILD_NUMBER Job: $JOB_NAME. ❌❌
+                        See build at $BUILD_URL.
+                        """.stripIndent().trim(),
+                        'failure', 'danger', false)
+                } //end fo
+            } // end script
+        } //end failure
+
+        success {
+                script {
+                    for (user in USERS_TO_NOTIFY) {
+                        notify.slack(user, """
+                        ✅✅ NVBLOX deployment pipeline succeeded ✅✅
+                        ✅✅ Build: #$BUILD_NUMBER Job: $JOB_NAME. ✅✅
+                        See build at $BUILD_URL.
+                        Artifact URL: https://urm.nvidia.com/ui/repos/tree/General/hw-nvblox-alpine-local/pypi/release/nvblox_torch
+                        """.stripIndent().trim(),
+                        'success', 'good', false)
+                } //end fo
+            } // end script
+        } //end success
+    } // end post
+} // end pipeline

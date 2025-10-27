@@ -1,0 +1,406 @@
+// NVBLOX Development Pipeline
+//
+// This will take care of building and doing basic tests for merge requests
+// It will help to give developers faster feedback and for code reviewers
+// to verify the compliance of the commit
+//
+// Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto. Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+@Library('ci-lib@dab5e635315c343114eca42af8734edd1043340b')
+import com.nvidia.isaac_ros.ci.Notify
+import com.nvidia.isaac.ci.utils.WorkflowScriptUtil
+
+// Environment variable
+env.REPO_NAME = 'nvblox'
+env.DOCKER_URL = 'urm.nvidia.com'
+env.DOCKER_REGISTERY = 'https://urm.nvidia.com'
+env.DOCKER_REPO = 'sw-isaac-public-docker'
+env.DOCKER_BASE = "${env.DOCKER_URL}/${env.DOCKER_REPO}"
+
+// Replace url-encoded '/' with '_' to make docker happy
+env.BUILD_TAG_SANITIZED = "${env.BUILD_TAG}".replaceAll("%2F", "_")
+
+// Docker images produced by this pipeline
+env.DOCKER_IMAGE_LINT_X86 = "${env.DOCKER_BASE}/lint:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DOCS_X86 = "${env.DOCKER_BASE}/docs:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEPS_X86 = "${env.DOCKER_BASE}/deps-x86_64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEPS_X86_CU13 = "${env.DOCKER_BASE}/deps-x86_64-cu13:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_RELEASE_X86 = "${env.DOCKER_BASE}/release-x86_64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_RELEASE_X86_CU13 = "${env.DOCKER_BASE}/release-x86_64-cu13:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEBUG_X86 = "${env.DOCKER_BASE}/debug-x86_64:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEPS_AARCH_JP5 = "${env.DOCKER_BASE}/deps-aarch64-jp5:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_DEPS_AARCH_JP6 = "${env.DOCKER_BASE}/deps-aarch64-jp6:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_RELEASE_AARCH_JP5 = "${env.DOCKER_BASE}/release-aarch64-jp5:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_RELEASE_AARCH_JP6 = "${env.DOCKER_BASE}/release-aarch64-jp6:${env.BUILD_TAG_SANITIZED}"
+env.DOCKER_IMAGE_REALSENSE_X86 = "${env.DOCKER_BASE}/realsense-example-x86:${env.BUILD_TAG_SANITIZED}"
+
+// Cuda architectures used in CI
+env.CMAKE_CUDA_ARCHITECTURES_X86="120;100;90;89;86;80;75"
+
+// Cuda architectures for the realsense example.
+// TODO9(dtingdahl) make the example work for Blackwell
+env.CMAKE_CUDA_ARCHITECTURES_REALSENSE_X86="90;89;86;80;75"
+
+// Cuda architectures for Jetson
+env.CMAKE_CUDA_ARCHITECTURES_AARCH64="87"
+
+
+String driver_version = '535.104.05'
+String image_pull_secret = 'vault-artifactory'
+String arm_builder_label = 'arm-image-builder'
+
+def gpu_list = [ "A10",             // 8.6
+                 "A40",             // 8.6
+                 "A100_PCIE_40GB",  // 8.0
+                 "Tesla_T4",        // 7.5
+                 "QUADRO_RTX_8000", // 7.5
+
+                ]
+
+def pod_cpu = '10000m' // 10 cores (unit is milllicores)
+def pod_memory = '64Gi'
+def pod_storage = '100Gi'
+
+
+blossom.init()
+common.init()
+
+Notify notify = new Notify(this)
+
+// Build, tag and push a docker image
+def buildAndPushX86Image(dockerfile_path, docker_tag, docker_build_args="") {
+    script {
+        blossom.run_container_with_docker('docker:20.10.15', 'urm') {
+            checkout scm
+            withCredentials([
+                usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+            ]) {
+                sh  """
+                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                        docker login -u '${URM_USERNAME}' -p $URM_PASSWORD https://urm.nvidia.com && \
+                        docker build . \
+                          ${docker_build_args} \
+                          --tag ${docker_tag} \
+                          --file ${dockerfile_path} \
+                          --network host && \
+
+                        docker push ${docker_tag}
+                    """
+            }
+        }
+    }
+}
+
+// Build, tag and push a docker image
+def buildAndPushARMImage(arm_builder_label, dockerfile_path, docker_tag, docker_build_args="") {
+    script {
+        blossom.run_on_static_node(arm_builder_label) {
+            checkout scm
+            withCredentials([
+                usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+            ]) {
+                sh  """
+                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                        docker login -u '${URM_USERNAME}' -p $URM_PASSWORD https://urm.nvidia.com && \
+                        docker build . \
+                          ${docker_build_args} \
+                          --tag ${docker_tag} \
+                          --file ${dockerfile_path} \
+                          --network host && \
+
+                        docker push ${docker_tag}
+                    """
+            }
+        }
+    }
+}
+
+// Main pipeline
+pipeline {
+    agent any
+    options {
+        gitLabConnection('gitlab-master')
+    }
+    triggers {
+        gitlab(triggerOnMergeRequest: true, branchFilterType: 'All')
+    }
+    stages {
+        // Get details about the commit. Used when sending slack notifications
+        stage('Get Commit Details') {
+            steps {
+                script {
+                    updateGitlabCommitStatus name: 'premerge', state: 'running'
+                    env.GIT_COMMIT_MSG = sh (script: 'git log -1 --pretty=%B ${GIT_COMMIT}', returnStdout: true).trim()
+                    env.GIT_AUTHOR = sh (script: 'git log -1 --format=%ae ${GIT_COMMIT}', returnStdout: true).trim()
+                }
+            }
+        }
+
+        // Stage which checks for lint errors
+        stage('Build and Push lint docker') {
+            steps {
+                buildAndPushX86Image("docker/Dockerfile.lint",
+                                                    "${env.DOCKER_IMAGE_LINT_X86}")
+            }
+        }
+        stage('Lint checker') {
+            steps {
+                script {
+                    blossom.run_container("${env.DOCKER_IMAGE_LINT_X86}", image_pull_secret, driver_version) {
+                        sh '''
+                            cd /nvblox
+                            bash ci/lint_nvblox_h.sh
+                            pre-commit run --all-files
+                        '''
+
+                    }
+                }
+            }
+        }
+        // Stage that creates docker images containing dependencies for the build
+        stage('Build base images') {
+            parallel {
+                stage('X86: Build deps') {
+                    steps {
+                        buildAndPushX86Image("docker/Dockerfile.deps",
+                                            "${env.DOCKER_IMAGE_DEPS_X86}")
+                    }
+                }
+                stage('X86+CU13: Build deps') {
+                    steps {
+                        // Pytorch is not available for cuda13, so we disable the wrapper.
+                        buildAndPushX86Image("docker/Dockerfile.deps",
+                                             "${env.DOCKER_IMAGE_DEPS_X86_CU13}",
+                                             "--build-arg BASE_IMAGE=nvcr.io/nvidia/cuda:13.0.0-devel-ubuntu24.04 --build-arg BUILD_PYTORCH_WRAPPER=0")
+
+                    }
+                }
+                stage('AARCH-jp6: build deps') {
+                    steps {
+                        buildAndPushARMImage(arm_builder_label,
+                                            "docker/Dockerfile.jetson_deps",
+                                            "${env.DOCKER_IMAGE_DEPS_AARCH_JP6}",
+                                            "--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r36.3.0")
+                    }
+                }
+                stage('AARCH-jp5: build deps') {
+                    steps {
+                        buildAndPushARMImage(arm_builder_label,
+                                            "docker/Dockerfile.jetson_deps",
+                                            "${env.DOCKER_IMAGE_DEPS_AARCH_JP5}",
+                                            "--build-arg BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r35.4.1 --build-arg SKIP_PYTORCH_INSTALL=1")
+                    }
+                }
+                stage('x86: Build Docs Image') {
+                    steps {
+                        buildAndPushX86Image("docker/Dockerfile.docs",
+                                            "${env.DOCKER_IMAGE_DOCS_X86}")
+                    }
+                }
+            }
+        }
+        // Stage for building the source code into images used for testing
+        stage('Build source') {
+            steps {
+                script {
+                parallel (
+                    'X86: build release': {
+                        buildAndPushX86Image("docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_RELEASE_X86}",
+                                             "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DWARNING_AS_ERROR=1 -DCMAKE_CUDA_ARCHITECTURES=\'${env.CMAKE_CUDA_ARCHITECTURES_X86}\'\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_X86}")
+                    },
+                    'X86+CU13: build release': {
+                        buildAndPushX86Image("docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_RELEASE_X86_CU13}",
+                                             "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DBUILD_PYTORCH_WRAPPER=0 -DWARNIN_AS_ERROR=1 -DCMAKE_CUDA_ARCHITECTURES=\'${env.CMAKE_CUDA_ARCHITECTURES_X86}\'\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_X86_CU13}")
+                    },
+                    'X86: build debug + sanitizer': {
+                        buildAndPushX86Image("docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_DEBUG_X86}",
+                                             "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=DEBUG -DUSE_SANITIZER=yes -DBUILD_PYTORCH_WRAPPER=0 -DWARNING_AS_ERROR=1 -DCMAKE_CUDA_ARCHITECTURES=\'${env.CMAKE_CUDA_ARCHITECTURES_X86}\'\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_X86}")
+                    },
+                    'AARCH-jp6: build release': {
+                        buildAndPushARMImage(arm_builder_label,
+                                          "docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_RELEASE_AARCH_JP6}",
+                                          "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DWARNING_AS_ERROR=1 -DCMAKE_CUDA_ARCHITECTURES=\"${env.CMAKE_CUDA_ARCHITECTURES_AARCH64}\"\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_AARCH_JP6}")
+                    },
+                    'AARCH-jp5: build release': {
+                        buildAndPushARMImage(arm_builder_label,
+                                          "docker/Dockerfile.build",
+                                          "${env.DOCKER_IMAGE_RELEASE_AARCH_JP5}",
+                                          "--build-arg CMAKE_ARGS=\"-DCMAKE_BUILD_TYPE=RELEASE -DWARNING_AS_ERROR=1 -DBUILD_PYTORCH_WRAPPER=0 -DCMAKE_CUDA_ARCHITECTURES=\"${env.CMAKE_CUDA_ARCHITECTURES_AARCH64}\"\" " +
+                                          "--build-arg BASE_IMAGE=" + "${env.DOCKER_IMAGE_DEPS_AARCH_JP5}")
+                    },
+                    'x86: Build docs': {
+                            blossom.run_container("${env.DOCKER_IMAGE_DOCS_X86}", image_pull_secret, driver_version) {
+                                checkout scm
+                                sh '''cd docs && make html SPHINXOPTS="-W --keep-going" && make linkcheck'''
+                            }
+                    },
+                    'x86: Build Realsense example': {
+                        script {
+                            // We use the ubuntu version of the earthly dind (docker-in-docker) image since we need Python
+                            blossom.run_container_with_docker('earthly/dind:ubuntu-24.04-docker-27.3.1-1', 'urm') {
+                                checkout scm
+                                withCredentials([
+                                    usernamePassword(credentialsId: 'vault-ngc', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                                    usernamePassword(credentialsId: 'vault-artifactory', usernameVariable: 'URM_USERNAME', passwordVariable: 'URM_PASSWORD')
+                                ]) {
+                                     // TODO(dtingdahl) use build_images.py for other builds as well
+                                    sh """
+                                        docker login -u '$USERNAME' -p $PASSWORD https://nvcr.io && \
+                                        docker login -u '${URM_USERNAME}' -p $URM_PASSWORD https://urm.nvidia.com && \
+                                        python3 docker/build_images.py --build-realsense-example --cuda-arch=\"${env.CMAKE_CUDA_ARCHITECTURES_REALSENSE_X86}\" --max-num-build-jobs=8 && \
+                                        docker tag nvblox_realsense_example_cu12_u22 ${env.DOCKER_IMAGE_REALSENSE_X86} && \
+                                        docker push ${env.DOCKER_IMAGE_REALSENSE_X86}
+                                    """
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        // Various testing stages that execute in parallel
+        stage('Tests') {
+            steps {
+                script {
+                    parallel(
+                        'Unit tests: X86 debug + sanitizer': {
+                            blossom.run_container("${env.DOCKER_IMAGE_DEBUG_X86}", image_pull_secret, driver_version, pod_cpu, pod_memory, pod_storage, gpu_list) {
+                                sh '''cd /nvblox/build/nvblox/tests && nvidia-smi && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                        },
+                        'Unit tests: AARCH-jp6': {
+                            blossom.run_on_static_node("${env.DOCKER_REGISTERY}", "${env.DOCKER_IMAGE_RELEASE_AARCH_JP6}", image_pull_secret,
+                                                       'jp-6.0', '-u root') {
+
+                                // Test nvblox_torch
+                                sh '''. /opt/venv/bin/activate && pip install /nvblox/nvblox_torch'''
+                                sh '''. /opt/venv/bin/activate && pip install pytest && cd /nvblox/nvblox_torch/internal_tests && pytest --capture=no'''
+                                sh '''. /opt/venv/bin/activate && pip install pytest && cd /nvblox/nvblox_torch/nvblox_torch/tests && pytest --capture=no'''
+
+                                // Run unit tests
+                                sh '''cd /nvblox/build/nvblox/tests && nvidia-smi && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                        },
+                        'Realsense example': {
+                            blossom.run_container("${env.DOCKER_IMAGE_REALSENSE_X86}", image_pull_secret, driver_version, pod_cpu, pod_memory, pod_storage, gpu_list) {
+                                // Note(dtingdahl) The Realsense test is disabled per default since
+                                // it requires a dedicated docker image. We pass --runxfail to
+                                // pytest in order to enable it.
+                                sh '''. /opt/venv/bin/activate && pip install pytest && cd /nvblox/nvblox_torch/internal_tests && pytest --runxfail test_realsense_example.py --capture=no'''
+                            }
+                        },
+                        // TODO(dtingdahl) enable these tests when the JP5 node is in an usable state
+                        'Unit tests: AARCH-jp5': {
+                            blossom.run_on_static_node("${env.DOCKER_REGISTERY}", "${env.DOCKER_IMAGE_RELEASE_AARCH_JP5}", image_pull_secret,
+                                                       'jp-5.1.2', '-u root') {
+                                sh '''cd /nvblox/build/nvblox/tests && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                        },
+                        'Tests in the Release image': {
+                            blossom.run_container("${env.DOCKER_IMAGE_RELEASE_X86}", image_pull_secret, driver_version, pod_cpu, pod_memory, pod_storage, gpu_list) {
+                                // Run Pytest. We need to install pytest after venv is activated for it to be found. Reasons unclear. Some more info:
+                                // Note also that we need to specify the full path to the tests. Otherwise there might be conflicts with installed
+                                // nvblox_torch that also contain the same tests.
+                                // https://stackoverflow.com/questions/35045038/how-do-i-use-pytest-with-virtualenv
+                                echo "Running Pytest"
+
+                                sh '''. /opt/venv/bin/activate && pip install /nvblox/python/evaluation /nvblox/python/scripts /nvblox/python/common /nvblox/nvblox_torch'''
+                                // TODO(dtingdahl) Investigate how we can run all tests from the root dir with a single command. We're getting conflicts with the installed tests
+                                // NOTE(dtingdahl) nvblox/python tests require cwd=/nvblox
+                                sh '''. /opt/venv/bin/activate && pip install pytest && cd /nvblox && pytest /nvblox/python --capture=no'''
+                                sh '''. /opt/venv/bin/activate && pip install pytest && cd /nvblox/nvblox_torch/internal_tests && pytest --capture=no'''
+                                sh '''. /opt/venv/bin/activate && pip install pytest && cd /nvblox/nvblox_torch/nvblox_torch/tests && pytest --capture=no'''
+
+                                // Run Cuda Compute-sanitizer
+                                echo "Running Cuda Compute-sanitizer"
+                                sh '''bash /nvblox/ci/compute_sanitizer.sh'''
+                                // Run Unit Tests
+                                echo "Running Unit Tests"
+                                sh '''cd /nvblox/build/nvblox/tests && nvidia-smi && ctest -j8 --verbose -T test --no-compress-output'''
+                                sh '''cd /nvblox/build/nvblox_torch/cpp/tests && ctest -j8 --verbose -T test --no-compress-output'''
+                                // Run Stability tests
+                                echo "Running Stability tests"
+                                sh '''bash /nvblox/ci/fuser_redwood_apartment.sh'''
+                            }
+                       },
+                        'Tests in the Release + CUDA13 image': {
+                            blossom.run_container("${env.DOCKER_IMAGE_RELEASE_X86_CU13}", image_pull_secret, driver_version, pod_cpu, pod_memory, pod_storage, gpu_list) {
+                                // Run Unit Tests
+                                echo "Running Unit Tests"
+                                sh '''cd /nvblox/build/nvblox/tests && nvidia-smi && ctest -j8 --verbose -T test --no-compress-output'''
+                            }
+                       },
+                    )
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            script {
+                if (!(BRANCH_NAME ==~ /^(main|release-.*)$/)) {
+                    notify.slack(GIT_AUTHOR, """
+                    ❌❌ Build failed for job #$BUILD_NUMBER of $JOB_NAME. ❌❌
+                    See build at $BUILD_URL.
+                    For reference, the commit message for this job was "$GIT_COMMIT_MSG"
+                    """.stripIndent().trim(),
+                    'failure', 'danger', false)
+                }
+                updateGitlabCommitStatus name: 'premerge', state: 'failed'
+            }
+        }
+        unstable {
+            script {
+                if (!(BRANCH_NAME ==~ /^(main|release-.*)$/)) {
+                    notify.slack(GIT_AUTHOR, """
+                    ❌❌ Build failed for job #$BUILD_NUMBER of $JOB_NAME. ❌❌
+                    See build at $BUILD_URL.
+                    For reference, the commit message for this job was "$GIT_COMMIT_MSG"
+                    """.stripIndent().trim(),
+                    'failure', 'danger', false)
+                }
+                updateGitlabCommitStatus name: 'premerge', state: 'failed'
+            }
+        }
+        success {
+            script {
+                if (!(BRANCH_NAME ==~ /^(main|release-.*)$/)) {
+                    notify.slack(GIT_AUTHOR,
+                    """
+                    🐸🐸 Build successful for job #$BUILD_NUMBER of $JOB_NAME. 🐸🐸
+                    See build at $BUILD_URL.
+                    For reference, the commit message for this job was "$GIT_COMMIT_MSG"
+                    """.stripIndent().trim(),
+                    'success', 'good', false)
+                }
+                updateGitlabCommitStatus name: 'premerge', state: 'success'
+            }
+        }
+        aborted {
+            script {
+                updateGitlabCommitStatus name: 'premerge', state: 'canceled'
+            }
+        }
+    }
+}

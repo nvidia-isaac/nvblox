@@ -1,0 +1,89 @@
+name: 'Build and Test'
+description: 'Build nvblox Docker image and run tests'
+inputs:
+  platform:
+    description: 'Platform to build for'
+    required: true
+  cuda-version:
+    description: 'CUDA version'
+    required: true
+  ubuntu-version:
+    description: 'Ubuntu version'
+    required: true
+  gcc-sanitizer:
+    description: 'Build in debug mode with gcc sanitizers enabled'
+    required: false
+    default: 0
+  ngc-api-key:
+    description: 'NGC API Key for authentication'
+    required: true
+  run-cpp-tests:
+    description: 'Run C++ unit tests'
+    required: false
+    default: 'true'
+  run-python-tests:
+    description: 'Run Python unit tests'
+    required: false
+    default: 'true'
+  run-cuda-sanitizer:
+    description: 'Run CUDA sanitizer tests'
+    required: false
+    default: 'true'
+  run-realsense-tests:
+    description: 'Run Realsense example tests'
+    required: false
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - name: NGC Login
+      uses: ./.github/actions/ngc-login
+      with:
+        ngc-api-key: ${{ inputs.ngc-api-key }}
+    - name: Set COMMON_PREMERGE_ARGS env
+      shell: bash
+      run: |
+        # Store arguments used for all jobs in an environment variable.
+        echo "COMMON_PREMERGE_ARGS=--platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --gcc-sanitizer ${{ inputs.gcc-sanitizer }}" >> $GITHUB_ENV
+    # Note that the two build-image steps could be omitted since the build-and-test steps also build necessary images.
+    # However, we separate the steps to get cleaner logs and better timing granularity.
+    - name: Build dependency image
+      shell: bash
+      run: |
+        echo "::group::BUILD DEPENDENCY IMAGE"
+        time python3 ci/premerge.py $COMMON_PREMERGE_ARGS --build-image deps
+        echo "::endgroup::"
+    - name: Build build image
+      shell: bash
+      run: |
+        echo "::group::BUILD BINARIES IMAGE"
+        time python3 ci/premerge.py $COMMON_PREMERGE_ARGS --build-image build
+        echo "::endgroup::"
+    - name: Run CPP unit tests
+      if: inputs.run-cpp-tests == 'true'
+      shell: bash
+      run: |
+        echo "::group::RUN CPP UNIT TESTS"
+        time python3 ci/premerge.py $COMMON_PREMERGE_ARGS --build-and-test cpp
+        echo "::endgroup::"
+    - name: Run Python unit tests
+      if: inputs.run-python-tests == 'true'
+      shell: bash
+      run: |
+        echo "::group::RUN PYTHON UNIT TESTS"
+        time python3 ci/premerge.py $COMMON_PREMERGE_ARGS --build-and-test python
+        echo "::endgroup::"
+    - name: Run CUDA Sanitizer
+      if: inputs.run-cuda-sanitizer == 'true'
+      shell: bash
+      run: |
+        echo "::group::RUN CUDA SANITIZER"
+        time python3 ci/premerge.py $COMMON_PREMERGE_ARGS --build-and-test cuda-sanitizer
+        echo "::endgroup::"
+    - name: Run Realsense example test
+      if: inputs.run-realsense-tests == 'true'
+      shell: bash
+      run: |
+        echo "::group::RUN REALSENSE EXAMPLE TEST"
+        time python3 ci/premerge.py $COMMON_PREMERGE_ARGS --build-and-test realsense
+        echo "::endgroup::"

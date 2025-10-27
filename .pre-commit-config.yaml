@@ -20,8 +20,7 @@ repos:
   - repo: https://github.com/doublify/pre-commit-clang-format
     rev: 62302476d0da01515660132d76902359bed0f782
     hooks:
-      - id: clang-format
-        entry: clang-format-14 -i
+      - id: clang-format # See premerge.yml for the clang-format version used.
         files: \.(c|cc|cpp|cxx|cu|cuh|h|hh|hpp|hxx|inl|proto|pb\.h|pb\.cc)$
   - repo: https://github.com/pylint-dev/pylint
     rev: v3.0.3
