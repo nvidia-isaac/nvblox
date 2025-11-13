@@ -182,8 +182,8 @@ TEST(InterpolationTest, ValidityCheckers) {
       interpolation::interpolate2DLinear(view, u_px, &interpolated_value));
   EXPECT_EQ(interpolated_value, -1.0);
   bool res = interpolation::interpolate2DLinear<
-      float, interpolation::checkers::FloatPixelGreaterThanZero>(
-      view, u_px, &interpolated_value);
+      float, interpolation::checkers::PixelIsValidDepth>(view, u_px,
+                                                         &interpolated_value);
   EXPECT_FALSE(res);
 
   // Closest
@@ -191,8 +191,8 @@ TEST(InterpolationTest, ValidityCheckers) {
       interpolation::interpolate2DClosest(view, u_px, &interpolated_value));
   EXPECT_EQ(interpolated_value, -1.0);
   res = interpolation::interpolate2DClosest<
-      float, interpolation::checkers::FloatPixelGreaterThanZero>(
-      view, u_px, &interpolated_value);
+      float, interpolation::checkers::PixelIsValidDepth>(view, u_px,
+                                                         &interpolated_value);
   EXPECT_FALSE(res);
 }
 

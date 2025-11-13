@@ -115,8 +115,8 @@ Download an example SUN3D dataset by running the following command:
 
 .. code-block:: bash
 
-    wget https://huggingface.co/datasets/nvidia/nvblox/resolve/main/sun3d-mit_76_studyroom-76-1studyroom2.tar.gz
-    tar -xvf sun3d-mit_76_studyroom-76-1studyroom2.tar.gz
+    wget http://3dvision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip
+    unzip sun3d-mit_76_studyroom-76-1studyroom2.zip
 
 """
 

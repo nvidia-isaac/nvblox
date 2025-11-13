@@ -35,7 +35,7 @@ void checkCamera(const Camera* camera) {
   EXPECT_EQ(camera->height(), gt.height());
 }
 
-Lidar createGtLidar() { return Lidar(10, 11, 12.F, 13.F, 14.F, 15.F); }
+Lidar createGtLidar() { return Lidar(10, 11, 12.F, 14.F, 15.F); }
 
 void checkLidar(const Lidar* lidar) {
   ASSERT_NE(lidar, nullptr);

@@ -16,6 +16,7 @@ limitations under the License.
 #include "nvblox/tests/interpolation_2d_gpu.h"
 
 #include "nvblox/interpolation/interpolation_2d.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -65,7 +66,7 @@ void linearInterpolateImageGpuTemplate(const Image<ElementType>& image,
 
   // Interpolate on the GPUUUU
   constexpr int kThreadsPerBlock = 32;
-  const int num_blocks = static_cast<int>(num_points / kThreadsPerBlock) + 1;
+  const int num_blocks = divideRoundUp(num_points, kThreadsPerBlock);
   interpolate<<<num_blocks, kThreadsPerBlock>>>(
       image.dataConstPtr(), image.rows(), image.cols(), u_px_vec_device_ptr,
       values_device_ptr, success_flags_device_ptr, num_points);

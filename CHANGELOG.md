@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased (public branch)
 
+- Refactor and optimization of blocks-to-update tracker.
 - Option for initializing freespace voxels to free.
 - Camera sensor extended with support for distortion (radial and tangential).
 - Support externally defined sensor types.

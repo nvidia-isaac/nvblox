@@ -13,6 +13,7 @@
 
 #include "nvblox/core/color.h"
 #include "nvblox/core/feature_array.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 #include "nvblox/utils/timing.h"
 #include "nvblox_torch/check_utils.h"
 #include "nvblox_torch/cuda_stream.h"
@@ -493,7 +494,7 @@ torch::Tensor Mapper::queryMultiEsdf(torch::Tensor output_tensor,
   // Call the kernel.
   const int num_mappers = static_cast<int>(mappers_.size());
   constexpr int kNumThreads = 128;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = nvblox::divideRoundUp(num_queries, kNumThreads);
 
   pynvblox::sdf::
       queryESDFMultiMapperKernel<<<num_blocks, kNumThreads, 0, stream>>>(
@@ -532,7 +533,7 @@ torch::Tensor Mapper::queryMultiOccupancy(torch::Tensor output_tensor,
   // Call a kernel.
   const int num_mappers = mappers_.size();
   constexpr int kNumThreads = 128;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = nvblox::divideRoundUp(num_queries, kNumThreads);
   float* out_log_odds = output_tensor.data_ptr<float>();
   pynvblox::sdf::
       queryOccupancyMultiMapperKernel<<<num_blocks, kNumThreads, 0, stream>>>(
@@ -582,7 +583,7 @@ torch::Tensor Mapper::queryEsdf(torch::Tensor output_tensor,
 
   // Call a kernel.
   constexpr int kNumThreads = 128;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = nvblox::divideRoundUp(num_queries, kNumThreads);
   pynvblox::sdf::queryESDFKernel<<<num_blocks, kNumThreads, 0, stream>>>(
       num_queries, extract_gradients, gpu_layer_view.getHash().impl_,
       mapper->esdf_layer().block_size(), query_sphere.data_ptr<float>(),
@@ -644,7 +645,7 @@ torch::Tensor Mapper::queryFeatures(torch::Tensor output_tensor,
 
   // Call a kernel.
   constexpr int kNumThreads = 128;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = nvblox::divideRoundUp(num_queries, kNumThreads);
 
   pynvblox::sdf::queryFeatureKernel<<<num_blocks, kNumThreads, 0, stream>>>(
       num_queries, gpu_layer_view.getHash().impl_,
@@ -686,7 +687,7 @@ torch::Tensor Mapper::queryTsdf(torch::Tensor output_tensor,
 
   // Call a kernel.
   constexpr int kNumThreads = 128;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = nvblox::divideRoundUp(num_queries, kNumThreads);
   pynvblox::sdf::queryTSDFKernel<<<num_blocks, kNumThreads, 0, stream>>>(
       num_queries, gpu_layer_view.getHash().impl_,
       mapper->tsdf_layer().block_size(), query_positions.data_ptr<float>(),
@@ -721,7 +722,7 @@ torch::Tensor Mapper::queryMultiTsdf(torch::Tensor output_tensor,
   // Call kernel.
   const int num_mappers = mappers_.size();
   constexpr int kNumThreads = 128;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = nvblox::divideRoundUp(num_queries, kNumThreads);
   pynvblox::sdf::
       queryTSDFMultiMapperKernel<<<num_blocks, kNumThreads, 0, stream>>>(
           num_mappers, num_queries, tsdf_hash_transfer_buffer_device_.data(),

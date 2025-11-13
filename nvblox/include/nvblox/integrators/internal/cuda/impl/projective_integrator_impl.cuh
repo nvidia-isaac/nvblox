@@ -89,6 +89,15 @@ __global__ void __launch_bounds__(kMaxNumThreadsPerBlock<VoxelType>())
     return;
   }
 
+  // Handle invalid depth values
+  if (!interpolation::checkers::PixelIsValidDepth::check(image_value)) {
+    // Set all invalid depth values to zero.
+    // Will not be integrated in Occupancy/TSDF layers.
+    // The ray along this pixel can be decayed by invalid_depth_decay_factor in
+    // the TSDF layer.
+    image_value = 0.0f;
+  }
+
   // Note that isMasked is always true if there is no mask attached to the
   // incoming image
   const bool is_active = image.isMasked(pix_pos.y(), pix_pos.x());
@@ -134,6 +143,13 @@ __global__ void __launch_bounds__(kMaxNumThreadsPerBlock<VoxelType>())
   float surface_depth_m;
   if (!sensor.interpolateDepthImage(depth_image, u_px_depth, p_voxel_center_C,
                                     voxel_size, &surface_depth_m)) {
+    return;
+  }
+
+  // Skip appearance integration for invalid depth values
+  if (!interpolation::checkers::PixelIsValidDepth::check(surface_depth_m)) {
+    // For appearance integration, we only allow valid depth values to get the
+    // distance to the surface.
     return;
   }
 

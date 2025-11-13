@@ -139,7 +139,7 @@ DataLoader::DataLoader(const std::string& base_path, bool multithreaded)
   constexpr float fv = 525;
   constexpr int width = 640;
   constexpr int height = 480;
-  camera_ = Camera(fu, fv, width, height);
+  camera_ = Camera(fu, fv, 0.5 * width, 0.5 * height, width, height);
   // If the base path doesn't exist return fail
   if (!std::filesystem::exists(base_path)) {
     LOG(WARNING) << "Tried to create a dataloader with a non-existant path.";

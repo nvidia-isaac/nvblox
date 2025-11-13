@@ -47,7 +47,8 @@ bool parsePoseFromFile(const std::string& filename, Transform* transform) {
 }
 
 bool parseCameraFromFile(const std::string& filename,
-                         Eigen::Matrix3f* intrinsics) {
+                         Eigen::Matrix3f* intrinsics,
+                         RadialTangentialDistortionParams* distortion_params) {
   CHECK_NOTNULL(intrinsics);
   constexpr int kDimension = 3;
 
@@ -59,8 +60,30 @@ bool parseCameraFromFile(const std::string& filename,
         fin >> item;
         (*intrinsics)(row, col) = item;
       }
+    if (!fin.eof() && distortion_params != nullptr) {
+      fin >> distortion_params->radial.k1;
+      fin >> distortion_params->radial.k2;
+      fin >> distortion_params->radial.k3;
+      fin >> distortion_params->radial.k4;
+      fin >> distortion_params->radial.k5;
+      fin >> distortion_params->radial.k6;
+      fin >> distortion_params->tangential.p1;
+      fin >> distortion_params->tangential.p2;
+    }
     fin.close();
 
+    LOG(INFO) << "Read camera params:\n" << *intrinsics << std::endl;
+    if (distortion_params != nullptr) {
+      LOG(INFO) << "Read distortion params:\n"
+                << distortion_params->radial.k1 << " "
+                << distortion_params->radial.k2 << " "
+                << distortion_params->radial.k3 << " "
+                << distortion_params->radial.k4 << " "
+                << distortion_params->radial.k5 << " "
+                << distortion_params->radial.k6 << " "
+                << distortion_params->tangential.p1 << " "
+                << distortion_params->tangential.p2 << std::endl;
+    }
     return true;
   }
   return false;
@@ -193,9 +216,10 @@ DataLoadResult DataLoader::loadNext(DepthImage* depth_frame_ptr,
   // Get the camera for this frame.
   timing::Timer timer_file_camera("file_loading/camera");
   Eigen::Matrix3f camera_intrinsics;
+  RadialTangentialDistortionParams distortion_params;
   if (!threedmatch::internal::parseCameraFromFile(
           threedmatch::internal::getPathForCameraIntrinsics(base_path_),
-          &camera_intrinsics)) {
+          &camera_intrinsics, &distortion_params)) {
     return DataLoadResult::kNoMoreData;
   }
   // Create a camera object.

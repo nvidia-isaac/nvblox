@@ -6,6 +6,7 @@ add_nvblox_shared_library(
   src/datasets/image_loader.cpp
   src/datasets/replica.cpp
   src/datasets/redwood.cpp
+  src/datasets/cusfm_data.cpp
   src/fuser.cpp
   LINK_LIBRARIES_PUBLIC
   nvblox_lib
@@ -39,6 +40,17 @@ add_nvblox_executable(
   fuse_redwood
   SOURCE_FILES
   src/fuse_redwood.cpp
+  LINK_LIBRARIES_PUBLIC
+  nvblox_lib
+  nvblox_datasets
+  nvblox_stdgpu
+  nvblox_gpu_hash)
+
+# CUSFM executable
+add_nvblox_executable(
+  fuse_cusfm
+  SOURCE_FILES
+  src/fuse_cusfm.cpp
   LINK_LIBRARIES_PUBLIC
   nvblox_lib
   nvblox_datasets

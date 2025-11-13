@@ -44,6 +44,12 @@ repos:
     rev: v0.6.10
     hooks:
       - id: cmake-format
+  - repo: local
+    hooks:
+      - id: check_nvblox_public_header
+        name: check_nvblox_public_header
+        language: script
+        entry: ci/lint_nvblox_h.sh
   - repo: https://github.com/PyCQA/pydocstyle
     rev: 6.3.0
     hooks:

@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/dynamics/dynamics_detection.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 #include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
 #include "nvblox/sensors/sensor.h"
@@ -102,8 +103,8 @@ void DynamicsDetection::computeDynamics(const DepthImage& depth_frame_C,
   // - 8 x 8 threads per thread block
   // - N x M thread blocks get 1 thread per pixel
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
-  const dim3 num_blocks(cols / kThreadsPerThreadBlock.x + 1,
-                        rows / kThreadsPerThreadBlock.y + 1, 1);
+  const dim3 num_blocks(divideRoundUp(cols, kThreadsPerThreadBlock.x),
+                        divideRoundUp(rows, kThreadsPerThreadBlock.y), 1);
   findDynamicPointsKernel<SensorType>
       <<<num_blocks, kThreadsPerThreadBlock, 0,
          *cuda_stream_>>>(depth_frame_C.dataConstPtr(),  // NOLINT

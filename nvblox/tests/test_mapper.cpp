@@ -137,7 +137,7 @@ TEST(MapperTest, IntegrateDepthWithMask) {
   constexpr static float fv = 300;
   constexpr static int width = 640;
   constexpr static int height = 480;
-  Camera camera(fu, fv, width, height);
+  Camera camera(fu, fv, 0.5 * width, 0.5 * height, width, height);
 
   // Looking down the x-axis
   Eigen::Quaternionf rotation_base(0.5, 0.5, 0.5, 0.5);
@@ -195,7 +195,7 @@ TEST(MapperTest, GenerateEsdfInFakeObservedAreas) {
   constexpr static float fv = 300;
   constexpr static int width = 640;
   constexpr static int height = 480;
-  Camera camera(fu, fv, width, height);
+  Camera camera(fu, fv, 0.5 * width, 0.5 * height, width, height);
 
   // Looking down the x-axis
   Eigen::Quaternionf rotation_base(0.5, 0.5, 0.5, 0.5);

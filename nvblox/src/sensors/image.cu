@@ -21,6 +21,7 @@ limitations under the License.
 #include <algorithm>
 
 #include "nvblox/sensors/image.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace image {
@@ -245,8 +246,9 @@ void getDifferenceImageGPUTemplateAsync(const ImageType& image_1,
   constexpr int kThreadsPerBlockInEachDimension = 8;
   dim3 blockShape(kThreadsPerBlockInEachDimension,
                   kThreadsPerBlockInEachDimension);
-  dim3 gridShape((image_1.rows() / kThreadsPerBlockInEachDimension) + 1,
-                 (image_1.cols() / kThreadsPerBlockInEachDimension) + 1);
+  dim3 gridShape(
+      divideRoundUp(image_1.rows(), kThreadsPerBlockInEachDimension),
+      divideRoundUp(image_1.cols(), kThreadsPerBlockInEachDimension));
   differenceImageKernel<<<gridShape, blockShape, 0, cuda_stream>>>(
       diff_image_ptr->dataPtr(), image_1.rows(), image_1.cols(),
       image_1.dataConstPtr(), image_2.dataConstPtr());

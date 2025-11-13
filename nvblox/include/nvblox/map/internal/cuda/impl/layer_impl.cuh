@@ -21,6 +21,7 @@ limitations under the License.
 
 #include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
 #include "nvblox/map/layer.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 
@@ -69,7 +70,7 @@ void VoxelBlockLayer<VoxelType>::getVoxelsGPU(
   success_flags_ptr->resizeAsync(num_queries, *cuda_stream_ptr);
 
   constexpr int kNumThreads = 512;
-  const int num_blocks = num_queries / kNumThreads + 1;
+  const int num_blocks = divideRoundUp(num_queries, kNumThreads);
 
   queryVoxelsKernel<VoxelType>
       <<<num_blocks, kNumThreads, 0, *cuda_stream_ptr>>>(

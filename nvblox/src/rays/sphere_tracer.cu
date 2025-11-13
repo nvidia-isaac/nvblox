@@ -1,5 +1,5 @@
 /*
-Copyright 2022 NVIDIA CORPORATION
+Copyright 2025 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ limitations under the License.
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
 
 #include "nvblox/rays/sphere_tracer.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 #include "nvblox/utils/timing.h"
 
 #include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
@@ -465,9 +466,8 @@ void SphereTracer::renderImageOnGPU(const Camera& camera,
   // - N x M thread blocks get 1 thread per pixel
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
   const dim3 num_blocks(
-      depth_ptr->cols() / kThreadsPerThreadBlock.x + 1,  // NOLINT
-      depth_ptr->rows() / kThreadsPerThreadBlock.y + 1,  // NOLINT
-      1);
+      divideRoundUp(depth_ptr->cols(), kThreadsPerThreadBlock.x),
+      divideRoundUp(depth_ptr->rows(), kThreadsPerThreadBlock.y), 1);
   sphereTracingKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
                         *cuda_stream_>>>(
       camera,                          // NOLINT
@@ -531,8 +531,8 @@ void SphereTracer::renderRgbdImageOnGPU(
   // - 8 x 8 threads per thread block
   // - N x M thread blocks get 1 thread per pixel
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
-  const dim3 num_blocks(image_width / kThreadsPerThreadBlock.y + 1,   // NOLINT
-                        image_height / kThreadsPerThreadBlock.x + 1,  // NOLINT
+  const dim3 num_blocks(divideRoundUp(image_width, kThreadsPerThreadBlock.y),
+                        divideRoundUp(image_height, kThreadsPerThreadBlock.x),
                         1);
   sphereTracingKernelWithColor<<<num_blocks, kThreadsPerThreadBlock, 0,
                                  *cuda_stream_>>>(
@@ -622,7 +622,7 @@ std::pair<device_vector<Vector3f>, device_vector<bool>> SphereTracer::castOnGPU(
   // - 64 threads per thread block (chosen arbitrarily)
   // - N thread blocks get 1 thread per ray
   constexpr int kThreadsPerThreadBlock = 32;
-  const int num_blocks = rays_L.size() / kThreadsPerThreadBlock + 1;
+  const int num_blocks = divideRoundUp(rays_L.size(), kThreadsPerThreadBlock);
   sphereTracingKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
                         *cuda_stream_>>>(
       rays_L_device.data(),            // NOLINT

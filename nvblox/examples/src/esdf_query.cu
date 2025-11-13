@@ -25,6 +25,7 @@ limitations under the License.
 #include "nvblox/map/voxels.h"
 #include "nvblox/mapper/mapper.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
@@ -143,7 +144,7 @@ void EsdfQueryExample::queryMap(size_t num_queries) {
   timing::Timer kernel_timer("query/kernel");
 
   constexpr int kNumThreads = 512;
-  int num_blocks = num_queries / kNumThreads + 1;
+  int num_blocks = divideRoundUp(num_queries, kNumThreads);
 
   // Call the kernel.
   queryESDFKernel<<<num_blocks, kNumThreads>>>(

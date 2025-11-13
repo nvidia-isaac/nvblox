@@ -40,7 +40,7 @@ class FrustumTest : public test_utils::SensorFixture<SensorType> {
  protected:
   FrustumTest()
       : test_utils::SensorFixture<SensorType>(
-            Lidar(20, 20, 1E-2, 50.0F, 90.F * M_PI / 180.F),
+            Lidar(20, 20, 1E-2, 90.F * M_PI / 180.F),
             Camera(300, 300, 320, 240, 640, 480)) {}
   void SetUp() override {
     timing::Timing::Reset();

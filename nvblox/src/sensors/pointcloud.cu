@@ -1,5 +1,5 @@
 /*
-Copyright 2024 NVIDIA CORPORATION
+Copyright 2025 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ limitations under the License.
 */
 #include "nvblox/core/internal/error_check.h"
 #include "nvblox/sensors/pointcloud.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 
@@ -79,7 +80,8 @@ void transformPointcloudOnGPU(const Transform& T_out_in,
   pointcloud_out_ptr->resizeAsync(pointcloud_in.size(), *cuda_stream_ptr);
 
   constexpr int kThreadsPerThreadBlock = 512;
-  const int num_blocks(pointcloud_in.size() / kThreadsPerThreadBlock + 1);
+  const int num_blocks(
+      divideRoundUp(pointcloud_in.size(), kThreadsPerThreadBlock));
   transformPointcloudKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
                               *cuda_stream_ptr>>>(
       T_out_in, pointcloud_in.size(), pointcloud_in.dataConstPtr(),

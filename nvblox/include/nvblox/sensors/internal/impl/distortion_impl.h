@@ -26,7 +26,9 @@ __host__ __device__ T radialDistortionScale(const T r2,
                                             const RadialDistortionParams& rp) {
   const T r4 = r2 * r2;
   const T r6 = r2 * r4;
-  return 1.0 + rp.k1 * r2 + rp.k2 * r4 + rp.k3 * r6;
+  const T numerator = 1.0 + rp.k1 * r2 + rp.k2 * r4 + rp.k3 * r6;
+  const T denominator = 1.0 + rp.k4 * r2 + rp.k5 * r4 + rp.k6 * r6;
+  return numerator / denominator;
 }
 
 // Correct a point for tangential distortion, arising when imaging elements in
@@ -45,7 +47,7 @@ __host__ __device__ Eigen::Vector2<T> applyTangentialDistortion(
 
 Vector2f applyDistortion(
     const Vector2f& u_normalized,
-    const BrownConradyDistortionParams& distortion_params) {
+    const RadialTangentialDistortionParams& distortion_params) {
   const float x = u_normalized[0];
   const float y = u_normalized[1];
   const float r2 = x * x + y * y;
@@ -55,16 +57,48 @@ Vector2f applyDistortion(
                                    distortion_params.tangential);
 }
 
-// Remove distortion from the input point (in normalized coordinates).
+__host__ __device__ inline double compute_dR_dr2(
+    const double r2, const double k1, const double k2, const double k3,
+    const double k4, const double k5, const double k6) {
+  // Thanks to sympy for the formula!
+  // clang-format off
+  //
+  // ⎛                    2⎞ ⎛           2       3    ⎞   ⎛                    2⎞ ⎛           2       3    ⎞
+  // ⎝k₁ + 2⋅k₂⋅q + 3⋅k₃⋅q ⎠⋅⎝k₄⋅q + k₅⋅q  + k₆⋅q  + 1⎠ - ⎝k₄ + 2⋅k₅⋅q + 3⋅k₆⋅q ⎠⋅⎝k₁⋅q + k₂⋅q  + k₃⋅q  + 1⎠
+  // ───────────────────────────────────────────────────────────────────────────────────────────────────────
+  //                                                                 2
+  //                                       ⎛           2       3    ⎞
+  //                                       ⎝k₄⋅q + k₅⋅q  + k₆⋅q  + 1⎠
+  //
+  // We use notation (a*b - c*d) / b*b  and q == r2.
+  //
+  // clang-format on
+
+  const double q = r2;
+  const double q2 = q * q;
+  const double q3 = q2 * q;
+
+  const double k4q = k4 * q;
+  const double k5q2 = k5 * q2;
+  const double k6q3 = k6 * q3;
+
+  const double a = k1 + 2. * k2 * q + 3. * k3 * q2;
+  const double c = k4 + 2. * k5 * q + 3. * k6 * q2;
+  const double b = k4q + k5q2 + k6q3 + 1.;
+  const double d = k1 * q + k2 * q2 + k3 * q3 + 1.;
+
+  return (a * b - c * d) / (b * b);
+}
+
 Vector2f removeDistortion(
     const Vector2f& u_in,
-    const BrownConradyDistortionParams& distortion_params) {
-  // We apply an iterative solution (Newton Raphson) to remove distortion. This
-  // is since a closed form solution of the inverse distortion function is
-  // infeasible.
+    const RadialTangentialDistortionParams& distortion_params) {
+  // We apply an iterative solution (Newton Raphson) to remove distortion.
+  // This is since a closed form solution of the inverse distortion function
+  // is infeasible.
   //
-  // In each iteration, we linearize the distortion function around the current
-  // estimate and compute the update step as:
+  // In each iteration, we linearize the distortion function around the
+  // current estimate and compute the update step as:
   //
   // delta_xy = -inv(J) * (u_est - u_in)
   //
@@ -86,6 +120,9 @@ Vector2f removeDistortion(
   const double k1 = distortion_params.radial.k1;
   const double k2 = distortion_params.radial.k2;
   const double k3 = distortion_params.radial.k3;
+  const double k4 = distortion_params.radial.k4;
+  const double k5 = distortion_params.radial.k5;
+  const double k6 = distortion_params.radial.k6;
   const double p1 = distortion_params.tangential.p1;
   const double p2 = distortion_params.tangential.p2;
 
@@ -94,12 +131,10 @@ Vector2f removeDistortion(
   double y = u_in.y();
 
   for (int i = 0; i < kMaxIterations; i++) {
-    // Precompute some common terms.
+    // Precompute squared radius.
     const double x2 = x * x;
     const double y2 = y * y;
-
     const double r2 = x2 + y2;
-    const double r4 = r2 * r2;
 
     // Apply radial and tangential distortion to the current estimate.
     const double R =
@@ -114,10 +149,10 @@ Vector2f removeDistortion(
     const double error_x = x_estimated - u_in.x();
     const double error_y = y_estimated - u_in.y();
 
-    // We precompute some commonly used derivatives.
-    const double dR_dr2 = k1 + 2.0 * k2 * r2 + 3.0 * k3 * r4;
-    const double dR_dx = 2.0 * x * dR_dr2;
-    const double dR_dy = 2.0 * y * dR_dr2;
+    // We precompute derivative of R with respect to x and y
+    const double dR_dr2 = compute_dR_dr2(r2, k1, k2, k3, k4, k5, k6);
+    const double dR_dx = 2.0 * x * dR_dr2;  // Chain rule
+    const double dR_dy = 2.0 * y * dR_dr2;  // Chain rule
 
     // Then we compute the jacobian.
     const double a = R + x * dR_dx + 2 * p1 * y + 6 * p2 * x;  // derror_x/dx

@@ -77,6 +77,13 @@ __device__ inline bool doesVoxelHaveDepthMeasurement(
     return false;
   }
 
+  // Handle invalid depth values
+  if (!interpolation::checkers::PixelIsValidDepth::check(
+          surface_depth_measured)) {
+    // Voxel is not in view for invalid depth values.
+    return false;
+  }
+
   // Check the distance from the surface
   const float voxel_to_surface_distance =
       surface_depth_measured - voxel_depth_m;

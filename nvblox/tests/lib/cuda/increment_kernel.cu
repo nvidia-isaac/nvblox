@@ -1,5 +1,5 @@
 /*
-Copyright 2022 NVIDIA CORPORATION
+Copyright 2025 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ limitations under the License.
 */
 #include "nvblox/core/internal/error_check.h"
 #include "nvblox/tests/increment_on_gpu.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 __global__ void incrementKernel(int* number) {
   if (threadIdx.x == 0 && blockIdx.x == 0) {
@@ -22,9 +23,9 @@ __global__ void incrementKernel(int* number) {
   }
 }
 
-__global__ void incrementKernel(int* number, const int num_elelments) {
+__global__ void incrementKernel(int* number, const int num_elements) {
   const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < num_elelments) {
+  if (idx < num_elements) {
     number[idx]++;
   }
 }
@@ -42,10 +43,10 @@ void incrementOnGPU(int* number_ptr) {
   checkCudaErrors(cudaDeviceSynchronize());
 }
 
-void incrementOnGPU(const int num_elelments, int* numbers_ptr) {
+void incrementOnGPU(const int num_elements, int* numbers_ptr) {
   constexpr int kThreadsPerBlock = 32;
-  const int num_blocks = (num_elelments / kThreadsPerBlock) + 1;
-  incrementKernel<<<num_blocks, kThreadsPerBlock>>>(numbers_ptr, num_elelments);
+  const int num_blocks = divideRoundUp(num_elements, kThreadsPerBlock);
+  incrementKernel<<<num_blocks, kThreadsPerBlock>>>(numbers_ptr, num_elements);
   checkCudaErrors(cudaDeviceSynchronize());
 }
 

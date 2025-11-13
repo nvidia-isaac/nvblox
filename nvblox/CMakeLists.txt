@@ -105,6 +105,7 @@ add_nvblox_shared_library(
   src/integrators/freespace_integrator.cu
   src/integrators/esdf_integrator.cu
   src/integrators/esdf_slicer.cu
+  src/integrators/occupancy_conversions.cpp
   src/integrators/instantiations/camera_inst.cu
   src/integrators/instantiations/lidar_inst.cu
   src/rays/sphere_tracer.cu

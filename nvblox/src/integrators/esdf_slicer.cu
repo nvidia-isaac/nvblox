@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "nvblox/geometry/bounding_boxes.h"
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
+#include "nvblox/utils/cuda_kernel_utils.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
@@ -68,6 +69,49 @@ __global__ void populateSliceFromLayerKernel(
   image::access(pixel_row, pixel_col, cols, image) = distance;
 }
 
+constexpr int8_t kOccupancyGridUnknownValue = -1;
+
+// Calling rules:
+// - Should be called with 2D grid of thread-blocks where the total number of
+// threads in each dimension exceeds the number of pixels in each image
+// dimension ie:
+// - blockIdx.x * blockDim.x + threadIdx.x > cols
+// - blockIdx.y * blockDim.y + threadIdx.y > rows
+// - We assume that theres enough space in the pointcloud to store a point per
+// pixel if required.
+__global__ void occupancyGridFromSliceImageKernel(
+    const float* slice_image_ptr,         // NOLINT
+    const int rows,                       // NOLINT
+    const int cols,                       // NOLINT
+    const float unobserved_value,         // NOLINT
+    int8_t* occupancy_grid_device_ptr) {  // NOLINT
+  // Get the pixel addressed by this thread.
+  const int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+  const int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+  if (col_idx >= cols || row_idx >= rows) {
+    return;
+  }
+
+  // Access the slice
+  const float pixel_value =
+      image::access(row_idx, col_idx, cols, slice_image_ptr);
+
+  constexpr float kEps = 1e-2;
+  constexpr int8_t kOccupiedValue = 100;
+
+  // If the distance is under epsilon (near zero), we're in occupied space so
+  // set it to kOccupiedValue (via implicit cast from Bool(True) to int(1)).
+  int8_t value = (pixel_value < kEps) * kOccupiedValue;
+  // If the value is approximately equal to the constant signifying unknown,
+  // set it to unknown in ros (-1).
+  if (fabsf(pixel_value - unobserved_value) < kEps) {
+    value = kOccupancyGridUnknownValue;
+  }
+
+  // Write the point to the output
+  image::access(row_idx, col_idx, cols, occupancy_grid_device_ptr) = value;
+}
+
 EsdfSlicer::EsdfSlicer() : EsdfSlicer(std::make_shared<CudaStreamOwning>()) {}
 
 EsdfSlicer::EsdfSlicer(std::shared_ptr<CudaStream> cuda_stream)
@@ -116,6 +160,17 @@ AxisAlignedBoundingBox EsdfSlicer::getCombinedAabbOfLayersAtHeight(
 void EsdfSlicer::sliceLayerToDistanceImage(const EsdfLayer& layer,
                                            float slice_height,
                                            float unobserved_value,
+                                           AxisAlignedBoundingBox* aabb,
+                                           Image<float>* output_image) {
+  CHECK_NOTNULL(aabb);
+  *aabb = getAabbOfLayerAtHeight(layer, slice_height);
+  sliceLayerToDistanceImage(layer, slice_height, unobserved_value, *aabb,
+                            output_image);
+}
+
+void EsdfSlicer::sliceLayerToDistanceImage(const EsdfLayer& layer,
+                                           float slice_height,
+                                           float unobserved_value,
                                            const AxisAlignedBoundingBox& aabb,
                                            Image<float>* output_image) {
   if (aabb.isEmpty()) {
@@ -146,6 +201,20 @@ void EsdfSlicer::sliceLayerToDistanceImage(const EsdfLayer& layer,
 void EsdfSlicer::sliceLayersToCombinedDistanceImage(
     const EsdfLayer& layer_1, const EsdfLayer& layer_2,
     float layer_1_slice_height, float layer_2_slice_height,
+    float unobserved_value, AxisAlignedBoundingBox* aabb,
+    Image<float>* output_image) {
+  CHECK_NOTNULL(aabb);
+  CHECK_NOTNULL(output_image);
+  *aabb = getCombinedAabbOfLayersAtHeight(
+      layer_1, layer_2, layer_1_slice_height, layer_2_slice_height);
+  sliceLayersToCombinedDistanceImage(layer_1, layer_2, layer_1_slice_height,
+                                     layer_2_slice_height, unobserved_value,
+                                     *aabb, output_image);
+}
+
+void EsdfSlicer::sliceLayersToCombinedDistanceImage(
+    const EsdfLayer& layer_1, const EsdfLayer& layer_2,
+    float layer_1_slice_height, float layer_2_slice_height,
     float unobserved_value, const AxisAlignedBoundingBox& aabb,
     Image<float>* output_image) {
   CHECK_NOTNULL(output_image);
@@ -160,6 +229,54 @@ void EsdfSlicer::sliceLayersToCombinedDistanceImage(
   // Get the minimal distance between the two slices
   image::elementWiseMinInPlaceGPUAsync(slice_image_1, output_image,
                                        *cuda_stream_);
+  cuda_stream_->synchronize();
+  checkCudaErrors(cudaPeekAtLastError());
+}
+
+void EsdfSlicer::occupancyGridFromSliceImage(const Image<float>& slice_image,
+                                             signed char* occupancy_grid_data,
+                                             const float unobserved_value) {
+  CHECK_NOTNULL(occupancy_grid_data);
+
+  // Can happen that this function is called before the ESDF contains data.
+  // Return without doing anything if that happens.
+  if (slice_image.numel() <= 0 || slice_image.rows() <= 0 ||
+      slice_image.cols() <= 0) {
+    return;
+  }
+
+  const int width = slice_image.cols();
+  const int height = slice_image.rows();
+
+  // Allocate device-side scratch pad
+  occupancy_grid_device_.reserveAsync(width * height, *cuda_stream_);
+
+  // Call CUDA kernel to convert from float distance to int8 occupancy.
+  // Kernel
+  // Call params
+  // - 1 thread per pixel
+  // - 8 x 8 threads per thread block
+  // - N x M thread blocks get 1 thread per pixel
+  constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
+  const dim3 num_blocks(
+      slice_image.cols() / kThreadsPerThreadBlock.x + 1,  // NOLINT
+      slice_image.rows() / kThreadsPerThreadBlock.y + 1,  // NOLINT
+      1);
+  occupancyGridFromSliceImageKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
+                                      *cuda_stream_>>>(
+      slice_image.dataConstPtr(),    // NOLINT
+      slice_image.rows(),            // NOLINT
+      slice_image.cols(),            // NOLINT
+      unobserved_value,              // NOLINT
+      occupancy_grid_device_.data()  // NOLINT
+  );
+  checkCudaErrors(cudaPeekAtLastError());
+
+  // Copy into the message
+  checkCudaErrors(cudaMemcpyAsync(
+      occupancy_grid_data, occupancy_grid_device_.data(),
+      width * height * sizeof(int8_t), cudaMemcpyDefault, *cuda_stream_));
+  cuda_stream_->synchronize();
 }
 
 void EsdfSlicer::populateSliceFromLayer(const EsdfLayer& layer,
@@ -188,10 +305,8 @@ void EsdfSlicer::populateSliceFromLayer(const EsdfLayer& layer,
 
   // Pass in the GPU hash and AABB and let the kernel figure it out.
   constexpr int kThreadDim = 16;
-  const int rounded_rows = static_cast<int>(
-      std::ceil(output_image->rows() / static_cast<float>(kThreadDim)));
-  const int rounded_cols = static_cast<int>(
-      std::ceil(output_image->cols() / static_cast<float>(kThreadDim)));
+  const int rounded_rows = divideRoundUp(output_image->rows(), kThreadDim);
+  const int rounded_cols = divideRoundUp(output_image->cols(), kThreadDim);
   dim3 block_dim(rounded_cols, rounded_rows);
   dim3 thread_dim(kThreadDim, kThreadDim);
 

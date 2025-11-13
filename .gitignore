@@ -64,3 +64,6 @@ nvblox_torch/dist
 
 # Generated version file
 nvblox_torch/nvblox_torch/_version.py
+
+# Python version file for pyenv
+.python-version

@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/semantics/image_projector.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 
@@ -68,8 +69,9 @@ void DepthImageBackProjector::backProjectOnGPU(
   // - 8 x 8 threads per thread block
   // - N x M thread blocks get 1 thread per pixel
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
-  const dim3 num_blocks(image.cols() / kThreadsPerThreadBlock.x + 1,
-                        image.rows() / kThreadsPerThreadBlock.y + 1, 1);
+  const dim3 num_blocks(divideRoundUp(image.cols(), kThreadsPerThreadBlock.x),
+                        divideRoundUp(image.rows(), kThreadsPerThreadBlock.y),
+                        1);
   projectImageKernel<<<num_blocks, kThreadsPerThreadBlock, 0, *cuda_stream_>>>(
       sensor, image.dataConstPtr(), image.rows(), image.cols(),
       max_back_projection_distance_m, pointcloud_C_ptr->dataPtr(),

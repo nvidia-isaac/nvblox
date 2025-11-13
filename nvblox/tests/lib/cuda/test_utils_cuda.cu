@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include "nvblox/tests/test_utils_cuda.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -125,7 +126,7 @@ bool checkVectorAllConstantTemplate(const T* vec, T value, size_t size) {
 
   // Kernel
   constexpr int kNumThreads = 512;
-  const int num_thread_blocks = size / kNumThreads + 1;
+  const int num_thread_blocks = divideRoundUp(size, kNumThreads);
   checkVectorAllConstant<T>
       <<<num_thread_blocks, kNumThreads>>>(size, value, vec, flag_device_ptr);
   checkCudaErrors(cudaDeviceSynchronize());
@@ -160,7 +161,7 @@ bool checkAllConstant(const int* vec_ptr, int value, size_t num_elems) {
 
 void addOneToAllGPU(unified_vector<int>* vec_ptr) {
   constexpr int kNumThreadsPerBlock = 512;
-  const int kNumBlocks = vec_ptr->size() / kNumThreadsPerBlock + 1;
+  const int kNumBlocks = divideRoundUp(vec_ptr->size(), kNumThreadsPerBlock);
   addOneToAll<<<kNumBlocks, kNumThreadsPerBlock>>>(vec_ptr->size(),
                                                    vec_ptr->data());
   checkCudaErrors(cudaDeviceSynchronize());

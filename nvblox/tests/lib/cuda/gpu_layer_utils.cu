@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
 #include "nvblox/gpu_hash/internal/cuda/gpu_indexing.cuh"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -43,7 +44,8 @@ std::vector<bool> getContainsFlags(const GPULayerView<TsdfBlock>& gpu_layer,
 
   // Kernel
   constexpr int kNumThreadsPerBlock = 32;
-  const int num_blocks = device_indices.size() / kNumThreadsPerBlock + 1;
+  const int num_blocks =
+      divideRoundUp(device_indices.size(), kNumThreadsPerBlock);
   getContainsFlagsKernel<<<num_blocks, kNumThreadsPerBlock>>>(
       gpu_layer.getHash().impl_, device_indices.data(), device_indices.size(),
       device_flags.data());
@@ -88,7 +90,8 @@ void getVoxelsAtPositionsOnGPU(const GPULayerView<TsdfBlock>& gpu_layer,
 
   // Kernel
   constexpr int kNumThreadsPerBlock = 32;
-  const int num_blocks = device_positions.size() / kNumThreadsPerBlock + 1;
+  const int num_blocks =
+      divideRoundUp(device_positions.size(), kNumThreadsPerBlock);
   getVoxelsAtPositionsKernel<<<num_blocks, kNumThreadsPerBlock>>>(
       gpu_layer.getHash().impl_, device_positions.data(), block_size,
       device_positions.size(), device_voxels.data(), device_flags.data());

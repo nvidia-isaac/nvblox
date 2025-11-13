@@ -42,32 +42,11 @@ class Camera : public SensorBase {
   /// @param cv Principal point position in the v (y/height) direction.
   /// @param width Width (in pixels) of the image plane.
   /// @param height Height (in pixels) of the image plane.
-  __host__ __device__ inline Camera(float fu, float fv, float cu, float cv,
-                                    int width, int height);
-
-  /// Constructor with distortion parameters
-  /// @param fu Focal length (in pixels) in the u (x/width) direction.
-  /// @param fv Focal length (in pixels) in the v (y/height) direction.
-  /// @param cu Principal point position in the u (x/width) direction.
-  /// @param cv Principal point position in the v (y/height) direction.
-  /// @param width Width (in pixels) of the image plane.
-  /// @param height Height (in pixels) of the image plane.
-  /// @param k1 First radial distortion coefficient.
-  /// @param k2 Second radial distortion coefficient.
-  /// @param k3 Third radial distortion coefficient.
-  /// @param p1 First tangential distortion coefficient.
-  /// @param p2 Second tangential distortion coefficient.
-  __host__ __device__ inline Camera(float fu, float fv, float cu, float cv,
-                                    int width, int height, float k1, float k2,
-                                    float k3, float p1, float p2);
-
-  /// Constructor
-  /// Principal point is assumed to be in the center of the image plane.
-  /// @param fu Focal length (in pixels) in the u (x/width) direction.
-  /// @param fv Focal length (in pixels) in the v (y/height) direction.
-  /// @param width Width (in pixels) of the image plane.
-  /// @param height Height (in pixels) of the image plane.
-  __host__ __device__ inline Camera(float fu, float fv, int width, int height);
+  /// @param distortion_params Distortion parameters.
+  __host__ __device__ inline Camera(
+      float fu, float fv, float cu, float cv, int width, int height,
+      std::optional<RadialTangentialDistortionParams> distortion_params =
+          std::nullopt);
 
   /// Project a 3D point in camera image space to a 2D pixel coordinate.
   /// @param p_C Input 3D point coordinate in image space.
@@ -182,8 +161,12 @@ class Camera : public SensorBase {
   __host__ __device__ inline int cols() const { return width_; }
   __host__ __device__ inline int rows() const { return height_; }
 
-  __host__ __device__ inline const BrownConradyDistortionParams&
-  distortion_params() const {
+  /// Get the distortion parameters
+  /// @return The distortion parameters or std::nullopt if no distortion
+  /// parameters are set.
+  __host__
+      __device__ inline const std::optional<RadialTangentialDistortionParams>&
+      distortion_params() const {
     return distortion_params_;
   }
 
@@ -197,25 +180,12 @@ class Camera : public SensorBase {
   /// @param mat Matrix representation of the camera intrinsics.
   /// @param width The width (in pixels) of the image plane.
   /// @param height The height (in pixels) of the image plane.
+  /// @param distortion_params Distortion parameters.
   /// @return A Camera object representation of the intrinsics.
-  inline static Camera fromIntrinsicsMatrix(const Matrix3f& mat, int width,
-                                            int height);
-
-  /// Camera factory with distortion parameters.
-  /// @param mat Matrix representation of the camera intrinsics.
-  /// @param width The width (in pixels) of the image plane.
-  /// @param height The height (in pixels) of the image plane.
-  /// @param k1 First radial distortion coefficient.
-  /// @param k2 Second radial distortion coefficient.
-  /// @param k3 Third radial distortion coefficient.
-  /// @param p1 First tangential distortion coefficient.
-  /// @param p2 Second tangential distortion coefficient.
-  /// @return A Camera object representation of the intrinsics with distortion.
-  inline static Camera fromIntrinsicsMatrixWithDistortion(const Matrix3f& mat,
-                                                          int width, int height,
-                                                          float k1, float k2,
-                                                          float k3, float p1,
-                                                          float p2);
+  inline static Camera fromIntrinsicsMatrix(
+      const Matrix3f& mat, int width, int height,
+      std::optional<RadialTangentialDistortionParams> distortion_params =
+          std::nullopt);
 
   /// Equality
   __host__ inline friend bool operator==(const Camera& lhs, const Camera& rhs);
@@ -229,9 +199,7 @@ class Camera : public SensorBase {
   int width_ = 0;
   int height_ = 0;
 
-  BrownConradyDistortionParams distortion_params_;
-  // Whether the camera was created with distortion parameters
-  bool has_distortion_ = false;
+  std::optional<RadialTangentialDistortionParams> distortion_params_;
 };
 
 /// Equality

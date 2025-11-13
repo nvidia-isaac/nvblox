@@ -163,4 +163,20 @@ enum class InterpolationType { kNearestNeighbor, kLinear };
 
 typedef Eigen::ParametrizedLine<float, 3> Ray;
 
+/// Replacement for Eigen's allFinite() function for vectors.
+/// This is because Eigen's allFinite() function is not available in CUDA.
+/// Note: This function only works with column vectors, not matrices.
+template <typename Derived>
+__host__ __device__ inline bool allFinite(
+    const Eigen::MatrixBase<Derived>& vec) {
+  static_assert(Eigen::internal::traits<Derived>::ColsAtCompileTime == 1,
+                "allFinite only works with column vectors, not matrices");
+  for (int i = 0; i < vec.size(); ++i) {
+    if (!std::isfinite(vec[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace nvblox

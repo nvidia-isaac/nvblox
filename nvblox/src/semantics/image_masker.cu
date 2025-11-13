@@ -1,5 +1,21 @@
+/*
+Copyright 2025 NVIDIA CORPORATION
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 #include "nvblox/core/internal/cuda/atomic_float.cuh"
 #include "nvblox/semantics/image_masker.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 
@@ -266,8 +282,8 @@ static void splitImageOnGPUTemplate(
   // - 8 x 8 threads per thread block
   // - N x M thread blocks get 1 thread per pixel
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
-  const dim3 num_blocks(input.cols() / kThreadsPerThreadBlock.x + 1,  // NOLINT
-                        input.rows() / kThreadsPerThreadBlock.y + 1,  // NOLINT
+  const dim3 num_blocks(divideRoundUp(input.cols(), kThreadsPerThreadBlock.x),
+                        divideRoundUp(input.rows(), kThreadsPerThreadBlock.y),
                         1);
 
   splitColorImageKernel<<<num_blocks, kThreadsPerThreadBlock, 0,
@@ -322,11 +338,12 @@ void ImageMasker::splitImageOnGPU(
   // - 8 x 8 threads per thread block
   // - N x M thread blocks get 1 thread per pixel
   constexpr dim3 kThreadsPerThreadBlock(8, 8, 1);
-  const dim3 num_blocks_depth(depth_input.cols() / kThreadsPerThreadBlock.x + 1,
-                              depth_input.rows() / kThreadsPerThreadBlock.y + 1,
-                              1);
-  const dim3 num_blocks_mask(mask.cols() / kThreadsPerThreadBlock.x + 1,
-                             mask.rows() / kThreadsPerThreadBlock.y + 1, 1);
+  const dim3 num_blocks_depth(
+      divideRoundUp(depth_input.cols(), kThreadsPerThreadBlock.x),
+      divideRoundUp(depth_input.rows(), kThreadsPerThreadBlock.y), 1);
+  const dim3 num_blocks_mask(
+      divideRoundUp(mask.cols(), kThreadsPerThreadBlock.x),
+      divideRoundUp(mask.rows(), kThreadsPerThreadBlock.y), 1);
 
   // Initialize the minimum depth image
   if ((mask.rows() != min_depth_image_.rows()) ||

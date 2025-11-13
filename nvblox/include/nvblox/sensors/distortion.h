@@ -21,21 +21,27 @@ limitations under the License.
 namespace nvblox {
 
 // Parameters for radial distortion:
-// p_distorted = 1 + k1 * r^2 + k2 * r^4 + k3 * r^6
+// p_distorted = p * (1 + k1 * r^2 + k2 * r^4 + k3 * r^6) / (1 + k4 * r^2 + k5 *
+// r^4 + k6 * r^6)
 struct RadialDistortionParams {
-  float k1 = 0.F;  // First radial distortion coefficient
-  float k2 = 0.F;  // Second radial distortion coefficient
-  float k3 = 0.F;  // Third radial distortion coefficient
+  float k1 = 0.F;  // First numerator coefficient
+  float k2 = 0.F;  // Second numerator coefficient
+  float k3 = 0.F;  // Third numerator coefficient
+  float k4 = 0.F;  // First denominator coefficient
+  float k5 = 0.F;  // Second denominator coefficient
+  float k6 = 0.F;  // Third denominator coefficient
 
   __host__ __device__ inline bool operator==(
       const RadialDistortionParams& other) const {
     return std::abs(k1 - other.k1) <= 1e-6 && std::abs(k2 - other.k2) <= 1e-6 &&
-           std::abs(k3 - other.k3) <= 1e-6;
+           std::abs(k3 - other.k3) <= 1e-6 && std::abs(k4 - other.k4) <= 1e-6 &&
+           std::abs(k5 - other.k5) <= 1e-6 && std::abs(k6 - other.k6) <= 1e-6;
   }
 };
 
 // Parameters for tangential distortion:
-// p_distorted = p1 * (r^2 + 2 * x^2) + p2 * (r^2 + 2 * y^2)
+// p_distorted_x = 2*p1*x*y + p2*(r^2 + 2*x^2)
+// p_distorted_y = 2*p2*x*y + p1*(r^2 + 2*y^2)
 struct TangentialDistortionParams {
   float p1 = 0.F;  // First tangential distortion coefficient
   float p2 = 0.F;  // Second tangential distortion coefficient
@@ -48,12 +54,12 @@ struct TangentialDistortionParams {
 
 // Distortion parameters for the Brown / Conrady model that combines radial and
 // tangential distortion. See https://en.wikipedia.org/wiki/Distortion_(optics)
-struct BrownConradyDistortionParams {
+struct RadialTangentialDistortionParams {
   RadialDistortionParams radial;
   TangentialDistortionParams tangential;
 
   __host__ __device__ inline bool operator==(
-      const BrownConradyDistortionParams& other) const {
+      const RadialTangentialDistortionParams& other) const {
     return radial == other.radial && tangential == other.tangential;
   }
 };
@@ -64,7 +70,7 @@ struct BrownConradyDistortionParams {
 /// @return Distorted normalized coordinates
 __host__ __device__ inline Vector2f applyDistortion(
     const Vector2f& u_norm,
-    const BrownConradyDistortionParams& distortion_params);
+    const RadialTangentialDistortionParams& distortion_params);
 
 /// Remove distortion
 /// Note that this function uses an iterative method that can be slow.
@@ -73,7 +79,7 @@ __host__ __device__ inline Vector2f applyDistortion(
 /// @return Undistorted normalized coordinates
 __host__ __device__ inline Vector2f removeDistortion(
     const Vector2f& u_dist,
-    const BrownConradyDistortionParams& distortion_params);
+    const RadialTangentialDistortionParams& distortion_params);
 
 }  // namespace nvblox
 

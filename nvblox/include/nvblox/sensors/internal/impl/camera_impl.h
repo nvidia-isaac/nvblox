@@ -17,40 +17,38 @@ limitations under the License.
 
 #include <cmath>
 #include <iostream>
+#include <optional>
 
 #include "nvblox/core/types.h"
 
 namespace nvblox {
 
-Camera::Camera(float fu, float fv, float cu, float cv, int width, int height)
-    : fu_(fu), fv_(fv), cu_(cu), cv_(cv), width_(width), height_(height) {}
-
-Camera::Camera(float fu, float fv, float cu, float cv, int width, int height,
-               float k1, float k2, float k3, float p1, float p2)
+Camera::Camera(
+    float fu, float fv, float cu, float cv, int width, int height,
+    std::optional<RadialTangentialDistortionParams> distortion_params)
     : fu_(fu),
       fv_(fv),
       cu_(cu),
       cv_(cv),
       width_(width),
       height_(height),
-      distortion_params_(
-          BrownConradyDistortionParams{RadialDistortionParams{k1, k2, k3},
-                                       TangentialDistortionParams{p1, p2}}),
-      has_distortion_(true) {}
-
-Camera::Camera(float fu, float fv, int width, int height)
-    : Camera(fu, fv, width / 2.0, height / 2.0, width, height) {}
+      distortion_params_(distortion_params) {}
 
 bool Camera::project(const Vector3f& p_C, Vector2f* u_C, float min_depth,
                      bool check_viewport) const {
+  // Check if all values are finite (not NaN or +/- infinity)
+  if (!allFinite(p_C)) {
+    return false;
+  }
+
   // Projection to normalized coordinates
   if (!projectToNormalizedCoordinates(p_C, u_C, min_depth)) {
     return false;
   }
 
   // Apply distortion if present
-  if (has_distortion_) {
-    *u_C = applyDistortion(*u_C, distortion_params_);
+  if (distortion_params_.has_value()) {
+    *u_C = applyDistortion(*u_C, distortion_params_.value());
   }
 
   // Apply intrinsics
@@ -66,6 +64,7 @@ bool Camera::project(const Vector3f& p_C, Vector2f* u_C, float min_depth,
 
 bool Camera::projectToNormalizedCoordinates(const Vector3f& p_C, Vector2f* u_C,
                                             const float min_depth) {
+  NVBLOX_CHECK(min_depth > 0.f, "");
   if (p_C[2] >= min_depth) {
     u_C->x() = p_C[0] / p_C[2];
     u_C->y() = p_C[1] / p_C[2];
@@ -98,8 +97,8 @@ Vector3f Camera::vectorFromImagePlaneCoordinates(const Vector2f& u_C) const {
                   (u_C[1] - cv_) / fv_);
 
   // Remove distortion if present
-  if (has_distortion_) {
-    u_norm = removeDistortion(u_norm, distortion_params_);
+  if (distortion_params_.has_value()) {
+    u_norm = removeDistortion(u_norm, distortion_params_.value());
   }
 
   return Vector3f(u_norm[0], u_norm[1], 1.0f);
@@ -118,29 +117,18 @@ bool Camera::interpolateDepthImage(const DepthImageConstView depth_image,
                                    const Vector2f& u_px, const Vector3f&,
                                    const float, float* value_interpolated_ptr,
                                    Index2D* u_px_closest_ptr) {
-  return interpolation::interpolate2DClosest<
-      float, interpolation::checkers::PixelNotNan<float>>(
+  return interpolation::interpolate2DClosest<float>(
       depth_image, u_px, value_interpolated_ptr, u_px_closest_ptr);
 }
 
-Camera Camera::fromIntrinsicsMatrix(const Matrix3f& mat, int width,
-                                    int height) {
+Camera Camera::fromIntrinsicsMatrix(
+    const Matrix3f& mat, int width, int height,
+    std::optional<RadialTangentialDistortionParams> distortion_params) {
   const float fu = mat(0, 0);
   const float fv = mat(1, 1);
   const float cu = mat(0, 2);
   const float cv = mat(1, 2);
-  return Camera(fu, fv, cu, cv, width, height);
-}
-
-Camera Camera::fromIntrinsicsMatrixWithDistortion(const Matrix3f& mat,
-                                                  int width, int height,
-                                                  float k1, float k2, float k3,
-                                                  float p1, float p2) {
-  const float fu = mat(0, 0);
-  const float fv = mat(1, 1);
-  const float cu = mat(0, 2);
-  const float cv = mat(1, 2);
-  return Camera(fu, fv, cu, cv, width, height, k1, k2, k3, p1, p2);
+  return Camera(fu, fv, cu, cv, width, height, distortion_params);
 }
 
 bool operator==(const Camera& lhs, const Camera& rhs) {
@@ -152,9 +140,19 @@ bool operator==(const Camera& lhs, const Camera& rhs) {
   same_intrinsics &= lhs.width() == rhs.width();
   same_intrinsics &= lhs.height() == rhs.height();
 
-  // Compare distortion parameters
-  same_intrinsics &= lhs.distortion_params() == rhs.distortion_params();
+  // Check that both models either have or do not have distortion parameters.
+  const bool different_distortion_state =
+      (lhs.distortion_params().has_value() !=
+       rhs.distortion_params().has_value());
+  same_intrinsics &= !different_distortion_state;
 
+  // If both models have distortion, we check the distortion parameters as well.
+  const bool both_have_distortion = lhs.distortion_params().has_value() &&
+                                    rhs.distortion_params().has_value();
+  if (both_have_distortion) {
+    same_intrinsics &=
+        lhs.distortion_params().value() == rhs.distortion_params().value();
+  }
   return same_intrinsics;
 }
 

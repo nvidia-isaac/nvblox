@@ -41,11 +41,10 @@ TEST_P(ParameterizedLidarTest, Extremes) {
   const int num_elevation_divisions = std::get<1>(params);
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, vertical_fov_rad);
+              vertical_fov_rad);
 
   //-------------------
   // Elevation extremes
@@ -123,11 +122,10 @@ TEST_P(ParameterizedLidarTest, SphereTest) {
   const int num_elevation_divisions = std::get<1>(params);
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, vertical_fov_rad);
+              vertical_fov_rad);
 
   // Pointcloud
   Eigen::MatrixX3f pointcloud(num_azimuth_divisions * num_elevation_divisions,
@@ -198,11 +196,10 @@ TEST_P(ParameterizedLidarTest, OutOfBoundsTest) {
   const int num_elevation_divisions = std::get<1>(params);
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, vertical_fov_rad);
+              vertical_fov_rad);
 
   // Outside on top and bottom
   const float rads_per_pixel_elevation =
@@ -223,7 +220,7 @@ TEST_P(ParameterizedLidarTest, OutOfBoundsTest) {
     const float theta = test_utils::randomFloatInRange(-M_PI - 0.1, M_PI + 0.1);
     const float radius = 10.0f;
     const float x = radius * cos(theta);
-    const float y = radius * cos(theta);
+    const float y = radius * sin(theta);
     const float z = 0;
 
     EXPECT_TRUE(lidar.project(Vector3f(x, y, z), &u_C_float));
@@ -239,11 +236,10 @@ TEST_P(ParameterizedLidarTest, PixelToRayExtremes) {
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
   const float half_vertical_fov_rad = vertical_fov_rad / 2.0;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, vertical_fov_rad);
+              vertical_fov_rad);
 
   // Special pixels to use
   const float middle_elevation_pixel = (num_elevation_divisions - 1) / 2;
@@ -323,11 +319,10 @@ TEST_P(ParameterizedLidarTest, RandomPixelRoundTrips) {
   const int num_elevation_divisions = std::get<1>(params);
   const float vertical_fov_deg = std::get<2>(params);
   const float vertical_fov_rad = vertical_fov_deg * M_PI / 180.0f;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, vertical_fov_rad);
+              vertical_fov_rad);
 
   // Test a large number of points
   const int kNumberOfPointsToTest = 10000;
@@ -369,12 +364,11 @@ TEST_F(LidarTest, UnevenVerticalBeamsTest) {
       min_angle_below_zero_elevation_deg * kDegreesToRads;
   const float max_angle_above_zero_elevation_rad =
       max_angle_above_zero_elevation_deg * kDegreesToRads;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   // Create a LiDAR with more beams below 0 than above (like the Pandar)
   Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, min_angle_below_zero_elevation_rad,
+              min_angle_below_zero_elevation_rad,
               max_angle_above_zero_elevation_rad);
   LOG(INFO) << "Created vertically un-even LiDAR\n" << lidar;
 
@@ -404,6 +398,142 @@ TEST_F(LidarTest, UnevenVerticalBeamsTest) {
   EXPECT_NEAR(u_C_upper_left.x(), 0.5f, kEps);
   EXPECT_NEAR(u_C_lower_right.y(), num_elevation_divisions - 0.5f, kEps);
   EXPECT_NEAR(u_C_lower_right.x(), num_azimuth_divisions - 0.5f, kEps);
+}
+
+TEST_F(LidarTest, InvalidPointProjections) {
+  const int num_azimuth_divisions = 360;
+  const int num_elevation_divisions = 16;
+  const float min_valid_range_m = 0.1f;
+  // Make sure (1.0, 1.0, 1.0) is inside the FOV
+  const float vertical_fov_rad = 91.0f * M_PI / 180.0f;
+
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
+              vertical_fov_rad);
+
+  Vector2f u_C_float;
+  Index2D u_C_int;
+
+  // Test that valid point projects successfully
+  Vector3f valid_point(1.0f, 1.0f, 1.0f);
+  EXPECT_TRUE(lidar.project(valid_point, &u_C_float));
+  EXPECT_TRUE(lidar.project(valid_point, &u_C_int));
+
+  // Test invalid values (NaN, +inf, -inf) in each coordinate.
+  // All should fail to project.
+  const std::vector<float> invalid_values = {
+      std::numeric_limits<float>::quiet_NaN(),
+      std::numeric_limits<float>::infinity(),
+      -std::numeric_limits<float>::infinity()};
+
+  for (const float invalid_val : invalid_values) {
+    for (int coord = 0; coord < 3; ++coord) {
+      Vector3f invalid_point(1.0f, 1.0f, 1.0f);
+      invalid_point[coord] = invalid_val;
+      EXPECT_FALSE(lidar.project(invalid_point, &u_C_float));
+      EXPECT_FALSE(lidar.project(invalid_point, &u_C_int));
+    }
+  }
+
+  // Test that zero point fails to project.
+  Vector3f zero_point(0.0f, 0.0f, 0.0f);
+  EXPECT_FALSE(lidar.project(zero_point, &u_C_float));
+  EXPECT_FALSE(lidar.project(zero_point, &u_C_int));
+}
+
+TEST_F(LidarTest, DepthInterpolation) {
+  // Tests the two-stage depth interpolation behavior for lidar:
+  //
+  // 1. LINEAR INTERPOLATION (first attempt):
+  //    - Uses bilinear interpolation between 4 neighboring pixels
+  //    - Validates pixels with PixelIsValidDepth (rejects NaN, ±inf, zero,
+  //    negative)
+  //    - Also checks for depth discontinuities to avoid smearing across object
+  //    edges
+  //    - If any check fails, falls back to step 2
+  //
+  // 2. CLOSEST NEIGHBOR (fallback):
+  //    - Uses nearest neighbor interpolation (no validation of pixel values)
+  //    - Returns closest pixel value even if it has invalid depth
+  //    - Then performs RAY DISTANCE CHECK:
+  //      * Rejects voxels too far from the sensor ray (prevents far-range
+  //      smearing)
+  //
+  // This test uses a 2x2 grid with different depth values to validate both
+  // paths.
+
+  // Create a minimal 2x2 lidar for easy understanding
+  const int num_azimuth_divisions = 2;
+  const int num_elevation_divisions = 2;
+  const float min_valid_range_m = 0.1f;
+  const float vertical_fov_rad = 30.0f * M_PI / 180.0f;
+  const float voxel_size = 0.05f;
+
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
+              vertical_fov_rad);
+
+  // Increase threshold to avoid discontinuity rejection with our test values
+  // (2,4,6,8)
+  lidar.linear_interpolation_max_allowable_difference_vox(100.0f);
+
+  // Create a 2x2 depth image with different values:
+  // [0,0]=2.0  [0,1]=4.0
+  // [1,0]=6.0  [1,1]=8.0
+  DepthImage depth_image(2, 2, MemoryType::kHost);
+  depth_image(0, 0) = 2.0f;  // Top-left
+  depth_image(0, 1) = 4.0f;  // Top-right
+  depth_image(1, 0) = 6.0f;  // Bottom-left
+  depth_image(1, 1) = 8.0f;  // Bottom-right
+
+  DepthImageConstView depth_view(depth_image);
+
+  // Interpolate at (1.0, 1.0) - the corner point between all 4 pixels
+  // Pixel centers are at (0.5, 0.5), (1.5, 0.5), (0.5, 1.5), (1.5, 1.5)
+  // Corners (where pixels meet) are at (1.0, 1.0)
+  const Vector2f u_px(1.0f, 1.0f);
+  const Index2D pixel_idx(0, 0);
+  const Vector3f ray_direction = lidar.vectorFromPixelIndices(pixel_idx);
+  const Vector3f p_voxel_center = ray_direction * 5.0f;
+  float interpolated_value;
+
+  // Test 1: All 4 pixels valid → linear interpolation returns average
+  // Bilinear interpolation at corner: (2+4+6+8)/4 = 5.0
+  bool success = lidar.interpolateDepthImage(depth_view, u_px, p_voxel_center,
+                                             voxel_size, &interpolated_value);
+  EXPECT_TRUE(success);
+  EXPECT_NEAR(interpolated_value, 5.0f, 0.01f)
+      << "Linear interpolation should average";
+
+  // Test 2: One pixel invalid → linear fails, closest neighbor succeeds
+  depth_image(0, 1) =
+      std::numeric_limits<float>::quiet_NaN();  // Top-right is NaN
+  success = lidar.interpolateDepthImage(depth_view, u_px, p_voxel_center,
+                                        voxel_size, &interpolated_value);
+  EXPECT_TRUE(success) << "Falls back to closest neighbor";
+  // Closest pixel to (1.0, 1.0) is floor(1.0, 1.0) = [1,1] with value 8.0
+  EXPECT_NEAR(interpolated_value, 8.0f, 0.01f);
+
+  // Test 3: Make closest pixel invalid
+  depth_image(1, 1) = 0.0f;  // Bottom-right invalid (closest to (1.0, 1.0))
+  depth_image(0, 1) = 4.0f;  // Restore top-right to valid
+  success = lidar.interpolateDepthImage(depth_view, u_px, p_voxel_center,
+                                        voxel_size, &interpolated_value);
+  EXPECT_TRUE(success) << "Closest neighbor doesn't validate";
+  // Returns the closest pixel [1,1] regardless if it's invalid
+  EXPECT_NEAR(interpolated_value, 0.0f, 0.01f)
+      << "Returns invalid closest pixel";
+
+  // Test 4: All pixels invalid → returns closest invalid value
+  depth_image(0, 0) = std::numeric_limits<float>::infinity();
+  depth_image(0, 1) = -1.0f;
+  depth_image(1, 0) = 0.0f;
+  depth_image(1, 1) =
+      std::numeric_limits<float>::quiet_NaN();  // Closest pixel [1,1]
+  success = lidar.interpolateDepthImage(depth_view, u_px, p_voxel_center,
+                                        voxel_size, &interpolated_value);
+  EXPECT_TRUE(success) << "Closest neighbor succeeds even with all invalid";
+  // Returns 0.0 from [1,1] which is closest
+  EXPECT_TRUE(std::isnan(interpolated_value))
+      << "Returns invalid value from closest pixel";
 }
 
 int main(int argc, char** argv) {

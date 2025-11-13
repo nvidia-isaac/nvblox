@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "nvblox/core/indexing.h"
 #include "nvblox/core/unified_vector.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -71,7 +72,7 @@ void getBlockAndVoxelIndexFromPositionInLayerOnGPU(
   device_vector<Index3D> voxel_indices_device(positions.size());
 
   constexpr int kNumThreads = 1024;
-  const int kNumBlocks = positions.size() / kNumThreads + 1;
+  const int kNumBlocks = divideRoundUp(positions.size(), kNumThreads);
 
   getBlockAndVoxelIndexFromPositionInLayerKernel<<<kNumBlocks, kNumThreads>>>(
       positions_device.data(), block_size, positions_device.size(),

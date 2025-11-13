@@ -70,8 +70,6 @@ __device__ inline void voxelAndBlockIndexFromCudaThreadIndex(
 /// @param voxel_idx The voxel index of the voxel in question.
 /// @param sensor The intrinsics of the sensor viewing the voxel.
 /// @param depth_image The depth image.
-/// @param rows The number of rows in the depth image.
-/// @param cols The number of cols in the depth image.
 /// @param T_C_L The pose of the viewing camera.
 /// @param voxel_size The side-length of a voxel.
 /// @param block_size The side-length of a block.

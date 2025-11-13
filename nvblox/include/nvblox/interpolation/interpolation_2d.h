@@ -27,8 +27,10 @@ namespace checkers {
 template <typename ElementType>
 struct PixelAlwaysValid;
 
-/// A checker that returns true if a float pixel is greater than 0.0f.
-struct FloatPixelGreaterThanZero;
+/// A checker that returns true if a float pixel is finite (not NaN/inf) and
+/// positive. This is useful for depth values which should be valid finite
+/// numbers > 0.
+struct PixelIsValidDepth;
 
 }  // namespace checkers
 

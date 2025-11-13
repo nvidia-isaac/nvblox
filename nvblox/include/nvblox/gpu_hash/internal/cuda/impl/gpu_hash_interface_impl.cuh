@@ -15,6 +15,7 @@ limitations under the License.
 */
 #pragma once
 #include "nvblox/core/internal/error_check.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 
@@ -64,7 +65,8 @@ void GPUHashImpl<BlockType>::initializeFromAsync(
   CHECK_GE(max_num_blocks_, other.impl_.size());
 
   constexpr int kNumThreadsPerBlock = 512;
-  const int num_blocks = other.impl_.max_size() / kNumThreadsPerBlock + 1;
+  const int num_blocks =
+      divideRoundUp(other.impl_.max_size(), kNumThreadsPerBlock);
   insertAllKernel<<<num_blocks, kNumThreadsPerBlock, 0, cuda_stream>>>(
       other.impl_, impl_);
   cuda_stream.synchronize();
@@ -85,7 +87,8 @@ GPUHashImpl<BlockType>::GPUHashImpl(int max_num_blocks,
 
   // Initialize memory to zero to make compute-sanitizer's initcheck happy.
   constexpr int kNumThreadsPerBlock = 512;
-  const int num_cuda_blocks = impl_.max_size() / kNumThreadsPerBlock + 1;
+  const int num_cuda_blocks =
+      divideRoundUp(impl_.max_size(), kNumThreadsPerBlock);
   setToZero<<<num_cuda_blocks, kNumThreadsPerBlock, 0, cuda_stream>>>(impl_);
   checkCudaErrors(cudaPeekAtLastError());
 }

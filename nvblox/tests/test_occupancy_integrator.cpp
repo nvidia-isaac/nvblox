@@ -303,6 +303,98 @@ TYPED_TEST(OccupancyIntegratorTestFixture, MaskedDepthPixels) {
   EXPECT_GT(num_checked, 0);
 }
 
+TYPED_TEST(OccupancyIntegratorTestFixture, InvalidDepthHandling) {
+  // Test that invalid depth values are not integrated
+  // Unlike TSDF, occupancy has no invalid_depth_decay_factor - invalid pixels
+  // simply skip integration
+
+  // Use sensor's actual dimensions
+  const int kImageWidth = this->sensor().width();
+  const int kImageHeight = this->sensor().height();
+  DepthImage depth_image(kImageHeight, kImageWidth, MemoryType::kUnified);
+
+  // Helper to set all depth values
+  auto set_all_depth = [&](float value) {
+    for (int i = 0; i < depth_image.numel(); i++) {
+      depth_image(i) = value;
+    }
+  };
+
+  auto count_voxels_integrated = [](const OccupancyLayer& layer) {
+    int count = 0;
+    callFunctionOnAllVoxels<OccupancyVoxel>(
+        layer,
+        [&](const Index3D&, const Index3D&, const OccupancyVoxel* voxel) {
+          // Voxel is integrated if its log_odds changed from default (0)
+          if (std::abs(voxel->log_odds) > 1e-6f) ++count;
+        });
+    return count;
+  };
+
+  ProjectiveOccupancyIntegrator integrator;
+
+  // Test 1: All pixels invalid - no voxels should be integrated
+  // Test different types of invalid depth values
+  const std::vector<float> invalid_values = {
+      std::numeric_limits<float>::quiet_NaN(),
+      std::numeric_limits<float>::infinity(),
+      -std::numeric_limits<float>::infinity(),
+      -1.0f,
+      0.0f,
+      -10.0f};
+
+  for (const float invalid_value : invalid_values) {
+    set_all_depth(invalid_value);
+
+    integrator.integrateFrame(
+        MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+        Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+    const int voxels_integrated = count_voxels_integrated(this->layer_);
+    EXPECT_EQ(voxels_integrated, 0)
+        << "No voxels should be integrated for invalid depth value: "
+        << invalid_value;
+  }
+
+  // Test 2: Valid depth - some voxels should be integrated
+  set_all_depth(2.0f);
+
+  integrator.integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+      Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+  const int voxels_integrated_after_valid =
+      count_voxels_integrated(this->layer_);
+  EXPECT_GT(voxels_integrated_after_valid, 0)
+      << "Some voxels should be integrated after valid depth";
+
+  // Test 3: Invalid depth after valid - no change (no decay for invalid depth
+  // in occupancy) Store the current state
+  std::vector<float> log_odds_before;
+  callFunctionOnAllVoxels<OccupancyVoxel>(
+      this->layer_,
+      [&](const Index3D&, const Index3D&, const OccupancyVoxel* voxel) {
+        log_odds_before.push_back(voxel->log_odds);
+      });
+
+  set_all_depth(std::numeric_limits<float>::infinity());
+
+  integrator.integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+      Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+  // Verify log_odds values haven't changed
+  int idx = 0;
+  callFunctionOnAllVoxels<OccupancyVoxel>(
+      this->layer_,
+      [&](const Index3D&, const Index3D&, const OccupancyVoxel* voxel) {
+        EXPECT_FLOAT_EQ(voxel->log_odds, log_odds_before[idx])
+            << "Log odds should not change when integrating invalid depth "
+            << "(occupancy has no decay factor)";
+        idx++;
+      });
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

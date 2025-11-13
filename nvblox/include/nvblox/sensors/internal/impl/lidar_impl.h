@@ -25,23 +25,19 @@ limitations under the License.
 namespace nvblox {
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
-             float min_valid_range_m, float max_valid_range_m,
-             float vertical_fov_rad)
+             float min_valid_range_m, float vertical_fov_rad)
     : Lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-            max_valid_range_m, vertical_fov_rad / 2.0f,
-            vertical_fov_rad / 2.0f) {}
+            vertical_fov_rad / 2.0f, vertical_fov_rad / 2.0f) {}
 
 Lidar::Lidar(int num_azimuth_divisions, int num_elevation_divisions,
-             float min_valid_range_m, float max_valid_range_m,
-             float min_angle_below_zero_elevation_rad,
+             float min_valid_range_m, float min_angle_below_zero_elevation_rad,
              float max_angle_above_zero_elevation_rad)
     : num_azimuth_divisions_(num_azimuth_divisions),
       num_elevation_divisions_(num_elevation_divisions),
       min_valid_range_m_(min_valid_range_m),
-      max_valid_range_m_(max_valid_range_m) {
+      min_valid_range_squared_m_(min_valid_range_m * min_valid_range_m) {
   // Only positive range values are allowed
-  NVBLOX_CHECK(min_valid_range_m_ >= 0.f, "");
-  NVBLOX_CHECK(min_valid_range_m_ < max_valid_range_m_, "");
+  NVBLOX_CHECK(min_valid_range_m_ > 0.f, "");
 
   // Only even numbers of azimuth divisions allowed
   NVBLOX_CHECK(num_azimuth_divisions_ % 2 == 0, "");
@@ -88,8 +84,6 @@ int Lidar::num_elevation_divisions() const { return num_elevation_divisions_; }
 
 float Lidar::min_valid_range_m() const { return min_valid_range_m_; }
 
-float Lidar::max_valid_range_m() const { return max_valid_range_m_; }
-
 float Lidar::vertical_fov_rad() const { return vertical_fov_rad_; }
 
 float Lidar::start_polar_angle_rad() const { return start_polar_angle_rad_; }
@@ -107,12 +101,9 @@ int Lidar::width() const { return cols(); }
 int Lidar::height() const { return rows(); }
 
 bool Lidar::isInValidRange(const Vector3f& p_C) const {
-  const float r = p_C.norm();
-  if (r < min_valid_range_m_ || r > max_valid_range_m_) {
-    return false;
-  } else {
-    return true;
-  }
+  // Valid if all values are finite (i.e. not NaN or +/- infinity)
+  // and if the range is greater than or equal to the minimum valid range
+  return allFinite(p_C) && p_C.squaredNorm() >= min_valid_range_squared_m_;
 }
 
 bool Lidar::project(const Vector3f& p_C, Vector2f* u_C, const float,
@@ -205,13 +196,11 @@ AxisAlignedBoundingBox Lidar::getViewAABB(const Transform& T_L_C, const float,
   // determined by the lidar FoV.
   // NOTE(alexmillane): The min depth is ignored in this function, it is a
   // parameter so it matches with camera's getViewAABB().
-  // The AABB is bounded by the maximum valid range of the lidar.
-  const float max_valid_depth = std::min(max_depth, max_valid_range_m_);
   AxisAlignedBoundingBox box(
-      Vector3f(-max_valid_depth, -max_valid_depth,
-               -max_valid_depth * sin(vertical_fov_rad_ / 2.0f)),
-      Vector3f(max_valid_depth, max_valid_depth,
-               max_valid_depth * sin(vertical_fov_rad_ / 2.0f)));
+      Vector3f(-max_depth, -max_depth,
+               -max_depth * sin(vertical_fov_rad_ / 2.0f)),
+      Vector3f(max_depth, max_depth,
+               max_depth * sin(vertical_fov_rad_ / 2.0f)));
   // Translate the box to the sensor's location (note that orientation doesn't
   // matter as the lidar sees in the circle)
   box.translate(T_L_C.translation());
@@ -231,7 +220,6 @@ bool operator==(const Lidar& lhs, const Lidar& rhs) {
   return (lhs.num_azimuth_divisions_ == rhs.num_azimuth_divisions_) &&
          (lhs.num_elevation_divisions_ == rhs.num_elevation_divisions_) &&
          (lhs.min_valid_range_m_ == rhs.min_valid_range_m_) &&
-         (lhs.max_valid_range_m_ == rhs.max_valid_range_m_) &&
          (std::fabs(lhs.vertical_fov_rad_ - rhs.vertical_fov_rad_) <
           std::numeric_limits<float>::epsilon());
 }
@@ -242,7 +230,6 @@ std::ostream& operator<<(std::ostream& os, const Lidar& lidar) {
      << "\tnum_azimuth_divisions: " << lidar.num_azimuth_divisions() << "\n"
      << "\tnum_elevation_divisions: " << lidar.num_elevation_divisions() << "\n"
      << "\tmin_valid_range_m: " << lidar.min_valid_range_m() << "\n"
-     << "\tmax_valid_range_m: " << lidar.max_valid_range_m() << "\n"
      << "\tvertical_fov_deg: " << lidar.vertical_fov_rad() * kRadToDegrees
      << "\n"
      << "\tstart_polar_angle_deg: "
@@ -268,7 +255,7 @@ bool Lidar::interpolateDepthImage(const DepthImageConstView frame,
   // Try linear interpolation first
   interpolation::Interpolation2DNeighbours<float> neighbours;
   bool linear_interpolation_success = interpolation::interpolate2DLinear<
-      float, interpolation::checkers::FloatPixelGreaterThanZero>(
+      float, interpolation::checkers::PixelIsValidDepth>(
       frame, u_px, image_value, &neighbours);
 
   // Additional check
@@ -289,9 +276,8 @@ bool Lidar::interpolateDepthImage(const DepthImageConstView frame,
 
   // If linear didn't work - try nearest neighbour interpolation
   if (!linear_interpolation_success) {
-    if (!interpolation::interpolate2DClosest<
-            float, interpolation::checkers::FloatPixelGreaterThanZero>(
-            frame, u_px, image_value, &u_px_closest)) {
+    if (!interpolation::interpolate2DClosest<float>(frame, u_px, image_value,
+                                                    &u_px_closest)) {
       // If we can't successfully do closest, fail to intgrate this voxel.
       return false;
     }

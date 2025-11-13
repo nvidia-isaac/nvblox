@@ -29,11 +29,16 @@ constexpr static float cv_ = static_cast<float>(height_) / 2.0f;
 constexpr static float k1_ = 0.1f;
 constexpr static float k2_ = 0.1f;
 constexpr static float k3_ = 0.01f;
+constexpr static float k4_ = 0.001f;
+constexpr static float k5_ = 0.001f;
+constexpr static float k6_ = 0.001f;
 constexpr static float p1_ = 0.01f;
 constexpr static float p2_ = 0.02f;
 
 Camera getTestCameraWithDistortion() {
-  return Camera(fu_, fv_, cu_, cv_, width_, height_, k1_, k2_, k3_, p1_, p2_);
+  return Camera(fu_, fv_, cu_, cv_, width_, height_,
+                RadialTangentialDistortionParams{{k1_, k2_, k3_, k4_, k5_, k6_},
+                                                 {p1_, p2_}});
 }
 
 Camera getTestCameraWithoutDistortion() {

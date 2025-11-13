@@ -37,15 +37,14 @@ class LidarIntegrationTest : public ::testing::Test {
  protected:
   LidarIntegrationTest()
       : lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
-              max_valid_range_m, vertical_fov_rad) {
+              vertical_fov_rad) {
     //
   }
 
   const int num_azimuth_divisions = 1024;
   const int num_elevation_divisions = 16;
   const float vertical_fov_rad = 30.0f * M_PI / 180.0;
-  const float min_valid_range_m = 0.0f;
-  const float max_valid_range_m = 100.0f;
+  const float min_valid_range_m = 0.1f;
 
   const Lidar lidar;
   ;

@@ -99,7 +99,9 @@ void Mapper::integrateColor(const MaskedColorImageConstView& color_frame,
         layers_.getPtr<ColorLayer>(), &updated_blocks);
 
     layers_.getPtr<ColorLayer>()->updateGpuHash(*cuda_stream_);
-    blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
+    blocks_to_update_tracker_.addBlocksToUpdate(
+        updated_blocks,
+        {BlocksToUpdateType::kColorMesh, BlocksToUpdateType::kLayerStreamer});
   }
 }
 
@@ -118,7 +120,9 @@ void Mapper::integrateFeatures(const MaskedFeatureImageConstView& feature_frame,
         layers_.getPtr<FeatureLayer>(), &updated_blocks);
 
     layers_.getPtr<FeatureLayer>()->updateGpuHash(*cuda_stream_);
-    blocks_to_update_tracker_.addBlocksToUpdate(updated_blocks);
+    blocks_to_update_tracker_.addBlocksToUpdate(
+        updated_blocks,
+        {BlocksToUpdateType::kFeatureMesh, BlocksToUpdateType::kLayerStreamer});
   }
 }
 
@@ -153,16 +157,13 @@ void Mapper::updateFreespace(
   CHECK(hasFreespaceLayer(projective_layer_type_))
       << "Trying to update the freespace layer while it is not enabled.";
 
-  // Get the freespace blocks that need an update
-  std::vector<Index3D> blocks_to_update =
+  const std::vector<Index3D> blocks_to_update =
       getBlocksToUpdate(BlocksToUpdateType::kFreespace, update_full_layer);
 
-  // Call the integrator.
   freespace_integrator_.updateFreespaceLayer(
       blocks_to_update, update_time_ms, layers_.get<TsdfLayer>(),
       view_to_update, layers_.getPtr<FreespaceLayer>());
 
-  // Mark blocks as updated
   blocks_to_update_tracker_.markBlocksAsUpdated(BlocksToUpdateType::kFreespace);
   layers_.getPtr<FreespaceLayer>()->updateGpuHash(*cuda_stream_);
 }
@@ -189,10 +190,7 @@ void Mapper::decayTsdfInternal(
     const std::optional<DepthObservationSpace<SensorType>>& inclusion_data) {
   // TODO(remos): In the future we could exclude the blocks not decayed, from
   // the blocks requiring an update.
-
-  const std::vector<Index3D> all_blocks =
-      layers_.get<TsdfLayer>().getAllBlockIndices();
-  blocks_to_update_tracker_.addBlocksToUpdate(all_blocks);
+  blocks_to_update_tracker_.addAllBlocksToUpdate();
 
   // Decay
   std::vector<Index3D> removed_blocks =
@@ -229,10 +227,7 @@ void Mapper::decayOccupancyInternal(
     const std::optional<DepthObservationSpace<SensorType>>& inclusion_data) {
   // TODO(remos): In the future we could exclude the blocks not decayed, from
   // the blocks requiring an update.
-
-  const std::vector<Index3D> all_blocks =
-      layers_.get<OccupancyLayer>().getAllBlockIndices();
-  blocks_to_update_tracker_.addBlocksToUpdate(all_blocks);
+  blocks_to_update_tracker_.addAllBlocksToUpdate();
 
   // Decay
   std::vector<Index3D> removed_blocks =

@@ -585,6 +585,142 @@ TYPED_TEST(TsdfIntegratorTestFixture, mask) {
   EXPECT_GT(static_cast<float>(num_projected) / num_voxels, 0.5F);
 }
 
+TYPED_TEST(TsdfIntegratorTestFixture, InvalidDepthHandling) {
+  // Test that invalid depth values are not integrated and
+  // can be decayed by invalid_depth_decay_factor.
+
+  // Use sensor's actual dimensions
+  const int kImageWidth = this->sensor().width();
+  const int kImageHeight = this->sensor().height();
+  DepthImage depth_image(kImageHeight, kImageWidth, MemoryType::kUnified);
+
+  // Helper to set all depth values
+  auto set_all_depth = [&](float value) {
+    for (int i = 0; i < depth_image.numel(); i++) {
+      depth_image(i) = value;
+    }
+  };
+
+  auto count_voxels_with_weight = [](const TsdfLayer& layer) {
+    int count = 0;
+    callFunctionOnAllVoxels<TsdfVoxel>(
+        layer, [&](const Index3D&, const Index3D&, const TsdfVoxel* voxel) {
+          if (voxel->weight > 0.0f) ++count;
+        });
+    return count;
+  };
+
+  auto get_total_weight = [](const TsdfLayer& layer) {
+    float total_weight = 0.0f;
+    callFunctionOnAllVoxels<TsdfVoxel>(
+        layer, [&](const Index3D&, const Index3D&, const TsdfVoxel* voxel) {
+          total_weight += voxel->weight;
+        });
+    return total_weight;
+  };
+
+  std::unique_ptr<ProjectiveTsdfIntegrator> integrator_ptr =
+      this->create_integrator();
+
+  // Use constant weighting for predictable weights
+  integrator_ptr->weighting_function_type(
+      WeightingFunctionType::kConstantWeight);
+  constexpr float kConstantWeight = 1.0f;
+
+  // Enable invalid depth decay (default is -1.0 which disables it)
+  constexpr float kDecayFactor = 0.8f;
+  integrator_ptr->invalid_depth_decay_factor(kDecayFactor);
+
+  // Test 1: All pixels invalid - no voxels should have weight
+  // Test different types of invalid depth values
+  const std::vector<float> invalid_values = {
+      std::numeric_limits<float>::quiet_NaN(),
+      std::numeric_limits<float>::infinity(),
+      -std::numeric_limits<float>::infinity(),
+      -1.0f,
+      0.0f,
+      -10.0f};
+
+  for (const float invalid_value : invalid_values) {
+    set_all_depth(invalid_value);
+
+    integrator_ptr->integrateFrame(
+        MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+        Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+    const int voxels_with_weight = count_voxels_with_weight(this->layer_);
+    const float total_weight = get_total_weight(this->layer_);
+    EXPECT_EQ(voxels_with_weight, 0)
+        << "No voxels should have weight for invalid depth value: "
+        << invalid_value;
+    EXPECT_FLOAT_EQ(total_weight, 0.0f)
+        << "Total weight should be exactly 0 for invalid depth value: "
+        << invalid_value;
+  }
+
+  // Test 2: Valid depth - voxels should gain exact constant weight
+  set_all_depth(2.0f);
+
+  integrator_ptr->integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+      Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+  // Each integrated voxel should have exactly the constant weight
+  const int voxels_with_weight_valid = count_voxels_with_weight(this->layer_);
+  const float total_weight_after_valid = get_total_weight(this->layer_);
+  const float expected_weight_per_voxel = kConstantWeight;
+  const float expected_total_weight =
+      voxels_with_weight_valid * expected_weight_per_voxel;
+  EXPECT_GT(voxels_with_weight_valid, 0)
+      << "Some voxels should have weight after integrating valid depth";
+  EXPECT_NEAR(total_weight_after_valid, expected_total_weight, 1e-3f)
+      << "With constant weighting, total weight should equal "
+      << "num_voxels * constant_weight";
+
+  // Test 3: Invalid depth again - weight should decay by exact factor
+  // Test that decay works consistently across different invalid values
+  set_all_depth(std::numeric_limits<float>::infinity());
+
+  integrator_ptr->integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+      Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+  const float total_weight_after_decay = get_total_weight(this->layer_);
+  const float expected_weight_after_decay =
+      total_weight_after_valid * kDecayFactor;
+  EXPECT_NEAR(total_weight_after_decay, expected_weight_after_decay, 1e-3f)
+      << "After integrating invalid depth (infinity), total weight should be "
+      << "multiplied by decay factor (" << kDecayFactor << ")";
+
+  // Test 4: Apply decay multiple times with different invalid values
+  set_all_depth(-1.0f);  // negative value
+  integrator_ptr->integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+      Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+  const float total_weight_after_second_decay = get_total_weight(this->layer_);
+  const float expected_weight_after_second_decay =
+      expected_weight_after_decay * kDecayFactor;
+  EXPECT_NEAR(total_weight_after_second_decay,
+              expected_weight_after_second_decay, 1e-3f)
+      << "Decay should compound with different invalid values: "
+      << "weight after 2nd decay = initial * decay^2";
+
+  // Test 5: Apply decay with yet another invalid value (0)
+  set_all_depth(0.0f);
+  integrator_ptr->integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere),
+      Transform::Identity(), this->sensor(), &this->layer_, nullptr);
+
+  const float total_weight_after_third_decay = get_total_weight(this->layer_);
+  const float expected_weight_after_third_decay =
+      expected_weight_after_second_decay * kDecayFactor;
+  EXPECT_NEAR(total_weight_after_third_decay, expected_weight_after_third_decay,
+              1e-3f)
+      << "Decay should compound consistently: weight after 3rd decay = initial "
+         "* decay^3";
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

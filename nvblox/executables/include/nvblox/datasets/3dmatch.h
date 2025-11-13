@@ -95,8 +95,9 @@ class DataLoader : public RgbdDataLoaderInterface {
 namespace internal {
 
 bool parsePoseFromFile(const std::string& filename, Transform* transform);
-bool parseCameraFromFile(const std::string& filename,
-                         Eigen::Matrix3f* intrinsics);
+bool parseCameraFromFile(
+    const std::string& filename, Eigen::Matrix3f* intrinsics,
+    RadialTangentialDistortionParams* distortion_params = nullptr);
 std::string getPathForCameraIntrinsics(const std::string& base_path);
 std::string getPathForFramePose(const std::string& base_path, const int seq_id,
                                 const int frame_id);

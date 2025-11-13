@@ -21,6 +21,7 @@ limitations under the License.
 #include "nvblox/geometry/transforms.h"
 #include "nvblox/integrators/view_calculator.h"
 #include "nvblox/rays/ray_caster.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
@@ -359,10 +360,8 @@ void ViewCalculator::getBlocksByRaycastingPixelsAsync(
   // We'll do warps of 16x16 pixels in the image. This is 1024 threads which
   // is in the recommended 512-1024 range.
   constexpr int kThreadDim = 16;
-  const int rounded_rows = static_cast<int>(
-      std::ceil(num_subsampled_rows / static_cast<float>(kThreadDim)));
-  const int rounded_cols = static_cast<int>(
-      std::ceil(num_subsampled_cols / static_cast<float>(kThreadDim)));
+  const int rounded_rows = divideRoundUp(num_subsampled_rows, kThreadDim);
+  const int rounded_cols = divideRoundUp(num_subsampled_cols, kThreadDim);
   dim3 block_dim(rounded_cols, rounded_rows);
   dim3 thread_dim(kThreadDim, kThreadDim);
 

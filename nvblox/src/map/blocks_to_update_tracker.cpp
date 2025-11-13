@@ -1,5 +1,5 @@
 /*
-Copyright 2024 NVIDIA CORPORATION
+Copyright 2025 NVIDIA CORPORATION
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,120 +22,108 @@ namespace nvblox {
 void clearIfTooLarge(Index3DSet& set, const std::string& name) {
   constexpr size_t kMaxSize = 100'000;
   if (set.size() > kMaxSize) {
-    LOG(ERROR) << "IndexSet " << name << " is too large: " << set.size()
-               << " > " << kMaxSize
+    LOG(ERROR) << "BlocksToUpdateTracker: IndexSet " << name
+               << " is too large: " << set.size() << " > " << kMaxSize
                << ". This should normally not happen. Clearing the set";
     set.clear();
   }
 }
 
 void BlocksToUpdateTracker::addBlocksToUpdate(
-    const std::vector<Index3D>& blocks_to_update) {
-  // Function definition to update blocks.
-  auto funct = [&](const std::vector<Index3D> vec) -> void {
-    esdf_blocks_to_update_.insert(vec.begin(), vec.end());
-    color_mesh_blocks_to_update_.insert(vec.begin(), vec.end());
-    feature_mesh_blocks_to_update_.insert(vec.begin(), vec.end());
-    layer_streamer_blocks_to_update_.insert(vec.begin(), vec.end());
-
-    if (hasFreespaceLayer(projective_layer_type_)) {
-      freespace_blocks_to_update_.insert(vec.begin(), vec.end());
-    }
-
-    // Safety vent to prevent the set from growing indefinitely if there is no
-    // consumer.
-    clearIfTooLarge(esdf_blocks_to_update_, "esdf");
-    clearIfTooLarge(color_mesh_blocks_to_update_, "color_mesh");
-    clearIfTooLarge(feature_mesh_blocks_to_update_, "feature_mesh");
-    clearIfTooLarge(layer_streamer_blocks_to_update_, "layer_streamer");
-    clearIfTooLarge(freespace_blocks_to_update_, "freespace");
-  };
-
-  // Synchronize (wait for other async calls to finish) and
-  // then call the update function asynchronous.
-  future_.wait();
-  future_ = std::async(std::launch::async, funct, blocks_to_update);
-}
-
-void BlocksToUpdateTracker::removeBlocksToUpdate(
-    const std::vector<Index3D>& blocks_to_remove) {
-  // Function definition to remove blocks.
-  auto funct = [&](const std::vector<Index3D> vec) -> void {
-    for (const Index3D& idx : vec) {
-      esdf_blocks_to_update_.erase(idx);
-      color_mesh_blocks_to_update_.erase(idx);
-      feature_mesh_blocks_to_update_.erase(idx);
-      layer_streamer_blocks_to_update_.erase(idx);
-
-      if (hasFreespaceLayer(projective_layer_type_)) {
-        freespace_blocks_to_update_.erase(idx);
+    const std::vector<Index3D>& blocks_to_update,
+    const std::vector<BlocksToUpdateType>& block_types_to_update) {
+  // Lambda to add blocks to update asyncronously.
+  auto funct = [this, blocks_to_update, block_types_to_update]() -> void {
+    if (block_types_to_update.empty()) {
+      // Add blocks to all initialized types
+      for (auto& [block_type, state] : states_) {
+        state.insertBlocks(blocks_to_update);
+        clearIfTooLarge(state.blockSet(), toString(block_type));
+      }
+    } else {
+      // Add only to specified types
+      for (const auto& block_type : block_types_to_update) {
+        auto state_it = states_.find(block_type);
+        // Only add the new blocks if the state for the block type exists.
+        // Note: States are created lazily on first call to getBlocksToUpdate
+        // for a given block type, not in addBlocksToUpdate. This prevents
+        // creating states for types that are never queried.
+        if (state_it != states_.end()) {
+          state_it->second.insertBlocks(blocks_to_update);
+          clearIfTooLarge(state_it->second.blockSet(), toString(block_type));
+        }
       }
     }
   };
 
-  // Synchronize (wait for other async calls to finish) and
-  // then call the removal function asynchronous.
   future_.wait();
-  future_ = std::async(std::launch::async, funct, blocks_to_remove);
+  future_ = std::async(std::launch::async, funct);
 }
 
-std::vector<Index3D> BlocksToUpdateTracker::getBlocksToUpdate(
-    BlocksToUpdateType blocks_to_update_type) const {
-  // Synchronize (wait for async calls modifying the update sets to finish).
+void BlocksToUpdateTracker::addAllBlocksToUpdate() {
+  auto funct = [this]() -> void {
+    // Set flag for all initialized types
+    for (auto& [_, state] : states_) {
+      state.setUpdateAllBlocks();
+    }
+  };
+
+  future_.wait();
+  future_ = std::async(std::launch::async, funct);
+}
+
+void BlocksToUpdateTracker::removeClearedBlocksFromTracking(
+    const std::vector<Index3D>& blocks_to_remove) {
+  // Lambda to remove blocks from tracking asyncronously.
+  auto funct = [this, blocks_to_remove]() -> void {
+    // Remove from all existing states (don't create new ones)
+    // Note: If update_all_blocks is true, individual blocks aren't tracked,
+    // so erasing has no effect.
+    for (auto& [_, state] : states_) {
+      for (const Index3D& idx : blocks_to_remove) {
+        state.eraseBlock(idx);
+      }
+    }
+  };
+
+  future_.wait();
+  future_ = std::async(std::launch::async, funct);
+}
+
+BlocksToUpdateState BlocksToUpdateTracker::getBlocksToUpdate(
+    BlocksToUpdateType blocks_to_update_type) {
   future_.wait();
 
-  // Return the blocks to update.
-  switch (blocks_to_update_type) {
-    case BlocksToUpdateType::kEsdf:
-      return {esdf_blocks_to_update_.begin(), esdf_blocks_to_update_.end()};
-    case BlocksToUpdateType::kColorMesh:
-      return {color_mesh_blocks_to_update_.begin(),
-              color_mesh_blocks_to_update_.end()};
-    case BlocksToUpdateType::kFeatureMesh:
-      return {feature_mesh_blocks_to_update_.begin(),
-              feature_mesh_blocks_to_update_.end()};
-    case BlocksToUpdateType::kFreespace:
-      return {freespace_blocks_to_update_.begin(),
-              freespace_blocks_to_update_.end()};
-    case BlocksToUpdateType::kLayerStreamer:
-      return {layer_streamer_blocks_to_update_.begin(),
-              layer_streamer_blocks_to_update_.end()};
-    default:
-      LOG(FATAL) << "BlocksToUpdateType not implemented";
-      break;
+  // Lazy initialization: create state on first access
+  auto state_it = states_.find(blocks_to_update_type);
+  if (state_it == states_.end()) {
+    // Create a new state for the block type if it doesn't exist (lazy
+    // initialization).
+    auto& state = states_[blocks_to_update_type];
+    // First access - we don't know which blocks need updating, so mark all.
+    state.setUpdateAllBlocks();
+    state_it = states_.find(blocks_to_update_type);
   }
+
+  // Return a copy of the state (it will convert the set to vector on demand)
+  return state_it->second;
 }
 
 void BlocksToUpdateTracker::markBlocksAsUpdated(
     BlocksToUpdateType blocks_to_update_type) {
-  // Function definition to mark blocks as updated.
-  auto funct = [&](BlocksToUpdateType type) -> void {
-    switch (type) {
-      case BlocksToUpdateType::kEsdf:
-        esdf_blocks_to_update_.clear();
-        break;
-      case BlocksToUpdateType::kColorMesh:
-        color_mesh_blocks_to_update_.clear();
-        break;
-      case BlocksToUpdateType::kFeatureMesh:
-        feature_mesh_blocks_to_update_.clear();
-        break;
-      case BlocksToUpdateType::kFreespace:
-        freespace_blocks_to_update_.clear();
-        break;
-      case BlocksToUpdateType::kLayerStreamer:
-        layer_streamer_blocks_to_update_.clear();
-        break;
-      default:
-        LOG(FATAL) << "BlocksToUpdateType not implemented";
-        break;
+  // Lambda to mark blocks as updated asyncronously.
+  auto funct = [this, blocks_to_update_type]() -> void {
+    auto state_it = states_.find(blocks_to_update_type);
+    if (state_it == states_.end()) {
+      NVBLOX_ABORT("Attempted to mark blocks as updated for a state (" +
+                   toString(blocks_to_update_type) +
+                   ") that does not exist. This is unexpected.");
     }
+    state_it->second.markBlocksAsUpdated();
   };
 
-  // Synchronize (wait for other async calls to finish) and
-  // then call the mark as updated function asynchronous.
   future_.wait();
-  future_ = std::async(std::launch::async, funct, blocks_to_update_type);
+  future_ = std::async(std::launch::async, funct);
 }
 
 }  // namespace nvblox

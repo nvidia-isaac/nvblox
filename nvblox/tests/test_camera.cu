@@ -23,13 +23,13 @@ limitations under the License.
 #include "nvblox/primitives/scene.h"
 #include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
+#include "nvblox/tests/sensor_fixture.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
-
 // TODO: Decide where to put test epsilons
-// NOTE(alexmillane): I had to crank this up slightly to get things to pass... I
-// guess this is just floating point errors accumulating?
+// NOTE(alexmillane): I had to crank this up slightly to get things to
+// pass... I guess this is just floating point errors accumulating?
 constexpr float kFloatEpsilon = 1e-4;
 
 std::pair<Vector3f, Vector2f> getRandomVisibleRayAndImagePoint(
@@ -54,22 +54,33 @@ Camera getTestCamera() {
   return Camera(fu, fv, cu, cv, width, height);
 }
 
+float randomScale() {
+  constexpr float kS = 0.1;
+  return test_utils::randomFloatInRange(1.0 - kS, 1.0 + kS);
+}
 Camera getCameraRandomDistortion() {
-  // Upper limits on distortion parameters.
-  constexpr float k1Max = 0.8;
-  constexpr float k2Max = 0.5;
-  constexpr float k3Max = 0.3;
-  constexpr float p1Max = 0.01;
-  constexpr float p2Max = 0.02;
-  Camera camera = getTestCamera();
+  // In order to get a realistic and non-degenerate camera, we start with a
+  // known calibration which is perturbed.
+  const Camera camera = test_utils::getOrbecCamera();
+  const auto dist = camera.distortion_params().value();
+  const float fu = camera.fu() * randomScale();
+  const float fv = camera.fv() * randomScale();
+  const float cu = camera.cu() * randomScale();
+  const float cv = camera.cv() * randomScale();
+  const float k1 = dist.radial.k1 * randomScale();
+  const float k2 = dist.radial.k2 * randomScale();
+  const float k3 = dist.radial.k3 * randomScale();
+  const float k4 = dist.radial.k4 * randomScale();
+  const float k5 = dist.radial.k5 * randomScale();
+  const float k6 = dist.radial.k6 * randomScale();
+  const float p1 =
+      camera.distortion_params().value().tangential.p1 * randomScale();
+  const float p2 =
+      camera.distortion_params().value().tangential.p2 * randomScale();
 
-  return Camera(camera.fu(), camera.fv(), camera.cu(), camera.cv(),
-                camera.width(), camera.height(),
-                test_utils::randomFloatInRange(0.F, k1Max),
-                test_utils::randomFloatInRange(0.F, k2Max),
-                test_utils::randomFloatInRange(0.F, k3Max),
-                test_utils::randomFloatInRange(0.F, p1Max),
-                test_utils::randomFloatInRange(0.F, p2Max));
+  return Camera(
+      fu, fv, cu, cv, camera.width(), camera.height(),
+      RadialTangentialDistortionParams{{k1, k2, k3, k4, k5, k6}, {p1, p2}});
 }
 
 TEST(CameraTest, PointsInView) {
@@ -392,6 +403,50 @@ TEST(CameraTest, UnProjectionTest) {
   }
 }
 
+TEST(CameraTest, InvalidPointProjections) {
+  const Camera camera = getTestCamera();
+  Vector2f u_C;
+
+  // Test that valid point projects successfully
+  // Point at center of camera view
+  Vector3f valid_point(0.0f, 0.0f, 5.0f);
+  EXPECT_TRUE(camera.project(valid_point, &u_C))
+      << "Valid point at camera center should project";
+
+  // Test invalid values (NaN, +inf, -inf) in each coordinate
+  const std::vector<float> invalid_values = {
+      std::numeric_limits<float>::quiet_NaN(),
+      std::numeric_limits<float>::infinity(),
+      -std::numeric_limits<float>::infinity()};
+
+  for (const float invalid_val : invalid_values) {
+    for (int coord = 0; coord < 3; ++coord) {
+      Vector3f invalid_point(0.0f, 0.0f, 5.0f);
+      invalid_point[coord] = invalid_val;
+      EXPECT_FALSE(camera.project(invalid_point, &u_C))
+          << "Point with invalid value " << invalid_val << " at coord " << coord
+          << " should fail to project";
+    }
+  }
+
+  // Test one point behind camera (negative z)
+  Vector3f point_behind_camera(1.0f, 1.0f, -1.0f);
+  EXPECT_FALSE(camera.project(point_behind_camera, &u_C))
+      << "Point behind camera " << point_behind_camera.transpose()
+      << " should fail to project";
+
+  // Test points with z less than default min_depth
+  constexpr float kDefaultMinDepth = Camera::kDefaultMinProjectionDepth;
+  Vector3f too_close(1.0f, 1.0f, kDefaultMinDepth / 2.0f);
+  EXPECT_FALSE(camera.project(too_close, &u_C))
+      << "Point closer than min_depth should fail to project";
+
+  // Test that point exactly at min_depth projects (boundary case)
+  Vector3f at_min_depth(0.0f, 0.0f, kDefaultMinDepth);
+  EXPECT_TRUE(camera.project(at_min_depth, &u_C))
+      << "Point at exactly min_depth should project";
+}
+
 TEST(CameraTest, CameraViewport) {
   const Camera camera = getTestCamera();
   const CameraViewport viewport = camera.getNormalizedViewport();
@@ -410,14 +465,19 @@ TEST(CameraTest, RadialDistortionScale_PixelsAreDistorted) {
   for (int i = 0; i < kNumIterations; i++) {
     const Camera camera = getCameraRandomDistortion();
 
-    const float k1 = camera.distortion_params().radial.k1;
-    const float k2 = camera.distortion_params().radial.k2;
-    const float k3 = camera.distortion_params().radial.k3;
+    const auto dist = camera.distortion_params().value();
+    const float k1 = dist.radial.k1;
+    const float k2 = dist.radial.k2;
+    const float k3 = dist.radial.k3;
+    const float k4 = dist.radial.k4;
+    const float k5 = dist.radial.k5;
+    const float k6 = dist.radial.k6;
 
     const float r2 = test_utils::randomFloatInRange(0.F, 10.F);
-    const float actual =
-        radialDistortionScale<float>(r2, camera.distortion_params().radial);
-    const float expected = 1.F + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2;
+    const float actual = radialDistortionScale<float>(
+        r2, camera.distortion_params().value().radial);
+    const float expected = (1.F + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2) /
+                           (1.F + k4 * r2 + k5 * r2 * r2 + k6 * r2 * r2 * r2);
     EXPECT_NEAR(actual, expected, kFloatEpsilon);
   }
 }
@@ -437,15 +497,15 @@ TEST(CameraTest, TangentialDistortion_PixelsAreDistorted) {
   constexpr int kNumIterations = 100000;
   for (int i = 0; i < kNumIterations; i++) {
     const Camera camera = getCameraRandomDistortion();
-    const float p1 = camera.distortion_params().tangential.p1;
-    const float p2 = camera.distortion_params().tangential.p2;
+    const float p1 = camera.distortion_params().value().tangential.p1;
+    const float p2 = camera.distortion_params().value().tangential.p2;
     const float x = test_utils::randomFloatInRange(-2.F, 2.F);
     const float y = test_utils::randomFloatInRange(-2.F, 2.F);
     const Vector2f u_normalized(x, y);
     const float r2 = x * x + y * y;
 
     const Vector2f actual = applyTangentialDistortion<float>(
-        u_normalized, r2, camera.distortion_params().tangential);
+        u_normalized, r2, camera.distortion_params().value().tangential);
 
     const float expected_x = 2.F * p1 * x * y + p2 * (r2 + 2.F * x * x);
     const float expected_y = 2.F * p2 * x * y + p1 * (r2 + 2.F * y * y);
@@ -503,8 +563,8 @@ TEST(CameraTest, DistortionUndistortion_P2dRoundtrip) {
   }
 }
 
-__global__ void cudaDistortionUndistortionP2dRoundtripKernel(
-    const Camera camera) {
+__global__ void __launch_bounds__(1024)
+    cudaDistortionUndistortionP2dRoundtripKernel(const Camera camera) {
   const int x = threadIdx.x;
   const int y = blockIdx.x;
 
@@ -545,14 +605,47 @@ void renderAndWriteDepthImage(const Camera& camera,
   io::writeToPng(filename, depth_image);
 }
 
+TEST(CameraTest, testDerivative_dR_dr2) {
+  constexpr int kNumIterations = 100000;
+  for (int i = 0; i < kNumIterations; i++) {
+    // Get a random camera with distortion
+    const Camera camera = getCameraRandomDistortion();
+
+    // Get a random normalized point inside the viewport
+    const CameraViewport viewport = camera.getNormalizedViewport();
+    const Vector2f u_normalized = Vector2f(
+        test_utils::randomFloatInRange(viewport.min().x(), viewport.max().x()),
+        test_utils::randomFloatInRange(viewport.min().y(), viewport.max().y()));
+
+    // Compute the squared radius
+    const double r2 = u_normalized.x() * u_normalized.x() +
+                      u_normalized.y() * u_normalized.y();
+
+    // Compute analytic derivative.
+    const auto dist = camera.distortion_params().value();
+    const double dR_dr2 =
+        compute_dR_dr2(r2, dist.radial.k1, dist.radial.k2, dist.radial.k3,
+                       dist.radial.k4, dist.radial.k5, dist.radial.k6);
+
+    // Compute numerical derivative using finite differences.
+    constexpr double kDelta = 1e-6;
+    double forward = radialDistortionScale<double>(r2 + kDelta, dist.radial);
+    double backward = radialDistortionScale<double>(r2 - kDelta, dist.radial);
+    double dR_dr2_numerical = (forward - backward) / (2.0 * kDelta);
+
+    // Check that the analytic and numerical derivatives are close.
+    EXPECT_NEAR(dR_dr2, dR_dr2_numerical, 1E-6);
+  }
+}
+
 TEST(CameraTest, RenderSampleImages) {
   // create a scene with a cube
   primitives::Scene scene;
   constexpr float kDepth = 3.f;
 
   constexpr float kSide = 0.75f;
-  for (int x = -3; x < 3; ++x) {
-    for (int y = -3; y < 3; ++y) {
+  for (int x = -10; x < 10; ++x) {
+    for (int y = -10; y < 10; ++y) {
       scene.addPrimitive(std::make_unique<primitives::Cube>(
           Vector3f(x, y, kDepth), Vector3f(kSide, kSide, kSide)));
     }
@@ -561,25 +654,15 @@ TEST(CameraTest, RenderSampleImages) {
   // create a camera without distortion
   constexpr int kWidth = 640;
   constexpr int kHeight = 480;
-
-  // linear camera
   Camera camera(kWidth / 2, kHeight / 2, kWidth / 2, kHeight / 2, kWidth,
                 kHeight);
   renderAndWriteDepthImage(camera, scene, "depth_image_linear.png");
 
-  // camera with radial distortion
-  Camera camera_with_radial_distortion(kWidth / 2, kHeight / 2, kWidth / 2,
-                                       kHeight / 2, kWidth, kHeight, 0.8, 0.5,
-                                       0.3, 0.0, 0.0);
-  renderAndWriteDepthImage(camera_with_radial_distortion, scene,
-                           "depth_image_radial_distorted.png");
+  // camera with distortion
+  Camera camera_with_distortion = test_utils::getOrbecCamera();
 
-  // camera with tangential distortion
-  Camera camera_with_tangential_distortion(kWidth / 2, kHeight / 2, kWidth / 2,
-                                           kHeight / 2, kWidth, kHeight, 0.0,
-                                           0.0, 0.0, 0.01, 0.02);
-  renderAndWriteDepthImage(camera_with_tangential_distortion, scene,
-                           "depth_image_tangential_distorted.png");
+  renderAndWriteDepthImage(camera_with_distortion, scene,
+                           "depth_image_distorted.png");
 }
 
 int main(int argc, char** argv) {

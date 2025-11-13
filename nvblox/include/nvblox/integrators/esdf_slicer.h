@@ -45,6 +45,21 @@ class EsdfSlicer {
       const EsdfLayer& layer_1, const EsdfLayer& layer_2,
       float layer_1_slice_height, float layer_2_slice_height);
 
+  /// Slices an ESDF layer at a specific height to a distance image.
+  /// Uses getAabbOfLayerAtHeight to get the AABB of the layer at the specific
+  /// height and calls sliceLayerToDistanceImage with the AABB.
+  /// @param layer Input ESDF layer.
+  /// @param slice_height The height of the slice to output.
+  /// @param unobserved_value Floating-point value to use for unknown/unobserved
+  /// points.
+  /// @param aabb Output AABB that is calculated by getAabbOfLayerAtHeight.
+  /// @param output_image Output floating point image with the distances at each
+  /// pixel.
+  void sliceLayerToDistanceImage(const EsdfLayer& layer, float slice_height,
+                                 float unobserved_value,
+                                 AxisAlignedBoundingBox* aabb,
+                                 Image<float>* output_image);
+
   /// Slices an ESDF layer at a specific height to a distance image inside a
   /// custom AABB.
   /// @param layer Input ESDF layer.
@@ -59,6 +74,28 @@ class EsdfSlicer {
                                  float unobserved_value,
                                  const AxisAlignedBoundingBox& aabb,
                                  Image<float>* output_image);
+
+  /// Slices two ESDF layers at a specific height to a combined distance image.
+  /// Uses getCombinedAabbOfLayersAtHeight to get the AABB of the two layers at
+  /// the specific height and calls sliceLayersToCombinedDistanceImage with the
+  /// AABB.
+  /// @param layer_1 First input ESDF layer.
+  /// @param layer_2 Second input ESDF layer.
+  /// @param layer_1_slice_height The height of the slice in layer 1.
+  /// @param layer_2_slice_height The height of the slice in layer 2.
+  /// @param unobserved_value Floating-point value to use for unknown/unobserved
+  /// points.
+  /// @param aabb Output AABB that is calculated by
+  /// getCombinedAabbOfLayersAtHeight.
+  /// @param output_image Output floating point image with the distances at each
+  /// pixel.
+  void sliceLayersToCombinedDistanceImage(const EsdfLayer& layer_1,
+                                          const EsdfLayer& layer_2,
+                                          float layer_1_slice_height,
+                                          float layer_2_slice_height,
+                                          float unobserved_value,
+                                          AxisAlignedBoundingBox* aabb,
+                                          Image<float>* output_image);
 
   /// Slices two ESDF layers at a specific height to a combined distance image
   /// inside a custom AABB.
@@ -80,6 +117,11 @@ class EsdfSlicer {
                                           const AxisAlignedBoundingBox& aabb,
                                           Image<float>* output_image);
 
+  // Convert slice image to occupancy grid
+  void occupancyGridFromSliceImage(const Image<float>& slice_image,
+                                   int8_t* occupancy_grid_data,
+                                   float unobserved_value);
+
  private:
   // Helper to do the actual work.
   void populateSliceFromLayer(const EsdfLayer& layer,
@@ -88,6 +130,9 @@ class EsdfSlicer {
                               float resolution, Image<float>* output_image);
 
   std::shared_ptr<CudaStream> cuda_stream_;
+
+  // Buffers
+  device_vector<int8_t> occupancy_grid_device_;
 };
 
 }  // namespace nvblox

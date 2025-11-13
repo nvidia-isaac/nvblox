@@ -723,21 +723,28 @@ class Mapper : public MapperBase {
   const DepthImage& preprocessDepthImageAsync(
       const DepthImageConstView& depth_image);
 
-  /// @brief Get the esdf, mesh or freespace blocks that need and update.
-  /// @param blocks_to_update_type The type of blocks you want to get the
-  /// vector for.
-  /// @param update_full_layer Whether to return all block indices (for
-  /// updating the full layer) or only the blocks that need an update.
+  /// @brief Get the esdf, mesh or freespace blocks that need an update.
+  /// @param blocks_to_update_type The type of blocks you want to get.
+  /// @param update_full_layer Whether to update all blocks or only changed
+  /// ones.
   /// @return Vector of block indices to update.
+  /// @note This function performs lazy initialization
+  ///       of the tracker for blocks_to_update_type if it doesn't exist yet.
+  ///       On first call for a given type, it will initialize tracking for that
+  ///       type.
   std::vector<Index3D> getBlocksToUpdate(
       BlocksToUpdateType blocks_to_update_type,
-      UpdateFullLayer update_full_layer) const;
+      UpdateFullLayer update_full_layer);
 
   /// @brief Deallocate blocks int the esdf, mesh and freespace layer.
   /// @param blocks_to_clear Vector of blocks to clear.
   void clearBlocksInLayers(const std::vector<Index3D>& blocks_to_clear);
 
  private:
+  /// @brief Get all block indices from the appropriate projective layer.
+  /// @return All block indices from TsdfLayer or OccupancyLayer based on type.
+  std::vector<Index3D> getAllProjectiveLayerBlockIndices() const;
+
   /// Common function for decaying
   template <typename SensorType>
   void decayTsdfInternal(

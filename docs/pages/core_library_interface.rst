@@ -169,7 +169,7 @@ The code looks like:
       success_flags_ptr->resize(num_queries);
 
       constexpr int kNumThreads = 512;
-      const int num_blocks = num_queries / kNumThreads + 1;
+      const int num_blocks = divideRoundUp(num_queries, kNumThreads);
 
       GPULayerView<TsdfBlock> gpu_layer_view = layer.getGpuLayerView(CudaStreamOwning());
 

@@ -43,8 +43,7 @@ Mapper::Mapper(float voxel_size_m,
       color_mesh_integrator_(cuda_stream),
       feature_mesh_integrator_(cuda_stream),
       esdf_integrator_(cuda_stream),
-      depth_preprocessor_(cuda_stream),
-      blocks_to_update_tracker_(projective_layer_type) {
+      depth_preprocessor_(cuda_stream) {
   layers_ = LayerCake::create<TsdfLayer, ColorLayer, FeatureLayer,
                               FreespaceLayer, OccupancyLayer, EsdfLayer,
                               ColorMeshLayer, FeatureMeshLayer>(
@@ -75,8 +74,7 @@ Mapper::Mapper(const std::string& map_filepath,
       color_mesh_integrator_(cuda_stream),
       feature_mesh_integrator_(cuda_stream),
       esdf_integrator_(cuda_stream),
-      depth_preprocessor_(cuda_stream),
-      blocks_to_update_tracker_(kDefaultProjectiveLayerType) {
+      depth_preprocessor_(cuda_stream) {
   loadMap(map_filepath, block_memory_pool_params);
 }
 
@@ -382,22 +380,19 @@ void Mapper::updateMeshTemplate(
   // Mesh is only updated for Tsdf layers (not for occupancy)
   if (!hasTsdfLayer(projective_layer_type_)) {
     return;
-  } else {
-    // Get the mesh blocks that need an update
-    std::vector<Index3D> blocks_to_update =
-        getBlocksToUpdate(blocks_to_update_type, update_full_layer);
+  }
 
-    // Call the integrator.
-    mesh_integrator.integrateBlocksGPU(layers_.get<TsdfLayer>(),
-                                       blocks_to_update,
-                                       layers_.getPtr<MeshLayerType>());
+  const std::vector<Index3D> blocks_to_update =
+      getBlocksToUpdate(blocks_to_update_type, update_full_layer);
 
-    mesh_integrator.updateAppearance(layers_.get<AppearanceLayerType>(),
-                                     blocks_to_update,
+  mesh_integrator.integrateBlocksGPU(layers_.get<TsdfLayer>(), blocks_to_update,
                                      layers_.getPtr<MeshLayerType>());
 
-    blocks_to_update_tracker_.markBlocksAsUpdated(blocks_to_update_type);
-  }
+  mesh_integrator.updateAppearance(layers_.get<AppearanceLayerType>(),
+                                   blocks_to_update,
+                                   layers_.getPtr<MeshLayerType>());
+
+  blocks_to_update_tracker_.markBlocksAsUpdated(blocks_to_update_type);
 }
 
 void Mapper::updateFeatureMesh(UpdateFullLayer update_full_layer) {
@@ -415,13 +410,10 @@ void Mapper::updateEsdf(UpdateFullLayer update_full_layer) {
                                         "the ESDF to 2d *or* 3d. Not both.";
   esdf_mode_ = EsdfMode::k3D;
 
-  // Get the esdf blocks that need an update
-  std::vector<Index3D> blocks_to_update =
+  const std::vector<Index3D> blocks_to_update =
       getBlocksToUpdate(BlocksToUpdateType::kEsdf, update_full_layer);
 
   if (projective_layer_type_ == ProjectiveLayerType::kTsdfWithFreespace) {
-    // Passing a freespace layer to the integrator for checking if
-    // candidate esdf sites fall into freespace
     esdf_integrator_.integrateBlocks(
         layers_.get<TsdfLayer>(), layers_.get<FreespaceLayer>(),
         blocks_to_update, layers_.getPtr<EsdfLayer>());
@@ -434,7 +426,6 @@ void Mapper::updateEsdf(UpdateFullLayer update_full_layer) {
                                      layers_.getPtr<EsdfLayer>());
   }
 
-  // Mark blocks as updated
   blocks_to_update_tracker_.markBlocksAsUpdated(BlocksToUpdateType::kEsdf);
 }
 
@@ -444,14 +435,11 @@ void Mapper::updateEsdfSlice(UpdateFullLayer update_full_layer,
                                         "the ESDF to 2d *or* 3d. Not both.";
   esdf_mode_ = EsdfMode::k2D;
 
-  // Get the esdf blocks that need an update
-  std::vector<Index3D> blocks_to_update =
+  const std::vector<Index3D> blocks_to_update =
       getBlocksToUpdate(BlocksToUpdateType::kEsdf, update_full_layer);
 
   if (ground_plane) {
     if (projective_layer_type_ == ProjectiveLayerType::kTsdfWithFreespace) {
-      // Passing a freespace layer to the integrator for checking if
-      // candidate esdf sites fall into freespace
       esdf_integrator_.integrateSlice(
           layers_.get<TsdfLayer>(), layers_.get<FreespaceLayer>(),
           blocks_to_update, ground_plane.value(), layers_.getPtr<EsdfLayer>());
@@ -459,7 +447,6 @@ void Mapper::updateEsdfSlice(UpdateFullLayer update_full_layer,
       esdf_integrator_.integrateSlice(layers_.get<TsdfLayer>(),
                                       blocks_to_update, ground_plane.value(),
                                       layers_.getPtr<EsdfLayer>());
-
     } else if (projective_layer_type_ == ProjectiveLayerType::kOccupancy) {
       esdf_integrator_.integrateSlice(layers_.get<OccupancyLayer>(),
                                       blocks_to_update, ground_plane.value(),
@@ -467,8 +454,6 @@ void Mapper::updateEsdfSlice(UpdateFullLayer update_full_layer,
     }
   } else {
     if (projective_layer_type_ == ProjectiveLayerType::kTsdfWithFreespace) {
-      // Passing a freespace layer to the integrator for checking if
-      // candidate esdf sites fall into freespace
       esdf_integrator_.integrateSlice(
           layers_.get<TsdfLayer>(), layers_.get<FreespaceLayer>(),
           blocks_to_update, layers_.getPtr<EsdfLayer>());
@@ -482,7 +467,6 @@ void Mapper::updateEsdfSlice(UpdateFullLayer update_full_layer,
                                       layers_.getPtr<EsdfLayer>());
     }
   }
-  // Mark blocks as updated
   blocks_to_update_tracker_.markBlocksAsUpdated(BlocksToUpdateType::kEsdf);
 }
 
@@ -538,16 +522,25 @@ std::vector<Index3D> Mapper::getClearedBlocks(
 
 std::vector<Index3D> Mapper::getBlocksToUpdate(
     BlocksToUpdateType blocks_to_update_type,
-    UpdateFullLayer update_full_layer) const {
-  if (update_full_layer == UpdateFullLayer::kYes) {
-    if (hasTsdfLayer(projective_layer_type_)) {
-      return layers_.get<TsdfLayer>().getAllBlockIndices();
-    } else {
-      return layers_.get<OccupancyLayer>().getAllBlockIndices();
-    }
+    UpdateFullLayer update_full_layer) {
+  // Get blocks from the blocks to update tracker.
+  // This also initializes tracking for the blocks_to_update_type if not being
+  // tracked yet.
+  const BlocksToUpdateState blocks_query =
+      blocks_to_update_tracker_.getBlocksToUpdate(blocks_to_update_type);
+
+  if (blocks_query.updateAll() || update_full_layer == UpdateFullLayer::kYes) {
+    return getAllProjectiveLayerBlockIndices();
   } else {
-    return blocks_to_update_tracker_.getBlocksToUpdate(blocks_to_update_type);
+    return blocks_query.blocks();
   }
+}
+
+std::vector<Index3D> Mapper::getAllProjectiveLayerBlockIndices() const {
+  if (hasTsdfLayer(projective_layer_type_)) {
+    return layers_.get<TsdfLayer>().getAllBlockIndices();
+  }
+  return layers_.get<OccupancyLayer>().getAllBlockIndices();
 }
 
 void Mapper::clearBlocksInLayers(const std::vector<Index3D>& blocks_to_clear) {
@@ -633,7 +626,7 @@ void Mapper::clearBlocksInLayers(const std::vector<Index3D>& blocks_to_clear) {
   }
 
   // We don't need to update the removed blocks.
-  blocks_to_update_tracker_.removeBlocksToUpdate(blocks_to_clear);
+  blocks_to_update_tracker_.removeClearedBlocksFromTracking(blocks_to_clear);
 
   // We need to keep track of cleared blocks to delete them in our
   // visualizer.
@@ -674,7 +667,8 @@ bool Mapper::loadMap(const std::string& filename,
 
   // Now we're happy, let's swap the cakes.
   layers_ = std::move(new_cake);
-  blocks_to_update_tracker_.markBlocksAsUpdated(BlocksToUpdateType::kEsdf);
+  // We have a new cake, reset the block tracker.
+  blocks_to_update_tracker_ = BlocksToUpdateTracker();
 
   // We can't serialize mesh layers yet so we have to add a new mesh layer.
   std::unique_ptr<ColorMeshLayer> mesh(
@@ -816,15 +810,11 @@ void Mapper::serializeSelectedLayers(
     const BlockExclusionParams& exclusion_params,
     std::optional<std::vector<Index3D>> blocks_to_serialize_opt) {
   // Figure out which blocks to serialize
-  // Note that all layers need to be serialized simultaneously since they all
-  // share the same BlocksToUpdate tracker
-  std::vector<Index3D> blocks_to_serialize;
-  if (blocks_to_serialize_opt.has_value()) {
-    blocks_to_serialize = blocks_to_serialize_opt.value();
-  } else {
-    blocks_to_serialize = blocks_to_update_tracker_.getBlocksToUpdate(
-        BlocksToUpdateType::kLayerStreamer);
-  }
+  const auto blocks_to_serialize =
+      blocks_to_serialize_opt.has_value()
+          ? blocks_to_serialize_opt.value()
+          : getBlocksToUpdate(BlocksToUpdateType::kLayerStreamer,
+                              UpdateFullLayer::kNo);
 
   // Serialize meshes
   if (layer_type_bitmask & LayerType::kColorMesh) {
@@ -881,9 +871,11 @@ void Mapper::serializeSelectedLayers(
     }
   }
 
-  // Keep track of serialized blocks
-  blocks_to_update_tracker_.markBlocksAsUpdated(
-      BlocksToUpdateType::kLayerStreamer);
+  // Keep track of serialized blocks (only if we used the tracker to get them)
+  if (!blocks_to_serialize_opt.has_value()) {
+    blocks_to_update_tracker_.markBlocksAsUpdated(
+        BlocksToUpdateType::kLayerStreamer);
+  }
 }
 
 void Mapper::markBlocksForUpdate(const std::vector<Index3D>& blocks) {

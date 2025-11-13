@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "nvblox/core/internal/error_check.h"
 #include "nvblox/sensors/image.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -43,8 +44,9 @@ void setImageConstantOnGpuTemplate(const ElementType value,
   constexpr int kThreadsPerBlockInEachDimension = 8;
   dim3 blockShape(kThreadsPerBlockInEachDimension,
                   kThreadsPerBlockInEachDimension);
-  dim3 gridShape((image_ptr->rows() / kThreadsPerBlockInEachDimension) + 1,
-                 (image_ptr->cols() / kThreadsPerBlockInEachDimension) + 1);
+  dim3 gridShape(
+      divideRoundUp(image_ptr->rows(), kThreadsPerBlockInEachDimension),
+      divideRoundUp(image_ptr->cols(), kThreadsPerBlockInEachDimension));
   setImageConstantKernel<<<gridShape, blockShape>>>(
       ImageView<ElementType>(*image_ptr), value);
   checkCudaErrors(cudaGetLastError());

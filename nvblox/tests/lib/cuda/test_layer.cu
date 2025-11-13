@@ -21,6 +21,7 @@ limitations under the License.
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
 #include "nvblox/map/common_names.h"
 #include "nvblox/tests/gpu_layer_utils.h"
+#include "nvblox/utils/cuda_kernel_utils.h"
 
 namespace nvblox {
 namespace test_utils {
@@ -58,7 +59,7 @@ void checkGpuAndCpuHashesEqual(TsdfLayer& layer) {
                                   CudaStreamOwning());
 
   constexpr int kNumThreadsPerBlock = 32;
-  const int num_blocks = gpu_hash.size() / kNumThreadsPerBlock + 1;
+  const int num_blocks = divideRoundUp(gpu_hash.size(), kNumThreadsPerBlock);
 
   CHECK_GE(gpu_hash.size(), block_indices_device.size());
   CHECK_GE(gpu_hash.size(), block_ptrs_device.size());

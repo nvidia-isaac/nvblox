@@ -95,17 +95,11 @@ struct PixelAlwaysValid {
   }
 };
 
-template <typename ElementType>
-struct PixelNotNan {
-  __host__ __device__ constexpr static inline bool check(
-      const ElementType& pixel_value) {
-    return !std::isnan(pixel_value);
-  }
-};
-struct FloatPixelGreaterThanZero {
+/// Checker that validates pixel is finite (not NaN/inf) and positive.
+struct PixelIsValidDepth {
   __host__ __device__ static inline bool check(const float& pixel_value) {
     constexpr float kEps = 1e-6;
-    return pixel_value > kEps;
+    return std::isfinite(pixel_value) && pixel_value > kEps;
   }
 };
 

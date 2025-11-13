@@ -2,7 +2,7 @@ ARG BASE_IMAGE=nvblox_deps
 
 FROM $BASE_IMAGE
 ARG CMAKE_ARGS=""
-ARG MAX_NUM_JOBS=32
+ARG MAX_NUM_JOBS=20
 
 SHELL ["/bin/bash", "-c"]
 
