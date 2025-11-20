@@ -96,7 +96,7 @@ class DockerImage(ABC):
         print(f'Ubuntu version:           {self.args.ubuntu_version.value}')
         print(f'Max number of build jobs: {self.args.max_num_build_jobs}')
         print(f'Build arguments:          {", ".join(self.build_args() or [])}')
-        print(f'Extra build arguments:    {", ".join(self.args.extra_build_args or [])}')
+        print(f'User build arguments:     {", ".join(self.args.user_build_args or [])}')
         print('=' * 80)
 
         cmd = [
@@ -112,8 +112,8 @@ class DockerImage(ABC):
                 cmd += ['--build-arg', arg]
 
         # Add extra docker args from args if provided
-        if self.args.extra_build_args is not None:
-            cmd += self.args.extra_build_args
+        if self.args.user_build_args is not None:
+            cmd += self.args.user_build_args
 
         cmd += ['.']
 
@@ -303,10 +303,10 @@ def parse_args() -> argparse.Namespace:
                         required=False,
                         default=UbuntuVersion.UBUNTU_24,
                         help='Ubuntu version to build for.')
-    parser.add_argument('--extra-build-args',
-                        type=List[str],
+    parser.add_argument('--user-build-args',
+                        type=str,
                         required=False,
-                        help='Extra docker build arguments.')
+                        help='Additional user-provided docker build arguments.')
     parser.add_argument('--max-num-build-jobs',
                         type=int,
                         required=False,
