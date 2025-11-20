@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Helper for building nvblox docker images
-
 """
 
 import os
@@ -33,6 +32,14 @@ class CudaSmArchitectures(Enum):
     SM_X86_CI_SUPPORTED = '120;100;90;89;86;80;75'
     SM_JETPACK_ORIN = '87'
     SM_NATIVE = 'native'
+
+
+class NvbloxImage(Enum):
+    DEPS = 'deps'
+    BUILD = 'build'
+    REALSENSE = 'realsense'
+    DOCS = 'docs'
+    LINT = 'lint'
 
 
 class DockerImage(ABC):
@@ -76,8 +83,20 @@ class DockerImage(ABC):
             self.parent_image().build()
 
         image_name = self.image_name()
+
+        # Print build information
         print('=' * 80)
-        print(f'Building {image_name} from {self.dockerfile_path()}')
+        print(f'BUILDING: {image_name}')
+        print('=' * 80)
+        print(f'Dockerfile:               {self.dockerfile_path()}')
+        print(f'Parent image:             {self.parent_image().image_name()}')
+        print(f'Platform:                 {self.args.platform.value}')
+        print(f'CUDA version:             {self.args.cuda_version.value}')
+        print(f'CUDA architecture:        {self.args.cuda_arch.value}')
+        print(f'Ubuntu version:           {self.args.ubuntu_version.value}')
+        print(f'Max number of build jobs: {self.args.max_num_build_jobs}')
+        print(f'Build arguments:          {", ".join(self.build_args() or [])}')
+        print(f'Extra build arguments:    {", ".join(self.args.extra_build_args or [])}')
         print('=' * 80)
 
         cmd = [
@@ -261,7 +280,10 @@ class LintImage(DockerImage):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Build nvblox docker images')
-    parser.add_argument('--cuda-version', type=CudaVersion, required=True, help='CUDA version')
+    parser.add_argument('--cuda-version',
+                        type=CudaVersion,
+                        default=CudaVersion.CUDA_12,
+                        help='CUDA version')
     parser.add_argument('--cuda-arch',
                         type=CudaSmArchitectures,
                         required=False,
@@ -272,7 +294,10 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=True,
         help='Docker image to build. Choices are: deps, binaries, realsense-example')
-    parser.add_argument('--platform', type=Platform, required=True, help='Platform to build for.')
+    parser.add_argument('--platform',
+                        type=Platform,
+                        default=Platform.X86_64,
+                        help='Platform to build for.')
     parser.add_argument('--ubuntu-version',
                         type=UbuntuVersion,
                         required=False,
@@ -285,6 +310,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--max-num-build-jobs',
                         type=int,
                         required=False,
+                        default=8,
                         help='Maximum number of build jobs to run in parallel.')
 
     return parser.parse_args()
@@ -292,15 +318,15 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.image == 'deps':
+    if args.image == NvbloxImage.DEPS.value:
         DependenciesImage(args=args).build()
-    elif args.image == 'build':
+    elif args.image == NvbloxImage.BUILD.value:
         BuildImage(args).build()
-    elif args.image == 'realsense':
+    elif args.image == NvbloxImage.REALSENSE.value:
         RealsenseImage(args).build()
-    elif args.image == 'docs':
+    elif args.image == NvbloxImage.DOCS.value:
         DocsImage(args).build()
-    elif args.image == 'lint':
+    elif args.image == NvbloxImage.LINT.value:
         LintImage(args).build()
 
 
