@@ -120,6 +120,20 @@ class DockerImage(ABC):
         print(cmd)
         subprocess.run(cmd, check=True)
 
+        self._validate()
+
+    def _validate(self) -> None:
+        """Validate that the correct cuda/ubuntu version was built"""
+
+        # Check ubuntu version
+        lsb_release_result = subprocess.run(['docker', 'run', '--rm', self.image_name(), 'lsb_release', '-a'], check=True, capture_output=True, text=True)
+        assert f"Ubuntu {self.args.ubuntu_version.value}" in lsb_release_result.stdout, f"Failed to find the correct ubuntu version. Stdout: {lsb_release_result.stdout}"
+        
+        # Check cuda version
+        cuda_version_result = subprocess.run(['docker', 'run', '--rm', self.image_name(), 'nvcc', '--version'], check=True, capture_output=True, text=True)
+        assert f"cuda_{self.args.cuda_version.value}" in cuda_version_result.stdout, f"Failed to find the correct cuda version. Stdout: {cuda_version_result.stdout}"
+
+        print(f"Successfully validated image: {self.image_name()}")
 
 class OsImage(DockerImage):
     """External cuda or jetpack OS base image. Used as a parent image for other images."""
