@@ -62,6 +62,10 @@ class DockerImage(ABC):
         """
         pass
 
+    def do_validate_image(self) -> bool:
+        """Whether to validate the image after building. Override to disable validation."""
+        return True
+
     @abstractmethod
     def build_args(self) -> List[str]:
         """Build arguments for the docker build command"""
@@ -125,7 +129,8 @@ class DockerImage(ABC):
         print(' '.join(cmd))
         subprocess.run(cmd, check=True)
 
-        self._validate()
+        if self.do_validate_image():
+            self._validate()
 
     def _validate(self) -> None:
         """Validate that the correct cuda/ubuntu version was built"""
@@ -160,9 +165,13 @@ class DockerImage(ABC):
 class TestBase(ABC):
     """Base class for unit tests"""
 
-    def __init__(self, args: argparse.Namespace, image: DockerImage):
+    def __init__(self, args: argparse.Namespace):
         self.args = args
-        self.image = image
+
+    @abstractmethod
+    def image(self) -> DockerImage:
+        """Get the image to run the test on"""
+        pass
 
     @abstractmethod
     def get_command(self) -> str:
@@ -176,8 +185,8 @@ class TestBase(ABC):
 
     def run(self) -> None:
         """Build image and run command inside it"""
-        self.image.build()
-        docker_cmd = ['docker', 'run', '--rm', self.image.image_name()]
+        self.image().build()
+        docker_cmd = ['docker', 'run', '--rm', self.image().image_name()]
         cwd = self.get_cwd()
         cmd = self.get_command()
         full_cmd = docker_cmd + ['bash', '-c'] + [f'cd {cwd} && {cmd}']

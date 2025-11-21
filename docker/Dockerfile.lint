@@ -18,6 +18,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install pre-commit
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir pre-commit
-
-# Set the entrypoint to bash
-ENTRYPOINT ["bash"]

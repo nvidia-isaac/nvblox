@@ -147,6 +147,10 @@ class LintImage(DockerImage):
     def build_args(self) -> List[str]:
         return []
 
+    def do_validate_image(self) -> bool:
+        """Lint image is not based on ubunut/cuda so cannot be validated."""
+        return False
+
 
 class CppUnitTests(TestBase):
     """Run the C++ unit tests"""
@@ -156,8 +160,37 @@ class CppUnitTests(TestBase):
         return (f'ctest -j{num_jobs} --verbose -T test '
                 f'--no-compress-output')
 
+    def image(self) -> DockerImage:
+        return BuildImage(self.args)
+
     def get_cwd(self) -> str:
         return '/nvblox/build/nvblox/tests'
+
+
+class PytorchUnitTests(TestBase):
+    """Run the Pytorch unit tests"""
+
+    def get_command(self) -> str:
+        return 'pytest --capture=no'
+
+    def image(self) -> DockerImage:
+        return BuildImage(self.args)
+
+    def get_cwd(self) -> str:
+        return '/nvblox/'
+
+
+class LintTests(TestBase):
+    """Run the Lint tests"""
+
+    def get_command(self) -> str:
+        return 'bash -c \"ci/lint_nvblox_h.sh && pre-commit run --all-files\"'
+
+    def image(self) -> DockerImage:
+        return LintImage(self.args)
+
+    def get_cwd(self) -> str:
+        return '/nvblox/'
 
 
 def parse_args() -> argparse.Namespace:
@@ -221,9 +254,15 @@ def main() -> int:
         DocsImage(args).build()
     elif args.image == NvbloxImage.LINT:
         LintImage(args).build()
-
-    if args.test == NvbloxTests.CPP:
-        CppUnitTests(args, BuildImage(args)).run()
+    elif args.test == NvbloxTests.CPP:
+        CppUnitTests(args).run()
+    elif args.test == NvbloxTests.PYTHON:
+        PytorchUnitTests(args).run()
+    elif args.test == NvbloxTests.LINT:
+        LintTests(args).run()
+    else:
+        print(f'Invalid test: {args.test}')
+        return 1
 
     return 0
 
