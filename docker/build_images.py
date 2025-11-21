@@ -42,6 +42,14 @@ class NvbloxImage(Enum):
     LINT = 'lint'
 
 
+class NvbloxTests(Enum):
+    CPP = 'cpp'
+    PYTHON = 'python'
+    LINT = 'lint'
+    DOCS = 'docs'
+    REALSENSE = 'realsense'
+
+
 class DockerImage(ABC):
     """Abstract base class for Docker images. Wraps a dockerfile + build args. Supports single dependent parent image."""
 
@@ -94,7 +102,7 @@ class DockerImage(ABC):
         print(f'CUDA version:             {self.args.cuda_version.value}')
         print(f'CUDA architecture:        {self.args.cuda_arch.value}')
         print(f'Ubuntu version:           {self.args.ubuntu_version.value}')
-        print(f'Max number of build jobs: {self.args.max_num_build_jobs}')
+        print(f'Max number of jobs:       {self.args.max_num_jobs}')
         print(f'Build arguments:          {", ".join(self.build_args() or [])}')
         print(f'User build arguments:     {", ".join(self.args.user_build_args or [])}')
         print('=' * 80)
@@ -117,7 +125,7 @@ class DockerImage(ABC):
 
         cmd += ['.']
 
-        print(cmd)
+        print(' '.join(cmd))
         subprocess.run(cmd, check=True)
 
         self._validate()
@@ -126,14 +134,25 @@ class DockerImage(ABC):
         """Validate that the correct cuda/ubuntu version was built"""
 
         # Check ubuntu version
-        lsb_release_result = subprocess.run(['docker', 'run', '--rm', self.image_name(), 'lsb_release', '-a'], check=True, capture_output=True, text=True)
-        assert f"Ubuntu {self.args.ubuntu_version.value}" in lsb_release_result.stdout, f"Failed to find the correct ubuntu version. Stdout: {lsb_release_result.stdout}"
-        
-        # Check cuda version
-        cuda_version_result = subprocess.run(['docker', 'run', '--rm', self.image_name(), 'nvcc', '--version'], check=True, capture_output=True, text=True)
-        assert f"cuda_{self.args.cuda_version.value}" in cuda_version_result.stdout, f"Failed to find the correct cuda version. Stdout: {cuda_version_result.stdout}"
+        lsb_release_result = subprocess.run(
+            ['docker', 'run', '--rm',
+             self.image_name(), 'lsb_release', '-a'],
+            check=True,
+            capture_output=True,
+            text=True)
+        assert f'Ubuntu {self.args.ubuntu_version.value}' in lsb_release_result.stdout, f'Failed to find the correct ubuntu version. Stdout: {lsb_release_result.stdout}'
 
-        print(f"Successfully validated image: {self.image_name()}")
+        # Check cuda version
+        cuda_version_result = subprocess.run(
+            ['docker', 'run', '--rm',
+             self.image_name(), 'nvcc', '--version'],
+            check=True,
+            capture_output=True,
+            text=True)
+        assert f'cuda_{self.args.cuda_version.value}' in cuda_version_result.stdout, f'Failed to find the correct cuda version. Stdout: {cuda_version_result.stdout}'
+
+        print(f'Successfully validated image: {self.image_name()}')
+
 
 class OsImage(DockerImage):
     """External cuda or jetpack OS base image. Used as a parent image for other images."""
@@ -239,8 +258,8 @@ class BuildImage(DockerImage):
 
     def build_args(self) -> List[str]:
         args = [f'CMAKE_ARGS=\"-DCMAKE_CUDA_ARCHITECTURES={self.get_cuda_sm_architecture()}\"']
-        if self.args.max_num_build_jobs is not None:
-            args += [f'MAX_NUM_JOBS={self.args.max_num_build_jobs}']
+        if self.args.max_num_jobs is not None:
+            args += [f'MAX_NUM_JOBS={self.args.max_num_jobs}']
         return args
 
 
@@ -292,6 +311,45 @@ class LintImage(DockerImage):
         return None
 
 
+class TestBase:
+    """Base class for unit tests"""
+
+    def __init__(self, args: argparse.Namespace, image: DockerImage):
+        self.args = args
+        self.image = image
+
+    @abstractmethod
+    def get_command(self) -> None:
+        """Run the unit test"""
+        pass
+
+    @abstractmethod
+    def get_cwd(self) -> str:
+        """Get the current working directory"""
+        pass
+
+    def run(self) -> None:
+        """Build image and run command inside it"""
+        self.image.build()
+        docker_cmd = ['docker', 'run', '--rm', self.image.image_name()]
+        cwd = self.get_cwd()
+        cmd = self.get_command()
+        subprocess.run(docker_cmd + ['bash', '-c'] + [f'cd {cwd} && {cmd}'])
+
+
+class CppUnitTests(TestBase):
+    """Run the C++ unit tests"""
+
+    def __init__(self, args: argparse.Namespace, image: DockerImage):
+        super().__init__(args, image)
+
+    def get_command(self) -> str:
+        return f'ctest -j{self.args.max_num_jobs} --verbose -T test --no-compress-output'
+
+    def get_cwd(self) -> str:
+        return '/nvblox/build/nvblox/tests'
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Build nvblox docker images')
     parser.add_argument('--cuda-version',
@@ -303,11 +361,14 @@ def parse_args() -> argparse.Namespace:
                         required=False,
                         default=CudaSmArchitectures.SM_NATIVE,
                         help='CUDA SM architectures.')
-    parser.add_argument(
-        '--image',
-        type=str,
-        required=True,
-        help='Docker image to build. Choices are: deps, binaries, realsense-example')
+    parser.add_argument('--image',
+                        type=NvbloxImage,
+                        required=False,
+                        help='Docker image to build. Choices are: deps, binaries, realsense')
+    parser.add_argument('--test',
+                        type=NvbloxTests,
+                        required=False,
+                        help='Test to run. Choices are: cpp, python, lint, docs, realsense')
     parser.add_argument('--platform',
                         type=Platform,
                         default=Platform.X86_64,
@@ -321,27 +382,35 @@ def parse_args() -> argparse.Namespace:
                         type=str,
                         required=False,
                         help='Additional user-provided docker build arguments.')
-    parser.add_argument('--max-num-build-jobs',
+    parser.add_argument('--max-num-jobs',
                         type=int,
                         required=False,
                         default=8,
-                        help='Maximum number of build jobs to run in parallel.')
+                        help='Maximum number of jobs to run in parallel (for build and ctest).')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.image is None and args.test is None:
+        parser.error('Either image or test must be provided')
+
+    return args
 
 
 def main() -> int:
     args = parse_args()
-    if args.image == NvbloxImage.DEPS.value:
+    if args.image == NvbloxImage.DEPS:
         DependenciesImage(args=args).build()
-    elif args.image == NvbloxImage.BUILD.value:
+    elif args.image == NvbloxImage.BUILD:
         BuildImage(args).build()
-    elif args.image == NvbloxImage.REALSENSE.value:
+    elif args.image == NvbloxImage.REALSENSE:
         RealsenseImage(args).build()
-    elif args.image == NvbloxImage.DOCS.value:
+    elif args.image == NvbloxImage.DOCS:
         DocsImage(args).build()
-    elif args.image == NvbloxImage.LINT.value:
+    elif args.image == NvbloxImage.LINT:
         LintImage(args).build()
+
+    if args.test == NvbloxTests.CPP:
+        CppUnitTests(args, BuildImage(args)).run()
 
 
 if __name__ == '__main__':
