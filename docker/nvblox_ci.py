@@ -204,11 +204,11 @@ def parse_args() -> argparse.Namespace:
                         required=False,
                         default=CudaSmArchitectures.SM_NATIVE,
                         help='CUDA SM architectures.')
-    parser.add_argument('--image',
+    parser.add_argument('--build-image',
                         type=NvbloxImage,
                         required=False,
                         help='Docker image to build. Choices: deps, binaries, realsense')
-    parser.add_argument('--test',
+    parser.add_argument('--run-test',
                         type=NvbloxTests,
                         required=False,
                         help='Test to run. Choices: cpp, python, lint, docs, realsense')
@@ -236,7 +236,7 @@ def parse_args() -> argparse.Namespace:
                         help='Build in debug mode.')
     args = parser.parse_args()
 
-    if args.image is None and args.test is None:
+    if args.build_image is None and args.run_test is None:
         parser.error('Either image or test must be provided')
 
     return args
@@ -244,21 +244,21 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.image == NvbloxImage.DEPS:
+    if args.build_image == NvbloxImage.DEPS:
         DependenciesImage(args=args).build()
-    elif args.image == NvbloxImage.BUILD:
+    elif args.build_image == NvbloxImage.BUILD:
         BuildImage(args).build()
-    elif args.image == NvbloxImage.REALSENSE:
+    elif args.build_image == NvbloxImage.REALSENSE:
         RealsenseImage(args).build()
-    elif args.image == NvbloxImage.DOCS:
+    elif args.build_image == NvbloxImage.DOCS:
         DocsImage(args).build()
-    elif args.image == NvbloxImage.LINT:
+    elif args.build_image == NvbloxImage.LINT:
         LintImage(args).build()
-    elif args.test == NvbloxTests.CPP:
+    elif args.run_test == NvbloxTests.CPP:
         CppUnitTests(args).run()
-    elif args.test == NvbloxTests.PYTHON:
+    elif args.run_test == NvbloxTests.PYTHON:
         PytorchUnitTests(args).run()
-    elif args.test == NvbloxTests.LINT:
+    elif args.run_test == NvbloxTests.LINT:
         LintTests(args).run()
     else:
         print(f'Invalid test: {args.test}')
