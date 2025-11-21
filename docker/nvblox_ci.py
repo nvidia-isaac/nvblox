@@ -90,7 +90,11 @@ class BuildImage(DockerImage):
 
     def build_args(self) -> List[str]:
         cuda_arch = self.get_cuda_sm_architecture()
-        args = [f'CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES={cuda_arch}"']
+        cmake_args = f'-DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
+        if self.args.build_debug:
+            cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
+
+        args = [f'CMAKE_ARGS={cmake_args}']
         if self.args.max_num_jobs is not None:
             args += [f'MAX_NUM_JOBS={self.args.max_num_jobs}']
         return args
@@ -193,7 +197,10 @@ def parse_args() -> argparse.Namespace:
                         required=False,
                         default=8,
                         help='Maximum number of jobs to run in parallel (build and ctest).')
-
+    parser.add_argument('--build-debug',
+                        action='store_true',
+                        required=False,
+                        help='Build in debug mode.')
     args = parser.parse_args()
 
     if args.image is None and args.test is None:
