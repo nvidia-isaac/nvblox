@@ -167,11 +167,13 @@ class CppUnitTests(TestBase):
         return '/nvblox/build/nvblox/tests'
 
 
-class PytorchUnitTests(TestBase):
-    """Run the Pytorch unit tests"""
+class PythonUnitTests(TestBase):
+    """Run the Python unit tests"""
 
     def get_command(self) -> str:
-        return 'pytest --capture=no'
+        cmd = '. /opt/venv/bin/activate && '
+        cmd += 'pytest --capture=no /opt/venv/lib/*/site-packages/nvblox_torch'
+        return cmd
 
     def image(self) -> DockerImage:
         return BuildImage(self.args)
@@ -257,7 +259,7 @@ def main() -> int:
     elif args.run_test == NvbloxTests.CPP:
         CppUnitTests(args).run()
     elif args.run_test == NvbloxTests.PYTHON:
-        PytorchUnitTests(args).run()
+        PythonUnitTests(args).run()
     elif args.run_test == NvbloxTests.LINT:
         LintTests(args).run()
     else:
