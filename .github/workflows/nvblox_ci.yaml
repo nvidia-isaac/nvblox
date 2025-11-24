@@ -1,0 +1,10 @@
+name: GPU Dummy Job
+on:
+  workflow_dispatch:
+jobs:
+  gpu-job:
+    name: GPU Job
+    runs-on: [self-hosted, gpu] # assumes you have a runner with the label "gpu"
+    steps:
+      - name: Run dummy command
+        run: sleep 10
