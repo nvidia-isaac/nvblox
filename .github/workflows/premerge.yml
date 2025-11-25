@@ -6,6 +6,18 @@ jobs:
     name: Premerge
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
+      - name: NGC Login
+        shell: sh
+        run: |
+          # Only attempt NGC login if API key is available
+          if [ -n "${{ env.NGC_API_KEY }}" ]; then
+            echo "Logging into NGC registry..."
+            docker login -u \$oauthtoken -p ${{ env.NGC_API_KEY }} nvcr.io
+            echo "✅ Successfully logged into NGC registry"
+          else
+            echo "⚠️ NGC_API_KEY not available - skipping NGC login"
+            echo "This is normal for PRs from forks or when secrets are not configured"
+          fi
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
