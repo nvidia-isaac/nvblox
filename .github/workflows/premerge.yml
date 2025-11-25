@@ -12,3 +12,4 @@ jobs:
           platform: x86_64
           cuda-version: '12'
           ubuntu-version: '22'
+          ngc-api-key: ${{ secrets.NGC_API_KEY }}

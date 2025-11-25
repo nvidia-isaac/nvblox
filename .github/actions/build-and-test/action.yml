@@ -10,6 +10,9 @@ inputs:
   ubuntu-version:
     description: 'Ubuntu version'
     required: true
+  ngc-api-key:
+    description: 'NGC API Key for authentication'
+    required: true
 runs:
   using: 'composite'
   steps:
@@ -21,7 +24,7 @@ runs:
     - name: NGC Login
       uses: ./.github/actions/ngc-login
       with:
-        ngc-api-key: ${{ secrets.NGC_API_KEY }}
+        ngc-api-key: ${{ inputs.ngc-api-key }}
     - name: Build dependencies image
       shell: bash
       run: |
