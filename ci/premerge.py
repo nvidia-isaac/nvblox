@@ -11,7 +11,7 @@ import subprocess
 import sys
 from typing import Dict, List, Type
 
-from docker_base import (
+from ci_utils import (
     CudaSmArchitectures,
     CudaVersion,
     DockerImage,
