@@ -6,6 +6,11 @@ jobs:
     name: Premerge
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
       - name: x86_64-Cuda12-Ubuntu22 - Unit tests
         uses: ./.github/actions/build-and-test
         with:
