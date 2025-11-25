@@ -13,7 +13,4 @@ jobs:
           lfs: true
       - name: cpp-unit-tests x86_64-Cuda12-Ubuntu22
         run: |
-          echo "testing the log"
-          echo $PWD
-          find ..
-          nvblox/ci/premerge.py --platform x86_64 --cuda-version 12 --ubuntu-version 22 --build-and-test cpp
+          ci/premerge.py --platform x86_64 --cuda-version 12 --ubuntu-version 22 --build-and-test cpp
