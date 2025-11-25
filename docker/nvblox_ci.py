@@ -180,6 +180,7 @@ class LintTests(TestBase):
         return '/nvblox/'
 
 
+# Map cmd line arg to image class.
 ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
     'deps': DependenciesImage,
     'build': BuildImage,
@@ -188,6 +189,7 @@ ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
     'lint': LintImage,
 }
 
+# Map cmd line arg to test class.
 ARG_TO_TEST: Dict[str, Type[TestBase]] = {
     'cpp': CppUnitTests,
     'python': PythonUnitTests,
