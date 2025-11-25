@@ -10,5 +10,5 @@ jobs:
         run: |
           echo "testing the log"
           echo $PWD
-          find .
+          find ..
           nvblox/ci/premerge.py --platform x86_64 --cuda-version 12 --ubuntu-version 22 --build-and-test cpp
