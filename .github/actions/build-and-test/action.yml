@@ -1,0 +1,22 @@
+name: 'Build and Test'
+description: 'Build nvblox Docker image and run tests'
+inputs:
+  platform:
+    description: 'Platform to build for'
+    required: true
+  cuda-version:
+    description: 'CUDA version'
+    required: true
+  ubuntu-version:
+    description: 'Ubuntu version'
+    required: true
+  test-type:
+    description: 'Test type to run'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Build and run ${{ inputs.test-type }} tests
+      shell: bash
+      run: |
+        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test ${{ inputs.test-type }}

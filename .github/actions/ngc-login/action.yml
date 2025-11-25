@@ -1,0 +1,21 @@
+name: 'NGC Login'
+description: 'Login to NVIDIA NGC Container Registry'
+inputs:
+  ngc-api-key:
+    description: 'NGC API Key for authentication'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: NGC Login
+      shell: bash
+      run: |
+        # Only attempt NGC login if API key is available
+        if [ -n "${{ inputs.ngc-api-key }}" ]; then
+          echo "Logging into NGC registry..."
+          docker login -u \$oauthtoken -p ${{ inputs.ngc-api-key }} nvcr.io
+          echo "✅ Successfully logged into NGC registry"
+        else
+          echo "⚠️ NGC_API_KEY not available - skipping NGC login"
+          echo "This is normal for PRs from forks or when secrets are not configured"
+        fi
