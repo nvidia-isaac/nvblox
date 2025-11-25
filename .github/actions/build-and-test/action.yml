@@ -20,18 +20,9 @@ runs:
       uses: ./.github/actions/ngc-login
       with:
         ngc-api-key: ${{ inputs.ngc-api-key }}
-    - name: Build dependencies image
-      shell: bash
-      run: |
-        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-image deps
-    - name: Build binaries image
-      shell: bash
-      run: |
-        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-image build
     - name: Run CPP unit tests
       shell: bash
       run: |
-        # Note that we could skip the explicit build-image steps, but separating them makes the steps stand out in the UI.
         ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test cpp
     - name: Run Python unit tests
       shell: bash
