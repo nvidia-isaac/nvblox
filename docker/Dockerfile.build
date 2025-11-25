@@ -24,6 +24,6 @@ RUN cd nvblox && mkdir build && cd build && \
     echo "Number of build jobs: $NUM_JOBS" && \
     bash -ic "cmake ..  ${CMAKE_ARGS} && make -j $NUM_JOBS"
 
-# Copy nvblox_torch and install it
-COPY nvblox_torch /nvblox/nvblox_torch
+# Copy the complete source tree and install nvblox_torch. Note that we need the .git dir to read the SHA in CI.
+COPY . /nvblox
 RUN . /opt/venv/bin/activate && pip install /nvblox/nvblox_torch/
