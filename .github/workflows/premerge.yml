@@ -6,26 +6,9 @@ jobs:
     name: Premerge
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: true
-      - name: NGC Login
-        uses: ./.github/actions/ngc-login
-        with:
-          ngc-api-key: ${{ secrets.NGC_API_KEY }}
-      - name: x86_64-Cuda12-Ubuntu22 - C++ tests
+      - name: x86_64-Cuda12-Ubuntu22 - Unit tests
         uses: ./.github/actions/build-and-test
         with:
           platform: x86_64
           cuda-version: '12'
           ubuntu-version: '22'
-          test-type: cpp
-      - name: x86_64-Cuda12-Ubuntu22 - Python tests
-        uses: ./.github/actions/build-and-test
-        with:
-          platform: x86_64
-          cuda-version: '12'
-          ubuntu-version: '22'
-          test-type: python

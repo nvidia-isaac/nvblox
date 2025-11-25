@@ -10,13 +10,31 @@ inputs:
   ubuntu-version:
     description: 'Ubuntu version'
     required: true
-  test-type:
-    description: 'Test type to run'
-    required: true
 runs:
   using: 'composite'
   steps:
-    - name: Build and run ${{ inputs.test-type }} tests
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        lfs: true
+    - name: NGC Login
+      uses: ./.github/actions/ngc-login
+      with:
+        ngc-api-key: ${{ secrets.NGC_API_KEY }}
+    - name: Build dependencies image
       shell: bash
       run: |
-        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test ${{ inputs.test-type }}
+        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-image deps
+    - name: Build binaries image
+      shell: bash
+      run: |
+        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-image build
+    - name: Run CPP unit tests
+      shell: bash
+      run: |
+        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test cpp
+    - name: Run Python unit tests
+      shell: bash
+      run: |
+        ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test python
