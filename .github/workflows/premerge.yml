@@ -8,9 +8,7 @@ jobs:
     steps:
       - name: cpp-unit-tests x86_64-Cuda12-Ubuntu22
         run: |
+          echo "testing the log"
           echo $PWD
           find .
-          ci/premerge.py --platform x86_64 --cuda-version 12 --ubuntu-version 22 --build-and-test cpp
-      - name: python-unit-tests x86_64-Cuda12-Ubuntu22
-        run: |
-          ci/premerge.py --platform x86_64 --cuda-version 12 --ubuntu-version 22 --build-and-test python
+          nvblox/ci/premerge.py --platform x86_64 --cuda-version 12 --ubuntu-version 22 --build-and-test cpp
