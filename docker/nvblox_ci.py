@@ -9,8 +9,7 @@ import argparse
 import os
 import subprocess
 import sys
-from enum import Enum
-from typing import List
+from typing import Dict, List, Type
 
 from docker_base import (
     CudaSmArchitectures,
@@ -22,21 +21,7 @@ from docker_base import (
     OsImage,
 )
 
-
-class NvbloxImage(Enum):
-    DEPS = 'deps'
-    BUILD = 'build'
-    REALSENSE = 'realsense'
-    DOCS = 'docs'
-    LINT = 'lint'
-
-
-class NvbloxTests(Enum):
-    CPP = 'cpp'
-    PYTHON = 'python'
-    LINT = 'lint'
-    DOCS = 'docs'
-    REALSENSE = 'realsense'
+DEFAULT_MAX_NUM_JOBS = 8
 
 
 class DependenciesImage(DockerImage):
@@ -91,7 +76,7 @@ class BuildImage(DockerImage):
     def build_args(self) -> List[str]:
         cuda_arch = self.get_cuda_sm_architecture()
         cmake_args = f'-DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
-        if self.args.build_debug:
+        if self.args.debug_with_sanitizers:
             cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
 
         args = [f'CMAKE_ARGS={cmake_args}']
@@ -195,8 +180,33 @@ class LintTests(TestBase):
         return '/nvblox/'
 
 
+ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
+    'deps': DependenciesImage,
+    'build': BuildImage,
+    'realsense': RealsenseImage,
+    'docs': DocsImage,
+    'lint': LintImage,
+}
+
+ARG_TO_TEST: Dict[str, Type[TestBase]] = {
+    'cpp': CppUnitTests,
+    'python': PythonUnitTests,
+    'lint': LintTests,
+}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Build nvblox docker images and run tests')
+    parser.add_argument('--build-image',
+                        type=str,
+                        choices=ARG_TO_IMAGE.keys(),
+                        required=False,
+                        help='Docker image to build. Will build the image and then exit.')
+    parser.add_argument('--build-and-test',
+                        type=str,
+                        choices=ARG_TO_TEST.keys(),
+                        required=False,
+                        help='Test to run. Will build also build the necessary image.')
     parser.add_argument('--cuda-version',
                         type=CudaVersion,
                         default=CudaVersion.CUDA_12,
@@ -206,14 +216,6 @@ def parse_args() -> argparse.Namespace:
                         required=False,
                         default=CudaSmArchitectures.SM_NATIVE,
                         help='CUDA SM architectures.')
-    parser.add_argument('--build-image',
-                        type=NvbloxImage,
-                        required=False,
-                        help='Docker image to build. Choices: deps, binaries, realsense')
-    parser.add_argument('--run-test',
-                        type=NvbloxTests,
-                        required=False,
-                        help='Test to run. Choices: cpp, python, lint, docs, realsense')
     parser.add_argument('--platform',
                         type=Platform,
                         default=Platform.X86_64,
@@ -230,15 +232,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--max-num-jobs',
                         type=int,
                         required=False,
-                        default=8,
+                        default=DEFAULT_MAX_NUM_JOBS,
                         help='Maximum number of jobs to run in parallel (build and ctest).')
-    parser.add_argument('--build-debug',
+    parser.add_argument('--debug-with-sanitizers',
                         action='store_true',
                         required=False,
-                        help='Build in debug mode.')
+                        help='Build in debug mode with gcc sanitizers enabled.')
     args = parser.parse_args()
 
-    if args.build_image is None and args.run_test is None:
+    if args.build_image is None and args.build_and_test is None:
         parser.error('Either image or test must be provided')
 
     return args
@@ -246,25 +248,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.build_image == NvbloxImage.DEPS:
-        DependenciesImage(args=args).build()
-    elif args.build_image == NvbloxImage.BUILD:
-        BuildImage(args).build()
-    elif args.build_image == NvbloxImage.REALSENSE:
-        RealsenseImage(args).build()
-    elif args.build_image == NvbloxImage.DOCS:
-        DocsImage(args).build()
-    elif args.build_image == NvbloxImage.LINT:
-        LintImage(args).build()
-    elif args.run_test == NvbloxTests.CPP:
-        CppUnitTests(args).run()
-    elif args.run_test == NvbloxTests.PYTHON:
-        PythonUnitTests(args).run()
-    elif args.run_test == NvbloxTests.LINT:
-        LintTests(args).run()
-    else:
-        print(f'Invalid test: {args.test}')
-        return 1
+    if args.build_image is not None:
+        image = ARG_TO_IMAGE[args.build_image](args)
+        image.build()
+
+    if args.build_and_test is not None:
+        test = ARG_TO_TEST[args.build_and_test](args)
+        test.run()
 
     return 0
 
