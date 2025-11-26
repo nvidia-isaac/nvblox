@@ -23,8 +23,12 @@ runs:
     - name: Run CPP unit tests
       shell: bash
       run: |
+        echo "::group::Run CPP unit tests"
         ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test cpp
+        echo "::endgroup::"
     - name: Run Python unit tests
       shell: bash
       run: |
+        echo "::group::Run Python unit tests"
         ci/premerge.py --platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --build-and-test python
+        echo "::endgroup::"

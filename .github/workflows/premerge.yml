@@ -11,11 +11,6 @@ jobs:
         with:
           lfs: true
       - name: ${{ github.job }} - Unit tests
-        shell: bash
-        run: |
-          cat ci/premerge.py
-          git log
-      - name: ${{ github.job }} - Unit tests
         uses: ./.github/actions/build-and-test
         with:
           platform: x86_64
