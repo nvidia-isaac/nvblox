@@ -27,7 +27,7 @@ jobs:
   ## Build and test x86/CU11/U22
   ## ------------------------------------------
   premerge_x86_cu11_u22:
-    name: Build and test x86/CU11/U22
+    name: Build&Test x86-CU11-U22
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
@@ -46,7 +46,7 @@ jobs:
   ## Build and test x86/CU12/U22
   ## ------------------------------------------
   premerge_x86_cu12_u22:
-    name: Build and test x86/CU12/U22
+    name: Build&Test x86-CU12-U22
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
@@ -65,7 +65,7 @@ jobs:
   ## Build and test x86/CU13/U24
   ## ------------------------------------------
   premerge_x86_cu13_u24:
-    name: Build and test x86/CU13/U24
+    name: Build&Test x86-CU13-U24
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
@@ -84,7 +84,7 @@ jobs:
   ## Build and test x86/CU12/U22/gcc-sanitizer
   ## --------------------------------------------------------
   premerge_x86_cu12_u22_debug:
-    name: Build and test x86/CU12/U22/gcc-sanitizer
+    name: Build&Test x86-gcc-sanitizer
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
