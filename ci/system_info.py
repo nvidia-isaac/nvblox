@@ -176,3 +176,6 @@ def print_system_info() -> None:
 
     # NVIDIA SMI section
     _print_section('NVIDIA SMI', _nvidia_smi_lines())
+
+    # Ensure it is flushed to the console
+    print('', flush=True)

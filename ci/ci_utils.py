@@ -116,6 +116,7 @@ class DockerImage(ABC):
         user_build_args_str = ', '.join(self.args.user_build_args or [])
         print(f'User build arguments:     {user_build_args_str}')
         print('=' * 80)
+        print('', flush=True)
 
         cmd = [
             'docker', 'build', '-f',
