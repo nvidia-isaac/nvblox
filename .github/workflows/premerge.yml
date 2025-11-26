@@ -11,6 +11,7 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+          clean: true
       - name: ${{ github.job }} - Unit tests
         uses: ./.github/actions/build-and-test
         with:
@@ -27,6 +28,7 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+          clean: true
       - name: ${{ github.job }} - Unit tests
         uses: ./.github/actions/build-and-test
         with:
@@ -43,6 +45,7 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+          clean: true
       - name: ${{ github.job }} - Unit tests
         uses: ./.github/actions/build-and-test
         with:
