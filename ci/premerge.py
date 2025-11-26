@@ -167,6 +167,32 @@ class PythonUnitTests(TestBase):
         return '/nvblox/'
 
 
+class ComputeSanitizer(TestBase):
+    """Run the Compute Sanitizer tests"""
+
+    def get_command(self) -> str:
+        return 'ci/compute_sanitizer.sh'
+
+    def image(self) -> DockerImage:
+        return BuildImage(self.args)
+
+    def get_cwd(self) -> str:
+        return '/nvblox/'
+
+
+class StabilityTest(TestBase):
+    """Run the Stability tests"""
+
+    def get_command(self) -> str:
+        return 'ci/fuser_redwood_apartment.sh'
+
+    def image(self) -> DockerImage:
+        return BuildImage(self.args)
+
+    def get_cwd(self) -> str:
+        return '/nvblox/'
+
+
 # Map cmd line arg to image class.
 ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
     'deps': DependenciesImage,
@@ -179,21 +205,26 @@ ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
 ARG_TO_TEST: Dict[str, Type[TestBase]] = {
     'cpp': CppUnitTests,
     'python': PythonUnitTests,
+    'compute-sanitizer': ComputeSanitizer,
+    'stability': StabilityTest,
 }
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Build nvblox docker images and run tests')
+    parser = argparse.ArgumentParser(
+        description='Build nvblox docker images and run tests inside them.')
     parser.add_argument('--build-image',
                         type=str,
                         choices=ARG_TO_IMAGE.keys(),
                         required=False,
                         help='Docker image to build. Will build the image and then exit.')
-    parser.add_argument('--build-and-test',
-                        type=str,
-                        choices=ARG_TO_TEST.keys(),
-                        required=False,
-                        help='Test to run. Will build also build the necessary image.')
+    parser.add_argument(
+        '--build-and-test',
+        type=str,
+        choices=ARG_TO_TEST.keys(),
+        required=False,
+        help=
+        'Test to run. Will also build the necessary image (no-op if the image is already built).')
     parser.add_argument('--cuda-version',
                         type=CudaVersion,
                         default=CudaVersion.CUDA_12,
