@@ -86,13 +86,22 @@ class BuildImage(DockerImage):
 
     def build_args(self) -> List[str]:
         cuda_arch = self.get_cuda_sm_architecture()
+
+        # Setup args to cmake
         cmake_args = f'-DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
         if self.args.debug_with_sanitizers:
             cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
 
+        # Pytorch is not supported on CUDA 13.
+        if self.args.cuda_version == CudaVersion.CUDA_13:
+            cmake_args += ' -DBUILD_PYTORCH_WRAPPER=0'
+            print('Pytorch is not yet supported on CUDA 13. Disabling pytorch wrapper.')
+
+        # Setup args to docker build
         args = [f'CMAKE_ARGS={cmake_args}']
         if self.args.max_num_jobs is not None:
             args += [f'MAX_NUM_JOBS={self.args.max_num_jobs}']
+
         return args
 
 
