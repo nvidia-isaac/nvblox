@@ -128,26 +128,6 @@ class DocsImage(DockerImage):
         return []
 
 
-class LintImage(DockerImage):
-    """Nvblox lint image. Does not have any internal dependencies."""
-
-    def image_name_base(self) -> str:
-        return 'nvblox_lint'
-
-    def dockerfile_path(self) -> str:
-        return os.path.join('docker', 'Dockerfile.lint')
-
-    def parent_image(self) -> None:
-        return None
-
-    def build_args(self) -> List[str]:
-        return []
-
-    def do_validate_image(self) -> bool:
-        """Lint image is not based on ubunut/cuda so cannot be validated."""
-        return False
-
-
 class CppUnitTests(TestBase):
     """Run the C++ unit tests"""
 
@@ -178,33 +158,18 @@ class PythonUnitTests(TestBase):
         return '/nvblox/'
 
 
-class LintTests(TestBase):
-    """Run the Lint tests"""
-
-    def get_command(self) -> str:
-        return 'bash -c \"ci/lint_nvblox_h.sh && pre-commit run --all-files\"'
-
-    def image(self) -> DockerImage:
-        return LintImage(self.args)
-
-    def get_cwd(self) -> str:
-        return '/nvblox/'
-
-
 # Map cmd line arg to image class.
 ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
     'deps': DependenciesImage,
     'build': BuildImage,
     'realsense': RealsenseImage,
     'docs': DocsImage,
-    'lint': LintImage,
 }
 
 # Map cmd line arg to test class.
 ARG_TO_TEST: Dict[str, Type[TestBase]] = {
     'cpp': CppUnitTests,
     'python': PythonUnitTests,
-    'lint': LintTests,
 }
 
 
