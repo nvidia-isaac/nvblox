@@ -21,7 +21,7 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
   premerge_x86_cu11_u22:
-    name: Build and test x86_64/CUDA 11/Ubuntu 22
+    name: Build and test x86/CU11/U22
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
@@ -37,7 +37,7 @@ jobs:
           ubuntu-version: '22'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
   premerge_x86_cu12_u22:
-    name: Build and test x86_64/CUDA 12/Ubuntu 22
+    name: Build and test x86/CU12/U22
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
@@ -53,7 +53,7 @@ jobs:
           ubuntu-version: '22'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
   premerge_x86_cu13_u24:
-    name: Build and test x86_64/CUDA 13/Ubuntu 24
+    name: Build and test x86/CU13/U24
     needs: [lint_precommit]
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
