@@ -29,7 +29,7 @@ runs:
     - name: Build dependency image
       shell: bash
       run: |
-        echo "::group::Build dependency image"
+        echo "::group::BUILD DEPENDENCY IMAGE"
         time ci/premerge.py   --platform ${{ inputs.platform }} \
                               --cuda-version ${{ inputs.cuda-version }} \
                               --ubuntu-version ${{ inputs.ubuntu-version }} \
@@ -39,7 +39,7 @@ runs:
     - name: Build build image
       shell: bash
       run: |
-        echo "::group::Build binaries image"
+        echo "::group::BUILD BINARIES IMAGE"
         time ci/premerge.py   --platform ${{ inputs.platform }} \
                               --cuda-version ${{ inputs.cuda-version }} \
                               --ubuntu-version ${{ inputs.ubuntu-version }} \
@@ -49,7 +49,7 @@ runs:
     - name: Run CPP unit tests
       shell: bash
       run: |
-        echo "::group::Run CPP unit tests"
+        echo "::group::RUN CPP UNIT TESTS"
         time ci/premerge.py   --platform ${{ inputs.platform }} \
                               --cuda-version ${{ inputs.cuda-version }} \
                               --ubuntu-version ${{ inputs.ubuntu-version }} \
@@ -59,7 +59,7 @@ runs:
     - name: Run Python unit tests
       shell: bash
       run: |
-        echo "::group::Run Python unit tests"
+        echo "::group::RUN PYTHON UNIT TESTS"
         time ci/premerge.py   --platform ${{ inputs.platform }} \
                               --cuda-version ${{ inputs.cuda-version }} \
                               --ubuntu-version ${{ inputs.ubuntu-version }} \
@@ -69,7 +69,7 @@ runs:
     - name: Run CUDA Sanitizer
       shell: bash
       run: |
-        echo "::group::Run CUDA Sanitizer"
+        echo "::group::RUN CUDA SANITIZER"
         time ci/premerge.py   --platform ${{ inputs.platform }} \
                               --cuda-version ${{ inputs.cuda-version }} \
                               --ubuntu-version ${{ inputs.ubuntu-version }} \
@@ -79,7 +79,7 @@ runs:
     - name: Run Large Dataset Stability test
       shell: bash
       run: |
-        echo "::group::Run Large Dataset Stability test"
+        echo "::group::RUN LARGE DATASET STABILITY TEST"
         time ci/premerge.py   --platform ${{ inputs.platform }} \
                               --cuda-version ${{ inputs.cuda-version }} \
                               --ubuntu-version ${{ inputs.ubuntu-version }} \
