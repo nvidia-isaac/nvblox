@@ -93,6 +93,44 @@ class DockerImage(ABC):
         """Full image name with suffix"""
         return self.image_name_base() + '_' + self.image_name_suffix()
 
+    def _parse_and_print_log_from_process(self, process: subprocess.Popen) -> None:
+        """Read from the process' stdout and parse its log.
+            - The log is printed to console unmodified.
+            - Errors and warnings are captured and annotated for GitHub Actions.
+            - If there are too many identical lines in a row, the output is truncated.
+        """
+        # Check each line for these errors and warnings and annotate them for GitHub Actions
+        error_keywords = [
+            'error:',
+            'fatal error:',
+            'cmake error',
+            'cmake fatal error',
+        ]
+        warning_keywords = [
+            'warning:',
+            'cmake warning',
+            'cmake deprecation warning',
+        ]
+
+        # Stop printing if there are too many identical lines in a row.
+        num_identical = 0
+        last_line = None
+        if process.stdout is not None:
+            for line in process.stdout:
+                num_identical = num_identical + 1 if line == last_line else 0
+                last_line = line
+
+                if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
+                    print(line, end='')    # Print live output
+                elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
+                    print(
+                        '::warning :: Truncating output due to too many identical lines in a row.')
+
+                if any(keyword in line.lower() for keyword in error_keywords):
+                    print(f'::error ::{line.strip()}')
+                if any(keyword in line.lower() for keyword in warning_keywords):
+                    print(f'::warning ::{line.strip()}')
+
     def build(self) -> None:
         """Build a docker image from a Dockerfile. First builds the parent image if it exists."""
 
@@ -158,38 +196,8 @@ class DockerImage(ABC):
                 universal_newlines=True,
         ) as process:
 
-            # Check each line for these errors and warnings and annotate them for GitHub Actions
-            error_keywords = [
-                'error:',
-                'fatal error:',
-                'cmake error',
-                'cmake fatal error',
-            ]
-            warning_keywords = [
-                'warning:',
-                'cmake warning',
-                'cmake deprecation warning',
-            ]
+            self._parse_and_print_log_from_process(process)
 
-            # Stop printing if there are too many identical lines in a row.
-            num_identical = 0
-            last_line = None
-            if process.stdout is not None:
-                for line in process.stdout:
-                    num_identical = num_identical + 1 if line == last_line else 0
-                    last_line = line
-
-                    if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
-                        print(line, end='')    # Print live output
-                    elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
-                        print('truncating output...')
-
-                    if any(keyword in line.lower() for keyword in error_keywords):
-                        print(f'::error ::{line.strip()}')
-                    if any(keyword in line.lower() for keyword in warning_keywords):
-                        print(f'::warning ::{line.strip()}')
-
-            # Wait for the process to finish and check the return code
             process.wait()
             assert process.returncode == 0, 'Build failed'
 
