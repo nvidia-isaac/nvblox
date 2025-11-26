@@ -253,9 +253,9 @@ def parse_args() -> argparse.Namespace:
                         default=DEFAULT_MAX_NUM_JOBS,
                         help='Maximum number of jobs to run in parallel (build and ctest).')
     parser.add_argument('--gcc-sanitizer',
-                        type=bool,
+                        type=int,
                         default=False,
-                        help='Build in debug mode with gcc sanitizers enabled.')
+                        help='Build in debug mode with gcc sanitizers enabled.(1=yes, 0=no)')
     args = parser.parse_args()
 
     if args.build_image is None and args.build_and_test is None:

@@ -45,6 +45,9 @@ class CudaSmArchitectures(Enum):
     SM_NATIVE = 'native'
 
 
+MAX_CONSECUTIVE_IDENTICAL_LOG_LINES = 100
+
+
 class DockerImage(ABC):
     """Abstract base class for Docker images.
 
@@ -155,13 +158,32 @@ class DockerImage(ABC):
                 universal_newlines=True,
         ) as process:
 
-            # Check each line for errors and warnings and annotate them for GitHub Actions
-            error_keywords = ['error:', 'fatal error:', 'cmake error', 'cmake fatal error']
-            warning_keywords = ['warning:', 'cmake warning', 'cmake deprecation warning']
+            # Check each line for these errors and warnings and annotate them for GitHub Actions
+            error_keywords = [
+                'error:',
+                'fatal error:',
+                'cmake error',
+                'cmake fatal error',
+            ]
+            warning_keywords = [
+                'warning:',
+                'cmake warning',
+                'cmake deprecation warning',
+            ]
 
+            # Stop printing if there are too many identical lines in a row.
+            num_identical = 0
+            last_line = None
             if process.stdout is not None:
                 for line in process.stdout:
-                    print(line, end='')    # Print live output
+                    num_identical = num_identical + 1 if line == last_line else 0
+                    last_line = line
+
+                    if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
+                        print(line, end='')    # Print live output
+                    elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
+                        print('truncating output...')
+
                     if any(keyword in line.lower() for keyword in error_keywords):
                         print(f'::error ::{line.strip()}')
                     if any(keyword in line.lower() for keyword in warning_keywords):
