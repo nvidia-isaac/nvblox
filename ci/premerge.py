@@ -262,6 +262,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     print_system_info()
+    sys.exit(1)
 
     if args.build_image is not None:
         image = ARG_TO_IMAGE[args.build_image](args)
