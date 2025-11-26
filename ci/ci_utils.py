@@ -119,8 +119,14 @@ class DockerImage(ABC):
         print('', flush=True)
 
         cmd = [
-            'docker', 'build', '-f',
-            self.dockerfile_path(), '-t', image_name, '--network=host', '--progress=plain'
+            'docker',
+            'build',
+            '-f',
+            self.dockerfile_path(),
+            '-t',
+            image_name,
+            '--network=host',
+            '--progress=plain',
         ]
 
         if parent is not None:
@@ -138,7 +144,32 @@ class DockerImage(ABC):
         cmd += ['.']
 
         print(' '.join(cmd))
-        subprocess.run(cmd, check=True)
+
+        # Run the subprocess and redirect stderr to stdout
+        with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+        ) as process:
+
+            # Check each line for errors and warnings and annotate them for GitHub Actions
+            error_keywords = ['error:', 'fatal error:', 'cmake error', 'cmake fatal error']
+            warning_keywords = ['warning:', 'cmake warning', 'cmake deprecation warning']
+
+            if process.stdout is not None:
+                for line in process.stdout:
+                    print(line, end='')    # Print live output
+                    if any(keyword in line.lower() for keyword in error_keywords):
+                        print(f'::error ::{line.strip()}')
+                    if any(keyword in line.lower() for keyword in warning_keywords):
+                        print(f'::warning ::{line.strip()}')
+
+            # Wait for the process to finish and check the return code
+            process.wait()
+            assert process.returncode == 0, 'Build failed'
 
         if self.do_validate_image():
             self._validate()
@@ -152,7 +183,8 @@ class DockerImage(ABC):
              self.image_name(), 'lsb_release', '-a'],
             check=True,
             capture_output=True,
-            text=True)
+            text=True,
+        )
         expected_ubuntu = f'Ubuntu {self.args.ubuntu_version.value}'
         assert expected_ubuntu in lsb_release_result.stdout, (
             f'Failed to find the correct ubuntu version. '
@@ -164,7 +196,8 @@ class DockerImage(ABC):
              self.image_name(), 'nvcc', '--version'],
             check=True,
             capture_output=True,
-            text=True)
+            text=True,
+        )
         expected_cuda = f'cuda_{self.args.cuda_version.value}'
         assert expected_cuda in cuda_version_result.stdout, (
             f'Failed to find the correct cuda version. '
@@ -222,7 +255,7 @@ class OsImage(DockerImage):
             },
         },
         Platform.JETPACK_5: 'nvcr.io/nvidia/l4t-jetpack:r35.4.1',
-        Platform.JETPACK_6: 'nvcr.io/nvidia/l4t-jetpack:r36.3.0'
+        Platform.JETPACK_6: 'nvcr.io/nvidia/l4t-jetpack:r36.3.0',
     }
 
     def get_os_image_name(self) -> str:
