@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+# property and proprietary rights in and to this material, related
+# documentation and any modifications thereto. Any use, reproduction,
+# disclosure or distribution of this material and related documentation
+# without an express license agreement from NVIDIA CORPORATION or
+# its affiliates is strictly prohibited.
+#
 """Nvblox CI script for building Docker images and running tests.
 
 This script provides a command-line interface for building nvblox Docker images
@@ -20,6 +30,7 @@ from ci_utils import (
     UbuntuVersion,
     OsImage,
 )
+from system_info import print_system_info
 
 DEFAULT_MAX_NUM_JOBS = 8
 
@@ -250,6 +261,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    print_system_info()
+
     if args.build_image is not None:
         image = ARG_TO_IMAGE[args.build_image](args)
         image.build()
