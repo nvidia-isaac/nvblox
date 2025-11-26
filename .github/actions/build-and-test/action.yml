@@ -10,6 +10,10 @@ inputs:
   ubuntu-version:
     description: 'Ubuntu version'
     required: true
+  gcc-sanitizer:
+    description: 'Build in debug mode with gcc sanitizers enabled'
+    required: false
+    default: 0
   ngc-api-key:
     description: 'NGC API Key for authentication'
     required: true
@@ -27,6 +31,7 @@ runs:
         ci/premerge.py  --platform ${{ inputs.platform }} \
                         --cuda-version ${{ inputs.cuda-version }} \
                         --ubuntu-version ${{ inputs.ubuntu-version }} \
+                        --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
                         --build-and-test cpp
         echo "::endgroup::"
     - name: Run Python unit tests
@@ -36,16 +41,18 @@ runs:
         ci/premerge.py  --platform ${{ inputs.platform }} \
                         --cuda-version ${{ inputs.cuda-version }} \
                         --ubuntu-version ${{ inputs.ubuntu-version }} \
+                        --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
                         --build-and-test python
         echo "::endgroup::"
-    - name: Run Compute Sanitizer
+    - name: Run CUDA Sanitizer
       shell: bash
       run: |
-        echo "::group::Run Compute Sanitizer"
+        echo "::group::Run CUDA Sanitizer"
         ci/premerge.py  --platform ${{ inputs.platform }} \
                         --cuda-version ${{ inputs.cuda-version }} \
                         --ubuntu-version ${{ inputs.ubuntu-version }} \
-                        --build-and-test compute-sanitizer
+                        --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                        --build-and-test cuda-sanitizer
         echo "::endgroup::"
     - name: Run Large Dataset Stability test
       shell: bash
@@ -54,5 +61,6 @@ runs:
         ci/premerge.py  --platform ${{ inputs.platform }} \
                         --cuda-version ${{ inputs.cuda-version }} \
                         --ubuntu-version ${{ inputs.ubuntu-version }} \
+                        --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
                         --build-and-test stability
         echo "::endgroup::"

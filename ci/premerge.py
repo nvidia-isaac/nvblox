@@ -89,7 +89,7 @@ class BuildImage(DockerImage):
 
         # Setup args to cmake
         cmake_args = f'-DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
-        if self.args.debug_with_sanitizers:
+        if self.args.gcc_sanitizer == 1:
             cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
 
         # Pytorch is not supported on CUDA 13.
@@ -167,8 +167,8 @@ class PythonUnitTests(TestBase):
         return '/nvblox/'
 
 
-class ComputeSanitizer(TestBase):
-    """Run the Compute Sanitizer tests"""
+class CudaSanitizer(TestBase):
+    """Run the CUDA Sanitizer tests"""
 
     def get_command(self) -> str:
         return 'ci/compute_sanitizer.sh'
@@ -205,7 +205,7 @@ ARG_TO_IMAGE: Dict[str, Type[DockerImage]] = {
 ARG_TO_TEST: Dict[str, Type[TestBase]] = {
     'cpp': CppUnitTests,
     'python': PythonUnitTests,
-    'compute-sanitizer': ComputeSanitizer,
+    'cuda-sanitizer': CudaSanitizer,
     'stability': StabilityTest,
 }
 
@@ -252,9 +252,9 @@ def parse_args() -> argparse.Namespace:
                         required=False,
                         default=DEFAULT_MAX_NUM_JOBS,
                         help='Maximum number of jobs to run in parallel (build and ctest).')
-    parser.add_argument('--debug-with-sanitizers',
-                        action='store_true',
-                        required=False,
+    parser.add_argument('--gcc-sanitizer',
+                        type=bool,
+                        default=False,
                         help='Build in debug mode with gcc sanitizers enabled.')
     args = parser.parse_args()
 

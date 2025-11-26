@@ -2,6 +2,9 @@ name: nvblox premerge
 on:
   pull_request:
 jobs:
+  ## ------------------------------------------
+  ## Linting and formatting
+  ## ------------------------------------------
   lint_precommit:
     name: pre-commit
     runs-on: ubuntu-latest
@@ -20,6 +23,9 @@ jobs:
           pip install pre-commit clang-format==14.0.6
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
+  ## ------------------------------------------
+  ## Build and test x86/CU11/U22
+  ## ------------------------------------------
   premerge_x86_cu11_u22:
     name: Build and test x86/CU11/U22
     needs: [lint_precommit]
@@ -36,6 +42,9 @@ jobs:
           cuda-version: '11'
           ubuntu-version: '22'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
+  ## ------------------------------------------
+  ## Build and test x86/CU12/U22
+  ## ------------------------------------------
   premerge_x86_cu12_u22:
     name: Build and test x86/CU12/U22
     needs: [lint_precommit]
@@ -52,6 +61,9 @@ jobs:
           cuda-version: '12'
           ubuntu-version: '22'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
+  ## ------------------------------------------
+  ## Build and test x86/CU13/U24
+  ## ------------------------------------------
   premerge_x86_cu13_u24:
     name: Build and test x86/CU13/U24
     needs: [lint_precommit]
@@ -67,4 +79,24 @@ jobs:
           platform: x86_64
           cuda-version: '13'
           ubuntu-version: '24'
+          ngc-api-key: ${{ secrets.NGC_API_KEY }}
+  ## --------------------------------------------------------
+  ## Build and test x86/CU12/U22/gcc-sanitizer
+  ## --------------------------------------------------------
+  premerge_x86_cu12_u22_debug:
+    name: Build and test x86/CU12/U22/gcc-sanitizer
+    needs: [lint_precommit]
+    runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: premerge_x86_cu12_u22_debug - Unit tests
+        uses: ./.github/actions/build-and-test
+        with:
+          platform: x86_64
+          cuda-version: '12'
+          ubuntu-version: '22'
+          gcc-sanitizer: 1
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
