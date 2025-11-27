@@ -197,7 +197,7 @@ if(NOT USE_SANITIZER)
     add_nvblox_executable(
       run_memcpy_on_default_cuda_stream SOURCE_FILES
       run_memcpy_on_default_cuda_stream.cpp LINK_LIBRARIES_PUBLIC nvblox_lib)
-    add_test(test_default_stream_utilization
+    add_test(test_default_stream_utilization bash
              ${CMAKE_CURRENT_SOURCE_DIR}/check_default_stream_utilization.sh)
   endif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
 endif(NOT USE_SANITIZER)
