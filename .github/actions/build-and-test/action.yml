@@ -30,59 +30,59 @@ runs:
       shell: bash
       run: |
         echo "::group::BUILD DEPENDENCY IMAGE"
-        time ci/premerge.py   --platform ${{ inputs.platform }} \
-                              --cuda-version ${{ inputs.cuda-version }} \
-                              --ubuntu-version ${{ inputs.ubuntu-version }} \
-                              --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                              --build-image deps
+        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
+                                      --cuda-version ${{ inputs.cuda-version }} \
+                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
+                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                                      --build-image deps
         echo "::endgroup::"
     - name: Build build image
       shell: bash
       run: |
         echo "::group::BUILD BINARIES IMAGE"
-        time ci/premerge.py   --platform ${{ inputs.platform }} \
-                              --cuda-version ${{ inputs.cuda-version }} \
-                              --ubuntu-version ${{ inputs.ubuntu-version }} \
-                              --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                              --build-image build
+        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
+                                      --cuda-version ${{ inputs.cuda-version }} \
+                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
+                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                                      --build-image build
         echo "::endgroup::"
     - name: Run CPP unit tests
       shell: bash
       run: |
         echo "::group::RUN CPP UNIT TESTS"
-        time ci/premerge.py   --platform ${{ inputs.platform }} \
-                              --cuda-version ${{ inputs.cuda-version }} \
-                              --ubuntu-version ${{ inputs.ubuntu-version }} \
-                              --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                              --build-and-test cpp
+        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
+                                      --cuda-version ${{ inputs.cuda-version }} \
+                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
+                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                                      --build-and-test cpp
         echo "::endgroup::"
     - name: Run Python unit tests
       shell: bash
       run: |
         echo "::group::RUN PYTHON UNIT TESTS"
-        time ci/premerge.py   --platform ${{ inputs.platform }} \
-                              --cuda-version ${{ inputs.cuda-version }} \
-                              --ubuntu-version ${{ inputs.ubuntu-version }} \
-                              --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                              --build-and-test python
+        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
+                                      --cuda-version ${{ inputs.cuda-version }} \
+                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
+                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                                      --build-and-test python
         echo "::endgroup::"
     - name: Run CUDA Sanitizer
       shell: bash
       run: |
         echo "::group::RUN CUDA SANITIZER"
-        time ci/premerge.py   --platform ${{ inputs.platform }} \
-                              --cuda-version ${{ inputs.cuda-version }} \
-                              --ubuntu-version ${{ inputs.ubuntu-version }} \
-                              --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                              --build-and-test cuda-sanitizer
+        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
+                                      --cuda-version ${{ inputs.cuda-version }} \
+                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
+                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                                      --build-and-test cuda-sanitizer
         echo "::endgroup::"
     - name: Run Large Dataset Stability test
       shell: bash
       run: |
         echo "::group::RUN LARGE DATASET STABILITY TEST"
-        time ci/premerge.py   --platform ${{ inputs.platform }} \
-                              --cuda-version ${{ inputs.cuda-version }} \
-                              --ubuntu-version ${{ inputs.ubuntu-version }} \
-                              --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                              --build-and-test stability
+        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
+                                      --cuda-version ${{ inputs.cuda-version }} \
+                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
+                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
+                                      --build-and-test stability
         echo "::endgroup::"
