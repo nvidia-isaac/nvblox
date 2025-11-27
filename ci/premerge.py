@@ -157,9 +157,13 @@ class PythonUnitTests(TestBase):
     """Run the Python unit tests"""
 
     def get_command(self) -> str:
-        cmd = '. /opt/venv/bin/activate && '
-        cmd += 'pytest --capture=no /opt/venv/lib/*/site-packages/nvblox_torch'
-        return cmd
+
+        if self.args.cuda_version == CudaVersion.CUDA_13:
+            return 'echo ::warning :: Pytorch not supported on CUDA 13. Skipping Python tests.'
+        else:
+            cmd = '. /opt/venv/bin/activate && '
+            cmd += 'pytest --capture=no /opt/venv/lib/*/site-packages/nvblox_torch'
+            return cmd
 
     def image(self) -> DockerImage:
         return BuildImage(self.args)
