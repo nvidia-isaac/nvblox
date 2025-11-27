@@ -107,29 +107,29 @@ class DockerImage(ABC):
             'cmake fatal error',
         ]
         warning_keywords = [
-            'warning:',
-            'cmake warning',
-            'cmake deprecation warning',
+            'warning:', 'cmake warning', 'cmake deprecation warning', 'permission denied'
         ]
 
-        # Stop printing if there are too many identical lines in a row.
+        # Count successive identical lines.
         num_identical = 0
         last_line = None
+
+        # Parse output line by line.
         if process.stdout is not None:
             for line in process.stdout:
                 num_identical = num_identical + 1 if line == last_line else 0
                 last_line = line
 
+                # Only print if there are not too many identical lines in a row.
                 if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
                     print(line, end='')    # Print live output
+                    if any(keyword in line.lower() for keyword in error_keywords):
+                        print(f'::error ::{line.strip()}')
+                    if any(keyword in line.lower() for keyword in warning_keywords):
+                        print(f'::warning ::{line.strip()}')
                 elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
                     print(
                         '::warning :: Truncating output due to too many identical lines in a row.')
-
-                if any(keyword in line.lower() for keyword in error_keywords):
-                    print(f'::error ::{line.strip()}')
-                if any(keyword in line.lower() for keyword in warning_keywords):
-                    print(f'::warning ::{line.strip()}')
 
     def build(self) -> None:
         """Build a docker image from a Dockerfile. First builds the parent image if it exists."""
