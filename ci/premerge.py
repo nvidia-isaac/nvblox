@@ -88,7 +88,7 @@ class BuildImage(DockerImage):
         cuda_arch = self.get_cuda_sm_architecture()
 
         # Setup args to cmake
-        cmake_args = f'-DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
+        cmake_args = f'-DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
         if self.args.gcc_sanitizer == 1:
             cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
 
@@ -142,7 +142,7 @@ class CppUnitTests(TestBase):
 
     def get_command(self) -> str:
         num_jobs = self.args.max_num_jobs
-        return (f'ctest -j{num_jobs} --verbose -T test '
+        return (f'ctest -j{num_jobs} -T test '
                 f'--no-compress-output')
 
     def image(self) -> DockerImage:
