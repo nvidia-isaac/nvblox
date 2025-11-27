@@ -47,11 +47,11 @@ RUN umask 000 && . /opt/venv/bin/activate && \
 
 # Install cmake.
 COPY docker/install_cmake.sh /
-RUN /install_cmake.sh
+RUN bash /install_cmake.sh
 
 # Install ccache. We need a recent version for improved nvcc support.
 COPY docker/install_ccache.sh /
-RUN /install_ccache.sh
+RUN bash /install_ccache.sh
 
 # Make sure we're using text-based interactive terminal.
 ENV DEBIAN_FRONTEND teletype
