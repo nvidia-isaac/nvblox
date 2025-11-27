@@ -19,7 +19,8 @@ import argparse
 import subprocess
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
+import re
 
 
 class Platform(Enum):
@@ -93,22 +94,71 @@ class DockerImage(ABC):
         """Full image name with suffix"""
         return self.image_name_base() + '_' + self.image_name_suffix()
 
+    def _try_parse_gcc_output_line(self, line: str) -> Tuple[Optional[str], Optional[int]]:
+        """Try to extract file path and line number from gcc/clang/cmake-style output"""
+        # Example: /path/to/file.cpp:LINE:
+        match = re.search(r'([^\s:]+):(\d+)(?::\d+)?[ :]', line)
+        if match:
+            return match.group(1), int(match.group(2))
+        return None, None
+
+    def _try_parse_nvcc_output_line(self, line: str) -> Tuple[Optional[str], Optional[int]]:
+        """Try to extract file path and line number from nvcc output"""
+        # Example: /path/to/file.cu(LINE):
+        match = re.search(r'([^\s:()]+)\((\d+)\)[ :]', line)
+        if match:
+            return match.group(1), int(match.group(2))
+        return None, None
+
+    def _maybe_print_github_annotation(self, line: str) -> None:
+        """Print a line as a GitHub Actions annotation."""
+
+        error_keywords = [
+        # gcc/nvcc
+            'error:',
+            'fatal error:',
+        # cmake
+            'cmake error',
+            'cmake fatal error',
+        ]
+        warning_keywords = [
+        # gcc
+            'warning:',
+        # nvcc
+            'warning #',
+        # Cmake
+            'cmake warning',
+            'cmake deprecation warning',
+        # various
+            'permission denied',
+        ]
+
+        title = None
+        if any(keyword in line.lower() for keyword in error_keywords):
+            title = '::error'
+        if any(keyword in line.lower() for keyword in warning_keywords):
+            title = '::warning'
+
+        # Warning or error found. Print as GitHub Actions annotation.
+        if title is not None:
+            # Try to extract file path and line number from output.
+            file_path, line_number = self._try_parse_gcc_output_line(line)
+            if file_path is None or line_number is None:
+                file_path, line_number = self._try_parse_nvcc_output_line(line)
+
+            if file_path is None or line_number is None:
+                print(f'{title} ::{line.strip()}')
+            else:
+                # Make file path relative to nvblox root.
+                file_path = file_path.replace('/nvblox/', '')
+                print(f'{title} file={file_path},line={line_number} ::{line.strip()}')
+
     def _parse_and_print_log_from_process(self, process: subprocess.Popen) -> None:
         """Read from the process' stdout and parse its log.
             - The log is printed to console unmodified.
             - Errors and warnings are captured and annotated for GitHub Actions.
             - If there are too many identical lines in a row, the output is truncated.
         """
-        # Check each line for these errors and warnings and annotate them for GitHub Actions
-        error_keywords = [
-            'error:',
-            'fatal error:',
-            'cmake error',
-            'cmake fatal error',
-        ]
-        warning_keywords = [
-            'warning:', 'cmake warning', 'cmake deprecation warning', 'permission denied'
-        ]
 
         # Count successive identical lines.
         num_identical = 0
@@ -122,11 +172,11 @@ class DockerImage(ABC):
 
                 # Only print if there are not too many identical lines in a row.
                 if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
-                    print(line, end='')    # Print live output
-                    if any(keyword in line.lower() for keyword in error_keywords):
-                        print(f'::error ::{line.strip()}')
-                    if any(keyword in line.lower() for keyword in warning_keywords):
-                        print(f'::warning ::{line.strip()}')
+                    # Print live output
+                    print(line, end='')
+
+                    # Print errors and warnings as GitHub Actions annotations.
+                    self._maybe_print_github_annotation(line)
                 elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
                     print(
                         '::warning :: Truncating output due to too many identical lines in a row.')

@@ -74,7 +74,7 @@ class BuildImage(DockerImage):
             arch = command_output.decode('utf-8').split()[1].replace('.', '')
             return arch
         except FileNotFoundError:
-            print('ERROR:nvidia-smi not found. Cannot detect native CUDA SM architecture.')
+            print('::error :: nvidia-smi not found. Cannot detect native CUDA SM architecture.')
             raise
 
     def get_cuda_sm_architecture(self) -> str:
@@ -88,14 +88,15 @@ class BuildImage(DockerImage):
         cuda_arch = self.get_cuda_sm_architecture()
 
         # Setup args to cmake
-        cmake_args = f'-DCMAKE_CUDA_ARCHITECTURES={cuda_arch}'
+        cmake_args = f'-DCMAKE_CUDA_ARCHITECTURES={cuda_arch} -DWARNING_AS_ERROR=1'
         if self.args.gcc_sanitizer == 1:
             cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
 
         # Pytorch is not supported on CUDA 13.
         if self.args.cuda_version == CudaVersion.CUDA_13:
             cmake_args += ' -DBUILD_PYTORCH_WRAPPER=0'
-            print('Pytorch is not yet supported on CUDA 13. Disabling pytorch wrapper.')
+            print(
+                '::warning :: Pytorch is not yet supported on CUDA 13. Disabling pytorch wrapper.')
 
         # Setup args to docker build
         args = [f'CMAKE_ARGS={cmake_args}']
