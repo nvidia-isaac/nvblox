@@ -176,7 +176,7 @@ class CudaSanitizer(TestBase):
     """Run the CUDA Sanitizer tests"""
 
     def get_command(self) -> str:
-        return 'ci/compute_sanitizer.sh'
+        return 'bash ci/compute_sanitizer.sh'
 
     def image(self) -> DockerImage:
         return BuildImage(self.args)
@@ -189,7 +189,7 @@ class StabilityTest(TestBase):
     """Run the Stability tests"""
 
     def get_command(self) -> str:
-        return 'ci/fuser_redwood_apartment.sh'
+        return 'bash ci/fuser_redwood_apartment.sh'
 
     def image(self) -> DockerImage:
         return BuildImage(self.args)
