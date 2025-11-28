@@ -49,6 +49,108 @@ class CudaSmArchitectures(Enum):
 MAX_CONSECUTIVE_IDENTICAL_LOG_LINES = 100
 
 
+def _try_parse_gcc_output_line(line: str) -> Tuple[Optional[str], Optional[int]]:
+    """Try to extract file path and line number from gcc/clang/cmake-style output"""
+    # Example: /path/to/file.cpp:LINE:
+    match = re.search(r'([^\s:]+):(\d+)(?::\d+)?[ :]', line)
+    if match:
+        return match.group(1), int(match.group(2))
+    return None, None
+
+
+def _try_parse_nvcc_output_line(line: str) -> Tuple[Optional[str], Optional[int]]:
+    """Try to extract file path and line number from nvcc output"""
+    # Example: /path/to/file.cu(LINE):
+    match = re.search(r'([^\s:()]+)\((\d+)\)[ :]', line)
+    if match:
+        return match.group(1), int(match.group(2))
+    return None, None
+
+
+def _maybe_print_github_annotation(line: str) -> None:
+    """Print a line as a GitHub Actions annotation."""
+
+    error_keywords = [
+    # gcc/nvcc
+        'error:',
+        'fatal error:',
+    # cmake
+        'cmake error',
+        'cmake fatal error',
+    ]
+    warning_keywords = [
+    # gcc
+        'warning:',
+    # nvcc
+        'warning #',
+    # Cmake
+        'cmake warning',
+        'cmake deprecation warning',
+    # various
+        'permission denied',
+    ]
+
+    title = None
+    if any(keyword in line.lower() for keyword in error_keywords):
+        title = '::error'
+    if any(keyword in line.lower() for keyword in warning_keywords):
+        title = '::warning'
+
+    # Warning or error found. Print as GitHub Actions annotation.
+    if title is not None:
+        # Try to extract file path and line number from output.
+        file_path, line_number = _try_parse_gcc_output_line(line)
+        if file_path is None or line_number is None:
+            file_path, line_number = _try_parse_nvcc_output_line(line)
+
+        if file_path is None or line_number is None:
+            print(f'{title} ::{line.strip()}')
+        else:
+            # Make file path relative to nvblox root.
+            file_path = file_path.replace('/nvblox/', '')
+            print(f'{title} file={file_path},line={line_number} ::{line.strip()}')
+
+
+def _run_and_parse_log(cmd: List[str]) -> None:
+    """Run a command and parse its log.
+        - The log is printed to console unmodified.
+        - Errors and warnings are captured and annotated for GitHub Actions.
+        - If there are too many identical lines in a row, the output is truncated.
+    """
+    # Run the subprocess and redirect stderr to stdout
+    with subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True,
+    ) as process:
+
+        # Count successive identical lines.
+        num_identical = 0
+        last_line = None
+
+        # Parse output line by line.
+        if process.stdout is not None:
+            for line in process.stdout:
+                num_identical = num_identical + 1 if line == last_line else 0
+                last_line = line
+
+                # Only print if there are not too many identical lines in a row.
+                if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
+                    # Print live output
+                    print(line, end='')
+
+                    # Print errors and warnings as GitHub Actions annotations.
+                    _maybe_print_github_annotation(line)
+                elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
+                    print(
+                        '::warning :: Truncating output due to too many identical lines in a row.')
+
+        assert process.wait() == 0, 'Command failed'
+
+
 class DockerImage(ABC):
     """Abstract base class for Docker images.
 
@@ -93,93 +195,6 @@ class DockerImage(ABC):
     def image_name(self) -> str:
         """Full image name with suffix"""
         return self.image_name_base() + '_' + self.image_name_suffix()
-
-    def _try_parse_gcc_output_line(self, line: str) -> Tuple[Optional[str], Optional[int]]:
-        """Try to extract file path and line number from gcc/clang/cmake-style output"""
-        # Example: /path/to/file.cpp:LINE:
-        match = re.search(r'([^\s:]+):(\d+)(?::\d+)?[ :]', line)
-        if match:
-            return match.group(1), int(match.group(2))
-        return None, None
-
-    def _try_parse_nvcc_output_line(self, line: str) -> Tuple[Optional[str], Optional[int]]:
-        """Try to extract file path and line number from nvcc output"""
-        # Example: /path/to/file.cu(LINE):
-        match = re.search(r'([^\s:()]+)\((\d+)\)[ :]', line)
-        if match:
-            return match.group(1), int(match.group(2))
-        return None, None
-
-    def _maybe_print_github_annotation(self, line: str) -> None:
-        """Print a line as a GitHub Actions annotation."""
-
-        error_keywords = [
-        # gcc/nvcc
-            'error:',
-            'fatal error:',
-        # cmake
-            'cmake error',
-            'cmake fatal error',
-        ]
-        warning_keywords = [
-        # gcc
-            'warning:',
-        # nvcc
-            'warning #',
-        # Cmake
-            'cmake warning',
-            'cmake deprecation warning',
-        # various
-            'permission denied',
-        ]
-
-        title = None
-        if any(keyword in line.lower() for keyword in error_keywords):
-            title = '::error'
-        if any(keyword in line.lower() for keyword in warning_keywords):
-            title = '::warning'
-
-        # Warning or error found. Print as GitHub Actions annotation.
-        if title is not None:
-            # Try to extract file path and line number from output.
-            file_path, line_number = self._try_parse_gcc_output_line(line)
-            if file_path is None or line_number is None:
-                file_path, line_number = self._try_parse_nvcc_output_line(line)
-
-            if file_path is None or line_number is None:
-                print(f'{title} ::{line.strip()}')
-            else:
-                # Make file path relative to nvblox root.
-                file_path = file_path.replace('/nvblox/', '')
-                print(f'{title} file={file_path},line={line_number} ::{line.strip()}')
-
-    def _parse_and_print_log_from_process(self, process: subprocess.Popen) -> None:
-        """Read from the process' stdout and parse its log.
-            - The log is printed to console unmodified.
-            - Errors and warnings are captured and annotated for GitHub Actions.
-            - If there are too many identical lines in a row, the output is truncated.
-        """
-
-        # Count successive identical lines.
-        num_identical = 0
-        last_line = None
-
-        # Parse output line by line.
-        if process.stdout is not None:
-            for line in process.stdout:
-                num_identical = num_identical + 1 if line == last_line else 0
-                last_line = line
-
-                # Only print if there are not too many identical lines in a row.
-                if num_identical < MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
-                    # Print live output
-                    print(line, end='')
-
-                    # Print errors and warnings as GitHub Actions annotations.
-                    self._maybe_print_github_annotation(line)
-                elif num_identical == MAX_CONSECUTIVE_IDENTICAL_LOG_LINES:
-                    print(
-                        '::warning :: Truncating output due to too many identical lines in a row.')
 
     def build(self) -> None:
         """Build a docker image from a Dockerfile. First builds the parent image if it exists."""
@@ -236,20 +251,7 @@ class DockerImage(ABC):
 
         print(' '.join(cmd))
 
-        # Run the subprocess and redirect stderr to stdout
-        with subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
-        ) as process:
-
-            self._parse_and_print_log_from_process(process)
-
-            process.wait()
-            assert process.returncode == 0, 'Build failed'
+        _run_and_parse_log(cmd)
 
         if self.do_validate_image():
             self._validate()
@@ -314,7 +316,8 @@ class TestBase(ABC):
         cwd = self.get_cwd()
         cmd = self.get_command()
         full_cmd = docker_cmd + ['bash', '-c'] + [f'cd {cwd} && {cmd}']
-        subprocess.run(full_cmd, check=True)
+
+        _run_and_parse_log(full_cmd)
 
 
 class OsImage(DockerImage):
