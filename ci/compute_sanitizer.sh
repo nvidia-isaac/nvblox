@@ -45,6 +45,6 @@ done
 # Launch all commands in parallel
 (
     cd $TEST_DIR
-    cat $JOB_FILE | parallel --halt-on-error now,fail=1  -j8
+    cat $JOB_FILE | parallel --halt-on-error now,fail=1  -j4
     rm $JOB_FILE
 )
