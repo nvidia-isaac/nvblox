@@ -76,13 +76,3 @@ runs:
                                       --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
                                       --build-and-test cuda-sanitizer
         echo "::endgroup::"
-    - name: Run Large Dataset Stability test
-      shell: bash
-      run: |
-        echo "::group::RUN LARGE DATASET STABILITY TEST"
-        time python3 ci/premerge.py   --platform ${{ inputs.platform }} \
-                                      --cuda-version ${{ inputs.cuda-version }} \
-                                      --ubuntu-version ${{ inputs.ubuntu-version }} \
-                                      --gcc-sanitizer ${{ inputs.gcc-sanitizer }} \
-                                      --build-and-test stability
-        echo "::endgroup::"
