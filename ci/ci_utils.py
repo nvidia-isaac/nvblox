@@ -113,9 +113,9 @@ def _maybe_print_github_annotation(line: str) -> None:
 
 def _run_and_parse_log(cmd: List[str]) -> None:
     """Run a command and parse its log.
-        - The log is printed to console unmodified.
-        - Errors and warnings are captured and annotated for GitHub Actions.
-        - If there are too many identical lines in a row, the output is truncated.
+    - The log is printed to console unmodified.
+    - Errors and warnings are captured and annotated for GitHub Actions.
+    - If there are too many identical lines in a row, the output is truncated.
     """
     # Run the subprocess and redirect stderr to stdout
     with subprocess.Popen(
@@ -189,8 +189,11 @@ class DockerImage(ABC):
 
     def image_name_suffix(self) -> str:
         """Platform/arch dependent suffix for the image name"""
-        return (f'{self.args.platform.value}_cu{self.args.cuda_version.value}'
-                f'_u{self.args.ubuntu_version.value}')
+        suffix = (f'{self.args.platform.value}_cu{self.args.cuda_version.value}'
+                  f'_u{self.args.ubuntu_version.value}')
+        if self.args.gcc_sanitizer == 1:
+            suffix += '_gsan'
+        return suffix
 
     def image_name(self) -> str:
         """Full image name with suffix"""
