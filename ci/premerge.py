@@ -143,7 +143,8 @@ class CppUnitTests(TestBase):
 
     def get_command(self) -> str:
         num_jobs = self.args.max_num_jobs
-        return (f'ctest -j{num_jobs} -T test -VV'
+        # Need to disable random virtual address space for gcc-sanitizer to work.
+        return (f'setarch $(uname -m) --addr-no-randomize && ctest -j{num_jobs} -T test -VV'
                 f'--no-compress-output')
 
     def image(self) -> DockerImage:
