@@ -77,7 +77,7 @@ class ProjectiveIntegrator {
   /// See max_integration_distance_m().
   /// @param max_integration_distance_m the maximum integration distance in
   /// meters.
-  void max_integration_distance_m(float max_integration_distance_m);
+  virtual void max_integration_distance_m(float max_integration_distance_m);
 
   /// Returns the object used to calculate the blocks in camera views.
   const ViewCalculator& view_calculator() const;

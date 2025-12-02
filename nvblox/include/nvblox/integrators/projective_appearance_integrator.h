@@ -107,6 +107,12 @@ class ProjectiveAppearanceIntegrator
   /// @return The truncation distance
   float get_truncation_distance_m(float voxel_size) const;
 
+  /// A parameter setter which additionally updates the sphere tracer's maximum
+  /// ray length. See max_integration_distance_m().
+  /// @param max_integration_distance_m the maximum integration distance in
+  /// meters.
+  void max_integration_distance_m(float max_integration_distance_m) override;
+
   /// A parameter setter
   /// See max_weight().
   /// @param max_weight the maximum weight of a voxel.
