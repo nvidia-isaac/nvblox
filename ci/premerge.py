@@ -143,7 +143,7 @@ class CppUnitTests(TestBase):
 
     def get_command(self) -> str:
         num_jobs = self.args.max_num_jobs
-        return (f'ctest -j{num_jobs} -T test '
+        return (f'ctest -j{num_jobs} -T test -VV'
                 f'--no-compress-output')
 
     def image(self) -> DockerImage:
