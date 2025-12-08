@@ -32,7 +32,9 @@ jobs:
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
       - name: Checkout Code
-        uses: ./.github/actions/checkout-code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: premerge_x86_cu11_u22 - Unit tests
         uses: ./.github/actions/build-and-test
         with:
@@ -49,7 +51,9 @@ jobs:
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
       - name: Checkout Code
-        uses: ./.github/actions/checkout-code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: premerge_x86_cu12_u22 - Unit tests
         uses: ./.github/actions/build-and-test
         with:
@@ -66,7 +70,9 @@ jobs:
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
       - name: Checkout Code
-        uses: ./.github/actions/checkout-code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: premerge_x86_cu13_u24 - Unit tests
         uses: ./.github/actions/build-and-test
         with:
@@ -84,7 +90,9 @@ jobs:
     runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
     steps:
       - name: Checkout Code
-        uses: ./.github/actions/checkout-code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: premerge_x86_cu12_u22_debug - Unit tests
         uses: ./.github/actions/build-and-test
         with:
