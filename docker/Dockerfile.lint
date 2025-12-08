@@ -1,0 +1,23 @@
+# Use a lightweight Python image
+FROM python:3.12.3-slim
+
+# Set the working directory
+WORKDIR /nvblox
+
+# Copy over nvblox
+COPY . /nvblox
+
+# Install system packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    clang-format \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pre-commit
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir pre-commit
+
+# Set the entrypoint to bash
+ENTRYPOINT ["bash"]
