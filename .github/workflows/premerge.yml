@@ -104,3 +104,22 @@ jobs:
           run-python-tests: false # TODO(dtingdahl) Enable these tests
           run-realsense-tests: false #
           run-cuda-sanitizer: false #
+  ## ------------------------------------------
+  ## Build and test Orin
+  ## ------------------------------------------
+  premerge_orin_jetpack6:
+    name: Build&Test orin-jetpack6
+    needs: [lint_precommit]
+    runs-on: [self-hosted, jetson-orin, jetpack-6.2]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: premerge_orin_jetpack6 - Unit tests
+        uses: ./.github/actions/build-and-test
+        with:
+          platform: jetpack6
+          ngc-api-key: ${{ secrets.NGC_API_KEY }}
+          run-realsense-tests: false
+          run-cuda-sanitizer: false
