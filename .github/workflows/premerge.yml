@@ -39,6 +39,7 @@ jobs:
         uses: ./.github/actions/build-and-test
         with:
           platform: x86_64
+          cuda-arch: 'native'
           cuda-version: '11'
           ubuntu-version: '22'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
@@ -58,6 +59,7 @@ jobs:
         uses: ./.github/actions/build-and-test
         with:
           platform: x86_64
+          cuda-arch: 'native'
           cuda-version: '12'
           ubuntu-version: '22'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
@@ -77,6 +79,7 @@ jobs:
         uses: ./.github/actions/build-and-test
         with:
           platform: x86_64
+          cuda-arch: 'native'
           cuda-version: '13'
           ubuntu-version: '24'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
@@ -97,6 +100,7 @@ jobs:
         uses: ./.github/actions/build-and-test
         with:
           platform: x86_64
+          cuda-arch: 'native'
           cuda-version: '12'
           ubuntu-version: '22'
           gcc-sanitizer: 1
@@ -122,6 +126,7 @@ jobs:
           platform: jetpack6
           cuda-version: '12' # unused
           ubuntu-version: '22' # unused
+          cuda-arch: '87' # Native detection of sm-arch not supported on orin.
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
           run-realsense-tests: false
           run-cuda-sanitizer: false

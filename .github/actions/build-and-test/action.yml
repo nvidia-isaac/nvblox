@@ -4,6 +4,9 @@ inputs:
   platform:
     description: 'Platform to build for'
     required: true
+  cuda-arch:
+    description: 'CUDA architecture'
+    required: true
   cuda-version:
     description: 'CUDA version'
     required: true
@@ -44,7 +47,7 @@ runs:
       shell: bash
       run: |
         # Store arguments used for all jobs in an environment variable.
-        echo "COMMON_PREMERGE_ARGS=--platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --gcc-sanitizer ${{ inputs.gcc-sanitizer }}" >> $GITHUB_ENV
+        echo "COMMON_PREMERGE_ARGS=--platform ${{ inputs.platform }} --cuda-arch ${{ inputs.cuda-arch }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --gcc-sanitizer ${{ inputs.gcc-sanitizer }}" >> $GITHUB_ENV
     # Note that the two build-image steps could be omitted since the build-and-test steps also build necessary images.
     # However, we separate the steps to get cleaner logs and better timing granularity.
     - name: Build dependency image
