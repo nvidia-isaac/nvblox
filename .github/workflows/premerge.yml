@@ -120,7 +120,8 @@ jobs:
         uses: ./.github/actions/build-and-test
         with:
           platform: jetpack6
-          cuda-version: '12'
+          cuda-version: '12' # unused
+          ubuntu-version: '22' # unused
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
           run-realsense-tests: false
           run-cuda-sanitizer: false
