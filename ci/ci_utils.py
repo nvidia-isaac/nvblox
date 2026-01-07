@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Optional, Tuple
 import re
+import pprint
 
 
 class Platform(Enum):
@@ -337,8 +338,16 @@ class OsImage(DockerImage):
                 UbuntuVersion.UBUNTU_24: 'nvcr.io/nvidia/cuda:13.0.0-devel-ubuntu24.04',
             },
         },
-        Platform.JETPACK_5: 'nvcr.io/nvidia/l4t-jetpack:r35.4.1',
-        Platform.JETPACK_6: 'nvcr.io/nvidia/l4t-jetpack:r36.3.0',
+        Platform.JETPACK_5: {
+            CudaVersion.CUDA_11: {
+                UbuntuVersion.UBUNTU_22: 'nvcr.io/nvidia/l4t-jetpack:r35.4.1'
+            }
+        },
+        Platform.JETPACK_6: {
+            CudaVersion.CUDA_12: {
+                UbuntuVersion.UBUNTU_22: 'nvcr.io/nvidia/l4t-jetpack:r36.3.0'
+            }
+        },
     }
 
     def get_os_image_name(self) -> str:
@@ -348,7 +357,9 @@ class OsImage(DockerImage):
         if os_image is None:
             raise ValueError(f'No OS image available for platform {self.args.platform}, '
                              f'cuda version {self.args.cuda_version}, '
-                             f'and ubuntu version {self.args.ubuntu_version}')
+                             f'and ubuntu version {self.args.ubuntu_version}.\n'
+                             f'Available images:\n'
+                             f'{pprint.pformat(self.AVAILABLE_OS_IMAGES, indent=2)}')
         return os_image
 
     def image_name(self) -> str:
