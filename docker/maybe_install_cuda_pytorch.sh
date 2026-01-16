@@ -6,13 +6,15 @@ set -e
 if [ $SKIP_PYTORCH_INSTALL -eq 0 ]; then
     echo "Installing pytorch"
     . /opt/venv/bin/activate
-    python3 -m pip install --ignore-installed --upgrade pip
-    wget https://nvidia.box.com/shared/static/mp164asf3sceb570wvjsrezk1p4ftj8t.whl -O  /torch-2.3.0-cp310-cp310-linux_aarch64.whl
-    pip install /torch-2.3.0-cp310-cp310-linux_aarch64.whl
-    rm /torch-2.3.0-cp310-cp310-linux_aarch64.whl
-    wget https://nvidia.box.com/shared/static/xpr06qe6ql3l6rj22cu3c45tz1wzi36p.whl -O /torchvision-0.18.0-cp310-cp310-linux_aarch64.whl
-    pip install /torchvision-0.18.0-cp310-cp310-linux_aarch64.whl
-    rm /torchvision-0.18.0-cp310-cp310-linux_aarch64.whl
+    python3 -m pip install --ignore-installed --upgrade pip wheel setuptools
+
+    # Install PyTorch/vision/torchaudio wheels built for JetPack 6 (JP6) with CUDA 12.6 (cu126),
+    # which are compatible with cuDNN 9.x shipped in JetPack 6.1/6.2 (L4T r36.4.x).
+    # Note: These wheels target aarch64 + Python 3.10.
+    pip uninstall -y torch torchvision torchaudio || true
+    pip install --no-cache-dir \
+        --index-url https://pypi.jetson-ai-lab.io/jp6/cu126 \
+        torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0
 else
     echo "Skipping pytorch installation"
 fi
