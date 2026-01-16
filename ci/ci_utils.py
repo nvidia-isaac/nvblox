@@ -345,7 +345,7 @@ class OsImage(DockerImage):
         },
         Platform.JETPACK_6: {
             CudaVersion.CUDA_12: {
-                UbuntuVersion.UBUNTU_22: 'nvcr.io/nvidia/l4t-jetpack:r36.3.0'
+                UbuntuVersion.UBUNTU_22: 'nvcr.io/nvidia/l4t-jetpack:r36.4.0'
             }
         },
     }
