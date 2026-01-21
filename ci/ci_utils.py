@@ -312,7 +312,10 @@ class TestBase(ABC):
     def run(self) -> None:
         """Build image and run command inside it"""
         self.image().build()
-        docker_cmd = ['docker', 'run', '--privileged', '--rm', self.image().image_name()]
+        docker_cmd = [
+            'docker', 'run', '--privileged', '--runtime=nvidia', '--rm',
+            self.image().image_name()
+        ]
         cwd = self.get_cwd()
         cmd = self.get_command()
         full_cmd = docker_cmd + ['bash', '-c'] + [f'cd {cwd} && {cmd}']
