@@ -136,7 +136,7 @@ jobs:
   premerge_thor_jetpack7:
     name: Build&Test thor-jetpack7
     needs: [lint_precommit]
-    runs-on: [self-hosted, jetson-thor, jetpack-7]
+    runs-on: [self-hosted, jetson-thor]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
