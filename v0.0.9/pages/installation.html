@@ -1,0 +1,744 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Installation &#8212; nvblox_torch 0.0.9</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=42eea36e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/tabs.js?v=3030b3cb"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'pages/installation';</script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3D Reconstruction" href="torch_examples_reconstruction.html" />
+    <link rel="prev" title="nvblox Documentation" href="../index.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.9 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.9 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.9</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.9 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.9 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.9</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+      <ul class="nav bd-sidenav">
+        <li class="toctree-l1 has-children" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+          <div  style ="text-align:center;">
+            <label for="version-select" style="font-weight: bold; display: block;">Version</label>
+          </div>
+          <select id="version-select" class="version-dropdown" style="margin: 0 auto; display: block;" onchange="location = this.value;">
+            <option value="../../public/pages/installation.html" >public</option>
+            <option value="installation.html" selected>v0.0.9</option>
+            <option value="../../v0.0.8/pages/installation.html" >v0.0.8</option>
+          </select>
+        </li>
+      </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">User's Guide</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Installation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">python</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_reconstruction.html">3D Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_deep_features.html">Deep Feature-based Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_gradients.html">Trajectory Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_esdf.html">Euclidean Signed Distance Field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_voxel_access.html">Voxels Access Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_realsense.html">Realsense Live Example</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">c++</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="core_library_run_an_example.html">Run an Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_more_examples.html">More Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_interface.html">Core Library Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_sensors.html">Visual Sensors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to nvblox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Installation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
+<p>There are several ways to install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>. See <a class="reference internal" href="#supported-platforms-table"><span class="std std-ref">Supported Platforms</span></a> for a list of which methods are supported on which platforms.</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#nvblox-torch-pip-installation"><span class="std std-ref">Install nvblox via pip</span></a>. If you intend to interface with <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> from Python, this is the recommended method.</p></li>
+<li><p><a class="reference internal" href="#nvblox-torch-source-installation"><span class="std std-ref">Install nvblox from Source (in Docker)</span></a>. Use this method if you intend to interface with <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> via the C++ interface or if your platform does not support <code class="docutils literal notranslate"><span class="pre">pip</span></code>.</p></li>
+<li><p><a class="reference internal" href="#nvblox-native-installation"><span class="std std-ref">Install nvblox from Source (Outside Docker)</span></a>. Use this method if you want to install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> outside our provided docker environment.</p></li>
+</ol>
+<section id="supported-platforms-table">
+<span id="supported-platforms"></span><span id="id1"></span><h2>Supported Platforms<a class="headerlink" href="#supported-platforms-table" title="Link to this heading">#</a></h2>
+<p>The following platforms are supported:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>x86 + dGPU</p></th>
+<th class="head"><p>JetPack 7.0.X</p></th>
+<th class="head"><p>JetPack 6.X</p></th>
+<th class="head"><p>JetPack 5.X</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nvblox_torch</span> <span class="pre">(pip)</span></code></p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+<td><p>❌</p></td>
+<td><p>❌</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nvblox_torch</span> <span class="pre">(src)</span></code></p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nvblox</span> <span class="pre">C++</span> <span class="pre">(src)</span></code></p></td>
+<td><p>✅</p></td>
+<td><p>✅</p></td>
+<td><p>✅</p></td>
+<td><p>✅</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>We support the systems with the following configurations:</p>
+<ul class="simple">
+<li><p><strong>x86 + discrete GPU</strong></p>
+<ul>
+<li><p>Ubuntu 20.04, 22.04, 24.04</p></li>
+<li><p>CUDA 11.4 - 13.0</p></li>
+<li><p>GPU with compute capability 7.5 or higher. See <a class="reference external" href="https://developer.nvidia.com/cuda/gpus">here</a> for a list of GPUs and their compute capabilities.</p></li>
+</ul>
+</li>
+<li><p><strong>Jetson (ARM64)</strong></p>
+<ul>
+<li><p>(ARM64) Jetpack 5, 6, 7</p></li>
+</ul>
+</li>
+</ul>
+<p>A minimum NVIDIA driver version is imposed by the version of CUDA you have installed.
+See the support table <a class="reference external" href="https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html">here</a>
+to find the minimum driver version for your platform.</p>
+<section id="install-nvblox-via-pip">
+<span id="nvblox-torch-pip-installation"></span><h3>Install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> via <code class="docutils literal notranslate"><span class="pre">pip</span></code><a class="headerlink" href="#install-nvblox-via-pip" title="Link to this heading">#</a></h3>
+<p>To install <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> via <code class="docutils literal notranslate"><span class="pre">pip</span></code> on a supported platform, run the following commands:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">Ubuntu 24.04 + CUDA 12.8</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">Ubuntu 22.04 + CUDA 12.6</button><button aria-controls="panel-0-0-2" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-2" name="0-2" role="tab" tabindex="-1">Ubuntu 22.04 + CUDA 11.8</button><button aria-controls="panel-0-0-3" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-3" name="0-3" role="tab" tabindex="-1">Ubuntu 24.04 + CUDA 13.0</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-pip<span class="w"> </span>libglib2.0-0<span class="w"> </span>libgl1<span class="w"> </span><span class="c1"># Open3D dependencies</span>
+pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nvidia-isaac/nvblox/releases/download/v0.0.9/nvblox_torch-0.0.9.dev1+cu12ubuntu24-py3-none-linux_x86_64.whl
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-0-1" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-1" name="0-1" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-pip<span class="w"> </span>libglib2.0-0<span class="w"> </span>libgl1<span class="w"> </span><span class="c1"># Open3D dependencies</span>
+pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nvidia-isaac/nvblox/releases/download/v0.0.9/nvblox_torch-0.0.9.dev1+cu12ubuntu22-py3-none-linux_x86_64.whl
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-0-2" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-2" name="0-2" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-pip<span class="w"> </span>libglib2.0-0<span class="w"> </span>libgl1<span class="w"> </span><span class="c1"># Open3D dependencies</span>
+pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nvidia-isaac/nvblox/releases/download/v0.0.9/nvblox_torch-0.0.9.dev1+cu11ubuntu22-py3-none-linux_x86_64.whl
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-0-3" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-3" name="0-3" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-pip<span class="w"> </span>libglib2.0-0<span class="w"> </span>libgl1<span class="w"> </span><span class="c1"># Open3D dependencies</span>
+pip3<span class="w"> </span>install<span class="w"> </span>torch<span class="w"> </span>torchvision<span class="w"> </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cu130/torch/<span class="w"> </span><span class="nv">torch</span><span class="o">==</span><span class="m">2</span>.9.1+cu130
+pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nvidia-isaac/nvblox/releases/download/v0.0.9/nvblox_torch-0.0.9.dev1+cu13ubuntu24-py3-none-linux_x86_64.whl
+</pre></div>
+</div>
+</div></div>
+<p>(Optional) You can verify the installation by running our tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span><span class="k">$(</span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import site; print(site.getsitepackages()[0])&quot;</span><span class="k">)</span>/nvblox_torch
+pytest<span class="w"> </span>-s
+</pre></div>
+</div>
+<p>You’re all set! You can now run the <a class="reference internal" href="torch_examples_reconstruction.html"><span class="doc">3D Reconstruction</span></a> example.</p>
+</section>
+<section id="install-nvblox-from-source-in-docker">
+<span id="nvblox-torch-source-installation"></span><h3>Install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> from Source (in Docker)<a class="headerlink" href="#install-nvblox-from-source-in-docker" title="Link to this heading">#</a></h3>
+<p>The source installation is recommended for developers who need to modify <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>
+or for platforms that are not supported via <code class="docutils literal notranslate"><span class="pre">pip</span></code>.
+We provide a docker image for building and developing inside.</p>
+<section id="build-the-c-library">
+<h4>Build the C++ library<a class="headerlink" href="#build-the-c-library" title="Link to this heading">#</a></h4>
+<p>First clone the repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:nvidia-isaac/nvblox.git
+</pre></div>
+</div>
+<p>Then build and run the docker container:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>nvblox
+./docker/run_docker.sh
+</pre></div>
+</div>
+<p>To build the library run</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-1-1-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-1-1-0" name="1-0" role="tab" tabindex="0">x86, JetPack 6</button><button aria-controls="panel-1-1-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-1-1-1" name="1-1" role="tab" tabindex="-1">JetPack 7, JetPack 5</button></div><div aria-labelledby="tab-1-1-0" class="sphinx-tabs-panel" id="panel-1-1-0" name="1-0" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>/workspaces/nvblox/build
+<span class="nb">cd</span><span class="w"> </span>/workspaces/nvblox/build
+cmake<span class="w"> </span>..
+make<span class="w"> </span>-j<span class="si">${</span><span class="nv">nproc</span><span class="si">}</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-1-1-1" class="sphinx-tabs-panel" hidden="true" id="panel-1-1-1" name="1-1" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>/workspaces/nvblox/build
+<span class="nb">cd</span><span class="w"> </span>/workspaces/nvblox/build
+cmake<span class="w"> </span>..<span class="w"> </span>-DBUILD_PYTORCH_WRAPPER<span class="o">=</span><span class="m">0</span>
+make<span class="w"> </span>-j<span class="si">${</span><span class="nv">nproc</span><span class="si">}</span>
+</pre></div>
+</div>
+</div></div>
+<p>(Optional) You can verify the installation by running our tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ctest<span class="w"> </span>--test-dir<span class="w"> </span>/workspaces/nvblox/build/nvblox
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We are using <cite>ccache</cite> to speed up the build process which may sometimes cause issues when the ccache directory is not writable.
+If you see errors like “<cite>/usr/local/bin/c++ is not able to compile a simple test</cite>”” when building, it may help to exit the container and remove the ccache directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>~/.ccache
+</pre></div>
+</div>
+</div>
+</section>
+<section id="install-nvblox-torch-python-package">
+<h4>Install <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> python package<a class="headerlink" href="#install-nvblox-torch-python-package" title="Link to this heading">#</a></h4>
+<p>On supported platforms, install the  <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> Python library that was built during the previous step:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/workspaces/nvblox/nvblox_torch
+pip3<span class="w"> </span>install<span class="w"> </span>--editable<span class="w"> </span>.
+</pre></div>
+</div>
+<p>(Optional) You can verify the installation by running our tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>-s<span class="w"> </span>/workspaces/nvblox/nvblox_torch
+</pre></div>
+</div>
+<p>You’re all set! Feel free to proceed with one of the following examples:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="torch_examples_reconstruction.html"><span class="doc">3D Reconstruction</span></a> in Python</p></li>
+<li><p><a class="reference internal" href="core_library_run_an_example.html"><span class="doc">Run an Example</span></a> from the C++ library.</p></li>
+</ul>
+</section>
+</section>
+<section id="install-nvblox-from-source-outside-docker">
+<span id="nvblox-native-installation"></span><h3>Install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> from Source (Outside Docker)<a class="headerlink" href="#install-nvblox-from-source-outside-docker" title="Link to this heading">#</a></h3>
+<p>These instructions describe how to install the <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> core library from source, outside
+of our development container.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We recommend using the <a class="reference internal" href="#nvblox-torch-source-installation"><span class="std std-ref">Install nvblox from Source (in Docker)</span></a> as it will handle all the
+dependencies for you.
+The docker image sets up a controlled environment in which we know things work.
+While we’ve tested the following instructions on many systems
+(see <a class="reference internal" href="#supported-platforms-table"><span class="std std-ref">Supported Platforms</span></a>), results may vary.</p>
+</div>
+<p>To start, install our dependencies</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>cmake<span class="w"> </span>git<span class="w"> </span>jq<span class="w"> </span>gnupg<span class="w"> </span>apt-utils<span class="w"> </span>software-properties-common<span class="w"> </span>build-essential<span class="w"> </span>sudo<span class="w"> </span>python3-pip<span class="w"> </span>wget<span class="w"> </span>sudo<span class="w"> </span>git<span class="w"> </span>python3-dev<span class="w"> </span>git-lfs
+</pre></div>
+</div>
+<p>Note that for Ubuntu 20.04, we need to install a more recent version of <code class="docutils literal notranslate"><span class="pre">cmake</span></code>
+than is available in the default repositories.
+We provide a script to add the relevant repositories and install a more recent
+version in: <code class="docutils literal notranslate"><span class="pre">docker/install_cmake.sh</span></code>.
+Note that running this script will replace any previously installed version of <code class="docutils literal notranslate"><span class="pre">cmake</span></code>.</p>
+<p>Now follow the instructions in <a class="reference internal" href="#nvblox-torch-source-installation"><span class="std std-ref">Install nvblox from Source (in Docker)</span></a>
+to build the code and run the tests.</p>
+<p>If you are using a Jetson and want to use the <code class="docutils literal notranslate"><span class="pre">pytorch</span></code> wrapper, you will need to install the CUDA-enabled versions of <code class="docutils literal notranslate"><span class="pre">torch</span></code> and <code class="docutils literal notranslate"><span class="pre">torchvision</span></code>. See <a class="reference external" href="https://docs.nvidia.com/deeplearning/frameworks/install-pytorch-jetson-platform/index.html">this page</a> for more details.</p>
+<p>You’re now ready to  <a class="reference internal" href="core_library_run_an_example.html"><span class="doc">Run an Example</span></a>.</p>
+</section>
+</section>
+<section id="advanced-build-options">
+<h2>Advanced Build Options<a class="headerlink" href="#advanced-build-options" title="Link to this heading">#</a></h2>
+<p>This section details build options for advanced <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> users.</p>
+<section id="modifying-maximum-feature-size">
+<h3>Modifying maximum feature size<a class="headerlink" href="#modifying-maximum-feature-size" title="Link to this heading">#</a></h3>
+<p>The library supports integrating generic image features into the reconstructed voxel map.
+The maximum supported length of image feature vectors is a compile-time constant which defaults to <code class="docutils literal notranslate"><span class="pre">128</span></code>.
+To change the default, call cmake with the following flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DNVBLOX_FEATURE_ARRAY_NUM_ELEMENTS<span class="o">=</span>XYZ<span class="w"> </span>..
+</pre></div>
+</div>
+<p>Note that increasing this number will approximately linearly increase memory usage for applications using deep
+feature mapping.</p>
+</section>
+<section id="building-for-post-cxx11-abi">
+<h3>Building for Post-CXX11 ABI<a class="headerlink" href="#building-for-post-cxx11-abi" title="Link to this heading">#</a></h3>
+<p>The library is built with the pre-cxx11 ABI by default in order to maintain compatibility with manylinux201X wheels.
+To build with the post cxx11 ABI, call cmake with the following flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DPRE_CXX11_ABI_LINKABLE<span class="o">=</span>OFF<span class="w"> </span>..
+</pre></div>
+</div>
+</section>
+<section id="disabling-pytorch-wrapper">
+<h3>Disabling <code class="docutils literal notranslate"><span class="pre">pytorch</span></code> wrapper<a class="headerlink" href="#disabling-pytorch-wrapper" title="Link to this heading">#</a></h3>
+<p>If you don’t need the <code class="docutils literal notranslate"><span class="pre">pytorch</span></code> wrapper, or you’re on a system without <code class="docutils literal notranslate"><span class="pre">pytorch</span></code> installed,
+you can disable it by calling cmake with the following flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DBUILD_PYTORCH_WRAPPER<span class="o">=</span><span class="m">0</span><span class="w"> </span>..
+</pre></div>
+</div>
+</section>
+<section id="other-docker-containers">
+<h3>Other <code class="docutils literal notranslate"><span class="pre">docker</span></code> containers<a class="headerlink" href="#other-docker-containers" title="Link to this heading">#</a></h3>
+<p>We build and test in the following <code class="docutils literal notranslate"><span class="pre">docker</span></code> images, so if you would like to install
+in a <code class="docutils literal notranslate"><span class="pre">docker</span></code>, and don’t want to use our development <code class="docutils literal notranslate"><span class="pre">docker</span></code>, these are guaranteed to work.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu24.04</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nvcr.io/nvidia/cuda:12.6.1-devel-ubuntu22.04</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04</span></code></p></li>
+</ul>
+</section>
+<section id="build-a-redistributable-library">
+<h3>Build a Redistributable Library<a class="headerlink" href="#build-a-redistributable-library" title="Link to this heading">#</a></h3>
+<p>By default, the <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> library only builds for the Compute Capability (CC)
+of the GPU in the machine it’s being built on.
+Sometimes it is desirable to build a library that can be used across multiple
+machines that contain GPUs with different architectures.
+We, for example, build <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> for several architectures for packaging
+into our <code class="docutils literal notranslate"><span class="pre">pip</span></code> package <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code>, such that it can be used on a
+variety of machines.</p>
+<p>To build binaries that can be used across multiple machines like this, you can
+use the <code class="docutils literal notranslate"><span class="pre">CMAKE_CUDA_ARCHITECTURE</span></code> flag and set it to a semicolon-separated
+list of architectures to support.</p>
+<p>For example, to build for Compute Capability (CC) 7.2 and 7.5, you would run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>..<span class="w"> </span>-DCMAKE_CUDA_ARCHITECTURES<span class="o">=</span><span class="m">75</span><span class="p">;</span><span class="m">72</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">nvblox</span></code> Documentation</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torch_examples_reconstruction.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">3D Reconstruction</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-platforms-table">Supported Platforms</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-nvblox-via-pip">Install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> via <code class="docutils literal notranslate"><span class="pre">pip</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-nvblox-from-source-in-docker">Install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> from Source (in Docker)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#build-the-c-library">Build the C++ library</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#install-nvblox-torch-python-package">Install <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code> python package</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-nvblox-from-source-outside-docker">Install <code class="docutils literal notranslate"><span class="pre">nvblox</span></code> from Source (Outside Docker)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-build-options">Advanced Build Options</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-maximum-feature-size">Modifying maximum feature size</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#building-for-post-cxx11-abi">Building for Post-CXX11 ABI</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#disabling-pytorch-wrapper">Disabling <code class="docutils literal notranslate"><span class="pre">pytorch</span></code> wrapper</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#other-docker-containers">Other <code class="docutils literal notranslate"><span class="pre">docker</span></code> containers</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#build-a-redistributable-library">Build a Redistributable Library</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025, NVIDIA.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

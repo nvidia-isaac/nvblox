@@ -1,0 +1,602 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Euclidean Signed Distance Field &#8212; nvblox_torch 0.0.9</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=42eea36e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'pages/torch_examples_esdf';</script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Voxels Access Example" href="torch_examples_voxel_access.html" />
+    <link rel="prev" title="Trajectory Optimization" href="torch_examples_gradients.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.9 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.9 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.9</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="nvblox_torch 0.0.9 - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="nvblox_torch 0.0.9 - Home"/>
+  
+  
+    <p class="title logo__title">nvblox_torch 0.0.9</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/nvidia-isaac/nvblox" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+      <ul class="nav bd-sidenav">
+        <li class="toctree-l1 has-children" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+          <div  style ="text-align:center;">
+            <label for="version-select" style="font-weight: bold; display: block;">Version</label>
+          </div>
+          <select id="version-select" class="version-dropdown" style="margin: 0 auto; display: block;" onchange="location = this.value;">
+            <option value="../../public/pages/torch_examples_esdf.html" >public</option>
+            <option value="../../v0.0.9/pages/torch_examples_esdf.html" >v0.0.9</option>
+            <option value="torch_examples_esdf.html" selected>v0.0.8</option>
+          </select>
+        </li>
+      </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">User's Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">python</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_reconstruction.html">3D Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_deep_features.html">Deep Feature-based Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_gradients.html">Trajectory Optimization</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Euclidean Signed Distance Field</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_voxel_access.html">Voxels Access Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_examples_realsense.html">Realsense Live Example</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">c++</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="core_library_run_an_example.html">Run an Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_more_examples.html">More Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_library_interface.html">Core Library Interface</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="todos.html">TODOS</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Euclidean Signed Distance Field</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="euclidean-signed-distance-field">
+<h1>Euclidean Signed Distance Field<a class="headerlink" href="#euclidean-signed-distance-field" title="Link to this heading">#</a></h1>
+<p>This example demonstrates how to use the Euclidean Signed Distance Field (ESDF) querying functionality in <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code>.</p>
+<p>Download an example SUN3D dataset by running the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>http://3dvision.princeton.edu/projects/2016/3DMatch/downloads/rgbd-datasets/sun3d-mit_76_studyroom-76-1studyroom2.zip
+unzip<span class="w"> </span>sun3d-mit_76_studyroom-76-1studyroom2.zip
+</pre></div>
+</div>
+<p>Launch the example by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>nvblox_torch.examples.esdf.esdf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dataset_path<span class="w"> </span>&lt;PATH&gt;/sun3d-mit_76_studyroom-76-1studyroom2/<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--num_frames<span class="w"> </span><span class="m">100</span>
+</pre></div>
+</div>
+<img alt="ESDF Example" src="../_images/esdf_example.gif" />
+<p>The code for this example can be found at
+<a class="reference external" href="https://github.com/nvidia-isaac/nvblox/tree/public/nvblox_torch/nvblox_torch/examples/esdf/esdf.py">esdf.py</a></p>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading">#</a></h2>
+<p>In this example we demonstrate how to build and query a Euclidean Signed Distance Field (ESDF)
+without leaving the GPU.</p>
+<p>We first use the first 500 frames of one of the SUN3D sequences to build a TSDF.
+This is hidden inside the function <code class="docutils literal notranslate"><span class="pre">get_sun3d_scene_mapper()</span></code> for brevity.
+For details on how to build a TSDF, see the <a class="reference internal" href="torch_examples_reconstruction.html"><span class="doc">reconstruction example</span></a>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Mapper</span></code> returned by this function contains the map of the scene as a <code class="docutils literal notranslate"><span class="pre">TsdfLayer</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mapper</span> <span class="o">=</span> <span class="n">get_sun3d_scene_mapper</span><span class="p">(</span>
+    <span class="n">dataset_path</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">,</span>
+    <span class="n">voxel_size_m</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">voxel_size_m</span><span class="p">,</span>
+    <span class="n">num_frames</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>We generate the corresponding ESDF by calling <code class="docutils literal notranslate"><span class="pre">mapper.update_esdf()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mapper</span><span class="o">.</span><span class="n">update_esdf</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To query the ESDF, we need some points to query at.
+We generate a grid of points that cover an Axis-Aligned Bounding Box (AABB) of the mapped space.
+This is performed by the function <code class="docutils literal notranslate"><span class="pre">get_aabb_voxel_center_grid()</span></code>
+.. code-block:: python</p>
+<blockquote>
+<div><p>query_grid_xyz_m = get_aabb_voxel_center_grid(mapper.tsdf_layer_view())</p>
+</div></blockquote>
+<p>This function inspects the <code class="docutils literal notranslate"><span class="pre">TsdfLayer</span></code> to get the extents of the mapped scene.
+The extents of the scene are returned as 3D <code class="docutils literal notranslate"><span class="pre">VoxelBlock</span></code> indices.
+Which we convert to 3D voxel coordinates.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">min_block_idx</span><span class="p">,</span> <span class="n">max_block_idx</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">get_block_limits</span><span class="p">()</span>
+<span class="n">aabb_min_vox</span> <span class="o">=</span> <span class="n">min_block_idx</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">block_dim_in_voxels</span>
+<span class="n">aabb_max_vox</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_block_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">block_dim_in_voxels</span>
+</pre></div>
+</div>
+<p>We then use torch to generate a 3D meshgrid of points in meters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a 3D grid of points.</span>
+<span class="n">x_linspace</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">aabb_min_vox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">aabb_max_vox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">aabb_max_vox</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">aabb_min_vox</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="n">y_linspace</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">aabb_min_vox</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                            <span class="n">aabb_max_vox</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                            <span class="n">aabb_max_vox</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">aabb_min_vox</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="n">z_linspace</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">aabb_min_vox</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                            <span class="n">aabb_max_vox</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                            <span class="n">aabb_max_vox</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">aabb_min_vox</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span><span class="p">,</span> <span class="n">z_grid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x_linspace</span><span class="p">,</span> <span class="n">y_linspace</span><span class="p">,</span> <span class="n">z_linspace</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
+<span class="n">query_grid_xyz_vox</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span><span class="p">,</span> <span class="n">z_grid</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Voxel units to meters.</span>
+<span class="n">query_grid_xyz_m</span> <span class="o">=</span> <span class="p">(</span><span class="n">query_grid_xyz_vox</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">voxel_size</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We move the grid to the GPU such that it can be used to query the GPU-based map held by <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">query_grid_xyz_m</span> <span class="o">=</span> <span class="n">query_grid_xyz_m</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We perform the query by calling <code class="docutils literal notranslate"><span class="pre">mapper.query_differentiable_layer()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sdf_values</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">query_differentiable_layer</span><span class="p">(</span><span class="n">QueryType</span><span class="o">.</span><span class="n">ESDF</span><span class="p">,</span> <span class="n">query_grid_xyz_m</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">sdf_values</span> <span class="o">=</span> <span class="n">sdf_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">query_grid_xyz_m</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Note that we first reshape the 4D grid [H, W, D, 3] to a 2D tensor [H * W * D, 3]
+where each row is a point to query.
+We then reshape the output back to the original grid shape [H, W, D], where
+each voxel now contains the signed distance to the nearest surface in meters.</p>
+<p>We detect unsuccessful queries by checking where the ESDF value is set to
+<code class="docutils literal notranslate"><span class="pre">constants.esdf_unknown_distance()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">valid_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">sdf_values</span> <span class="o">==</span> <span class="n">constants</span><span class="o">.</span><span class="n">esdf_unknown_distance</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>To visualize the ESDF we iterate through the slices of the grid, and visualize
+points where the query was successful.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Loop through the slices and visualize the ESDF.</span>
+<span class="k">for</span> <span class="n">slice_idx</span> <span class="ow">in</span> <span class="n">slice_idx_range</span><span class="p">:</span>
+
+        <span class="c1"># Slice the grid.</span>
+        <span class="n">slice_mask</span> <span class="o">=</span> <span class="n">valid_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">]</span>
+        <span class="n">slice_xyz</span> <span class="o">=</span> <span class="n">query_grid_xyz_m</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">slice_sdf</span> <span class="o">=</span> <span class="n">sdf_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">]</span>
+
+        <span class="c1"># Exclude points that didn&#39;t query successfully</span>
+        <span class="n">slice_xyz</span> <span class="o">=</span> <span class="n">slice_xyz</span><span class="p">[</span><span class="n">slice_mask</span><span class="p">]</span>
+        <span class="n">slice_sdf</span> <span class="o">=</span> <span class="n">slice_sdf</span><span class="p">[</span><span class="n">slice_mask</span><span class="p">]</span>
+
+        <span class="c1"># Visualize the ESDF as an open3d voxel grid.</span>
+        <span class="n">voxel_grid_o3d</span> <span class="o">=</span> <span class="n">to_open3d_esdf_voxel_grid</span><span class="p">(</span><span class="n">slice_sdf</span><span class="p">,</span> <span class="n">slice_xyz</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">voxel_size_m</span><span class="p">)</span>
+
+        <span class="o">...</span>
+
+        <span class="n">visualizer</span><span class="o">.</span><span class="n">add_geometry</span><span class="p">(</span><span class="n">voxel_grid_o3d</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can also back propogate through this query. See <a class="reference internal" href="torch_examples_gradients.html"><span class="doc">Gradients Example</span></a>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="torch_examples_gradients.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Trajectory Optimization</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="torch_examples_voxel_access.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Voxels Access Example</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#details">Details</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025, NVIDIA.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
