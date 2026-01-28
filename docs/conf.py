@@ -226,10 +226,10 @@ def get_wheel_name(version: str, ubuntu: str, cuda: str) -> str:
     Returns:
         Wheel filename like "nvblox_torch-0.0.9.dev1+cu12ubuntu24-py3-none-linux_x86_64.whl"
     """
-    # Map versions to their version patches
+    # Some versions have a patch in their name
     version_patches = {
         '0.0.8': 'rc5',
-        '0.0.9': '.dev1',
+        '0.0.9': '',
     }
 
     patch = version_patches.get(version, '.dev1')
