@@ -176,7 +176,7 @@ html_css_files = ['custom.css']
 
 # Versioning (sphinx-multiversion)
 smv_remote_whitelist = r'^.*$'
-smv_branch_whitelist = r'^(public|v0.0.8|v0.0.9)$'
+smv_branch_whitelist = r'^(public|v0.0.8-docs|v0.0.9)$'
 smv_tag_whitelist = r'^(v0.0.8|v0.0.9)$'
 html_sidebars = {'**': ['versioning.html', 'sidebar-nav-bs']}
 
@@ -226,14 +226,18 @@ def get_wheel_name(version: str, ubuntu: str, cuda: str) -> str:
     Returns:
         Wheel filename like "nvblox_torch-0.0.9.dev1+cu12ubuntu24-py3-none-linux_x86_64.whl"
     """
-    # Some versions have a patch in their name
+    # Some versions have a patch or build number in their name
     version_patches = {
         '0.0.8': 'rc5',
-        '0.0.9': '',
+    }
+    build_numbers = {
+        '0.0.8': '863-',
     }
 
-    patch = version_patches.get(version, '.dev1')
-    return f'nvblox_torch-{version}{patch}+cu{cuda}ubuntu{ubuntu}-py3-none-linux_x86_64.whl'
+    patch = version_patches.get(version, '')
+    build = build_numbers.get(version, '')
+
+    return f'nvblox_torch-{version}{patch}+cu{cuda}ubuntu{ubuntu}-{build}py3-none-linux_x86_64.whl'
 
 
 nvblox_torch_docs_config = {
