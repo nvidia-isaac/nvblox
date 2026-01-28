@@ -17,10 +17,20 @@ from typing import List
 import os
 import sys
 
-# Modify PYTHONPATH so we can obtain the version data from setup module.
+# Modify PYTHONPATH so we can import the helpers module.
 # pylint: disable=wrong-import-position
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'nvblox_torch')))
-from setup import NVBLOX_VERSION_NUMBER, NVBLOX_VERSION_PATCH
+sys.path.insert(0, os.path.abspath('.'))
+from helpers import get_version_from_multiversion_env
+
+# NOTE: We use environment variables instead of importing from setup.py to avoid
+# Python module import caching issues with sphinx-multiversion. When building
+# multiple versions, the first import of 'setup' gets cached and reused for all
+# subsequent builds. Reading from SPHINX_MULTIVERSION_NAME env var ensures each
+# version build uses its correct version number.
+NVBLOX_VERSION_NUMBER = get_version_from_multiversion_env()
+
+# For v0.0.8, the version patch is 'rc5'
+NVBLOX_VERSION_PATCH = 'rc5'
 
 # NOTE(alexmillane, 2025-04-24): This file is in a seperate folder to avoid
 # duplicate configuration errors coming from mypy. The only way I could find
@@ -49,6 +59,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_tabs.tabs',
     'sphinx_copybutton',
+    'sphinx_multiversion',
     # TODO(alexmillane, 2025-04-24): Try re-enabling this once we have pydocs generating.
     #    'autodocsumm'
     'nvblox_torch_doc_tools'
@@ -83,7 +94,7 @@ nitpick_ignore: List[str] = []    # can exclude known bad refs
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'nvidia_sphinx_theme'
-html_title = 'nvblox'
+html_title = f'nvblox_torch {NVBLOX_VERSION_NUMBER}'
 html_show_sphinx = False
 html_theme_options = {
     'copyright_override': {
@@ -109,6 +120,12 @@ html_theme_options = {
 # html_static_path = []
 html_static_path = ['_static']
 html_css_files = ['custom.css']
+
+# Versioning (sphinx-multiversion)
+smv_remote_whitelist = r'^.*$'
+smv_branch_whitelist = r'^(public|v0.0.8-docs|v0.0.9-docs)$'
+smv_tag_whitelist = r'^(v0.0.8|v0.0.9)$'
+html_sidebars = {'**': ['versioning.html', 'sidebar-nav-bs']}
 
 # Todos
 todo_include_todos = True
