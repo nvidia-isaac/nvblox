@@ -18,11 +18,6 @@ from typing import List
 import os
 import sys
 
-# NOTE: sphinx-multiversion doesn't provide a reliable way to detect the version
-# at conf.py import time. We need to use the setup() function to access Sphinx config.
-# For now, set a placeholder that will be updated in setup().
-NVBLOX_VERSION_NUMBER = '0.0.9'    # Will be overridden in setup()
-
 
 # Define setup() function to properly detect version after Sphinx initializes
 # pylint: disable=import-outside-toplevel,broad-exception-caught
@@ -36,13 +31,7 @@ def setup(app: object) -> None:
     import subprocess
 
     def _update_version_config(version: str) -> None:
-        """Update all version-dependent configuration values."""
-        global NVBLOX_VERSION_NUMBER
-        NVBLOX_VERSION_NUMBER = version
-        app.config.html_title = f'nvblox_torch {NVBLOX_VERSION_NUMBER}'
-
-        # Update wheel URLs and names in nvblox_torch_docs_config
-        # Access the config dict directly, not through html_context
+        """Update version-dependent wheel URLs and names in config."""
         app.config.nvblox_torch_docs_config['external_wheel_base_url'] = \
             f'https://github.com/nvidia-isaac/nvblox/releases/download/v{version}'
         app.config.nvblox_torch_docs_config['wheel_name_ubuntu_24_cuda_12'] = \
@@ -159,7 +148,6 @@ nitpick_ignore: List[str] = []    # can exclude known bad refs
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'nvidia_sphinx_theme'
-html_title = f'nvblox_torch {NVBLOX_VERSION_NUMBER}'
 html_show_sphinx = False
 html_theme_options = {
     'copyright_override': {
@@ -252,12 +240,13 @@ nvblox_torch_docs_config = {
     'released': released,
     'internal_wheel_base_url': 'https://urm.nvidia.com/artifactory/hw-nvblox-alpine-local/' + \
         'pypi/release/nvblox_torch/',
-    'external_wheel_base_url': 'https://github.com/nvidia-isaac/nvblox/releases' + \
-        f'/download/v{NVBLOX_VERSION_NUMBER}',
-    'wheel_name_ubuntu_24_cuda_12': get_wheel_name(NVBLOX_VERSION_NUMBER, '24', '12'),
-    'wheel_name_ubuntu_22_cuda_12': get_wheel_name(NVBLOX_VERSION_NUMBER, '22', '12'),
-    'wheel_name_ubuntu_22_cuda_11': get_wheel_name(NVBLOX_VERSION_NUMBER, '22', '11'),
-    'wheel_name_ubuntu_24_cuda_13': get_wheel_name(NVBLOX_VERSION_NUMBER, '24', '13'),
+    # Note: external_wheel_base_url and wheel_name_* are updated by setup() function
+    # with version-specific values from each branch's setup.py file
+    'external_wheel_base_url': '',
+    'wheel_name_ubuntu_24_cuda_12': '',
+    'wheel_name_ubuntu_22_cuda_12': '',
+    'wheel_name_ubuntu_22_cuda_11': '',
+    'wheel_name_ubuntu_24_cuda_13': '',
     'internal_git_url': 'ssh://git@gitlab-master.nvidia.com:12051/nvblox/nvblox.git',
     'external_git_url': 'git@github.com:nvidia-isaac/nvblox.git',
     'internal_code_link_base_url': 'https://gitlab-master.nvidia.com/nvblox/nvblox/-/tree/main',
