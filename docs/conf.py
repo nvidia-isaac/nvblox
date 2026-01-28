@@ -17,20 +17,88 @@ from typing import List
 import os
 import sys
 
-# Modify PYTHONPATH so we can import the helpers module.
-# pylint: disable=wrong-import-position
-sys.path.insert(0, os.path.abspath('.'))
-from helpers import get_version_from_multiversion_env
+# NOTE: sphinx-multiversion doesn't provide a reliable way to detect the version
+# at conf.py import time. We need to use the setup() function to access Sphinx config.
+# For now, set a placeholder that will be updated in setup().
+NVBLOX_VERSION_NUMBER = '0.0.8'    # Will be overridden in setup()
+NVBLOX_VERSION_PATCH = 'rc5'    # For v0.0.8
 
-# NOTE: We use environment variables instead of importing from setup.py to avoid
-# Python module import caching issues with sphinx-multiversion. When building
-# multiple versions, the first import of 'setup' gets cached and reused for all
-# subsequent builds. Reading from SPHINX_MULTIVERSION_NAME env var ensures each
-# version build uses its correct version number.
-NVBLOX_VERSION_NUMBER = get_version_from_multiversion_env()
 
-# For v0.0.8, the version patch is 'rc5'
-NVBLOX_VERSION_PATCH = 'rc5'
+# Define setup() function to properly detect version after Sphinx initializes
+# pylint: disable=import-outside-toplevel,broad-exception-caught
+def setup(app: object) -> None:
+    """Sphinx setup function to detect version from sphinx-multiversion context.
+
+    This function runs after Sphinx initializes and has access to app.srcdir,
+    which points to the correct source directory for each version being built.
+    """
+    import re
+    import subprocess
+
+    def _get_wheel_name(version: str, ubuntu: str, cuda: str) -> str:
+        """Generate wheel filename based on version."""
+        version_patches = {
+            '0.0.8': 'rc5',
+            '0.0.9': '.dev1',
+        }
+        patch = version_patches.get(version, '.dev1')
+        return f'nvblox_torch-{version}{patch}+cu{cuda}ubuntu{ubuntu}-863-py3-none-linux_x86_64.whl'
+
+    def _update_version_config(version: str) -> None:
+        """Update all version-dependent configuration values."""
+        global NVBLOX_VERSION_NUMBER
+        NVBLOX_VERSION_NUMBER = version
+        app.config.html_title = f'nvblox_torch {NVBLOX_VERSION_NUMBER}'
+
+        # Update wheel URLs and names in nvblox_torch_docs_config
+        app.config.nvblox_torch_docs_config['external_wheel_base_url'] = \
+            f'https://github.com/nvidia-isaac/nvblox/releases/download/v{version}'
+        app.config.nvblox_torch_docs_config['wheel_name_ubuntu_24_cuda_12'] = \
+            _get_wheel_name(version, '24', '12')
+        app.config.nvblox_torch_docs_config['wheel_name_ubuntu_22_cuda_12'] = \
+            _get_wheel_name(version, '22', '12')
+        app.config.nvblox_torch_docs_config['wheel_name_ubuntu_22_cuda_11'] = \
+            _get_wheel_name(version, '22', '11')
+        app.config.nvblox_torch_docs_config['wheel_name_ubuntu_24_cuda_13'] = \
+            _get_wheel_name(version, '24', '13')
+
+    # Try to get version from various sources
+    # 1. Check environment variable (sphinx-multiversion should set this)
+    smv_current_version = os.environ.get('SPHINX_MULTIVERSION_NAME')
+    if smv_current_version:
+        match = re.match(r'v?(\d+\.\d+\.\d+)', smv_current_version)
+        if match:
+            _update_version_config(match.group(1))
+            return
+
+    # 2. Try git in the source directory
+    try:
+        result = subprocess.run(['git', 'describe', '--all', '--exact-match', 'HEAD'],
+                                capture_output=True,
+                                text=True,
+                                cwd=app.srcdir,
+                                check=False)
+        if result.returncode == 0:
+            ref_name = result.stdout.strip()
+            match = re.search(r'v?(\d+\.\d+\.\d+)', ref_name)
+            if match:
+                _update_version_config(match.group(1))
+                return
+    except Exception:
+        pass    # Git detection failed, continue to fallback
+
+    # 3. Fallback: read from setup.py in the source directory
+    # This is the most reliable method for sphinx-multiversion builds
+    setup_path = os.path.join(app.srcdir, '..', 'nvblox_torch', 'setup.py')
+    try:
+        with open(setup_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        match = re.search(r"NVBLOX_VERSION_NUMBER\s*=\s*['\"]([^'\"]+)['\"]", content)
+        if match:
+            _update_version_config(match.group(1))
+    except Exception:
+        pass    # Use default version
+
 
 # NOTE(alexmillane, 2025-04-24): This file is in a seperate folder to avoid
 # duplicate configuration errors coming from mypy. The only way I could find
