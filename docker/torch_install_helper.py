@@ -102,10 +102,10 @@ def install_pytorch_jetson() -> None:
 def install_nvblox_torch() -> None:
 
     cuda_version = get_cuda_version()
-    if cuda_version not in JETSON_CUDA_VERSION_TO_TORCH:
-        print(
-            'warning: Unsupported CUDA version: {cuda_version}. Skipping nvblox torch installation.'
-        )
+    supported_cuda_versions = list(JETSON_CUDA_VERSION_TO_TORCH.keys()
+                                   | X86_CUDA_VERSION_TO_PYTORCH_PIP_URL.keys())
+    if cuda_version not in supported_cuda_versions:
+        print(f'warning: Unsupported CUDA version: {cuda_version}. Skipping nvblox torch install.')
         return
 
     script = """
