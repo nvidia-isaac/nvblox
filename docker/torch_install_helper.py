@@ -113,8 +113,12 @@ def install_nvblox_torch() -> None:
     umask 000
     . /opt/venv/bin/activate
     python3 -m pip install --ignore-installed --upgrade pip --no-cache-dir
-    pip install /nvblox/nvblox_torch/
     """
+    # Need to force the torch version for cuda 11 to prevent upgrade.
+    if cuda_version == '11':
+        script += 'pip install /nvblox/nvblox_torch/ "torch==2.7.1"'
+    else:
+        script += 'pip install /nvblox/nvblox_torch/'
     subprocess.run(script, shell=True, check=True)
 
 
