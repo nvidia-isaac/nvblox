@@ -76,7 +76,7 @@ def get_cuda_version() -> str:
     return match.group(1).split('.')[0]
 
 
-def get_pytorch_version_for_this_machine() -> PytorchVersion:
+def get_pytorch_version_for_this_machine() -> PytorchVersion | None:
     """Get the pytorch version for the current system or None if not supported."""
 
     print(f'platform.machine(): {platform.machine()}')
@@ -87,9 +87,9 @@ def get_pytorch_version_for_this_machine() -> PytorchVersion:
         if v.platform == platform.machine() and v.cuda_version == get_cuda_version()
     ]
 
-    if result is None:
+    if not result:
         print(f'No pytorch version found for {platform.machine()} '
-              'with cuda version: {get_cuda_version()}')
+              f'with cuda version: {get_cuda_version()}')
         return None
     print(f'pytorch version: {result}')
     assert len(result) <= 1, 'Expected 1 pytorch version'
@@ -100,7 +100,7 @@ def install_pytorch_if_supported_for_this_machine() -> None:
 
     pytorch_version = get_pytorch_version_for_this_machine()
     if pytorch_version is None:
-        print('Warning: pytorch not supported on this system')
+        print('pytorch not supported on this system')
         return
 
     script = f"""
@@ -123,7 +123,7 @@ def install_nvblox_torch_if_supported_for_this_machine() -> None:
 
     pytorch_version = get_pytorch_version_for_this_machine()
     if pytorch_version is None:
-        print('Warning: nvblox torch not supported on this system')
+        print('nvblox torch not supported on this system')
         return
 
     script = f"""
