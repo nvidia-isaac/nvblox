@@ -15,6 +15,7 @@ import re
 import platform
 import argparse
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -25,7 +26,7 @@ class PytorchVersion:
 
     pytorch_version: str
     pytorch_url: str
-    torchvision_url: str | None = None    # Only needed for jetson.
+    torchvision_url: Optional[str] = None    # Only needed for jetson.
 
 
 # List of supported pytorch versions in this project.
@@ -57,8 +58,10 @@ PYTORCH_VERSIONS = [
     PytorchVersion(
         platform='aarch64',
         cuda_version='12',
-        pytorch_version='2.3.0',
-        pytorch_url='https://nvidia.box.com/shared/static/xpr06qe6ql3l6rj22cu3c45tz1wzi36p.whl',
+        pytorch_version='2.9.1',
+        pytorch_url=
+    # pylint: disable=line-too-long
+        'https://pypi.jetson-ai-lab.io/jp6/cu126/+f/02f/de421eabbf626/torch-2.9.1-cp310-cp310-linux_aarch64.whl',
         torchvision_url=
     # pylint: disable=line-too-long
         'https://pypi.jetson-ai-lab.io/jp6/cu126/+f/d5b/caaf709f11750/torchvision-0.24.1-cp310-cp310-linux_aarch64.whl'
@@ -76,7 +79,7 @@ def get_cuda_version() -> str:
     return match.group(1).split('.')[0]
 
 
-def get_pytorch_version_for_this_machine() -> PytorchVersion | None:
+def get_pytorch_version_for_this_machine() -> Optional[PytorchVersion]:
     """Get the pytorch version for the current system or None if not supported."""
 
     print(f'platform.machine(): {platform.machine()}')
