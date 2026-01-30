@@ -30,18 +30,30 @@ class PytorchVersion:
 
 # List of supported pytorch versions in this project.
 PYTORCH_VERSIONS = [
-    PytorchVersion(platform='x86',
-                   cuda_version='11',
-                   pytorch_version='2.7.1',
-                   pytorch_url='https://download.pytorch.org/whl/cu118/torch/'),
-    PytorchVersion(platform='x86',
-                   cuda_version='12',
-                   pytorch_version='2.9.1',
-                   pytorch_url='https://download.pytorch.org/whl/cu128/torch/'),
-    PytorchVersion(platform='x86',
-                   cuda_version='13',
-                   pytorch_version='2.9.1',
-                   pytorch_url='https://download.pytorch.org/whl/cu130/torch/'),
+    PytorchVersion(
+        platform='x86_64',
+        cuda_version='11',
+        pytorch_version='2.7.1',
+        pytorch_url=
+    # pylint: disable=line-too-long
+        'https://download.pytorch.org/whl/cu118/torch-2.7.1%2Bcu118-cp310-cp310-manylinux_2_28_x86_64.whl'
+    ),
+    PytorchVersion(
+        platform='x86_64',
+        cuda_version='12',
+        pytorch_version='2.9.1',
+        pytorch_url=
+    # pylint: disable=line-too-long
+        'https://download.pytorch.org/whl/cu128/torch-2.9.1%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl'
+    ),
+    PytorchVersion(
+        platform='x86_64',
+        cuda_version='13',
+        pytorch_version='2.9.1',
+        pytorch_url=
+    # pylint: disable=line-too-long
+        'https://download.pytorch.org/whl/cu130/torch-2.9.1%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl'
+    ),
     PytorchVersion(
         platform='aarch64',
         cuda_version='12',
@@ -66,18 +78,29 @@ def get_cuda_version() -> str:
 
 def get_pytorch_version_for_this_machine() -> PytorchVersion:
     """Get the pytorch version for the current system or None if not supported."""
-    return next(pytorch_version for pytorch_version in PYTORCH_VERSIONS
-                if pytorch_version.platform == platform.machine()
-                and pytorch_version.cuda_version == get_cuda_version())
+
+    print(f'platform.machine(): {platform.machine()}')
+    print(f'get_cuda_version(): {get_cuda_version()}')
+
+    result = [
+        v for v in PYTORCH_VERSIONS
+        if v.platform == platform.machine() and v.cuda_version == get_cuda_version()
+    ]
+
+    if result is None:
+        print(f'No pytorch version found for {platform.machine()} '
+              'with cuda version: {get_cuda_version()}')
+        return None
+    print(f'pytorch version: {result}')
+    assert len(result) <= 1, 'Expected 1 pytorch version'
+    return result[0]
 
 
 def install_pytorch_if_supported_for_this_machine() -> None:
 
     pytorch_version = get_pytorch_version_for_this_machine()
     if pytorch_version is None:
-        cuda_version = get_cuda_version()
-        print(f'Warning: pytorch not supported on this system: '
-              f'{platform.machine()} with cuda version: {cuda_version}')
+        print('Warning: pytorch not supported on this system')
         return
 
     script = f"""
@@ -85,12 +108,12 @@ def install_pytorch_if_supported_for_this_machine() -> None:
     umask 000
     . /opt/venv/bin/activate
     python3 -m pip install --ignore-installed --upgrade pip --no-cache-dir
-    python3 -m pip install --no-cache-dir {PytorchVersion.pytorch_url}
+    python3 -m pip install --no-cache-dir {pytorch_version.pytorch_url}
     """
 
-    if PytorchVersion.torchvision_url is not None:
+    if pytorch_version.torchvision_url is not None:
         script += f"""
-        python3 -m pip install --no-cache-dir {PytorchVersion.torchvision_url}
+        python3 -m pip install --no-cache-dir {pytorch_version.torchvision_url}
         """
 
     subprocess.run(script, shell=True, check=True)
@@ -100,18 +123,16 @@ def install_nvblox_torch_if_supported_for_this_machine() -> None:
 
     pytorch_version = get_pytorch_version_for_this_machine()
     if pytorch_version is None:
-        cuda_version = get_cuda_version()
-        print(f'Warning: nvblox torch not supported on this system: '
-              f'{platform.machine()} with cuda version: {cuda_version}')
+        print('Warning: nvblox torch not supported on this system')
         return
 
-    script = """
+    script = f"""
     set -ex
     umask 000
     . /opt/venv/bin/activate
     python3 -m pip install --ignore-installed --upgrade pip --no-cache-dir
     # Need to force the torch version to prevent accidental upgrades.
-    pip install /nvblox/nvblox_torch/ "torch=={pytorch_version.pytorch_version}"'
+    pip install /nvblox/nvblox_torch/ torch=={pytorch_version.pytorch_version}
     """
 
     subprocess.run(script, shell=True, check=True)
