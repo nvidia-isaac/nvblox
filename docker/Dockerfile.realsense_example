@@ -19,8 +19,6 @@ RUN apt update && apt-get --no-install-recommends install -y \
 RUN . /opt/venv/bin/activate && \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install \
-        # Nvblox is installed from the build directory
-        /nvblox/nvblox_torch \
         # Other dependencies for the realsense example
         pyrealsense2 \
         rerun-sdk

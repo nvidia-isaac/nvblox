@@ -16,6 +16,7 @@ import platform
 import argparse
 from dataclasses import dataclass
 from typing import Optional
+import sys
 
 
 @dataclass
@@ -25,8 +26,22 @@ class PytorchVersion:
     cuda_version: str
 
     pytorch_version: str
-    pytorch_url: str
-    torchvision_url: Optional[str] = None    # Only needed for jetson.
+    _pytorch_url: str
+    _torchvision_url: Optional[str] = None    # Only needed for jetson.
+
+    def python_version(self) -> str:
+        """Return python version string like cp312"""
+        return f'cp{sys.version_info.major}{sys.version_info.minor}'
+
+    def pytorch_url(self) -> str:
+        """URL depends on the current python version"""
+        return self._pytorch_url.replace('PY', self.python_version())
+
+    def torchvision_url(self) -> Optional[str]:
+        """URL depends on the current python version"""
+        if self._torchvision_url is None:
+            return None
+        return self._torchvision_url.replace('PY', self.python_version())
 
 
 # List of supported pytorch versions in this project.
@@ -35,36 +50,36 @@ PYTORCH_VERSIONS = [
         platform='x86_64',
         cuda_version='11',
         pytorch_version='2.7.1',
-        pytorch_url=
+        _pytorch_url=
     # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu118/torch-2.7.1%2Bcu118-cp310-cp310-manylinux_2_28_x86_64.whl'
+        'https://download.pytorch.org/whl/cu118/torch-2.7.1%2Bcu118-PY-PY-manylinux_2_28_x86_64.whl'
     ),
     PytorchVersion(
         platform='x86_64',
         cuda_version='12',
         pytorch_version='2.9.1',
-        pytorch_url=
+        _pytorch_url=
     # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu128/torch-2.9.1%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl'
+        'https://download.pytorch.org/whl/cu128/torch-2.9.1%2Bcu128-PY-PY-manylinux_2_28_x86_64.whl'
     ),
     PytorchVersion(
         platform='x86_64',
         cuda_version='13',
         pytorch_version='2.9.1',
-        pytorch_url=
+        _pytorch_url=
     # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu130/torch-2.9.1%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl'
+        'https://download.pytorch.org/whl/cu130/torch-2.9.1%2Bcu130-PY-PY-manylinux_2_28_x86_64.whl'
     ),
     PytorchVersion(
         platform='aarch64',
         cuda_version='12',
         pytorch_version='2.9.1',
-        pytorch_url=
+        _pytorch_url=
     # pylint: disable=line-too-long
-        'https://pypi.jetson-ai-lab.io/jp6/cu126/+f/02f/de421eabbf626/torch-2.9.1-cp310-cp310-linux_aarch64.whl',
-        torchvision_url=
+        'https://pypi.jetson-ai-lab.io/jp6/cu126/+f/02f/de421eabbf626/torch-2.9.1-PY-PY-linux_aarch64.whl',
+        _torchvision_url=
     # pylint: disable=line-too-long
-        'https://pypi.jetson-ai-lab.io/jp6/cu126/+f/d5b/caaf709f11750/torchvision-0.24.1-cp310-cp310-linux_aarch64.whl'
+        'https://pypi.jetson-ai-lab.io/jp6/cu126/+f/d5b/caaf709f11750/torchvision-0.24.1-PY-PY-linux_aarch64.whl'
     ),
 ]
 
@@ -111,12 +126,12 @@ def install_pytorch_if_supported_for_this_machine() -> None:
     umask 000
     . /opt/venv/bin/activate
     python3 -m pip install --ignore-installed --upgrade pip --no-cache-dir
-    python3 -m pip install --no-cache-dir {pytorch_version.pytorch_url}
+    python3 -m pip install --no-cache-dir {pytorch_version.pytorch_url()}
     """
 
     if pytorch_version.torchvision_url is not None:
         script += f"""
-        python3 -m pip install --no-cache-dir {pytorch_version.torchvision_url}
+        python3 -m pip install --no-cache-dir {pytorch_version.torchvision_url()}
         """
 
     subprocess.run(script, shell=True, check=True)
