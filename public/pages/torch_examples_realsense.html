@@ -326,6 +326,7 @@
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to nvblox</a></li>
 <li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
 </ul>
@@ -451,7 +452,7 @@ We provide example-specific <code class="docutils literal notranslate"><span cla
 along with <code class="docutils literal notranslate"><span class="pre">nvblox_torch</span></code>, into a container.</p>
 <p>To run this example we first build the docker image. From the root of the <code class="docutils literal notranslate"><span class="pre">nvblox</span></code>
 repository run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>docker/build_images.py<span class="w"> </span>--build-realsense-example
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>ci/nvblox_ci.py<span class="w"> </span>--image<span class="w"> </span>realsense
 </pre></div>
 </div>
 <p>Then launch the container:</p>

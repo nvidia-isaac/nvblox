@@ -28,10 +28,8 @@ We first create a ``torch`` dataloader to read the image data off the disk:
 
 .. code-block:: python
 
-    dataloader = DataLoader(Sun3dDataset(root=args.dataset_path),
-                            batch_size=1,
-                            shuffle=False,
-                            num_workers=0)
+    dataloader = Sun3dDataset.create_dataloader(root_dir=args.dataset_path,
+                                                sequence_name=args.sequence_name)
 
 
 We then create a ``Mapper``, and specify a couple of parameters, in particular:

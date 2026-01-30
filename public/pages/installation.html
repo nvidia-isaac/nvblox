@@ -328,6 +328,7 @@
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to nvblox</a></li>
 <li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
 </ul>
@@ -396,6 +397,7 @@
 <thead>
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>x86 + dGPU</p></th>
+<th class="head"><p>JetPack 7.0.X</p></th>
 <th class="head"><p>JetPack 6.X</p></th>
 <th class="head"><p>JetPack 5.X</p></th>
 </tr>
@@ -405,13 +407,16 @@
 <td><p>✅</p></td>
 <td><p>❌</p></td>
 <td><p>❌</p></td>
+<td><p>❌</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nvblox_torch</span> <span class="pre">(src)</span></code></p></td>
 <td><p>✅</p></td>
+<td><p>❌</p></td>
 <td><p>✅</p></td>
 <td><p>❌</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nvblox</span> <span class="pre">C++</span> <span class="pre">(src)</span></code></p></td>
+<td><p>✅</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
@@ -424,12 +429,13 @@
 <li><p><strong>x86 + discrete GPU</strong></p>
 <ul>
 <li><p>Ubuntu 20.04, 22.04, 24.04</p></li>
-<li><p>CUDA 11.4 - 12.8</p></li>
+<li><p>CUDA 11.4 - 13.0</p></li>
+<li><p>GPU with compute capability 7.5 or higher. See <a class="reference external" href="https://developer.nvidia.com/cuda/gpus">here</a> for a list of GPUs and their compute capabilities.</p></li>
 </ul>
 </li>
 <li><p><strong>Jetson (ARM64)</strong></p>
 <ul>
-<li><p>(ARM64) Jetpack 5, 6</p></li>
+<li><p>(ARM64) Jetpack 5, 6, 7</p></li>
 </ul>
 </li>
 </ul>
@@ -449,11 +455,12 @@ pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nv
 </pre></div>
 </div>
 </div><div aria-labelledby="tab-0-0-2" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-2" name="0-2" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-pip<span class="w"> </span>libglib2.0-0<span class="w"> </span>libgl1<span class="w"> </span><span class="c1"># Open3D dependencies</span>
+pip3<span class="w"> </span>install<span class="w"> </span><span class="nv">torch</span><span class="o">==</span><span class="m">2</span>.7.1+cu118<span class="w"> </span>torchvision<span class="w"> </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cu118/
 pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nvidia-isaac/nvblox/releases/download/vunknown/nvblox_torch-unknown+cu11ubuntu22-py3-none-linux_x86_64.whl
 </pre></div>
 </div>
 </div><div aria-labelledby="tab-0-0-3" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-3" name="0-3" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-pip<span class="w"> </span>libglib2.0-0<span class="w"> </span>libgl1<span class="w"> </span><span class="c1"># Open3D dependencies</span>
-pip3<span class="w"> </span>install<span class="w"> </span>torch<span class="w"> </span>torchvision<span class="w"> </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cu130/torch/<span class="w"> </span><span class="nv">torch</span><span class="o">==</span><span class="m">2</span>.9.1+cu130
+pip3<span class="w"> </span>install<span class="w"> </span><span class="nv">torch</span><span class="o">==</span><span class="m">2</span>.9.1+cu130<span class="w"> </span>torchvision<span class="w"> </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cu130/
 pip3<span class="w"> </span>install<span class="w"> </span>https://github.com/nvidia-isaac/nvblox/releases/download/vunknown/nvblox_torch-unknown+cu13ubuntu24-py3-none-linux_x86_64.whl
 </pre></div>
 </div>
@@ -483,7 +490,7 @@ We provide a docker image for building and developing inside.</p>
 </div>
 <p>To build the library run</p>
 <div class="sphinx-tabs docutils container">
-<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-1-1-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-1-1-0" name="1-0" role="tab" tabindex="0">x86, JetPack 6</button><button aria-controls="panel-1-1-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-1-1-1" name="1-1" role="tab" tabindex="-1">JetPack 5</button></div><div aria-labelledby="tab-1-1-0" class="sphinx-tabs-panel" id="panel-1-1-0" name="1-0" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>/workspaces/nvblox/build
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-1-1-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-1-1-0" name="1-0" role="tab" tabindex="0">x86, JetPack 6</button><button aria-controls="panel-1-1-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-1-1-1" name="1-1" role="tab" tabindex="-1">JetPack 7, JetPack 5</button></div><div aria-labelledby="tab-1-1-0" class="sphinx-tabs-panel" id="panel-1-1-0" name="1-0" role="tabpanel" tabindex="0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>/workspaces/nvblox/build
 <span class="nb">cd</span><span class="w"> </span>/workspaces/nvblox/build
 cmake<span class="w"> </span>..
 make<span class="w"> </span>-j<span class="si">${</span><span class="nv">nproc</span><span class="si">}</span>
@@ -503,8 +510,8 @@ make<span class="w"> </span>-j<span class="si">${</span><span class="nv">nproc</
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>We are using <cite>ccache</cite> to speed up the build process which may sometimes cause issues when the ccache directory is not writable.
-If you see errors like “<cite>/usr/local/bin/c++ is not able to compile a simple test</cite>”” when building, make sure that the mounted <cite>~/.ccache</cite> is writable for the current user:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>chmod<span class="w"> </span>+rw<span class="w"> </span>~/.ccache
+If you see errors like “<cite>/usr/local/bin/c++ is not able to compile a simple test</cite>”” when building, it may help to exit the container and remove the ccache directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>~/.ccache
 </pre></div>
 </div>
 </div>

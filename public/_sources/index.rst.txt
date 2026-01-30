@@ -107,5 +107,6 @@ If you find this library useful for your research, please consider citing our pa
    :maxdepth: 1
    :caption: Other
 
+   pages/contributing
    pages/technical_details
    pages/limitations

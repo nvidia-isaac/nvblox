@@ -326,6 +326,7 @@
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to nvblox</a></li>
 <li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
 </ul>
@@ -394,10 +395,15 @@ unzip<span class="w"> </span>sun3d-mit_76_studyroom-76-1studyroom2.zip
 <span class="w">    </span>--deep_feature_mapping
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="../_images/desk_radio_x2_600px.gif"><img alt="AM-RADIO Example" src="../_images/desk_radio_x2_600px.gif" style="width: 600px;" />
-</a>
 <p>The code for this example can be found at
 <a class="reference external" href="https://github.com/nvidia-isaac/nvblox/tree/public/nvblox_torch/nvblox_torch/examples/reconstruction/sun3d.py">sun3d.py</a></p>
+<p>The results look like:</p>
+<a class="reference internal image-reference" href="../_images/deep_features_sun3d.gif"><img alt="AM-RADIO on SUN3D" src="../_images/deep_features_sun3d.gif" style="width: 800px;" />
+</a>
+<p>The same technique applied to a cluttered desk scene demonstrates how different
+objects receive distinct feature colorings:</p>
+<a class="reference internal image-reference" href="../_images/desk_radio_x2_600px.gif"><img alt="AM-RADIO on desk scene" src="../_images/desk_radio_x2_600px.gif" style="width: 600px;" />
+</a>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This example consumes &gt;10Gb GPU memory.
@@ -441,9 +447,6 @@ these to 3 dimensions, corresponding to the RGB channels, using PCA in the <code
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">visualizer</span><span class="o">.</span><span class="n">visualize</span><span class="p">(</span><span class="n">color_mesh</span><span class="o">=</span><span class="n">color_mesh</span><span class="p">,</span> <span class="n">feature_mesh</span><span class="o">=</span><span class="n">feature_mesh</span><span class="p">,</span> <span class="n">camera_pose</span><span class="o">=</span><span class="n">pose</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The results look like:</p>
-<a class="reference internal image-reference" href="../_images/deep_features_sun3d.gif"><img alt="AM-RADIO on SUN3D" src="../_images/deep_features_sun3d.gif" style="width: 800px;" />
-</a>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>

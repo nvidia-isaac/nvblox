@@ -326,6 +326,7 @@
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Other</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to nvblox</a></li>
 <li class="toctree-l1"><a class="reference internal" href="technical_details.html">Technical Details</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Limitations</a></li>
 </ul>
@@ -400,10 +401,8 @@ unzip<span class="w"> </span>sun3d-mit_76_studyroom-76-1studyroom2.zip
 <section id="details">
 <h2>Details<a class="headerlink" href="#details" title="Link to this heading">#</a></h2>
 <p>We first create a <code class="docutils literal notranslate"><span class="pre">torch</span></code> dataloader to read the image data off the disk:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">Sun3dDataset</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">),</span>
-                        <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                        <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">Sun3dDataset</span><span class="o">.</span><span class="n">create_dataloader</span><span class="p">(</span><span class="n">root_dir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">,</span>
+                                            <span class="n">sequence_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sequence_name</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We then create a <code class="docutils literal notranslate"><span class="pre">Mapper</span></code>, and specify a couple of parameters, in particular:</p>

@@ -95,7 +95,7 @@ repository run:
 
 .. code-block:: bash
 
-   python3 docker/build_images.py --build-realsense-example
+   python3 ci/nvblox_ci.py --image realsense
 
 Then launch the container:
 

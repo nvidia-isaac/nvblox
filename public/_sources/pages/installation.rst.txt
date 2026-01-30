@@ -19,29 +19,30 @@ Supported Platforms
 
 The following platforms are supported:
 
-+------------------------+-------------+----------------+-------------+
-|                        | x86 + dGPU  | JetPack 6.X    | JetPack 5.X |
-+========================+=============+================+=============+
-| ``nvblox_torch (pip)`` | ✅          | ❌             | ❌          |
-+------------------------+-------------+----------------+-------------+
-| ``nvblox_torch (src)`` | ✅          | ✅             | ❌          |
-+------------------------+-------------+----------------+-------------+
-| ``nvblox C++ (src)``   | ✅          | ✅             | ✅          |
-+------------------------+-------------+----------------+-------------+
++------------------------+-------------+----------------+----------------+-------------+
+|                        | x86 + dGPU  | JetPack 7.0.X  | JetPack 6.X    | JetPack 5.X |
++========================+=============+================+================+=============+
+| ``nvblox_torch (pip)`` | ✅          | ❌             | ❌             | ❌          |
++------------------------+-------------+----------------+----------------+-------------+
+| ``nvblox_torch (src)`` | ✅          | ❌             | ✅             | ❌          |
++------------------------+-------------+----------------+----------------+-------------+
+| ``nvblox C++ (src)``   | ✅          | ✅             | ✅             | ✅          |
++------------------------+-------------+----------------+----------------+-------------+
 
 We support the systems with the following configurations:
 
 - **x86 + discrete GPU**
 
   - Ubuntu 20.04, 22.04, 24.04
-  - CUDA 11.4 - 12.8
+  - CUDA 11.4 - 13.0
+  - GPU with compute capability 7.5 or higher. See `here <https://developer.nvidia.com/cuda/gpus>`__ for a list of GPUs and their compute capabilities.
 
 - **Jetson (ARM64)**
 
-  - (ARM64) Jetpack 5, 6
+  - (ARM64) Jetpack 5, 6, 7
 
 A minimum NVIDIA driver version is imposed by the version of CUDA you have installed.
-See the support table `here <https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html>`_
+See the support table `here <https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html>`__
 to find the minimum driver version for your platform.
 
 
@@ -98,7 +99,7 @@ To build the library run
             cmake ..
             make -j${nproc}
 
-    .. tab:: JetPack 5
+    .. tab:: JetPack 7, JetPack 5
 
            .. code-block:: bash
 
@@ -116,11 +117,11 @@ To build the library run
 .. note::
 
     We are using `ccache` to speed up the build process which may sometimes cause issues when the ccache directory is not writable.
-    If you see errors like "`/usr/local/bin/c++ is not able to compile a simple test`"" when building, make sure that the mounted `~/.ccache` is writable for the current user:
+    If you see errors like "`/usr/local/bin/c++ is not able to compile a simple test`"" when building, it may help to exit the container and remove the ccache directory:
 
     .. code-block:: bash
 
-        sudo chmod +rw ~/.ccache
+        rm -rf ~/.ccache
 
 Install ``nvblox_torch`` python package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

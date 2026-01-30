@@ -16,6 +16,12 @@ From the nvblox base folder run
 This produces an output mesh file ``mesh.ply`` in the current directory.
 
 We can view the mesh using the Open3D viewer.
+
+.. note::
+
+   If Open3D is not available for your platform, any tool that can visualize PLY files (such as
+   `CloudCompare <https://www.cloudcompare.org>`_ and `Meshlab <https://www.meshlab.net/>`_) may be used instead.
+
 First we need to install Open3D.
 
 .. code-block:: bash

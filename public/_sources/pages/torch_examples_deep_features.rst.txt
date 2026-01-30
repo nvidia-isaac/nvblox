@@ -14,12 +14,22 @@ Launch the example by running:
         --dataset_path <PATH>/sun3d-mit_76_studyroom-76-1studyroom2/ \
         --deep_feature_mapping
 
-.. image:: ../images/desk_radio_x2_600px.gif
-   :width: 600px
-   :alt: AM-RADIO Example
-
 The code for this example can be found at
 :nvblox_code_link:`<nvblox_torch/nvblox_torch/examples/reconstruction/sun3d.py>`
+
+The results look like:
+
+.. image:: ../images/deep_features_sun3d.gif
+   :width: 800px
+   :alt: AM-RADIO on SUN3D
+
+The same technique applied to a cluttered desk scene demonstrates how different
+objects receive distinct feature colorings:
+
+.. image:: ../images/desk_radio_x2_600px.gif
+   :width: 600px
+   :alt: AM-RADIO on desk scene
+
 
 
 .. note:: This example consumes >10Gb GPU memory.
@@ -78,11 +88,6 @@ these to 3 dimensions, corresponding to the RGB channels, using PCA in the ``Vis
 
         visualizer.visualize(color_mesh=color_mesh, feature_mesh=feature_mesh, camera_pose=pose)
 
-The results look like:
-
-.. image:: ../images/deep_features_sun3d.gif
-   :width: 800px
-   :alt: AM-RADIO on SUN3D
 
 References
 ----------
