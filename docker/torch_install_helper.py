@@ -83,7 +83,7 @@ PYTORCH_VERSIONS = [
     PytorchVersion(
         platform='aarch64',
         cuda_version='12',
-        pytorch_version='2.9.1',
+        pytorch_version='2.3.0',
         _pytorch_url='https://nvidia.box.com/shared/static/mp164asf3sceb570wvjsrezk1p4ftj8t.whl',
         pytorch_filename='torch-2.3.0-cp310-cp310-linux_aarch64.whl',
     # pylint: disable=line-too-long
