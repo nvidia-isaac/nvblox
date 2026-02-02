@@ -76,6 +76,9 @@ PYTORCH_VERSIONS = [
         _pytorch_url=
     # pylint: disable=line-too-long
         'https://download.pytorch.org/whl/cu130/torch-2.9.1%2Bcu130-PY-PY-manylinux_2_28_x86_64.whl',
+        _torchvision_url=
+    # pylint: disable=line-too-long
+        'https://download.pytorch.org/whl/cu130/torchvision-0.24.1%2Bcu130-PY-PY-manylinux_2_28_x86_64.whl',
     ),
     PytorchVersion(
         platform='aarch64',
