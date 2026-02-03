@@ -16,84 +16,64 @@ import platform
 import argparse
 from dataclasses import dataclass
 from typing import Optional
-import sys
 
 
 @dataclass
-class PytorchVersion:
+class TorchVersion:
     """Store information of a pythorch version."""
 
     platform: str
     cuda_version: str
 
     pytorch_version: str
-    _pytorch_url: str
+    torchvision_version: str
+    index_url: Optional[str] = None
 
     # Special treatment needed for Jetson:
-    # * Need to explicitly install torchvision
+    # * Need to explicitly install urls.
     # * Wheel urls has to be renamed to be installable. Hence we need the filename as well
-    _torchvision_url: Optional[str] = None
+    # TODO(dtingdahl): Remove these variables by using the pip install method described on
+    #  https://docs.nvidia.com/deeplearning/frameworks/install-pytorch-jetson-platform/index.html.
+    #  So far, this method cause linkage errors in our containers due to wrong version of cuDNN.
+    pytorch_url: Optional[str] = None
+    torchvision_url: Optional[str] = None
     torchvision_filename: Optional[str] = None
     pytorch_filename: Optional[str] = None
 
-    def python_version(self) -> str:
-        """Return python version string like cp312"""
-        return f'cp{sys.version_info.major}{sys.version_info.minor}'
-
-    def pytorch_url(self) -> str:
-        """URL depends on the current python version"""
-        return self._pytorch_url.replace('PY', self.python_version())
-
-    def torchvision_url(self) -> Optional[str]:
-        """URL depends on the current python version"""
-        if self._torchvision_url is None:
-            return None
-        return self._torchvision_url.replace('PY', self.python_version())
-
 
 # List of supported pytorch versions in this project.
-PYTORCH_VERSIONS = [
-    PytorchVersion(
+TORCH_VERSIONS = [
+    TorchVersion(
         platform='x86_64',
         cuda_version='11',
-        pytorch_version='2.7.1',
-        _pytorch_url=
-    # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu118/torch-2.7.1%2Bcu118-PY-PY-manylinux_2_28_x86_64.whl',
-    # pylint: disable=line-too-long
-        _torchvision_url=
-        'https://download.pytorch.org/whl/cu118/torchvision-0.22.0%2Bcu118-PY-PY-manylinux_2_28_x86_64.whl',
+        index_url='https://download.pytorch.org/whl/cu118',
+        pytorch_version='2.7.0',
+        torchvision_version='0.22.0',
     ),
-    PytorchVersion(
+    TorchVersion(
         platform='x86_64',
         cuda_version='12',
+        index_url='https://download.pytorch.org/whl/cu128',
         pytorch_version='2.9.1',
-        _pytorch_url=
-    # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu128/torch-2.9.1%2Bcu128-PY-PY-manylinux_2_28_x86_64.whl',
-    # pylint: disable=line-too-long
-        _torchvision_url=
-        'https://download.pytorch.org/whl/cu128/torchvision-0.24.1%2Bcu128-PY-PY-manylinux_2_28_x86_64.whl',
+        torchvision_version='0.24.1',
     ),
-    PytorchVersion(
+    TorchVersion(
         platform='x86_64',
         cuda_version='13',
+        index_url='https://download.pytorch.org/whl/cu130',
         pytorch_version='2.9.1',
-        _pytorch_url=
-    # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu130/torch-2.9.1%2Bcu130-PY-PY-manylinux_2_28_x86_64.whl',
-        _torchvision_url=
-    # pylint: disable=line-too-long
-        'https://download.pytorch.org/whl/cu130/torchvision-0.24.1%2Bcu130-PY-PY-manylinux_2_28_x86_64.whl',
+        torchvision_version='0.24.1',
     ),
-    PytorchVersion(
+    TorchVersion(
         platform='aarch64',
         cuda_version='12',
         pytorch_version='2.3.0',
-        _pytorch_url='https://nvidia.box.com/shared/static/mp164asf3sceb570wvjsrezk1p4ftj8t.whl',
+        torchvision_version='0.18.0',
+    # pylint: disable=line-too-long
+        pytorch_url='https://nvidia.box.com/shared/static/mp164asf3sceb570wvjsrezk1p4ftj8t.whl',
         pytorch_filename='torch-2.3.0-cp310-cp310-linux_aarch64.whl',
     # pylint: disable=line-too-long
-        _torchvision_url='https://nvidia.box.com/shared/static/xpr06qe6ql3l6rj22cu3c45tz1wzi36p.whl',
+        torchvision_url='https://nvidia.box.com/shared/static/xpr06qe6ql3l6rj22cu3c45tz1wzi36p.whl',
         torchvision_filename='torchvision-0.18.0-cp310-cp310-linux_aarch64.whl',
     ),
 ]
@@ -109,14 +89,14 @@ def get_cuda_version() -> str:
     return match.group(1).split('.')[0]
 
 
-def get_pytorch_version_for_this_machine() -> Optional[PytorchVersion]:
+def get_pytorch_version_for_this_machine() -> Optional[TorchVersion]:
     """Get the pytorch version for the current system or None if not supported."""
 
     print(f'platform.machine(): {platform.machine()}')
     print(f'get_cuda_version(): {get_cuda_version()}')
 
     result = [
-        v for v in PYTORCH_VERSIONS
+        v for v in TORCH_VERSIONS
         if v.platform == platform.machine() and v.cuda_version == get_cuda_version()
     ]
 
@@ -149,24 +129,28 @@ def install_pytorch_if_supported_for_this_machine() -> None:
     pip install --ignore-installed --upgrade pip --no-cache-dir
     """
 
-    pytorch_url = pytorch_version.pytorch_url()
-    torchvision_url = pytorch_version.torchvision_url()
+    if pytorch_version.platform == 'x86_64':
+        script += f"""
+            pip install \
+                --no-cache-dir \
+                --index-url {pytorch_version.index_url} \
+                torch=={pytorch_version.pytorch_version} \
+                torchvision=={pytorch_version.torchvision_version}
+            """
+    else:
+        # If on aarch64, we need to download the wheel blob and rename it.
+        # Otherwise pip won't install it.
+        assert pytorch_version.pytorch_filename is not None
+        assert pytorch_version.torchvision_filename is not None
+        pytorch_file = download_and_rename_wheel(pytorch_version.pytorch_url,
+                                                 pytorch_version.pytorch_filename)
+        torchvision_file = download_and_rename_wheel(pytorch_version.torchvision_url,
+                                                     pytorch_version.torchvision_filename)
 
-    # If explicit filename is provided, we need to download the wheel and rename it
-    # since the url is not installable.
-    if pytorch_version.pytorch_filename:
-        download_and_rename_wheel(pytorch_version.pytorch_url(), pytorch_version.pytorch_filename)
-        pytorch_url = pytorch_version.pytorch_filename
-    if pytorch_version.torchvision_filename:
-        download_and_rename_wheel(pytorch_version.torchvision_url(),
-                                  pytorch_version.torchvision_filename)
-        torchvision_url = pytorch_version.torchvision_filename
-
-    # Add snippet to install torch and torchvision.
-    script += f"""
-        pip install --no-cache-dir {pytorch_url}
-        pip install --no-cache-dir {torchvision_url}
-        """
+        script += f"""
+            pip install --no-cache-dir {pytorch_file}
+            pip install --no-cache-dir {torchvision_file}
+            """
 
     subprocess.run(script, shell=True, check=True)
 
