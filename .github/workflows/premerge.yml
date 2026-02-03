@@ -42,6 +42,7 @@ jobs:
           cuda-arch: 'native'
           cuda-version: '11'
           ubuntu-version: '22'
+          run-realsense-tests: false # CuvSLAM unsupported for CUDA 11.
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
   ## ------------------------------------------
   ## Build and test x86/CU12/U22
