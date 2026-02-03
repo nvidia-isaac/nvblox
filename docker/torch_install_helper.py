@@ -60,6 +60,9 @@ PYTORCH_VERSIONS = [
         _pytorch_url=
     # pylint: disable=line-too-long
         'https://download.pytorch.org/whl/cu118/torch-2.7.1%2Bcu118-PY-PY-manylinux_2_28_x86_64.whl',
+    # pylint: disable=line-too-long
+        _torchvision_url=
+        'https://download.pytorch.org/whl/cu118/torchvision-0.22.0%2Bcu118-PY-PY-manylinux_2_28_x86_64.whl',
     ),
     PytorchVersion(
         platform='x86_64',
@@ -68,6 +71,9 @@ PYTORCH_VERSIONS = [
         _pytorch_url=
     # pylint: disable=line-too-long
         'https://download.pytorch.org/whl/cu128/torch-2.9.1%2Bcu128-PY-PY-manylinux_2_28_x86_64.whl',
+    # pylint: disable=line-too-long
+        _torchvision_url=
+        'https://download.pytorch.org/whl/cu128/torchvision-0.24.1%2Bcu128-PY-PY-manylinux_2_28_x86_64.whl',
     ),
     PytorchVersion(
         platform='x86_64',
@@ -144,28 +150,22 @@ def install_pytorch_if_supported_for_this_machine() -> None:
     """
 
     pytorch_url = pytorch_version.pytorch_url()
-    opt_torchvision_url = pytorch_version.torchvision_url()
+    torchvision_url = pytorch_version.torchvision_url()
 
     # If explicit filename is provided, we need to download the wheel and rename it
     # since the url is not installable.
     if pytorch_version.pytorch_filename:
         download_and_rename_wheel(pytorch_version.pytorch_url(), pytorch_version.pytorch_filename)
         pytorch_url = pytorch_version.pytorch_filename
-
     if pytorch_version.torchvision_filename:
         download_and_rename_wheel(pytorch_version.torchvision_url(),
                                   pytorch_version.torchvision_filename)
-        opt_torchvision_url = pytorch_version.torchvision_filename
+        torchvision_url = pytorch_version.torchvision_filename
 
-    # Add snippet to install torch.
+    # Add snippet to install torch and torchvision.
     script += f"""
         pip install --no-cache-dir {pytorch_url}
-        """
-
-    # optionally add snippet to install torchvision
-    if opt_torchvision_url:
-        script += f"""
-        pip install --no-cache-dir {opt_torchvision_url}
+        pip install --no-cache-dir {torchvision_url}
         """
 
     subprocess.run(script, shell=True, check=True)
