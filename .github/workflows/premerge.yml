@@ -134,25 +134,26 @@ jobs:
   ## ------------------------------------------
   ## Build and test Thor
   ## ------------------------------------------
-  premerge_thor_jetpack7:
-    name: Build&Test thor-jetpack7
-    needs: [lint_precommit]
-    runs-on: [self-hosted, jetson-thor]
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-      - name: premerge_thor_jetpack7 - Unit tests
-        uses: ./.github/actions/build-and-test
-        with:
-          platform: jetpack7
-          cuda-version: '12' # unused
-          ubuntu-version: '24' # unused
-          cuda-arch: '110' # Native detection of sm-arch not supported on thor.
-          ngc-api-key: ${{ secrets.NGC_API_KEY }}
-          run-realsense-tests: false
-          run-cuda-sanitizer: false
+  # TODO(dtingdahl) Enable once Thor is supported.
+  # premerge_thor_jetpack7:
+  #   name: Build&Test thor-jetpack7
+  #   needs: [lint_precommit]
+  #   runs-on: [self-hosted, jetson-thor]
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         lfs: true
+  #     - name: premerge_thor_jetpack7 - Unit tests
+  #       uses: ./.github/actions/build-and-test
+  #       with:
+  #         platform: jetpack7
+  #         cuda-version: '12' # unused
+  #         ubuntu-version: '24' # unused
+  #         cuda-arch: '110' # Native detection of sm-arch not supported on thor.
+  #         ngc-api-key: ${{ secrets.NGC_API_KEY }}
+  #         run-realsense-tests: false
+  #         run-cuda-sanitizer: false
   ## --------------------------------------------------------
   ## Build docs
   ## --------------------------------------------------------
