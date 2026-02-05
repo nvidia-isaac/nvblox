@@ -15,6 +15,8 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/sensors/pointcloud_to_depth_conversion.h"
+
 namespace nvblox {
 template <typename SensorType>
 void Mapper::integrateDepth(const DepthImage& depth_frame,
@@ -96,8 +98,7 @@ void Mapper::integrateDepth(const Pointcloud& pointcloud,
                               *cuda_stream_);
 
   // Integrate the depth image.
-  integrateDepth(depth_frame_from_pointcloud_, T_L_S_scanStart, lidar_sensor,
-                 T_L_S_scanEnd, scan_duration_ms);
+  integrateDepth(depth_frame_from_pointcloud_, T_L_S_scanStart, lidar_sensor);
 }
 
 template <typename SensorType>

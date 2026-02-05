@@ -26,6 +26,7 @@ limitations under the License.
 #include "nvblox/mapper/mapper.h"
 #include "nvblox/mesh/mesh.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/sensors/lidar.h"
 #include "nvblox/tests/utils.h"
 
 using namespace nvblox;
@@ -401,6 +402,64 @@ TEST(MapperTest, SaveAndLoad) {
             mapper2.occupancy_layer().numBlocks());
   EXPECT_EQ(mapper.freespace_layer().numBlocks(),
             mapper2.freespace_layer().numBlocks());
+}
+
+TEST(MapperTest, IntegratePointcloud) {
+  // Create a simple pointcloud
+  Pointcloud pointcloud(MemoryType::kUnified);
+  std::vector<Vector3f> points_host = {
+      Vector3f(1.0f, 0.0f, 0.0f),  Vector3f(2.0f, 0.0f, 0.0f),
+      Vector3f(3.0f, 0.0f, 0.0f),  Vector3f(1.5f, 0.5f, 0.0f),
+      Vector3f(2.5f, -0.5f, 0.0f), Vector3f(2.0f, 1.0f, 0.0f),
+      Vector3f(2.0f, -1.0f, 0.0f), Vector3f(3.0f, 0.5f, 0.5f)};
+  pointcloud.copyPointsFromAsync(points_host, CudaStreamOwning());
+
+  // Create a Lidar sensor with valid dimensions
+  const int num_azimuth_divisions = 1024;
+  const int num_elevation_divisions = 16;
+  const float min_valid_range_m = 0.1f;
+  const float vertical_fov_rad = 30.0f * M_PI / 180.0f;
+  Lidar lidar(num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
+              vertical_fov_rad);
+
+  // Create Mapper
+  const float voxel_size_m = 0.1f;
+  Mapper mapper(voxel_size_m, MemoryType::kDevice, ProjectiveLayerType::kTsdf);
+
+  // Integrate pointcloud without motion compensation
+  Transform T_L_S = Transform::Identity();
+  bool use_lidar_motion_compensation = false;
+  mapper.integrateDepth(pointcloud, T_L_S, lidar,
+                        use_lidar_motion_compensation);
+
+  // Verify integration worked - should have allocated some blocks
+  const int num_blocks_after_first = mapper.tsdf_layer().numBlocks();
+  EXPECT_GT(num_blocks_after_first, 0);
+
+  // Integrate pointcloud again with motion compensation from a different
+  // location Motion compensation requires timestamps for each point
+  const int64_t scan_duration_ms_value = 100;
+  Time scan_duration_ms(scan_duration_ms_value);
+  std::vector<Time> timestamps_ms(points_host.size());
+  for (size_t i = 0; i < points_host.size(); i++) {
+    // Spread timestamps evenly across scan duration
+    timestamps_ms[i] = Time(i * scan_duration_ms_value / points_host.size());
+  }
+  pointcloud.copyTimestampsFromAsync(timestamps_ms, CudaStreamOwning());
+
+  // Start from a different position to cover new space
+  Transform T_L_S_scanStart2 = Transform::Identity();
+  T_L_S_scanStart2.translate(Vector3f(0.0f, 3.0f, 0.0f));  // Start 3m away in y
+  Transform T_L_S_scanEnd2 = Transform::Identity();
+  T_L_S_scanEnd2.translate(Vector3f(0.0f, 4.0f, 0.0f));  // End 4m away in y
+  use_lidar_motion_compensation = true;
+  mapper.integrateDepth(pointcloud, T_L_S_scanStart2, lidar,
+                        use_lidar_motion_compensation, T_L_S_scanEnd2,
+                        scan_duration_ms);
+
+  // Verify more blocks were allocated after second integration
+  const int num_blocks_after_second = mapper.tsdf_layer().numBlocks();
+  EXPECT_GT(num_blocks_after_second, num_blocks_after_first);
 }
 
 int main(int argc, char** argv) {
