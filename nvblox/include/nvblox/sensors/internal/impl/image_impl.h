@@ -34,8 +34,7 @@ Image<ElementType>::Image(int rows, int cols, MemoryType memory_type)
 
 template <typename ElementType>
 Image<ElementType>::Image(Image<ElementType>&& other)
-    : ImageBase<ElementType>(other.rows_, other.cols_,
-                             other.stride_num_elements_,
+    : ImageBase<ElementType>(other.rows_, other.cols_, other.stride_bytes(),
                              other.num_elements_per_pixel_, other.data_),
       memory_type_(other.memory_type()),
       owned_data_(std::move(other.owned_data_)) {
