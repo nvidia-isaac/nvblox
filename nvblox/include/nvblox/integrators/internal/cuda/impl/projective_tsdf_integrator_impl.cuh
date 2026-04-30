@@ -50,6 +50,23 @@ struct UpdateTsdfVoxelFunctor {
       return false;
     }
 
+    // Dynamic discrepancy check (disabled when threshold < 0).
+    // Voxels (with weight >= dynamic_discrepancy_min_weight_) whose
+    // clamped projective distance disagrees with the stored TSDF value
+    // by more than the threshold are reset.
+    // Voxels behind the surface are left untouched.
+    if (dynamic_discrepancy_threshold_m_ >= 0.0f &&
+        voxel_ptr->weight >= dynamic_discrepancy_min_weight_) {
+      const float clamped_distance =
+          fmin(truncation_distance_m_,
+               fmax(-truncation_distance_m_, voxel_to_surface_distance));
+      const float discrepancy = fabs(clamped_distance - voxel_ptr->distance);
+      if (discrepancy > dynamic_discrepancy_threshold_m_) {
+        voxel_ptr->weight = 0.0f;
+        voxel_ptr->distance = 0.0f;
+      }
+    }
+
     // Handle inactive depth pixels. We do not want to integrate
     // them, but we still want to clear any voxels in front of the surface. We
     // therefore integrate only up until the positive truncation distance.
@@ -93,6 +110,12 @@ struct UpdateTsdfVoxelFunctor {
   float max_weight_ = kProjectiveIntegratorMaxWeightParamDesc.default_value;
   float invalid_depth_decay_factor_ =
       kProjectiveIntegratorMaxWeightParamDesc.default_value;
+  float dynamic_discrepancy_threshold_m_ =
+      kProjectiveDynamicTsdfIntegratorDiscrepancyThresholdMParamDesc
+          .default_value;
+  float dynamic_discrepancy_min_weight_ =
+      kProjectiveDynamicTsdfIntegratorDynamicDiscrepancyMinWeightParamDesc
+          .default_value;
 
   WeightingFunction weighting_function_ =
       kProjectiveIntegratorWeightingModeParamDesc.default_value;

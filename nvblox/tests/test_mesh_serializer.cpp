@@ -63,62 +63,80 @@ class MeshSerializerGpuTestFixture : public ::testing::Test {
     }
   }
 
-  void validateSerializedMesh(
-      const std::vector<nvblox::Index3D>& serialized_block_indices) {
-    const std::shared_ptr<SerializedColorMeshLayer> result =
-        serializer_.getSerializedLayer();
-    ASSERT_EQ(result->vertex_block_offsets.size(),
-              serialized_block_indices.size() + 1);
-    ASSERT_EQ(result->triangle_index_block_offsets.size(),
+  /// Compare serialized flat buffers + offsets against the source mesh blocks.
+  template <typename VertVec, typename ColorVec, typename TriVec>
+  void validateSerializedMeshContents(
+      const std::vector<nvblox::Index3D>& serialized_block_indices,
+      const VertVec& vertices, const ColorVec& vertex_appearances,
+      const TriVec& triangle_indices,
+      const host_vector<int32_t>& vertex_block_offsets,
+      const host_vector<int32_t>& triangle_index_block_offsets) {
+    ASSERT_EQ(vertex_block_offsets.size(), serialized_block_indices.size() + 1);
+    ASSERT_EQ(triangle_index_block_offsets.size(),
               serialized_block_indices.size() + 1);
 
-    EXPECT_EQ(result->vertex_block_offsets[0], 0);
-    EXPECT_EQ(result->triangle_index_block_offsets[0], 0);
+    EXPECT_EQ(vertex_block_offsets[0], 0);
+    EXPECT_EQ(triangle_index_block_offsets[0], 0);
 
     int serialized_vertex_index = 0;
     int serialized_triangle_index = 0;
     for (size_t i = 0; i < serialized_block_indices.size(); ++i) {
-      EXPECT_EQ(result->vertex_block_offsets[i], serialized_vertex_index);
-      EXPECT_EQ(result->triangle_index_block_offsets[i],
-                serialized_triangle_index);
+      EXPECT_EQ(vertex_block_offsets[i], serialized_vertex_index);
+      EXPECT_EQ(triangle_index_block_offsets[i], serialized_triangle_index);
 
       const nvblox::ColorMeshBlock* mesh_block =
           mesh_layer_->getBlockAtIndex(serialized_block_indices[i]).get();
 
       ASSERT_NE(mesh_block, nullptr);
 
-      ASSERT_GE(result->vertices.size(),
-                serialized_vertex_index + mesh_block->vertices.size());
-      ASSERT_GE(
-          result->vertex_appearances.size(),
-          serialized_vertex_index + mesh_block->vertex_appearances.size());
-      ASSERT_GE(result->triangle_indices.size(),
-                serialized_triangle_index + mesh_block->triangles.size());
+      ASSERT_GE(vertices.size(), static_cast<size_t>(serialized_vertex_index) +
+                                     mesh_block->vertices.size());
+      ASSERT_GE(vertex_appearances.size(),
+                static_cast<size_t>(serialized_vertex_index) +
+                    mesh_block->vertex_appearances.size());
+      ASSERT_GE(triangle_indices.size(),
+                static_cast<size_t>(serialized_triangle_index) +
+                    mesh_block->triangles.size());
 
-      ASSERT_EQ(mesh_block->vertices.size(), result->getNumVerticesInBlock(i));
-      ASSERT_EQ(mesh_block->triangles.size(),
-                result->getNumTriangleIndicesInBlock(i));
+      const size_t verts_in_block =
+          static_cast<size_t>(vertex_block_offsets[i + 1]) -
+          static_cast<size_t>(vertex_block_offsets[i]);
+      const size_t tris_in_block =
+          static_cast<size_t>(triangle_index_block_offsets[i + 1]) -
+          static_cast<size_t>(triangle_index_block_offsets[i]);
+      ASSERT_EQ(mesh_block->vertices.size(), verts_in_block);
+      ASSERT_EQ(mesh_block->triangles.size(), tris_in_block);
 
       for (size_t j = 0; j < mesh_block->vertices.size(); ++j) {
         for (int k = 0; k < 3; ++k) {
-          EXPECT_EQ(result->vertices[serialized_vertex_index][k],
+          EXPECT_EQ(vertices[serialized_vertex_index][k],
                     mesh_block->vertices[j][k]);
         }
-        EXPECT_EQ(result->vertex_appearances[serialized_vertex_index].r(),
+        EXPECT_EQ(vertex_appearances[serialized_vertex_index].r(),
                   mesh_block->vertex_appearances[j].r());
-        EXPECT_EQ(result->vertex_appearances[serialized_vertex_index].g(),
+        EXPECT_EQ(vertex_appearances[serialized_vertex_index].g(),
                   mesh_block->vertex_appearances[j].g());
-        EXPECT_EQ(result->vertex_appearances[serialized_vertex_index].b(),
+        EXPECT_EQ(vertex_appearances[serialized_vertex_index].b(),
                   mesh_block->vertex_appearances[j].b());
         ++serialized_vertex_index;
       }
 
       for (size_t j = 0; j < mesh_block->triangles.size(); ++j) {
-        EXPECT_EQ(result->triangle_indices[serialized_triangle_index],
+        EXPECT_EQ(triangle_indices[serialized_triangle_index],
                   mesh_block->triangles[j]);
         ++serialized_triangle_index;
       }
     }
+  }
+
+  void validateSerializedMesh(
+      const std::vector<nvblox::Index3D>& serialized_block_indices) {
+    const std::shared_ptr<SerializedColorMeshLayer> result =
+        serializer_.getSerializedLayer();
+    validateSerializedMeshContents(
+        serialized_block_indices, result->vertices, result->vertex_appearances,
+        result->triangle_indices, result->vertex_block_offsets,
+        result->triangle_index_block_offsets);
   }
 
   // Data generators
@@ -137,6 +155,32 @@ TEST_F(MeshSerializerGpuTestFixture, serializeAllBlocks) {
                         CudaStreamOwning());
 
   validateSerializedMesh(block_indices_to_serialize);
+}
+
+TEST_F(MeshSerializerGpuTestFixture, serializeToDeviceAllBlocks) {
+  const std::vector<Index3D> block_indices_to_serialize =
+      mesh_layer_->getAllBlockIndices();
+  EXPECT_FALSE(block_indices_to_serialize.empty());
+
+  CudaStreamOwning stream;
+  const std::shared_ptr<ColorMeshSerializerGpu::SerializedLayerTypeDevice>
+      device_result = serializer_.serializeToDevice(
+          *(mesh_layer_.get()), block_indices_to_serialize, stream, true);
+
+  EXPECT_EQ(device_result->block_indices, block_indices_to_serialize);
+
+  std::vector<Vector3f> vertices_host =
+      device_result->vertices.toVectorAsync(stream);
+  std::vector<Color> appearances_host =
+      device_result->vertex_appearances.toVectorAsync(stream);
+  std::vector<int> triangle_indices_host =
+      device_result->triangle_indices.toVectorAsync(stream);
+  stream.synchronize();
+
+  validateSerializedMeshContents(block_indices_to_serialize, vertices_host,
+                                 appearances_host, triangle_indices_host,
+                                 device_result->vertex_block_offsets,
+                                 device_result->triangle_index_block_offsets);
 }
 
 TEST_F(MeshSerializerGpuTestFixture, serializeSomeblocks) {

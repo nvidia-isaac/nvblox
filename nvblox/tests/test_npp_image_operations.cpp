@@ -19,7 +19,7 @@ limitations under the License.
 #include "nvblox/io/image_io.h"
 #include "nvblox/sensors/image.h"
 #include "nvblox/sensors/npp_image_operations.h"
-
+#include "nvblox/tests/utils.h"
 using namespace nvblox;
 
 // Flag to write test data. Can be useful during troubleshooting.
@@ -29,7 +29,7 @@ class NppImageTest : public ::testing::Test {
  protected:
   void SetUp() override {
     // Load a test depth frame to unified memory
-    const std::string base_path = "./data/3dmatch/";
+    const std::string base_path = test_utils::getTestDataPath("data/3dmatch/");
     constexpr int seq_id = 1;
     constexpr bool kMultithreaded = false;
     depth_loader_ptr_ = datasets::threedmatch::internal::createDepthImageLoader(

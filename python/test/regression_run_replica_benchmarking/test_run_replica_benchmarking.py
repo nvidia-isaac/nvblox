@@ -22,13 +22,13 @@ import numpy
 from nvblox_run_replica_benchmarking.__main__ import main
 
 # Repo path to dataset used in regression tests
-DATASET_PATH = 'nvblox/tests/data/replica/office0'
+DATASET_PATH = 'executables/tests/data/replica/office0'
 
 # Repo path to directory containing baseline kpis
 BASELINE_KPI_PATH = 'python/test/regression_run_replica_benchmarking/baseline_kpi.json'
 
 # Binary path to fuser
-FUSE_REPLICA_BINARY_PATH = 'build/nvblox/executables/fuse_replica'
+FUSE_REPLICA_BINARY_PATH = 'build/executables/fuse_replica'
 
 
 def read_json(path: Path) -> dict:

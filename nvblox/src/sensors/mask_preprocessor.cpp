@@ -150,6 +150,11 @@ void MaskPreprocessor::removeSmallConnectedComponents(const MonoImage& mask_in,
     return;
   }
 
+  NVBLOX_CHECK(mask_in.rows() % kDownScaleFactor == 0,
+               "Mask rows must be divisible by kDownScaleFactor");
+  NVBLOX_CHECK(mask_in.cols() % kDownScaleFactor == 0,
+               "Mask cols must be divisible by kDownScaleFactor");
+
   // Allocate output mask if required,
   CHECK_GT(mask_in.rows(), 0);
   CHECK_GT(mask_in.cols(), 0);

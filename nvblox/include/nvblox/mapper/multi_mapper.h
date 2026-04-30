@@ -195,7 +195,8 @@ class MultiMapper {
   /// kHumanWithStaticTsdf/kHumanWithStaticOccupancy).
   ///@param depth_frame Depth frame to integrate. Depth in the image is
   ///                   specified as a float representing meters.
-  ///@param mask Mask. Interpreted as 0=background, >0=foreground.
+  ///@param mask Mask. Interpreted as 0=background, >0=foreground. Dimensions
+  /// must be divisible by kDownScaleFactor.
   ///@param T_L_CD Pose of the depth sensor, specified as a transform from
   ///              sensor frame to layer frame transform.
   ///@param T_CM_CD Transform from depth sensor to mask sensor frame.
@@ -241,7 +242,8 @@ class MultiMapper {
   /// @brief Integrates a color frame into the reconstruction (for mapping
   /// type kHumanWithStaticTsdf/kHumanWithStaticOccupancy).
   ///@param color_frame Color image to integrate.
-  ///@param mask Mask. Interpreted as 0=foreground, >0=background.
+  ///@param mask Mask. Interpreted as 0=foreground, >0=background. Dimensions
+  /// must be divisible by kDownScaleFactor.
   ///@param T_L_C Pose of the sensor, specified as a transform from sensor
   ///             frame to the layer frame.
   ///@param sensor Intrinsics model of the sensor.
@@ -269,6 +271,33 @@ class MultiMapper {
   /// @brief Updating the mesh layers of the mappers depending on the mapping
   /// type.
   void updateColorMesh();
+
+  /// @brief Extract a flat Mesh via single-pass mesh integration.
+  /// @tparam AppearanceVoxelType ColorVoxel or FeatureVoxel.
+  template <typename AppearanceVoxelType>
+  void updateFlatMesh();
+
+  /// @brief Extract a frustum-culled flat Mesh via single-pass mesh
+  /// integration. Only blocks visible in the camera frustum are meshed.
+  /// @tparam AppearanceVoxelType ColorVoxel or FeatureVoxel.
+  /// @param camera Camera intrinsics defining the field of view.
+  /// @param T_L_C Camera-to-layer-frame transform (camera pose in map frame).
+  /// @param max_depth Maximum depth (meters) for frustum extent.
+  template <typename AppearanceVoxelType>
+  void updateFlatMesh(const Camera& camera, const Transform& T_L_C,
+                      float max_depth);
+
+  /// Convenience: extract a flat ColorMesh from all TSDF blocks.
+  void updateFlatColorMesh() { updateFlatMesh<ColorVoxel>(); }
+
+  /// Convenience: extract a frustum-culled flat ColorMesh.
+  void updateFlatColorMesh(const Camera& camera, const Transform& T_L_C,
+                           float max_depth) {
+    updateFlatMesh<ColorVoxel>(camera, T_L_C, max_depth);
+  }
+
+  /// Convenience: extract a flat FeatureMesh from all TSDF blocks.
+  void updateFlatFeatureMesh() { updateFlatMesh<FeatureVoxel>(); }
 
   /// Access to one of the mappers
   const Mapper& background_mapper() const { return *background_mapper_.get(); }

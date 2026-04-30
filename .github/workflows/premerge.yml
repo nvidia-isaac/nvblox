@@ -41,6 +41,8 @@ jobs:
           platform: x86_64
           cuda-version: '11'
           ubuntu-version: '22'
+          run-python-tests: false # Not supported on cuda11
+          run-realsense-tests: false # Not supported on cuda11
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
   ## ------------------------------------------
   ## Build and test x86/CU12/U22
@@ -81,6 +83,7 @@ jobs:
           ubuntu-version: '24'
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
           run-realsense-tests: false # TODO(dtingahl) make realsense docker build for cuda13
+          run-bazel-tests: true
   ## --------------------------------------------------------
   ## Build and test x86/CU12/U22/gcc-sanitizer
   ## --------------------------------------------------------
@@ -101,9 +104,9 @@ jobs:
           ubuntu-version: '22'
           gcc-sanitizer: 1
           ngc-api-key: ${{ secrets.NGC_API_KEY }}
-          run-python-tests: false # TODO(dtingdahl) Enable these tests
-          run-realsense-tests: false #
-          run-cuda-sanitizer: false #
+          run-python-tests: false
+          run-realsense-tests: false
+          run-cuda-sanitizer: false
   ## --------------------------------------------------------
   ## Build docs
   ## --------------------------------------------------------
@@ -121,6 +124,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install doxygen
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends doxygen
       - name: Build docs
         working-directory: ./docs
         run: |

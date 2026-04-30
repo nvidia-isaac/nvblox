@@ -15,6 +15,8 @@ limitations under the License.
 */
 #pragma once
 
+#include "nvblox/experimental/ground_plane/ground_plane_estimator_params.h"
+#include "nvblox/experimental/ground_plane/ransac_plane_fitter_params.h"
 #include "nvblox/utils/params.h"
 
 namespace nvblox {

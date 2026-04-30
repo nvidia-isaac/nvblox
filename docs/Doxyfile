@@ -1,0 +1,40 @@
+# Doxyfile for nvblox_renderer — generates XML for Breathe/Sphinx.
+# Run from the docs/ directory: doxygen Doxyfile
+
+PROJECT_NAME           = nvblox_renderer
+PROJECT_BRIEF          = "Vulkan-based visualization library for nvblox"
+
+# Public renderer headers only (paths relative to docs/).
+INPUT                  = ../nvblox_renderer/include/nvblox/renderer/renderer.h \
+                         ../nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h \
+                         ../nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h \
+                         ../nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h \
+                         ../nvblox_renderer/include/nvblox/renderer/utils/view_camera.h \
+                         ../nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h \
+                         ../nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h
+RECURSIVE              = NO
+FILE_PATTERNS          = *.h
+
+# XML only (consumed by Breathe). No standalone HTML/LaTeX output.
+GENERATE_XML           = YES
+XML_OUTPUT             = _build/doxygen/xml
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+
+# Extraction — public documented members only.
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = NO
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+
+# Preprocessing — don't chase system includes (Vulkan, Eigen, etc.).
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+SEARCH_INCLUDES        = NO
+
+# Quieter output.
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES

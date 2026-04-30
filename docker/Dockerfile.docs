@@ -6,7 +6,9 @@ WORKDIR /nvblox
 
 # Install system packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential
+    build-essential \
+    doxygen \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install python deps
 COPY docs/requirements.txt /

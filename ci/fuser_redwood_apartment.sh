@@ -4,7 +4,7 @@
 set -exo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-EXEC_DIR=$SCRIPT_DIR/../build/nvblox/executables
+EXEC_DIR=$SCRIPT_DIR/../build/executables
 
 # Download the test dataset
 wget https://urm.nvidia.com/artifactory/sw-isaac-sdk-generic-local/dependencies/internal/data/redwood_apartment.tar

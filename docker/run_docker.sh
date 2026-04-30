@@ -98,6 +98,32 @@ then
     exit
 fi
 
+# Detect L4T major version on Jetson.
+# Sets L4T_MAJOR (e.g. "36", "38") on success, returns non-zero otherwise.
+# Try 1: parse /etc/nv_tegra_release (authoritative on any L4T image).
+# Try 2: fall back to the JETSON_L4T env variable (legacy behavior).
+detect_l4t_major() {
+    L4T_MAJOR=""
+
+    if [ -r /etc/nv_tegra_release ]; then
+        # First line looks like: "# R36 (release), REVISION: 3.0, ..."
+        L4T_MAJOR=$(sed -n 's/^#[[:space:]]*R\([0-9]\+\).*/\1/p' /etc/nv_tegra_release | head -n1)
+        if [ -n "$L4T_MAJOR" ]; then
+            echo "Detected L4T R${L4T_MAJOR} from /etc/nv_tegra_release" >&2
+            return 0
+        fi
+        echo "WARNING: /etc/nv_tegra_release exists but could not be parsed" >&2
+    fi
+
+    if [ -n "${JETSON_L4T:-}" ]; then
+        L4T_MAJOR="${JETSON_L4T%%.*}"
+        echo "Detected L4T R${L4T_MAJOR} from \$JETSON_L4T" >&2
+        return 0
+    fi
+
+    return 1
+}
+
 DOCKER_BUILD_ARGS=()
 if [ -z "$IMAGE_NAME" ]; then
     IMAGE_NAME=nvblox_deps
@@ -108,16 +134,24 @@ if [ -z "$IMAGE_NAME" ]; then
         DOCKERFILE="Dockerfile.deps"
     elif [ "$ARCH" = "aarch64" ]; then
         DOCKERFILE="Dockerfile.jetson_deps"
-        # On Jetson/Orin we use the default base image from Dockerfile.jetson_deps.
-        # On Thor (JP7) we override the base image to the requested PyTorch image.
-        if [ -n "${JETSON_L4T}" ]; then
-            case "$JETSON_L4T" in
-                # Jetpack 6 (L4T 36.x): Use the L4T JetPack 36 base image
-                36*) DOCKER_BUILD_ARGS=(--build-arg "BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r36.3.0") ;;
-                # Thor / Jetpack 7 (L4T 38.x): use the PyTorch JP7 image
-                38*) DOCKER_BUILD_ARGS=(--build-arg "BASE_IMAGE=nvcr.io/nvidia/pytorch:25.08-py3") ;;
-            esac
+        # On Jetson we must pick a base image matching the host's L4T release,
+        if ! detect_l4t_major; then
+            echo "ERROR: could not detect L4T version." >&2
+            echo "  Neither /etc/nv_tegra_release nor \$JETSON_L4T yielded a result." >&2
+            echo "  Set JETSON_L4T=<major>.<minor> (e.g. 36.3 or 38.0) and retry." >&2
+            exit 1
         fi
+        case "$L4T_MAJOR" in
+            # Jetpack 6 (L4T 36.x): Use the L4T JetPack 36 base image
+            36) DOCKER_BUILD_ARGS=(--build-arg "BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r36.3.0") ;;
+            # Thor / Jetpack 7 (L4T 38.x): use the PyTorch JP7 image
+            38) DOCKER_BUILD_ARGS=(--build-arg "BASE_IMAGE=nvcr.io/nvidia/pytorch:25.08-py3") ;;
+            *)
+                echo "ERROR: unsupported L4T major version: R${L4T_MAJOR}" >&2
+                echo "  Supported: R36 (JetPack 6), R38 (JetPack 7 / Thor)." >&2
+                exit 1
+                ;;
+        esac
     else
         echo "Unsupported architecture: $ARCH"
         exit 1

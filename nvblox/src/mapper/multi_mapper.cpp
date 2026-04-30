@@ -259,20 +259,20 @@ bool MultiMapper::saveGroundPlaneAsYaml(const std::string& filepath) {
   }
 
   const Vector3f& normal = ground_plane->normal();
-  const float height = ground_plane->offset();
+  const float offset = ground_plane->offset();
 
   if (!std::isfinite(normal.x()) || !std::isfinite(normal.y()) ||
-      !std::isfinite(normal.z()) || !std::isfinite(height)) {
+      !std::isfinite(normal.z()) || !std::isfinite(offset)) {
     LOG(ERROR) << "Ground plane data is not finite: normal: (" << normal.x()
                << ", " << normal.y() << ", " << normal.z()
-               << ") and height: " << height;
+               << ") and offset: " << offset;
     return false;
   }
 
   out << std::setprecision(std::numeric_limits<double>::max_digits10);
   out << "normal: [" << normal.x() << ", " << normal.y() << ", " << normal.z()
       << "]\n";
-  out << "height: " << height << "\n";
+  out << "offset: " << offset << "\n";
 
   if (out.fail()) {
     LOG(ERROR) << "Failed to write ground plane data to file: " << filepath;
@@ -282,7 +282,7 @@ bool MultiMapper::saveGroundPlaneAsYaml(const std::string& filepath) {
   out.close();
 
   LOG(INFO) << "Ground plane saved with normal: (" << normal.x() << ", "
-            << normal.y() << ", " << normal.z() << ") and height: " << height;
+            << normal.y() << ", " << normal.z() << ") and offset: " << offset;
 
   return true;
 }

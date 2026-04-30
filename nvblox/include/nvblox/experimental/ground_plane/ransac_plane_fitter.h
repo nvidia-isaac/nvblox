@@ -19,6 +19,7 @@ limitations under the License.
 #include <vector>
 
 #include "nvblox/core/indexing.h"
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/types.h"
 #include "nvblox/experimental/ground_plane/ransac_plane_fitter_params.h"
 #include "nvblox/geometry/plane.h"

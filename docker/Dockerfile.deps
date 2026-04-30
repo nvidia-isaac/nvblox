@@ -1,6 +1,10 @@
 ARG BASE_IMAGE=nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu24.04
 FROM ${BASE_IMAGE}
 
+# Expose compute, graphics (Vulkan/OpenGL for nvblox_renderer), and utility (nvidia-smi etc.)
+# to the NVIDIA Container Toolkit.
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
+
 # TZData goes first.
 RUN apt-get update
 ENV TZ Europe/Berlin
@@ -23,6 +27,8 @@ RUN apt update && apt-get --no-install-recommends install -y \
     libegl1 libgl1 libgomp1 \
     # Tools used in tests \
     nsight-systems-2025.3.2 parallel \
+    # Vulkan build dependencies for nvblox_renderer \
+    libvulkan-dev glslang-tools libglfw3-dev \
     && rm -rf /var/lib/apt/lists/* && apt-get clean
 
 # Create a virtual environment for python.

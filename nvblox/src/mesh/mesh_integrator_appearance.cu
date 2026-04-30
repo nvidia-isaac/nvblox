@@ -19,52 +19,13 @@ limitations under the License.
 #include "nvblox/integrators/internal/integrators_common.h"
 #include "nvblox/map/accessors.h"
 #include "nvblox/map/common_names.h"
+#include "nvblox/mesh/internal/appearance_getter.h"
 #include "nvblox/mesh/internal/impl/marching_cubes_table.h"
 #include "nvblox/mesh/internal/marching_cubes.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/utils/timing.h"
 
 namespace nvblox {
-
-template <typename AppearanceVoxelType>
-struct AppearanceGetter {
-  __host__ __device__ static typename AppearanceVoxelType::ArrayType
-  getAppearance(const AppearanceVoxelType& voxel) {
-    // AppearanceGetter not implemented for this voxel type
-    assert(false);
-  }
-
-  __host__ __device__ static typename AppearanceVoxelType::ArrayType
-  getDefaultAppearance() {
-    // AppearanceGetter not implemented for this voxel type
-    assert(false);
-  }
-};
-
-template <>
-struct AppearanceGetter<ColorVoxel> {
-  __host__ __device__ static Color getAppearance(const ColorVoxel& voxel) {
-    return voxel.color;
-  }
-
-  __host__ __device__ static Color getDefaultAppearance() {
-    // The color that the mesh takes if no coloring is available.
-    return Color::Gray();
-  }
-};
-
-template <>
-struct AppearanceGetter<FeatureVoxel> {
-  __host__ __device__ static FeatureArray getAppearance(
-      const FeatureVoxel& voxel) {
-    return voxel.feature;
-  }
-
-  __host__ __device__ static FeatureArray getDefaultAppearance() {
-    // The feature that the mesh takes if no features are available.
-    return FeatureArray();
-  }
-};
 
 template <typename AppearanceVoxelType>
 void MeshIntegrator<AppearanceVoxelType>::updateAppearance(

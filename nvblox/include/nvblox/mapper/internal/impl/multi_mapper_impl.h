@@ -224,4 +224,16 @@ void MultiMapper::integrateColor(const ColorImage& color_frame,
       T_L_C, sensor);
 }
 
+template <typename AppearanceVoxelType>
+void MultiMapper::updateFlatMesh() {
+  background_mapper_->template updateFlatMesh<AppearanceVoxelType>();
+}
+
+template <typename AppearanceVoxelType>
+void MultiMapper::updateFlatMesh(const Camera& camera, const Transform& T_L_C,
+                                 float max_depth) {
+  background_mapper_->template updateFlatMesh<AppearanceVoxelType>(
+      camera, T_L_C, max_depth);
+}
+
 }  // namespace nvblox

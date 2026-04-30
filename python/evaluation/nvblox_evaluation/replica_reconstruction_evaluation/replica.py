@@ -62,7 +62,7 @@ def get_default_fuse_replica_binary_path() -> Path:
 
     """
     script_dir = Path(__file__).resolve().parent
-    return script_dir.parents[3] / 'build' / 'nvblox' / 'executables' / 'fuse_replica'
+    return script_dir.parents[3] / 'build' / 'executables' / 'fuse_replica'
 
 
 def get_dataset_name_from_groundtruth_mesh_path(groundtruth_mesh_path: Path) -> str:

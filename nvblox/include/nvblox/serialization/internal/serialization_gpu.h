@@ -63,9 +63,14 @@ class LayerSerializerGpuInternal {
   //                                     of the block and size is the number of
   //                                     elements that should be serialized
   /// @param cuda_stream                 Cuda stream. Will *not* be synced.
+  ///
+  /// @tparam OutputVector  Vector type for serialized_output. Defaults to
+  ///                       host_vector. Pass device_vector to keep the result
+  ///                       in GPU memory and avoid the PCIe round-trip.
+  template <template <typename> class OutputVector = host_vector>
   void serializeAsync(const LayerType& layer,
                       const std::vector<Index3D>& block_indices_to_serialize,
-                      host_vector<T>& serialized_output,
+                      OutputVector<T>& serialized_output,
                       host_vector<int32_t>& offsets_output,
                       std::function<std::pair<const T*, int>(
                           const typename LayerType::BlockType* block)>

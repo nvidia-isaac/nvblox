@@ -69,7 +69,7 @@ def generate_timings(dataset_path: str, other_branch_or_hash: str, num_runs: int
         output_dir = os.path.join(output_root, branch_str)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
-        threedmatch_binary_path = os.path.join(build_dir, 'executables/fuse_3dmatch')
+        threedmatch_binary_path = os.path.join(build_dir, 'executables/fuser/fuse_3dmatch')
         threedmatch.run_multiple(num_runs,
                                  threedmatch_binary_path,
                                  dataset_path,

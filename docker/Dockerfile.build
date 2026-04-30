@@ -10,11 +10,13 @@ SHELL ["/bin/bash", "-c"]
 # irrelevant files are modified.
 # NOTE(dtingdahl) This can be reduced to a single COPY --parents command once syntax version 1.7-labs is
 # supported.
-RUN mkdir -p /nvblox/nvblox_torch/cpp /nvblox/cmake
+RUN mkdir -p /nvblox/nvblox_torch/cpp /nvblox/cmake /nvblox/nvblox_renderer
 COPY CMakeLists.txt /nvblox/
 COPY cmake /nvblox/cmake
 COPY nvblox /nvblox/nvblox
 COPY nvblox_torch/cpp /nvblox/nvblox_torch/cpp/
+COPY nvblox_renderer /nvblox/nvblox_renderer
+COPY executables /nvblox/executables
 
 # Build the standalone library. Note that 'bash -i' is needed to pickup the custom CMAKE_PREFIX_PATH
 # defined in bashrc

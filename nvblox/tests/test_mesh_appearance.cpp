@@ -26,6 +26,7 @@ limitations under the License.
 #include "nvblox/map/voxels.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/primitives/scene.h"
+#include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
@@ -133,7 +134,7 @@ TYPED_TEST(MeshAppearanceTest, UniformColorSphere) {
 
 TEST(MeshColoringTest, CPUvsGPUon3DMatch) {
   // Load 3dmatch image
-  const std::string base_path = "../tests/data/3dmatch";
+  const std::string base_path = test_utils::getTestDataPath("data/3dmatch");
   constexpr int seq_id = 1;
   DepthImage depth_image_1(MemoryType::kDevice);
   ColorImage color_image_1(MemoryType::kDevice);

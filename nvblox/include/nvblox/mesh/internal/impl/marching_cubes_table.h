@@ -25,6 +25,8 @@
 #include <cuda_runtime.h>
 #include <stdint.h>
 
+#include "nvblox/mesh/internal/impl/marching_cubes_constants.h"
+
 namespace nvblox {
 namespace marching_cubes {
 

@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/sensors/pointcloud_to_depth_conversion.h"
+#include "nvblox/utils/timing.h"
 
 namespace nvblox {
 template <typename SensorType>
@@ -106,6 +107,28 @@ void Mapper::integrateColor(const ColorImage& color_frame,
                             const Transform& T_L_C, const SensorType& sensor) {
   integrateColor(MaskedColorImageConstView(color_frame, kMaskActiveEverywhere),
                  T_L_C, sensor);
+}
+
+template <typename SensorType>
+void Mapper::integrateColor(const ColorImage& color_frame,
+                            const DepthImage& depth_frame,
+                            const Transform& T_L_C, const SensorType& sensor) {
+  static_assert(is_sensor_interface<SensorType>::value,
+                "Sensor does not match the required interface");
+
+  if (hasTsdfLayer(projective_layer_type_)) {
+    std::vector<Index3D> updated_blocks;
+    color_integrator_.integrateFrame(
+        MaskedColorImageConstView(color_frame, kMaskActiveEverywhere),
+        MaskedDepthImageConstView(depth_frame, kMaskActiveEverywhere), T_L_C,
+        sensor, layers_.get<TsdfLayer>(), layers_.getPtr<ColorLayer>(),
+        &updated_blocks);
+
+    layers_.getPtr<ColorLayer>()->updateGpuHash(*cuda_stream_);
+    blocks_to_update_tracker_.addBlocksToUpdate(
+        updated_blocks,
+        {BlocksToUpdateType::kColorMesh, BlocksToUpdateType::kLayerStreamer});
+  }
 }
 
 template <typename SensorType>
@@ -262,6 +285,42 @@ void Mapper::decayOccupancyInternal(
   // freespace and mesh layers.
   clearBlocksInLayers(removed_blocks);
   layers_.getPtr<OccupancyLayer>()->updateGpuHash(*cuda_stream_);
+}
+
+template <typename AppearanceVoxelType>
+void Mapper::updateFlatMesh() {
+  if (!hasTsdfLayer(projective_layer_type_)) return;
+  updateFlatMeshImpl<AppearanceVoxelType>(
+      layers_.get<TsdfLayer>().getAllBlockIndices());
+}
+
+template <typename AppearanceVoxelType>
+void Mapper::updateFlatMesh(const Camera& camera, const Transform& T_L_C,
+                            float max_depth) {
+  if (!hasTsdfLayer(projective_layer_type_)) return;
+  timing::Timer frustum_timer("mapper/update_flat_mesh/frustum_cull");
+  const auto block_indices =
+      getFrustumFilteredIndices(camera, T_L_C, max_depth);
+  frustum_timer.Stop();
+  updateFlatMeshImpl<AppearanceVoxelType>(block_indices);
+}
+
+template <typename AppearanceVoxelType>
+void Mapper::updateFlatMeshImpl(const std::vector<Index3D>& block_indices) {
+  timing::Timer timer("mapper/update_flat_mesh");
+  static_assert(std::is_same_v<AppearanceVoxelType, ColorVoxel> ||
+                    std::is_same_v<AppearanceVoxelType, FeatureVoxel>,
+                "Unsupported appearance voxel type for flat mesh");
+  using AppearanceLayerType = VoxelBlockLayer<AppearanceVoxelType>;
+  if constexpr (std::is_same_v<AppearanceVoxelType, ColorVoxel>) {
+    color_flat_mesh_integrator_.integrateBlocks(
+        layers_.get<TsdfLayer>(), layers_.get<AppearanceLayerType>(),
+        block_indices, &flat_color_mesh_);
+  } else {
+    feature_flat_mesh_integrator_.integrateBlocks(
+        layers_.get<TsdfLayer>(), layers_.get<AppearanceLayerType>(),
+        block_indices, &flat_feature_mesh_);
+  }
 }
 
 }  // namespace nvblox

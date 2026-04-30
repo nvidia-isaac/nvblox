@@ -22,12 +22,40 @@ limitations under the License.
 #include "nvblox/map/accessors.h"
 #include "nvblox/utils/timing.h"
 
+// This comes in via bazel's internal @bazel_tools//tools/cpp/runfiles
+// dependency
+#ifdef USE_BAZEL_RUNFILES
+#include "tools/cpp/runfiles/runfiles.h"
+using bazel::tools::cpp::runfiles::Runfiles;
+#endif
+
 DEFINE_bool(
     nvblox_test_file_output, false,
     "Whether to output debug files from tests to disk or not. Off by default.");
 
 namespace nvblox {
 namespace test_utils {
+
+std::string getTestDataPath(const std::string& relative_path) {
+#ifdef USE_BAZEL_RUNFILES
+  std::string runfiles_error;
+  std::unique_ptr<Runfiles> runfiles(
+      Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &runfiles_error));
+  if (!runfiles) {
+    LOG(ERROR) << "Failed to create runfiles: " << runfiles_error;
+    CHECK(false);
+  }
+  const std::string path =
+      runfiles->Rlocation("nvblox/executables/tests/" + relative_path);
+  if (path.empty()) {
+    LOG(ERROR) << "Failed to get test data path: " << path;
+    CHECK(false);
+  }
+  return path;
+#else
+  return "./" + relative_path;
+#endif
+}
 
 float randomFloatInRange(float f_min, float f_max) {
   float f = static_cast<float>(std::rand()) / RAND_MAX;
@@ -91,7 +119,7 @@ void createMaskImage(MonoImage* mask, MaskImageType type) {
 
   CHECK(mask->memory_type() != MemoryType::kDevice);
 
-  constexpr const char* kPath = "./data/dynamic_mask/mask_21.png";
+  const std::string kPath = getTestDataPath("data/dynamic_mask/mask_21.png");
 
   switch (type) {
     case MaskImageType::kFromDisk: {

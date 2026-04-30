@@ -22,6 +22,7 @@ limitations under the License.
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/image.h"
+#include "nvblox/tests/utils.h"
 
 #include "nvblox/tests/test_utils_cuda.h"
 
@@ -84,7 +85,7 @@ TEST(MemoryLeakTest, UnifiedVectorInt) {
 
 TEST(MemoryLeakTest, 3DMatchMeshing) {
   // Load 3dmatch image
-  const std::string base_path = "data/3dmatch";
+  const std::string base_path = test_utils::getTestDataPath("data/3dmatch/");
   constexpr int seq_id = 1;
   DepthImage depth_image_1(MemoryType::kDevice);
   ColorImage color_image_1(MemoryType::kDevice);

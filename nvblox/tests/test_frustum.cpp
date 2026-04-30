@@ -51,7 +51,7 @@ class FrustumTest : public test_utils::SensorFixture<SensorType> {
     scene_.aabb() = AxisAlignedBoundingBox(Vector3f(-3.0f, -3.0f, 0.0f),
                                            Vector3f(3.0f, 3.0f, 3.0f));
 
-    base_path_ = "./data/3dmatch/";
+    base_path_ = test_utils::getTestDataPath("data/3dmatch/");
 
     // NOTE(alexmillane): In the test we have situations where we expect
     // different results from exactly the same viewpoint so we turn off caching

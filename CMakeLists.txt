@@ -22,7 +22,7 @@ endif()
 # CMAKE_CUDA_ARCHITECTURES to a default (potentially non-native) value
 project(
   nvblox
-  VERSION 0.0.9
+  VERSION 0.0.10
   LANGUAGES CXX C CUDA)
 
 # ##############################################################################
@@ -31,7 +31,11 @@ project(
 # Build options
 option(BUILD_EXPERIMENTS "Build performance experimentation binaries" OFF)
 option(BUILD_TESTING "Build tests" ON)
+option(BUILD_BENCHMARKS "Build benchmark binaries" ON)
 option(BUILD_PYTORCH_WRAPPER "Wheter to build the pytorch wrapper" ON)
+
+# Renderer option
+option(BUILD_RENDERER "Build the nvblox renderer" ON)
 
 if(BUILD_TESTING)
   include(CTest)
@@ -48,6 +52,13 @@ if(BUILD_PYTORCH_WRAPPER)
 endif()
 
 add_subdirectory(nvblox)
+
+add_subdirectory(executables)
+
+# Optional renderer
+if(BUILD_RENDERER)
+  add_subdirectory(nvblox_renderer)
+endif()
 
 include(CMakePackageConfigHelpers)
 

@@ -1,0 +1,189 @@
+"""
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+NVIDIA CORPORATION and its licensors retain all intellectual property
+and proprietary rights in and to this software, related documentation
+and any modifications thereto. Any use, reproduction, disclosure or
+distribution of this software and related documentation without an express
+license agreement from NVIDIA CORPORATION is strictly prohibited.
+"""
+
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
+load(":cc_toolchain_config.bzl", "cc_toolchain_config")
+
+filegroup(
+    name = "empty",
+    srcs = [],
+)
+
+PLATFORMS = [
+    "k8",
+    "aarch64",
+]
+
+GCC_VERSIONS = [
+    11,
+    12,
+    13,
+]
+
+PLATFORM_TO_GROUP = {
+    "k8": [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    "aarch64": [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
+}
+
+[
+    cc_toolchain(
+        name = "cc-compiler-{platform}-gcc-{gcc_version}".format(
+            gcc_version = gcc_version,
+            platform = platform,
+        ),
+        all_files = ":empty",
+        compiler_files = ":empty",
+        dwp_files = ":empty",
+        linker_files = ":empty",
+        objcopy_files = ":empty",
+        strip_files = ":empty",
+        supports_param_files = 1,
+        toolchain_config = ":{platform}_gcc_{gcc_version}_toolchain_config".format(
+            gcc_version = gcc_version,
+            platform = platform,
+        ),
+        toolchain_identifier = "{platform}-toolchain-gcc-{gcc_version}".format(
+            gcc_version = gcc_version,
+            platform = platform,
+        ),
+    )
+    for platform in PLATFORMS
+    for gcc_version in GCC_VERSIONS
+]
+
+[
+    toolchain(
+        name = "cc_toolchain_for_{platform}_gcc_{gcc_version}".format(
+            gcc_version = gcc_version,
+            platform = platform,
+        ),
+        exec_compatible_with = PLATFORM_TO_GROUP[platform],
+        target_compatible_with = PLATFORM_TO_GROUP[platform],
+        toolchain = ":cc-compiler-{platform}-gcc-{gcc_version}".format(
+            gcc_version = gcc_version,
+            platform = platform,
+        ),
+        toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    )
+    for platform in PLATFORMS
+    for gcc_version in GCC_VERSIONS
+]
+
+[
+    cc_toolchain_config(
+        name = "k8_gcc_{gcc_version}_toolchain_config".format(gcc_version = gcc_version),
+        cxx_builtin_include_directories = [
+            "/usr/include",
+            "/usr/include/c++/{gcc_version}".format(gcc_version = gcc_version),
+            "/usr/include/c++/{gcc_version}/backward".format(gcc_version = gcc_version),
+            "/usr/include/x86_64-linux-gnu",
+            "/usr/include/x86_64-linux-gnu/c++/{gcc_version}".format(gcc_version = gcc_version),
+            "/usr/lib/gcc/x86_64-linux-gnu/{gcc_version}/include-fixed".format(gcc_version = gcc_version),
+            "/usr/lib/gcc/x86_64-linux-gnu/{gcc_version}/include".format(gcc_version = gcc_version),
+            "/usr/local/include",
+        ],
+        cxx_compile_opts = [
+            "-B/usr/bin",  # Use binaries from /usr/bin (set search path for compiler support files)
+            "-D_DEFAULT_SOURCE",  # Enable default source feature test macros to ensure modern POSIX and glibc features
+            "-D__STDC_FORMAT_MACROS",  # Enable C99 format macros from inttypes.h (required for PRIu64, etc)
+            "-U_FORTIFY_SOURCE",  # Undefine any previous -D_FORTIFY_SOURCE to ensure above value applies
+            "-D_FORTIFY_SOURCE=2",  # Enable compile-time and runtime buffer overrun protection - level 2
+            "-fPIC",  # Generate position-independent code (necessary for shared libraries)
+            "-fdata-sections",  # Place data in separate ELF sections (enables unused section GC at link time)
+            "-ffunction-sections",  # Place each function in its own ELF section (enables unused section GC at link time)
+            "-fno-omit-frame-pointer",  # Do not omit the frame pointer for better debugging/profiling support
+            "-fstack-protector",  # Enable stack overflow protection for vulnerable functions
+            "-Wall",  # Enable most compiler warning messages
+            "-Werror",  # Treat all warnings as errors (fail build on warnings)
+            "-Wunused-but-set-parameter",  # Warn if a function parameter is set but not used
+            "-Wunused-result",  # Warn if return value of a function marked warn_unused_result is ignored
+            "-Wno-free-nonheap-object",  # Suppress warnings about free() called on non-heap objects (common false positives)
+            "-Wno-free-nonheap-object",  # Redundant but ensures option is always present
+            "-Wno-maybe-uninitialized",  # Suppress warnings about variables that may be uninitialized
+            "-Wno-stringop-truncation",  # Suppress GCC bug 88780: warning for detected string truncation (see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88780)
+        ],
+        cxx_compiler = "/usr/bin/gcc-{gcc_version}".format(gcc_version = gcc_version),
+        cxx_link_opts = [
+            "-lstdc++",  # Link against the GNU C++ standard library
+            "-lm",  # Link against the math library
+            "-Wl,-no-as-needed",  # Linker: only link libraries used, not all specified
+            "-Wl,-z,relro,-z,now",  # Linker: enable RELRO and bind now for security (prevents certain exploits)
+            "-B/usr/bin",  # Use binaries from /usr/bin (set search path for compiler support files)
+            "-pass-exit-codes",  # Cause linker to report exit codes from failed child links (useful for diagnostics)
+            "-fPIC",  # Generate position-independent code (required for shared libraries)
+            "-Wl,--gc-sections",  # Linker: enable garbage collection of unused sections during linking
+            "-Wl,--disable-new-dtags",  # Linker: use legacy ELF dynamic section tags rather than new DT_RUNPATH
+        ],
+        disable_cxx11_abi_feature = select({
+            #"//workspace/build:disable_cxx11_abi": True,
+            "//conditions:default": False,
+        }),
+        toolchain_identifier = "k8-toolchain-gcc-{gcc_version}".format(gcc_version = gcc_version),
+    )
+    for gcc_version in GCC_VERSIONS
+]
+
+[
+    cc_toolchain_config(
+        name = "aarch64_gcc_{gcc_version}_toolchain_config".format(gcc_version = gcc_version),
+        cxx_builtin_include_directories = [
+            "/usr/include",
+            "/usr/include/aarch64-linux-gnu",
+            "/usr/include/aarch64-linux-gnu/c++/{gcc_version}".format(gcc_version = gcc_version),
+            "/usr/include/c++/{gcc_version}".format(gcc_version = gcc_version),
+            "/usr/include/c++/{gcc_version}/backward".format(gcc_version = gcc_version),
+            "/usr/lib/gcc/aarch64-linux-gnu/{gcc_version}/include-fixed".format(gcc_version = gcc_version),
+            "/usr/lib/gcc/aarch64-linux-gnu/{gcc_version}/include".format(gcc_version = gcc_version),
+            "/usr/local/include",
+        ],
+        cxx_compile_opts = [
+            "-B/usr/bin",  # Use binaries from /usr/bin (set search path for compiler support files)
+            "-D_DEFAULT_SOURCE",  # Enable default source feature test macros to ensure modern POSIX and glibc features
+            "-D__STDC_FORMAT_MACROS",  # Enable C99 format macros from inttypes.h (required for PRIu64, etc)
+            "-U_FORTIFY_SOURCE",  # Undefine any previous -D_FORTIFY_SOURCE to ensure above value applies
+            "-D_FORTIFY_SOURCE=2",  # Enable compile-time and runtime buffer overrun protection - level 2
+            "-fPIC",  # Generate position-independent code (necessary for shared libraries)
+            "-fdata-sections",  # Place data in separate ELF sections (enables unused section GC at link time)
+            "-ffunction-sections",  # Place each function in its own ELF section (enables unused section GC at link time)
+            "-fno-omit-frame-pointer",  # Do not omit the frame pointer for better debugging/profiling support
+            "-fstack-protector",  # Enable stack overflow protection for vulnerable functions
+            "-Wall",  # Enable most compiler warning messages
+            "-Werror",  # Treat all warnings as errors (fail build on warnings)
+            "-Wunused-but-set-parameter",  # Warn if a function parameter is set but not used
+            "-Wunused-result",  # Warn if return value of a function marked warn_unused_result is ignored
+            "-Wno-free-nonheap-object",  # Suppress warnings about free() called on non-heap objects (common false positives)
+            "-Wno-free-nonheap-object",  # Redundant but ensures option is always present
+            "-Wno-maybe-uninitialized",  # Suppress warnings about variables that may be uninitialized
+            "-Wno-stringop-truncation",  # Suppress GCC bug 88780: warning for detected string truncation (see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88780)
+        ],
+        cxx_compiler = "/usr/bin/gcc-{gcc_version}".format(gcc_version = gcc_version),
+        cxx_ld = "/bin/ld",
+        cxx_link_opts = [
+            "-lstdc++",  # Link against the GNU C++ standard library
+            "-lc",  # Link against the C standard library
+            "-Wl,--dynamic-linker=/lib/ld-linux-aarch64.so.1",  # Specify the dynamic linker path for aarch64
+            "-lm",  # Link against the math library
+            "-fPIC",  # Generate position-independent code (required for shared libraries)
+            "-Wl,--gc-sections",  # Enable garbage collection of unused sections during linking
+            "-Wl,--disable-new-dtags",  # Use legacy ELF dynamic section tags rather than new DT_RUNPATH
+        ],
+        gcov = "/bin/aarch64-linux-gnu-gcov",
+        nm = "/bin/aarch64-linux-gnu-nm",
+        objdump = "/bin/aarch64-linux-gnu-objdump",
+        strip = "/bin/aarch64-linux-gnu-strip",
+        toolchain_identifier = "aarch64-toolchain-gcc-{gcc_version}".format(gcc_version = gcc_version),
+    )
+    for gcc_version in GCC_VERSIONS
+]

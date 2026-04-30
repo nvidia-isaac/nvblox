@@ -74,7 +74,6 @@ def nvblox_torch_pip_install_code_block(app: Sphinx, _: Any, source: List[str]) 
 
         wheel_name_ubuntu_24_cuda_12 = get_wheel_url(version, '12', '24')
         wheel_name_ubuntu_22_cuda_12 = get_wheel_url(version, '12', '22')
-        wheel_name_ubuntu_22_cuda_11 = get_wheel_url(version, '11', '22')
         wheel_name_ubuntu_24_cuda_13 = get_wheel_url(version, '13', '24')
 
 
@@ -82,8 +81,6 @@ def nvblox_torch_pip_install_code_block(app: Sphinx, _: Any, source: List[str]) 
             f'{wheel_name_ubuntu_24_cuda_12}'
         pip_install_target_ubuntu_22_cuda_12 = \
             f'{wheel_name_ubuntu_22_cuda_12}'
-        pip_install_target_ubuntu_22_cuda_11 = \
-            f'{wheel_name_ubuntu_22_cuda_11}'
         pip_install_target_ubuntu_24_cuda_13 = \
             f'{wheel_name_ubuntu_24_cuda_13}'
 
@@ -106,13 +103,6 @@ To install ``nvblox_torch`` via ``pip`` on a supported platform, run the followi
             sudo apt-get install python3-pip libglib2.0-0 libgl1 # Open3D dependencies
             pip3 install {pip_install_target_ubuntu_22_cuda_12}
 
-    .. tab:: Ubuntu 22.04 + CUDA 11.8
-
-        .. code-block:: bash
-
-            sudo apt-get install python3-pip libglib2.0-0 libgl1 # Open3D dependencies
-            pip3 install torch==2.7.1+cu118 torchvision --index-url https://download.pytorch.org/whl/cu118/
-            pip3 install {pip_install_target_ubuntu_22_cuda_11}
 """
         # Only add the CUDA 13.0 tab if the version is not 0.0.8.
         # TODO(dtingdahl) handle this in a more elegant way to support future releases.
@@ -158,8 +148,8 @@ def nvblox_torch_git_clone_code_block(app: Sphinx, _: Any, source: List[str]) ->
 
 
 # pylint: disable=unused-argument
-def download_test_dataset(sphinx: Sphinx, _: Any, source: List[str]) -> None:
-    """Replaces the :download_test_dataset: directive with a code block.
+def download_sun3d_test_dataset(sphinx: Sphinx, _: Any, source: List[str]) -> None:
+    """Replaces the :download_sun3d_test_dataset: directive with a code block.
     """
 
     def replacer(_: Any) -> str:
@@ -175,7 +165,28 @@ Download an example SUN3D dataset by running the following command:
 
 """
 
-    source[0] = re.sub(r':download_test_dataset:', replacer, source[0])
+    source[0] = re.sub(r':download_sun3d_test_dataset:', replacer, source[0])
+
+
+# pylint: disable=unused-argument
+def download_replica_test_dataset(sphinx: Sphinx, _: Any, source: List[str]) -> None:
+    """Replaces the :download_replica_test_dataset: directive with a code block.
+    """
+
+    def replacer(_: Any) -> str:
+
+        return """
+
+Download an example Replica dataset by running the following command:
+
+.. code-block:: bash
+
+    wget https://cvg-data.inf.ethz.ch/nice-slam/data/Replica.zip
+    unzip Replica.zip
+
+"""
+
+    source[0] = re.sub(r':download_replica_test_dataset:', replacer, source[0])
 
 
 def nvblox_code_link(app: Sphinx, _: Any, source: List[str]) -> None:
@@ -233,6 +244,7 @@ def setup(app: Sphinx) -> None:
     app.connect('source-read', nvblox_torch_pip_install_code_block)
     app.connect('source-read', nvblox_torch_git_clone_code_block)
     app.connect('source-read', nvblox_code_link)
-    app.connect('source-read', download_test_dataset)
+    app.connect('source-read', download_replica_test_dataset)
+    app.connect('source-read', download_sun3d_test_dataset)
     app.connect('source-read', current_version_name)
     app.add_config_value('nvblox_torch_docs_config', {}, 'env')

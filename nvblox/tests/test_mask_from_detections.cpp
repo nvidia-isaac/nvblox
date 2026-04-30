@@ -16,8 +16,8 @@ limitations under the License.
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 #include "nvblox/io/image_io.h"
-
 #include "nvblox/semantics/mask_from_detections.h"
+#include "nvblox/tests/utils.h"
 
 using namespace nvblox;
 
@@ -152,7 +152,8 @@ TEST(MaskFromDetections, MultipleDetections) {
 
 TEST(MaskFromDetections, RealData) {
   DepthImage depth_image(MemoryType::kHost);
-  const std::string base_path = "./data/human_dataset/";
+  const std::string base_path =
+      test_utils::getTestDataPath("data/human_dataset/");
   ASSERT_TRUE(io::readFromPng(base_path + "depth_image_1.png", &depth_image));
 
   const ImageBoundingBox detection(Index2D(141, 0), Index2D(262, 310));

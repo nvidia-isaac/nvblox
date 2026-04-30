@@ -1,0 +1,316 @@
+# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto. Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library", "cuda_test")
+
+alias(
+    name = "test_data",
+    actual = "//executables/tests:test_data",
+    visibility = ["//visibility:public"],
+)
+
+# Side-steps cuda_library's lack of `strip_include_prefix` support.
+# See: https://github.com/bazel-contrib/rules_cuda/issues/142
+cc_library(
+    name = "test_lib_cu_headers",
+    hdrs = [
+        "include/nvblox/tests/blox.h",
+        "include/nvblox/tests/blox_utils.h",
+        "include/nvblox/tests/custom_camera_sensor.h",
+        "include/nvblox/tests/gpu_image_routines.h",
+        "include/nvblox/tests/gpu_indexing.h",
+        "include/nvblox/tests/gpu_layer_utils.h",
+        "include/nvblox/tests/increment_on_gpu.h",
+        "include/nvblox/tests/interpolation_2d_gpu.h",
+        "include/nvblox/tests/mesh_utils.h",
+        "include/nvblox/tests/projective_tsdf_integrator_cuda_components.h",
+        "include/nvblox/tests/test_utils_cuda.h",
+        "include/nvblox/tests/voxels.h",
+        "include/nvblox/tests/weighting_utils.h",
+    ],
+    includes = ["include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+
+cuda_library(
+    name = "test_lib_cu",
+    srcs = [
+        "lib/cuda/blox_utils.cu",
+        "lib/cuda/boolean_layer_specialization.cu",
+        "lib/cuda/float_layer_specialization.cu",
+        "lib/cuda/gpu_image_routines.cu",
+        "lib/cuda/gpu_indexing.cu",
+        "lib/cuda/gpu_layer_utils.cu",
+        "lib/cuda/increment_kernel.cu",
+        "lib/cuda/index_layer_specialization.cu",
+        "lib/cuda/initialization_test_layer_specialization.cu",
+        "lib/cuda/interpolation_2d_gpu.cu",
+        "lib/cuda/layer.cu",
+        "lib/cuda/mesh_utils.cu",
+        "lib/cuda/projective_tsdf_integrator_cuda_components.cu",
+        "lib/cuda/test_layer.cu",
+        "lib/cuda/test_utils_cuda.cu",
+        "lib/cuda/weighting_utils.cu",
+        "lib/custom_camera_sensor_inst.cu",
+    ],
+    copts = [
+        "--expt-relaxed-constexpr",
+        "--extended-lambda",
+        # Warning flags are configured globally in .bazelrc
+        "--compiler-options=-fPIC",
+    ],
+    defines = ["STBI_NO_FAILURE_STRINGS"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":test_lib_cu_headers",
+        "//nvblox/src:nvblox_lib",
+        "@cuda//:thrust",
+    ],
+)
+
+cc_library(
+    name = "test_lib",
+    srcs = [
+        "lib/esdf_integrator_cpu.cpp",
+        "lib/integrator_utils.cpp",
+        "lib/projective_tsdf_integrator_cpu.cpp",
+        "lib/ransac_plane_fitter_utils.cpp",
+        "lib/tsdf_zero_crossings_extractor_cpu.cpp",
+        "lib/utils.cpp",
+    ],
+    hdrs = [
+        "include/nvblox/tests/esdf_integrator_cpu.h",
+        "include/nvblox/tests/integrator_utils.h",
+        "include/nvblox/tests/projective_tsdf_integrator_cpu.h",
+        "include/nvblox/tests/ransac_plane_fitter_utils.h",
+        "include/nvblox/tests/sensor_fixture.h",
+        "include/nvblox/tests/tsdf_zero_crossings_extractor_cpu.h",
+        "include/nvblox/tests/utils.h",
+    ],
+    copts = [
+        "-Wno-sign-compare",
+        "-Wno-pessimizing-move",
+    ],
+    defines = [
+        "STBI_NO_FAILURE_STRINGS",
+        "USE_BAZEL_RUNFILES",
+    ],
+    includes = ["include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//nvblox/include:nvblox_headers",
+        "//nvblox/src:nvblox_lib",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+
+genrule(
+    name = "convert_regression_test_query_after_clear_to_cpp",
+    srcs = ["regression_test_query_after_clear.cu"],
+    outs = ["regression_test_query_after_clear.cu.cpp"],
+    cmd = "cp $(SRCS) $(OUTS)",
+)
+
+cuda_test(
+    name = "regression_test_query_after_clear",
+    srcs = ["regression_test_query_after_clear.cu.cpp"],
+    copts = [
+        "--expt-relaxed-constexpr",
+        "--extended-lambda",
+        "--disable-warnings",
+        "--diag-suppress=20012",
+    ],
+    defines = [
+        "STBI_NO_FAILURE_STRINGS",
+        "USE_BAZEL_RUNFILES",
+    ],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//nvblox/include:nvblox_headers",
+        "//nvblox/src:nvblox_lib",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@rules_cuda//cuda:runtime",
+    ],
+)
+
+# Non-cuda tests
+[
+    cc_test(
+        name = test_name,
+        size = "{}".format(
+            "enormous" if test_name in [
+                "test_esdf_integrator",
+                "test_tsdf_integrator",
+            ] else "large",
+        ),
+        srcs = ["{}.cpp".format(test_name)],
+        copts = [
+            "-Wno-sign-compare",
+            "-Wno-pessimizing-move",
+        ],
+        data = [
+            ":test_data",
+            "//executables:fuser",
+        ],
+        defines = [
+            "STBI_NO_FAILURE_STRINGS",
+            "USE_BAZEL_RUNFILES",
+        ],
+        visibility = ["//visibility:public"],
+        deps = [
+            ":test_lib",
+            ":test_lib_cu",
+            "//nvblox/datasets:datasets",
+            "//nvblox/include:nvblox_headers",
+            "//nvblox/src:nvblox_lib",
+            "@bazel_tools//tools/cpp/runfiles",
+            "@googletest//:gtest",
+            "@googletest//:gtest_main",
+        ],
+    )
+    for test_name in [
+        "test_3d_interpolation",
+        "test_bitmask",
+        "test_block_memory_pool",
+        "test_blox",
+        "test_bounding_spheres",
+        "test_cake",
+        "test_color_image",
+        "test_color_integrator",
+        "test_cuda_stream",
+        "test_delays",
+        "test_depth_image",
+        "test_depth_image_preprocessing",
+        "test_dynamics",
+        "test_esdf_integrator",
+        "test_feature_integrator",
+        "test_for_memory_leaks",
+        "test_freespace_integrator",
+        "test_frustum",
+        "test_gpu_layer_view",
+        "test_image_cache",
+        "test_image_io",
+        "test_image_masker",
+        "test_image_projector",
+        "test_image_view",
+        "test_indexing",
+        "test_interpolation_2d",
+        "test_layer_cake_streamer",
+        "test_layer",
+        "test_layer_serializer_gpu",
+        "test_layer_streamer",
+        "test_lidar",
+        "test_lidar_integration",
+        "test_mapper_block_allocation",
+        "test_mapper",
+        "test_mask_from_detections",
+        "test_mask_preprocessor",
+        "test_mesh_appearance",
+        "test_mesh",
+        "test_mesh_serializer",
+        "test_mono_image",
+        "test_multi_mapper",
+        "test_npp_image_operations",
+        "test_nvblox_h",
+        "test_nvtx_ranges",
+        "test_occupancy_decay",
+        "test_occupancy_integrator",
+        "test_params",
+        "test_pointcloud",
+        "test_ransac_plane_fitter",
+        "test_ransac_plane_fitter_cpu",
+        "test_rates",
+        "test_ray_caster",
+        "test_scene",
+        "test_serialization",
+        "test_shape_clearer",
+        "test_sphere_tracing",
+        "test_time",
+        "test_timing",
+        "test_traits",
+        "test_tsdf_decay",
+        "test_tsdf_error",
+        "test_tsdf_integrator",
+        "test_tsdf_integrator_cuda_components",
+        "test_unified_3d_grid",
+        "test_unified_ptr",
+        "test_unified_vector",
+        "test_weighting_function",
+        "test_workspace_bounds",
+    ]
+]
+
+NVBLOX_CUDA_TESTS = [
+    "test_array",
+    "test_device_function_utils",
+    "test_error_check",
+    # NOTE(adutton): This test fails to build due to errors with
+    #     multiple defitions within `esdf_integrator_slicing_impl.cuh` due to its
+    #     inclusion in `esdf_integrator_slicing.cuh` without functions marked
+    #     inline.
+    # DISABLED: "test_esdf_integrator_slicing",
+    "test_camera",
+    "test_gpu_hash_interface",
+    "test_layer_to_3d_grid",
+    "test_masked_image_view",
+    "test_plane",
+    "test_zero_crossings_extractor",
+]
+
+# CUDA tests
+[
+    genrule(
+        name = "convert_{}_to_cpp".format(test_name),
+        srcs = ["{}.cu".format(test_name)],
+        outs = ["{}.cu.cpp".format(test_name)],
+        cmd = "cp $(SRCS) $(OUTS)",
+    )
+    for test_name in NVBLOX_CUDA_TESTS
+]
+
+[
+    cuda_test(
+        name = test_name,
+        size = "large",
+        srcs = ["{}.cu.cpp".format(test_name)],
+        copts = [
+            "--expt-relaxed-constexpr",
+            "--extended-lambda",
+            "--disable-warnings",
+            "--diag-suppress=20012",
+        ],
+        data = [
+            ":test_data",
+            "//executables:fuser",
+        ],
+        defines = [
+            "STBI_NO_FAILURE_STRINGS",
+            "USE_BAZEL_RUNFILES",
+        ],
+        visibility = ["//visibility:public"],
+        deps = [
+            ":test_lib",
+            ":test_lib_cu",
+            "//nvblox/include:nvblox_headers",
+            "//nvblox/src:nvblox_lib",
+            "@bazel_tools//tools/cpp/runfiles",
+            "@googletest//:gtest",
+            "@googletest//:gtest_main",
+            "@rules_cuda//cuda:runtime",
+        ],
+    )
+    for test_name in NVBLOX_CUDA_TESTS
+]

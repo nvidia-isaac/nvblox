@@ -128,6 +128,32 @@ void ProjectiveIntegratorParams::
       static_cast<float>(value);
 }
 
+double ProjectiveIntegratorParams::
+    get_projective_dynamic_tsdf_integrator_discrepancy_threshold_m() const {
+  return static_cast<double>(
+      params_->projective_dynamic_tsdf_integrator_discrepancy_threshold_m);
+}
+void ProjectiveIntegratorParams::
+    set_projective_dynamic_tsdf_integrator_discrepancy_threshold_m(
+        double value) {
+  params_->projective_dynamic_tsdf_integrator_discrepancy_threshold_m =
+      static_cast<float>(value);
+}
+
+double ProjectiveIntegratorParams::
+    get_projective_dynamic_tsdf_integrator_dynamic_discrepancy_min_weight()
+        const {
+  return static_cast<double>(
+      params_
+          ->projective_dynamic_tsdf_integrator_dynamic_discrepancy_min_weight);
+}
+void ProjectiveIntegratorParams::
+    set_projective_dynamic_tsdf_integrator_dynamic_discrepancy_min_weight(
+        double value) {
+  params_->projective_dynamic_tsdf_integrator_dynamic_discrepancy_min_weight =
+      static_cast<float>(value);
+}
+
 /*****************************
  * MESH INTEGRATOR PARAMS
  ******************************/
@@ -146,6 +172,16 @@ bool MeshIntegratorParams::get_mesh_integrator_weld_vertices() const {
 
 void MeshIntegratorParams::set_mesh_integrator_weld_vertices(bool value) {
   params_->mesh_integrator_weld_vertices = value;
+}
+
+int64_t MeshIntegratorParams::get_mesh_integrator_max_flat_mesh_triangles()
+    const {
+  return static_cast<int64_t>(params_->mesh_integrator_max_flat_mesh_triangles);
+}
+
+void MeshIntegratorParams::set_mesh_integrator_max_flat_mesh_triangles(
+    int64_t value) {
+  params_->mesh_integrator_max_flat_mesh_triangles = static_cast<int>(value);
 }
 
 /*****************************

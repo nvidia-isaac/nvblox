@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include <gflags/gflags.h>
+#include <string>
 
 #include "nvblox/core/color.h"
 #include "nvblox/core/types.h"
@@ -28,6 +29,8 @@ DECLARE_bool(nvblox_test_file_output);
 
 namespace nvblox {
 namespace test_utils {
+
+std::string getTestDataPath(const std::string& relative_path);
 
 float randomFloatInRange(float f_min, float f_max);
 

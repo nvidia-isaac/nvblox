@@ -47,7 +47,7 @@ TEST(ColorImageTest, NearbyImagesSimilar) {
   // pixelwise difference.
 
   // Load 3dmatch image
-  const std::string base_path = "./data/3dmatch";
+  const std::string base_path = test_utils::getTestDataPath("data/3dmatch/");
   constexpr int seq_id = 1;
   ColorImage image_1(MemoryType::kUnified);
   EXPECT_TRUE(datasets::load8BitColorImage(

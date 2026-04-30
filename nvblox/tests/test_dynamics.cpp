@@ -18,6 +18,7 @@ limitations under the License.
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/dynamics/dynamics_detection.h"
 #include "nvblox/integrators/freespace_integrator.h"
+#include "nvblox/integrators/projective_tsdf_integrator.h"
 #include "nvblox/io/image_io.h"
 #include "nvblox/io/pointcloud_io.h"
 #include "nvblox/primitives/scene.h"
@@ -152,7 +153,8 @@ TYPED_TEST(DynamicsTester, HumanDataset) {
       depth_frame_L(MemoryType::kUnified);
   ColorImage color_frame_S(MemoryType::kUnified),
       color_frame_L(MemoryType::kUnified);
-  const std::string base_path = "./data/human_dataset/";
+  const std::string base_path =
+      test_utils::getTestDataPath("data/human_dataset/");
   EXPECT_TRUE(io::readFromPng(base_path + "depth_image_1.png", &depth_frame_L));
   EXPECT_TRUE(io::readFromPng(base_path + "depth_image_2.png", &depth_frame_C));
 

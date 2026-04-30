@@ -24,11 +24,16 @@ constexpr Param<float>::Description kMeshIntegratorMinWeightParamDesc{
 constexpr Param<bool>::Description kMeshIntegratorWeldVerticesParamDesc{
     "mesh_integrator_weld_vertices", true,
     "Whether to weld identical vertices together in the mesh."};
+constexpr Param<int>::Description kMeshIntegratorMaxFlatMeshTrianglesParamDesc{
+    "mesh_integrator_max_flat_mesh_triangles", 2000000,
+    "Initial max triangles for flat mesh buffer. Auto-grows if exceeded."};
 
 struct MeshIntegratorParams {
   Param<float> mesh_integrator_min_weight{kMeshIntegratorMinWeightParamDesc};
   Param<bool> mesh_integrator_weld_vertices{
       kMeshIntegratorWeldVerticesParamDesc};
+  Param<int> mesh_integrator_max_flat_mesh_triangles{
+      kMeshIntegratorMaxFlatMeshTrianglesParamDesc};
 };
 
 }  // namespace nvblox

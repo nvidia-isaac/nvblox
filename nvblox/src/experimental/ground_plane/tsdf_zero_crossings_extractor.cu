@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitationj under the License.
 */
 #include <assert.h>
+#include <algorithm>
+#include <cmath>
 
 #include "nvblox/core/indexing.h"
 #include "nvblox/core/types.h"
 #include "nvblox/experimental/ground_plane/tsdf_zero_crossings_extractor.h"
+#include "nvblox/integrators/internal/integrators_common.h"
 
 namespace nvblox {
 
@@ -91,20 +94,24 @@ std::optional<std::vector<Vector3f>>
 TsdfZeroCrossingsExtractor::computeZeroCrossingsFromAboveOnGPU(
     const TsdfLayer& tsdf_layer) {
   timing::Timer timer("ground_plane/compute_zero_crossings_from_above_on_gpu");
+
+  // Get all block indices
+  std::vector<Index3D> block_indices_host = tsdf_layer.getAllBlockIndices();
+  std::vector<const TsdfBlock*> block_ptrs_host =
+      tsdf_layer.getAllBlockPointers();
+
+  const int num_blocks = block_ptrs_host.size();
+  if (num_blocks == 0) {
+    return std::nullopt;
+  }
+
   resetAndAllocateCrossingBuffers();
 
-  const auto block_ptrs_host = tsdf_layer.getAllBlockPointers();
   block_ptrs_device_.copyFromAsync(block_ptrs_host, *cuda_stream_);
-
-  const auto block_indices_host = tsdf_layer.getAllBlockIndices();
   block_indices_device_.copyFromAsync(block_indices_host, *cuda_stream_);
 
   constexpr int kVoxelsPerSide = TsdfBlock::kVoxelsPerSide;
   const dim3 threads_per_block(kVoxelsPerSide, kVoxelsPerSide, kVoxelsPerSide);
-  const int num_blocks = tsdf_layer.numBlocks();
-  if (num_blocks == 0) {
-    return std::nullopt;
-  }
 
   // Collect the respective blocks above
   std::vector<const TsdfBlock*> block_above_ptrs_host;
@@ -129,18 +136,48 @@ TsdfZeroCrossingsExtractor::computeZeroCrossingsFromAboveOnGPU(
                                           *cuda_stream_);
 
   cuda_stream_->synchronize();
-  p_L_crossings_global_device_.resizeAsync(*p_L_crossings_count_host_,
-                                           *cuda_stream_);
-
-  cuda_stream_->synchronize();
   checkCudaErrors(cudaPeekAtLastError());
 
-  // Do not proceed with all calculations and let the caller know in case we
-  // reach the max capacity. Let the caller decide what to do in this case.
+  // Check if we hit the limit, resize if needed
   if (*p_L_crossings_count_host_ >= max_crossings_) {
-    LOG(WARNING) << "Maximum number of crossings reached.";
-    return std::nullopt;
+    const int old_max_crossings = max_crossings_;
+    max_crossings_ = static_cast<int>(
+        std::ceil(buffer_expansion_factor_ *
+                  std::max(static_cast<int>(*p_L_crossings_count_host_),
+                           max_crossings_)));
+
+    LOG(INFO) << "Zero crossing buffer limit reached (" << old_max_crossings
+              << "). Resizing buffer from " << old_max_crossings << " to "
+              << max_crossings_;
+
+    // Reallocate buffers with new size
+    resetAndAllocateCrossingBuffers();
+
+    // Retry computation with larger buffer
+    computeZeroCrossingsFromAboveKernel<<<num_blocks, threads_per_block, 0,
+                                          *cuda_stream_>>>(
+        block_ptrs_device_.data(), block_ptrs_above_device_.data(),
+        min_tsdf_weight_, tsdf_layer.voxel_size(), block_indices_device_.data(),
+        max_crossings_, p_L_crossings_global_device_.data(),
+        p_L_crossings_count_device_.get());
+    p_L_crossings_count_device_.copyToAsync(p_L_crossings_count_host_,
+                                            *cuda_stream_);
+
+    cuda_stream_->synchronize();
+    checkCudaErrors(cudaPeekAtLastError());
+
+    // Check if we still hit the limit after resize
+    if (*p_L_crossings_count_host_ >= max_crossings_) {
+      LOG(WARNING) << "Maximum number of crossings reached (" << max_crossings_
+                   << ") even after buffer resize.";
+      return std::nullopt;
+    }
   }
+
+  // Success - resize buffer to actual count and return
+  p_L_crossings_global_device_.resizeAsync(*p_L_crossings_count_host_,
+                                           *cuda_stream_);
+  cuda_stream_->synchronize();
   timer.Stop();
   return p_L_crossings_global_device_.toVectorAsync(*cuda_stream_);
 }

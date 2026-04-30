@@ -21,6 +21,8 @@ limitations under the License.
 #include "nvblox/mapper/multi_mapper.h"
 #include "nvblox/sensors/lidar.h"
 
+#include "nvblox/tests/utils.h"
+
 using namespace nvblox;
 
 constexpr float kFloatEpsilon = 1e-6;
@@ -108,7 +110,8 @@ TEST_F(MultiMapperTest, MaskOnAndOff) {
   constexpr int kSeqID = 1;
   constexpr bool kMultithreadedLoading = false;
   auto data_loader = datasets::threedmatch::DataLoader::create(
-      "./data/3dmatch", kSeqID, kMultithreadedLoading);
+      test_utils::getTestDataPath("data/3dmatch"), kSeqID,
+      kMultithreadedLoading);
   EXPECT_TRUE(data_loader) << "Cant find the test input data.";
 
   DepthImage depth_frame(MemoryType::kDevice);

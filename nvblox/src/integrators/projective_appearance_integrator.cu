@@ -70,51 +70,48 @@ ProjectiveAppearanceIntegrator<LayerType>::~ProjectiveAppearanceIntegrator() =
 
 template <class LayerType>
 void ProjectiveAppearanceIntegrator<LayerType>::integrateFrame(
-    const MaskedImageType& image, const Transform& T_L_C, const Camera& camera,
-    const TsdfLayer& tsdf_layer, LayerType* layer,
-    std::vector<Index3D>* updated_blocks) {
+    const MaskedImageType& image,
+    std::optional<MaskedDepthImageConstView> depth_image,
+    const Transform& T_L_C, const Camera& camera, const TsdfLayer& tsdf_layer,
+    LayerType* layer, std::vector<Index3D>* updated_blocks) {
   timing::Timer timer(getIntegratorName() + "/integrate");
   CHECK_NOTNULL(layer);
   CHECK_EQ(tsdf_layer.block_size(), layer->block_size());
 
-  // Metric truncation distance for this layer
-  const float voxel_size =
-      layer->block_size() / VoxelBlock<bool>::kVoxelsPerSide;
   const float truncation_distance_m =
       this->truncation_distance_vox_ * tsdf_layer.voxel_size();
 
-  // TODO(alexmillane): This order of operations could be improved here. We
-  // could:
-  // - Create synthetic depth *first*
-  // - Then use the depth image to gets block in view, as we do in the
-  //   TSDFIntegrator.
-  // - We could add an option to the view calculator to only return blocks in
-  //   the truncation band.
-  // - We could then remove the kernel below for reduce blocks to those in the
-  // truncation band.
-
+  // Get blocks in view. When a depth image is available we can use raycasting
+  // for tighter block selection; otherwise fall back to frustum projection.
   timing::Timer blocks_in_view_timer(getIntegratorName() +
                                      "/integrate/get_blocks_in_view");
-  std::vector<Index3D> block_indices =
-      view_calculator_.getBlocksInImageViewProjection(
-          T_L_C, camera, layer->block_size(),
-          this->max_integration_distance_m_ + truncation_distance_m);
+  std::vector<Index3D> block_indices;
+  if (depth_image.has_value()) {
+    block_indices = view_calculator_.getBlocksInImageViewRaycast(
+        *depth_image, T_L_C, camera, layer->block_size(), truncation_distance_m,
+        this->max_integration_distance_m_);
+  } else {
+    block_indices = view_calculator_.getBlocksInImageViewProjection(
+        T_L_C, camera, layer->block_size(),
+        this->max_integration_distance_m_ + truncation_distance_m);
+  }
   blocks_in_view_timer.Stop();
 
-  // Check which of these blocks are:
-  // - Allocated in the TSDF, and
-  // - have at least a single voxel within the truncation band
-  // This is because:
-  // - We don't allocate new geometry here, we just paint existing geometry
-  // - We don't paint freespace.
+  if (block_indices.empty()) {
+    return;
+  }
+
+  // Reduce to blocks allocated in the TSDF with at least one voxel in the
+  // truncation band. We only paint existing geometry, not freespace.
   timing::Timer blocks_in_band_timer(getIntegratorName() +
                                      "/integrate/reduce_to_blocks_in_band");
   block_indices = reduceBlocksToThoseInTruncationBand(block_indices, tsdf_layer,
                                                       truncation_distance_m);
+  blocks_in_band_timer.Stop();
+
   if (block_indices.empty()) {
     return;
   }
-  blocks_in_band_timer.Stop();
 
   // Allocate blocks (CPU)
   // We allocate blocks where
@@ -125,20 +122,23 @@ void ProjectiveAppearanceIntegrator<LayerType>::integrateFrame(
   allocateBlocksWhereRequired(block_indices, layer, *this->cuda_stream_);
   allocate_blocks_timer.Stop();
 
-  // Get preallocated space for the synthetic depth image
-  const SphereTracer::SubsampledImageSize image_size =
-      sphere_tracer_.getSubsampledImageSize(
-          camera, sphere_tracing_ray_subsampling_factor_);
-  DepthImage* synthetic_depth_image = synthetic_depth_images_.get(
-      image_size.rows, image_size.cols, MemoryType::kDevice);
+  // When no depth image is provided, generate one via sphere tracing.
+  if (!depth_image.has_value()) {
+    const SphereTracer::SubsampledImageSize image_size =
+        sphere_tracer_.getSubsampledImageSize(
+            camera, sphere_tracing_ray_subsampling_factor_);
+    DepthImage* synthetic_depth_image = synthetic_depth_images_.get(
+        image_size.rows, image_size.cols, MemoryType::kDevice);
 
-  // Create a synthetic depth image
-  timing::Timer sphere_trace_timer(getIntegratorName() +
-                                   "/integrate/sphere_trace");
-  sphere_tracer_.renderImageOnGPU(
-      camera, T_L_C, tsdf_layer, truncation_distance_m, synthetic_depth_image,
-      MemoryType::kDevice, sphere_tracing_ray_subsampling_factor_);
-  sphere_trace_timer.Stop();
+    timing::Timer sphere_trace_timer(getIntegratorName() +
+                                     "/integrate/sphere_trace");
+    sphere_tracer_.renderImageOnGPU(
+        camera, T_L_C, tsdf_layer, truncation_distance_m, synthetic_depth_image,
+        MemoryType::kDevice, sphere_tracing_ray_subsampling_factor_);
+    sphere_trace_timer.Stop();
+
+    depth_image.emplace(*synthetic_depth_image, kMaskActiveEverywhere);
+  }
 
   timing::Timer transfer_blocks_timer(getIntegratorName() +
                                       "/integrate/transfer_blocks");
@@ -160,9 +160,9 @@ void ProjectiveAppearanceIntegrator<LayerType>::integrateFrame(
   // Calling the GPU to do the updates
   timing::Timer update_blocks_timer(getIntegratorName() +
                                     "/integrate/update_blocks");
-  this->integrateBlocks(
-      MaskedDepthImageConstView(*synthetic_depth_image, kMaskActiveEverywhere),
-      image, T_C_L, camera, update_functor_device.get(), layer);
+  this->integrateBlocks(*depth_image, image, T_C_L, camera,
+                        update_functor_device.get(), layer);
+  update_blocks_timer.Stop();
 
   if (updated_blocks != nullptr) {
     *updated_blocks = block_indices;

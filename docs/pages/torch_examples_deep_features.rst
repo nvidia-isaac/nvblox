@@ -4,7 +4,7 @@ Deep Feature-based Reconstruction
 This example demonstrates how to integrate foundation-model features into an nvblox
 reconstruction.
 
-:download_test_dataset:
+:download_sun3d_test_dataset:
 
 Launch the example by running:
 

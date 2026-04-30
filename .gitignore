@@ -1,5 +1,7 @@
-**/build
-
+# Bazel files
+**/bazel-*/
+bazel-*
+MODULE.bazel.lock
 
 # Prerequisites
 *.d
@@ -58,7 +60,7 @@ TAGS
 # Test artifacts
 nvblox/tests/*.png
 nvblox/tests/*.nvblx
-nvblox/tests/data/test_output_data/
+executables/tests/data/test_output_data/
 
 # Built py distribution
 nvblox_torch/dist

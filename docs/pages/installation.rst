@@ -19,22 +19,22 @@ Supported Platforms
 
 The following platforms are supported:
 
-+------------------------+-------------+----------------+----------------+-------------+
-|                        | x86 + dGPU  | JetPack 7.0.X  | JetPack 6.X    | JetPack 5.X |
-+========================+=============+================+================+=============+
-| ``nvblox_torch (pip)`` | ✅          | ❌             | ❌             | ❌          |
-+------------------------+-------------+----------------+----------------+-------------+
-| ``nvblox_torch (src)`` | ✅          | ❌             | ✅             | ❌          |
-+------------------------+-------------+----------------+----------------+-------------+
-| ``nvblox C++ (src)``   | ✅          | ✅             | ✅             | ✅          |
-+------------------------+-------------+----------------+----------------+-------------+
++------------------------+-------------+----------------+----------------+-----------------+
+|                        | x86 + dGPU  | JetPack 7.0.X  | JetPack 6.X    | JetPack 5.X (*) |
++========================+=============+================+================+=================+
+| ``nvblox_torch (pip)`` | ✅          | ❌             | ❌             | ❌              |
++------------------------+-------------+----------------+----------------+-----------------+
+| ``nvblox_torch (src)`` | ✅          | ❌             | ✅             | ❌              |
++------------------------+-------------+----------------+----------------+-----------------+
+| ``nvblox C++ (src)``   | ✅          | ✅             | ✅             | ✅              |
++------------------------+-------------+----------------+----------------+-----------------+
 
 We support the systems with the following configurations:
 
 - **x86 + discrete GPU**
 
   - Ubuntu 20.04, 22.04, 24.04
-  - CUDA 11.4 - 13.0
+  - CUDA 11.4 (*) - 13.0
   - GPU with compute capability 7.5 or higher. See `here <https://developer.nvidia.com/cuda/gpus>`__ for a list of GPUs and their compute capabilities.
 
 - **Jetson (ARM64)**
@@ -45,6 +45,9 @@ A minimum NVIDIA driver version is imposed by the version of CUDA you have insta
 See the support table `here <https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html>`__
 to find the minimum driver version for your platform.
 
+.. note::
+
+    (*): CUDA 11 and Jetpack5 are deprecated and will be removed in an upcoming release.
 
 .. _nvblox_torch_pip_installation:
 
@@ -97,7 +100,7 @@ To build the library run
             mkdir -p /workspaces/nvblox/build
             cd /workspaces/nvblox/build
             cmake ..
-            make -j${nproc}
+            make -j6
 
     .. tab:: JetPack 7, JetPack 5
 
@@ -106,13 +109,13 @@ To build the library run
             mkdir -p /workspaces/nvblox/build
             cd /workspaces/nvblox/build
             cmake .. -DBUILD_PYTORCH_WRAPPER=0
-            make -j${nproc}
+            make -j6
 
 (Optional) You can verify the installation by running our tests:
 
 .. code-block:: bash
 
-    ctest --test-dir /workspaces/nvblox/build/nvblox
+    ctest --test-dir /workspaces/nvblox/build
 
 .. note::
 
@@ -250,3 +253,40 @@ For example, to build for Compute Capability (CC) 7.2 and 7.5, you would run:
 .. code-block:: bash
 
     cmake .. -DCMAKE_CUDA_ARCHITECTURES=75;72
+
+Building with Bazel
+~~~~~~~~~~~~~~~~~~~
+
+As an alternative to CMake, ``nvblox`` can be built using `Bazel <https://bazel.build/>`_.
+
+.. note::
+
+    Bazel support has the following limitations:
+
+    - **Core C++ library only**: The PyTorch wrapper (``nvblox_torch``) is not supported with Bazel.
+    - **Limited platform support**: Tested on Ubuntu 24.04 with GCC 13 x86_64.
+    - **Experimental**: Bazel support is newer and less tested than the CMake build system.
+
+To build with Bazel:
+
+.. code-block:: bash
+
+    # Install Bazel (if not already installed)
+    # See https://bazel.build/install for installation instructions
+
+    # Build the core library
+    bazel build //:nvblox
+
+    # Run tests
+    bazel test //nvblox/tests/...
+
+    # Build for aarch64 (experimental)
+    bazel build --config arm64 //:nvblox
+
+Build configuration options are defined in ``.bazelrc``. Additional configurations include:
+
+- ``--config asan``: Build with Address Sanitizer
+- ``--config tsan``: Build with Thread Sanitizer
+- ``--config ubsan``: Build with Undefined Behavior Sanitizer
+
+For more details on the Bazel build system configuration, see the ``.bazelrc`` and ``MODULE.bazel`` files in the repository root.

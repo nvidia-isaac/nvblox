@@ -123,6 +123,8 @@ add_nvblox_shared_library(
   src/mesh/mesh_block.cu
   src/mesh/mesh_integrator_appearance.cu
   src/mesh/mesh_integrator.cu
+  src/mesh/mesh_transform.cu
+  src/mesh/flat_mesh_integrator.cu
   src/primitives/primitives.cpp
   src/primitives/scene.cpp
   src/utils/nvtx_ranges.cpp
@@ -136,6 +138,8 @@ add_nvblox_shared_library(
   src/semantics/image_masker.cu
   src/semantics/image_projector.cu
   src/semantics/mask_from_detections.cu
+  src/projective_texturing/texture_atlas.cu
+  src/projective_texturing/projective_texture_mapper.cu
   LINK_LIBRARIES_PUBLIC
   glog::glog
   gflags
@@ -162,17 +166,19 @@ add_nvblox_shared_library(
 # nvblox_stdgpu and nvblox_gpu_hash to get some transitive dependencies. This
 # should not be required, as isn't required on JP6/7. Remove this overlinking
 # once JP5 is no longer supported.
-add_nvblox_executable(
-  sphere_benchmark
-  SOURCE_FILES
-  src/benchmarks/sphere_benchmark.cpp
-  LINK_LIBRARIES_PUBLIC
-  nvblox_lib
-  nvblox_stdgpu
-  nvblox_gpu_hash)
+if(BUILD_BENCHMARKS)
+  add_nvblox_executable(
+    sphere_benchmark
+    SOURCE_FILES
+    src/benchmarks/sphere_benchmark.cpp
+    LINK_LIBRARIES_PUBLIC
+    nvblox_lib
+    nvblox_stdgpu
+    nvblox_gpu_hash)
+endif()
 
-# Binaries for specific datasets
-add_subdirectory(executables)
+# Dataset loaders
+add_subdirectory(datasets)
 
 # Tiny example binaries.
 add_subdirectory(examples)
@@ -198,7 +204,7 @@ add_subdirectory(experiments)
 include(GNUInstallDirs)
 
 install(
-  TARGETS nvblox_lib nvblox_datasets nvblox_eigen fuse_3dmatch fuse_replica
+  TARGETS nvblox_lib nvblox_datasets nvblox_eigen
   EXPORT nvbloxTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -208,7 +214,7 @@ install(
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/executables/include/
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/datasets/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 if(NOT USE_SYSTEM_EIGEN)
   install(

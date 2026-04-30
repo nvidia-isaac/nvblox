@@ -1,7 +1,7 @@
 # Copy test data into the testing space (build/tests)
 include(GoogleTest)
 
-file(INSTALL "${CMAKE_CURRENT_SOURCE_DIR}/data"
+file(INSTALL "${CMAKE_SOURCE_DIR}/executables/tests/data"
      DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Copy some (python) visualization tools
@@ -51,6 +51,14 @@ add_nvblox_static_library(
 
 set(TEST_OPTIONS DISCOVERY_TIMEOUT 30)
 
+# Sanitizer instrumentation slows tests enough to exceed the CTest default
+# per-test timeout of 1500s. Bump the limit for sanitizer builds.
+if(USE_SANITIZER)
+  set(TEST_TIMEOUT 3000)
+else()
+  set(TEST_TIMEOUT 1500)
+endif()
+
 function(add_nvblox_test test_name is_cuda_test)
   # Switch between .cpp and .cu tests.
   set(test_file_extension "cpp")
@@ -72,8 +80,9 @@ function(add_nvblox_test test_name is_cuda_test)
   gtest_discover_tests(
     ${test_name} ${TEST_OPTIONS}
     PROPERTIES ENVIRONMENT "ASAN_OPTIONS=protect_shadow_gap=0"
+    TIMEOUT ${TEST_TIMEOUT}
     WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_BINARY_DIR}
       DISCOVERY_MODE
       PRE_TEST # Avoid running test executables in the build step
   )
@@ -91,7 +100,6 @@ function(add_nvblox_cuda_test test_name)
 endfunction()
 
 add_nvblox_cpp_test(test_3d_interpolation)
-add_nvblox_cpp_test(test_3dmatch)
 add_nvblox_cpp_test(test_blox)
 add_nvblox_cpp_test(test_shape_clearer)
 add_nvblox_cpp_test(test_bounding_spheres)
@@ -105,9 +113,9 @@ add_nvblox_cpp_test(test_cuda_stream)
 add_nvblox_cpp_test(test_mono_image)
 add_nvblox_cpp_test(test_depth_image)
 add_nvblox_cpp_test(test_dynamics)
+add_nvblox_cpp_test(test_dynamic_tsdf_integrator)
 add_nvblox_cpp_test(test_for_memory_leaks)
 add_nvblox_cpp_test(test_freespace_integrator)
-add_nvblox_cpp_test(test_frustum)
 add_nvblox_cpp_test(test_gpu_layer_view)
 add_nvblox_cpp_test(test_image_io)
 add_nvblox_cpp_test(test_image_masker)
@@ -116,11 +124,11 @@ add_nvblox_cpp_test(test_indexing)
 add_nvblox_cpp_test(test_interpolation_2d)
 add_nvblox_cpp_test(test_layer)
 add_nvblox_cpp_test(test_lidar)
-add_nvblox_cpp_test(test_lidarply)
 add_nvblox_cpp_test(test_lidar_integration)
 add_nvblox_cpp_test(test_mapper)
 add_nvblox_cpp_test(test_mesh_appearance)
 add_nvblox_cpp_test(test_mesh)
+add_nvblox_cpp_test(test_flat_mesh)
 add_nvblox_cpp_test(test_mesh_serializer)
 add_nvblox_cpp_test(test_ply_io)
 add_nvblox_cpp_test(test_nvtx_ranges)
@@ -129,15 +137,15 @@ add_nvblox_cpp_test(test_occupancy_integrator)
 add_nvblox_cpp_test(test_orbbec)
 add_nvblox_cpp_test(test_pointcloud)
 add_nvblox_cpp_test(test_ray_caster)
+add_nvblox_cpp_test(test_appearance_integrator_with_depth)
 add_nvblox_cpp_test(test_scene)
 add_nvblox_cpp_test(test_serialization)
-add_nvblox_cpp_test(test_sphere_tracing)
 add_nvblox_cpp_test(test_time)
 add_nvblox_cpp_test(test_timing)
 add_nvblox_cpp_test(test_traits)
+add_nvblox_cpp_test(test_transforms)
 add_nvblox_cpp_test(test_tsdf_decay)
 add_nvblox_cpp_test(test_tsdf_error)
-add_nvblox_cpp_test(test_tsdf_integrator)
 add_nvblox_cpp_test(test_tsdf_integrator_cuda_components)
 add_nvblox_cpp_test(test_unified_3d_grid)
 add_nvblox_cpp_test(test_unified_ptr)
@@ -153,6 +161,7 @@ add_nvblox_cpp_test(test_image_cache)
 add_nvblox_cpp_test(test_params)
 add_nvblox_cpp_test(test_block_memory_pool)
 add_nvblox_cpp_test(test_delays)
+add_nvblox_cpp_test(test_image)
 add_nvblox_cpp_test(test_image_view)
 add_nvblox_cpp_test(test_bitmask)
 add_nvblox_cpp_test(test_blocks_to_update_tracker)
@@ -160,13 +169,11 @@ add_nvblox_cpp_test(test_nvblox_h)
 add_nvblox_cpp_test(test_ransac_plane_fitter_cpu)
 add_nvblox_cpp_test(test_ransac_plane_fitter)
 add_nvblox_cpp_test(test_layer_cake_streamer)
-add_nvblox_cpp_test(test_replica)
 add_nvblox_cpp_test(test_checks)
 add_nvblox_cpp_test(test_type_indexed_store)
 add_nvblox_cuda_test(regression_test_query_after_clear)
 add_nvblox_cuda_test(test_camera)
 add_nvblox_cuda_test(test_layer_to_3d_grid)
-add_nvblox_cuda_test(test_gpu_hash_interface)
 add_nvblox_cuda_test(test_masked_image_view)
 add_nvblox_cuda_test(test_esdf_integrator_slicing)
 add_nvblox_cuda_test(test_plane)
@@ -174,7 +181,6 @@ add_nvblox_cuda_test(test_device_function_utils)
 add_nvblox_cuda_test(test_zero_crossings_extractor)
 add_nvblox_cuda_test(test_error_check)
 add_nvblox_cuda_test(test_array)
-add_nvblox_cuda_test(test_lidar_motion_compensation)
 
 # The error check tests some scenarios that we're normally not going to
 # encounter. Relevant warnings are disabled
@@ -185,31 +191,18 @@ if(NOT USE_SANITIZER)
   # TODO(dtingdahl) Fix tests that fails under sanitizer
   add_nvblox_cpp_test(test_esdf_integrator)
 
+  # These tests are too slow to run under sanitizer and are disabled to keep CI
+  # times sane.
+  add_nvblox_cuda_test(test_gpu_hash_interface)
+  add_nvblox_cpp_test(test_frustum)
+  add_nvblox_cpp_test(test_tsdf_integrator)
+  add_nvblox_cpp_test(test_sphere_tracing)
+
   # Since CUDA 12.6 these tests fail with an exception "invalid device ordinal".
   # The exception comes from cub and is thust not an asan error. It is possible
   # that CUDA 12.6 introduced further incompatibilies with asan. TODO(dtingdahl)
   # investigate
-  add_nvblox_cpp_test(test_fuser)
   add_nvblox_cpp_test(test_mapper_block_allocation)
   add_nvblox_cpp_test(test_multi_mapper)
 
-  # Add test that prevents us from accidentally introducing work on the default
-  # cuda stream. The test comes with a helper executable for for determining ID
-  # of the default cuda stream.
-  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    add_nvblox_executable(
-      run_memcpy_on_default_cuda_stream SOURCE_FILES
-      run_memcpy_on_default_cuda_stream.cpp LINK_LIBRARIES_PUBLIC nvblox_lib)
-    add_test(test_default_stream_utilization bash
-             ${CMAKE_CURRENT_SOURCE_DIR}/check_default_stream_utilization.sh)
-  endif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
 endif(NOT USE_SANITIZER)
-
-# Benchmarking executable
-add_nvblox_executable(
-  nvblox_benchmark SOURCE_FILES benchmark.cpp LINK_LIBRARIES_PUBLIC
-  nvblox_test_utils benchmark::benchmark)
-
-add_nvblox_executable(
-  nvblox_benchmark_camera SOURCE_FILES benchmark_camera.cpp
-  LINK_LIBRARIES_PUBLIC nvblox_test_utils benchmark::benchmark)

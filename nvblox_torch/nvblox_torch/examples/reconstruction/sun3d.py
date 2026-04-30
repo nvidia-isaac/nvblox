@@ -22,6 +22,7 @@ from nvblox_torch.mapper_params import MapperParams, ProjectiveIntegratorParams
 from nvblox_torch.sensor import Sensor
 from nvblox_torch.examples.utils.visualization import Visualizer
 from nvblox_torch.examples.utils.feature_extraction import RadioFeatureExtractor
+from nvblox_torch.examples.utils.interrupt_handling import run_with_graceful_interrupt
 
 # How often to integrate deep features.
 INTEGRATE_DEEP_FEATURES_EVERY_N_FRAMES = 20
@@ -175,4 +176,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(run_with_graceful_interrupt(main))

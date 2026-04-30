@@ -8,6 +8,7 @@ set -exo pipefail
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 TEST_DIR=$SCRIPT_DIR/../build/nvblox/tests
+BENCHMARK_DIR=$SCRIPT_DIR/../build/executables
 
 # Logging for debug reasons
 compute-sanitizer --version
@@ -17,7 +18,7 @@ dpkg -l | grep cuda || true
 
 # List of tests to run under compute-sanitizer
 # Add tests that are cuda-intensive and lightweight
-TESTS_TO_RUN=("nvblox_benchmark --benchmark_filter=benchmarkAll"
+TESTS_TO_RUN=("$BENCHMARK_DIR/nvblox_benchmark --benchmark_filter=benchmarkAll"
               "test_color_integrator --gtest_filter=ColorIntegrationTest.IntegrateColorToGroundTruthDistanceField"
               "test_esdf_integrator --gtest_filter=ParameterizedEsdfTests/EsdfIntegratorTest.OccupancySingleEsdfTestGPU/0"
               "test_freespace_integrator"

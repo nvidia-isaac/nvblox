@@ -96,7 +96,6 @@ class Sun3dDataset(Dataset):
     def _load_pose(self, frame_name: str) -> np.ndarray:
         """Load pose from disk."""
         pose_params = np.loadtxt(os.path.join(self.seq_dir, f'{frame_name}.pose.txt'))
-        print(pose_params.shape)
         if pose_params.shape == (4, 4):
             return torch.tensor(pose_params, dtype=torch.float32)
         elif pose_params.shape == (7, ):

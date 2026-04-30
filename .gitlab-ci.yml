@@ -7,6 +7,10 @@ image:
 # Reusable snippet for building docs
 .build_docs: &build_docs
   script:
+    # Ensure breathe + doxygen are available (can be removed once the docs
+    # Docker image is rebuilt with these baked in).
+    - pip install --quiet "breathe>=4.35"
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends doxygen > /dev/null
     - cd docs && make html SPHINXOPTS="-W --keep-going -D todo_include_todos=0"
     - make linkcheck
     - mkdir -p /builds/nvblox/nvblox/public

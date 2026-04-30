@@ -267,7 +267,8 @@ TEST_F(ZeroCrossingsFromAboveSimpleSphere, GPUTestMaxCrossingsExceeded) {
       std::make_shared<CudaStreamOwning>());
   tsdf_zero_crossings_extractor.max_crossings(max_crossings_too_low);
 
-  EXPECT_FALSE(tsdf_zero_crossings_extractor.computeZeroCrossingsFromAboveOnGPU(
+  // If exceeded, resize the buffer to fit all the crossings.
+  EXPECT_TRUE(tsdf_zero_crossings_extractor.computeZeroCrossingsFromAboveOnGPU(
       mapper.tsdf_layer()));
 }
 

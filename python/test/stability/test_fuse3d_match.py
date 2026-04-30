@@ -17,7 +17,7 @@
 import os
 import subprocess
 
-BINARY_PATH = 'build/nvblox/executables/fuse_3dmatch'
+BINARY_PATH = 'build/executables/fuse_3dmatch'
 
 TIMEOUT_S = 120
 
@@ -27,7 +27,7 @@ def test_run_fuser_multiple_times() -> None:
     assert os.path.isfile(BINARY_PATH), f'{BINARY_PATH} not found'
 
     for _ in range(0, 100):
-        output = subprocess.check_output([f'{BINARY_PATH}', 'nvblox/tests/data/3dmatch'],
+        output = subprocess.check_output([f'{BINARY_PATH}', 'executables/tests/data/3dmatch'],
                                          timeout=TIMEOUT_S)
 
         print(output.decode('utf-8'))

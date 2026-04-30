@@ -15,6 +15,8 @@ limitations under the License.
 */
 #pragma once
 
+#include <optional>
+
 #include "nvblox/core/cuda_stream.h"
 #include "nvblox/integrators/internal/projective_integrator.h"
 #include "nvblox/integrators/projective_integrator_params.h"
@@ -52,17 +54,31 @@ class ProjectiveAppearanceIntegrator
   virtual ~ProjectiveAppearanceIntegrator();
 
   /// Integrates an appearance image into the passed layer.
+  ///
+  /// When depth_image is provided, it is used directly for occlusion testing
+  /// (e.g., from an RGBD camera with aligned depth). Otherwise, a synthetic
+  /// depth image is generated via sphere tracing.
+  ///
   /// @param image An appearance image (color or features)
+  /// @param depth_image Optional aligned depth image for occlusion testing.
+  /// When absent, a synthetic depth image is generated via sphere tracing.
   /// @param T_L_C The pose of the camera. Supplied as a Transform mapping
   /// points in the camera frame (C) to the layer frame (L).
-  /// @param camera A the camera (intrinsics) model.
-  /// @param tsdf_layer The TSDF layer with which the appearance layer
+  /// @param camera The camera (intrinsics) model.
+  /// @param tsdf_layer The TSDF layer with which the appearance layer is
   /// associated. Integration is only performed on the voxels corresponding to
   /// the truncation band of this layer.
   /// @param layer A pointer to the layer into which this image will be
-  /// intergrated.
+  /// integrated.
   /// @param updated_blocks Optional pointer to a vector which will contain the
   /// 3D indices of blocks affected by the integration.
+  void integrateFrame(const MaskedImageType& image,
+                      std::optional<MaskedDepthImageConstView> depth_image,
+                      const Transform& T_L_C, const Camera& camera,
+                      const TsdfLayer& tsdf_layer, LayerType* layer,
+                      std::vector<Index3D>* updated_blocks = nullptr);
+
+  /// Convenience overload without a depth image (uses sphere tracing).
   void integrateFrame(const MaskedImageType& image, const Transform& T_L_C,
                       const Camera& camera, const TsdfLayer& tsdf_layer,
                       LayerType* layer,
@@ -192,3 +208,5 @@ using ProjectiveFeatureIntegrator =
     ProjectiveAppearanceIntegrator<FeatureLayer>;
 
 }  // namespace nvblox
+
+#include "nvblox/integrators/internal/impl/projective_appearance_integrator_impl.h"

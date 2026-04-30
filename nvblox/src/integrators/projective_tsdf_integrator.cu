@@ -51,6 +51,10 @@ ProjectiveTsdfIntegrator::getTsdfUpdateFunctorOnDevice(float voxel_size) {
       invalid_depth_decay_factor();
   update_functor_host_ptr_->weighting_function_ =
       WeightingFunction(weighting_function_type_);
+  update_functor_host_ptr_->dynamic_discrepancy_threshold_m_ =
+      dynamic_discrepancy_threshold_m();
+  update_functor_host_ptr_->dynamic_discrepancy_min_weight_ =
+      dynamic_discrepancy_min_weight();
   // Transfer to the device
   return update_functor_host_ptr_.cloneAsync(MemoryType::kDevice,
                                              *cuda_stream_);
@@ -100,6 +104,25 @@ void ProjectiveTsdfIntegrator::invalid_depth_decay_factor(
   invalid_depth_decay_factor_ = invalid_depth_decay_factor;
 }
 
+float ProjectiveTsdfIntegrator::dynamic_discrepancy_threshold_m() const {
+  return dynamic_discrepancy_threshold_m_;
+}
+
+void ProjectiveTsdfIntegrator::dynamic_discrepancy_threshold_m(
+    float dynamic_discrepancy_threshold_m) {
+  dynamic_discrepancy_threshold_m_ = dynamic_discrepancy_threshold_m;
+}
+
+float ProjectiveTsdfIntegrator::dynamic_discrepancy_min_weight() const {
+  return dynamic_discrepancy_min_weight_;
+}
+
+void ProjectiveTsdfIntegrator::dynamic_discrepancy_min_weight(
+    float dynamic_discrepancy_min_weight) {
+  CHECK_GE(dynamic_discrepancy_min_weight, 0.0f);
+  dynamic_discrepancy_min_weight_ = dynamic_discrepancy_min_weight;
+}
+
 std::string ProjectiveTsdfIntegrator::getIntegratorName() const {
   return "tsdf";
 }
@@ -134,6 +157,10 @@ parameters::ParameterTreeNode ProjectiveTsdfIntegrator::getParameterTree(
                          weighting_function_to_string),
        ParameterTreeNode("invalid_depth_decay_factor:",
                          invalid_depth_decay_factor_),
+       ParameterTreeNode("dynamic_discrepancy_threshold_m:",
+                         dynamic_discrepancy_threshold_m_),
+       ParameterTreeNode("dynamic_discrepancy_min_weight:",
+                         dynamic_discrepancy_min_weight_),
        ProjectiveIntegrator<TsdfVoxel>::getParameterTree()});
 }
 

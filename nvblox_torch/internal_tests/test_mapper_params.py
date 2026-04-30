@@ -93,11 +93,14 @@ def assert_getting_and_setting(parameter_class: Callable) -> None:
 def get_parameter_names_from_cpp(header_file_path: pathlib.Path) -> List[str]:
     param_names = []
     with open(header_file_path, 'r', encoding='utf-8') as file:
-        for line in file.readlines():
-            if 'Param<' in line and 'constexpr' not in line:
-                line.split()
-                param_name = re.split(r'[{>]+', line)[1].strip()
-                param_names.append(param_name)
+        lines = file.readlines()
+    for i, line in enumerate(lines):
+        if 'Param<' in line and 'constexpr' not in line:
+            param_name = re.split(r'[{>]+', line)[1].strip()
+            if not param_name:
+                # Name is on the next line (clang-format wrapped long declarations).
+                param_name = re.split(r'[{]+', lines[i + 1])[0].strip()
+            param_names.append(param_name)
     return param_names
 
 

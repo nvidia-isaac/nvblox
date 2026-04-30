@@ -1,0 +1,101 @@
+# Copyright (c) 2026, NVIDIA CORPORATION. All rights reserved.
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto. Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_test")
+
+cc_binary(
+    name = "run_memcpy_on_default_cuda_stream",
+    srcs = ["run_memcpy_on_default_cuda_stream.cpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//nvblox/src:nvblox_lib",
+        "@rules_cuda//cuda:runtime",
+    ],
+)
+
+[
+    cc_test(
+        name = test_name,
+        size = "large",
+        srcs = ["{}.cpp".format(test_name)],
+        copts = [
+            "-Wno-sign-compare",
+            "-Wno-pessimizing-move",
+        ],
+        data = [
+            ":test_data",
+        ],
+        defines = [
+            "STBI_NO_FAILURE_STRINGS",
+            "USE_BAZEL_RUNFILES",
+        ],
+        visibility = ["//visibility:public"],
+        deps = [
+            "//executables:fuser_lib",
+            "//nvblox/include:nvblox_headers",
+            "//nvblox/src:nvblox_lib",
+            "//nvblox/tests:test_lib",
+            "//nvblox/tests:test_lib_cu",
+            "@bazel_tools//tools/cpp/runfiles",
+            "@googletest//:gtest",
+            "@googletest//:gtest_main",
+        ],
+    )
+    for test_name in [
+        "test_3dmatch",
+        "test_fuser",
+        "test_lidarply",
+        "test_replica",
+    ]
+]
+
+genrule(
+    name = "convert_test_lidar_motion_compensation_to_cpp",
+    srcs = ["test_lidar_motion_compensation.cu"],
+    outs = ["test_lidar_motion_compensation.cu.cpp"],
+    cmd = "cp $(SRCS) $(OUTS)",
+)
+
+cuda_test(
+    name = "test_lidar_motion_compensation",
+    size = "large",
+    srcs = ["test_lidar_motion_compensation.cu.cpp"],
+    copts = [
+        "--expt-relaxed-constexpr",
+        "--extended-lambda",
+        "--disable-warnings",
+        "--diag-suppress=20012",
+    ],
+    data = [
+        ":test_data",
+    ],
+    defines = [
+        "STBI_NO_FAILURE_STRINGS",
+        "USE_BAZEL_RUNFILES",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//executables:fuser_lib",
+        "//nvblox/include:nvblox_headers",
+        "//nvblox/src:nvblox_lib",
+        "//nvblox/tests:test_lib",
+        "//nvblox/tests:test_lib_cu",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@rules_cuda//cuda:runtime",
+    ],
+)
+
+filegroup(
+    name = "test_data",
+    srcs = glob([
+        "data/**/*",
+    ]),
+    visibility = ["//visibility:public"],
+)

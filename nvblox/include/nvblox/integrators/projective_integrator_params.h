@@ -72,6 +72,23 @@ constexpr Param<float>::Description
         "as follows:"
         "x_new = alpha * x_measured + (1 - alpha) * x_old"};
 
+constexpr Param<float>::Description
+    kProjectiveDynamicTsdfIntegratorDiscrepancyThresholdMParamDesc{
+        "projective_dynamic_tsdf_integrator_discrepancy_threshold_m", -1.0f,
+        "The discrepancy threshold in meters. When a voxel's stored TSDF "
+        "distance differs from the current depth observation by more than "
+        "this threshold, the voxel is invalidated (TSDF and weight set to "
+        "zero). "
+        "A negative value disables the dynamic discrepancy check."};
+
+constexpr Param<float>::Description
+    kProjectiveDynamicTsdfIntegratorDynamicDiscrepancyMinWeightParamDesc{
+        "projective_dynamic_tsdf_integrator_dynamic_discrepancy_min_weight",
+        2.0f,
+        "Minimum voxel weight required before the dynamic discrepancy "
+        "check is applied. Voxels below this weight are treated as "
+        "establishing and are fused normally without comparison."};
+
 struct ProjectiveIntegratorParams {
   Param<float> projective_integrator_max_integration_distance_m{
       kProjectiveIntegratorMaxIntegrationDistanceMParamDesc};
@@ -87,6 +104,11 @@ struct ProjectiveIntegratorParams {
       kProjectiveTsdfIntegratorInvalidDepthDecayFactor};
   Param<float> projective_appearance_integrator_measurement_weight{
       kProjectiveAppearanceIntegratorMeasurementWeightParamDesc};
+  Param<float> projective_dynamic_tsdf_integrator_discrepancy_threshold_m{
+      kProjectiveDynamicTsdfIntegratorDiscrepancyThresholdMParamDesc};
+  Param<float>
+      projective_dynamic_tsdf_integrator_dynamic_discrepancy_min_weight{
+          kProjectiveDynamicTsdfIntegratorDynamicDiscrepancyMinWeightParamDesc};
 };
 
 }  // namespace nvblox

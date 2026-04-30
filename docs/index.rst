@@ -58,6 +58,13 @@ Below are some examples of building reconstructions using ``nvblox``.
          :target: pages/torch_examples_realsense.html
     * - :doc:`pages/torch_examples_voxel_access`
       - :doc:`pages/torch_examples_realsense`
+    * - .. image:: images/nvblox_texture_mapping_replica.gif
+         :height: 200px
+         :target: pages/core_library_run_an_example.html
+      -
+    * - :doc:`Texture mapped reconstruction <pages/core_library_run_an_example>`
+      -
+
 
 License
 -------
@@ -102,6 +109,14 @@ If you find this library useful for your research, please consider citing our pa
    pages/core_library_more_examples
    pages/core_library_interface
    pages/core_library_sensors
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Renderer
+
+   pages/renderer_overview
+   pages/renderer_getting_started
+   pages/renderer_api
 
 .. toctree::
    :maxdepth: 1

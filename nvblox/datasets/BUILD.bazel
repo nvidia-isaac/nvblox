@@ -1,0 +1,16 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "datasets",
+    srcs = glob(["**/*.cpp", "**/*.cc", "**/*.cu"]),
+    hdrs = glob(["include/nvblox/**/*"]),
+    copts = [
+        "-Wno-sign-compare",  # Warning triggered inside glog
+        "-Wno-pessimizing-move",
+    ],
+    defines = ["STBI_NO_FAILURE_STRINGS"],
+    includes = ["include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = ["//nvblox/src:nvblox_lib"],
+)

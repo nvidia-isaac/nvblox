@@ -3,7 +3,7 @@ Euclidean Signed Distance Field
 
 This example demonstrates how to use the Euclidean Signed Distance Field (ESDF) querying functionality in ``nvblox_torch``.
 
-:download_test_dataset:
+:download_sun3d_test_dataset:
 
 Launch the example by running:
 

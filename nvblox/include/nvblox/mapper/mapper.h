@@ -21,6 +21,7 @@ limitations under the License.
 #include "nvblox/core/hash.h"
 #include "nvblox/core/parameter_tree.h"
 #include "nvblox/dynamics/dynamics_detection.h"
+#include "nvblox/geometry/bounding_boxes.h"
 #include "nvblox/integrators/depth_observation_space.h"
 #include "nvblox/integrators/esdf_integrator.h"
 #include "nvblox/integrators/freespace_integrator.h"
@@ -37,8 +38,10 @@ limitations under the License.
 #include "nvblox/map/layer_cake.h"
 #include "nvblox/map/voxels.h"
 #include "nvblox/mapper/mapper_params.h"
+#include "nvblox/mesh/flat_mesh_integrator.h"
 #include "nvblox/mesh/mesh_integrator.h"
 #include "nvblox/semantics/image_masker.h"
+#include "nvblox/sensors/camera.h"
 #include "nvblox/sensors/depth_preprocessing.h"
 #include "nvblox/sensors/type_indexed_store.h"
 #include "nvblox/serialization/layer_cake_streamer.h"
@@ -205,6 +208,13 @@ class Mapper : public MapperBase {
   void integrateColor(const ColorImage& color_frame, const Transform& T_L_C,
                       const SensorType& sensor);
 
+  /// Integrates a color image using a provided depth image for occlusion
+  /// (bypasses sphere tracing). Use with aligned RGBD data.
+  template <typename SensorType>
+  void integrateColor(const ColorImage& color_frame,
+                      const DepthImage& depth_frame, const Transform& T_L_C,
+                      const SensorType& sensor);
+
   /// Integrates generic features into the reconstruction.
   ///@param feature_frame Feature image to integrate.
   ///@param T_L_C Pose of the sensor, specified as a transform from
@@ -262,6 +272,49 @@ class Mapper : public MapperBase {
   /// mesh layer, for example.
   void updateColorMesh(
       UpdateFullLayer update_full_layer = UpdateFullLayer::kNo);
+
+  /// Extract a flat Mesh via single-pass mesh integration.
+  /// Re-extracts from all TSDF blocks each call (not incremental).
+  /// @tparam AppearanceVoxelType ColorVoxel or FeatureVoxel.
+  template <typename AppearanceVoxelType>
+  void updateFlatMesh();
+
+  /// Extract a flat Mesh from only the TSDF blocks visible in the given
+  /// camera frustum. Blocks whose AABB does not intersect the view frustum
+  /// are skipped entirely, which can significantly reduce work for large maps.
+  /// @tparam AppearanceVoxelType ColorVoxel or FeatureVoxel.
+  /// @param camera Camera intrinsics defining the field of view.
+  /// @param T_L_C Camera-to-layer-frame transform (camera pose in map frame).
+  /// @param max_depth Maximum depth (meters) for frustum extent.
+  template <typename AppearanceVoxelType>
+  void updateFlatMesh(const Camera& camera, const Transform& T_L_C,
+                      float max_depth);
+
+  /// Convenience: extract a flat ColorMesh (with color) from all TSDF blocks.
+  void updateFlatColorMesh() { updateFlatMesh<ColorVoxel>(); }
+
+  /// Convenience: extract a frustum-culled flat ColorMesh (with color).
+  void updateFlatColorMesh(const Camera& camera, const Transform& T_L_C,
+                           float max_depth) {
+    updateFlatMesh<ColorVoxel>(camera, T_L_C, max_depth);
+  }
+
+  /// Convenience: extract a flat FeatureMesh (with features) from all blocks.
+  void updateFlatFeatureMesh() { updateFlatMesh<FeatureVoxel>(); }
+
+  /// Convenience: extract a frustum-culled flat FeatureMesh (with features).
+  void updateFlatFeatureMesh(const Camera& camera, const Transform& T_L_C,
+                             float max_depth) {
+    updateFlatMesh<FeatureVoxel>(camera, T_L_C, max_depth);
+  }
+
+  /// Extract a geometry-only flat ColorMesh (no appearance sampling).
+  /// Faster than updateFlatColorMesh() when color is not needed.
+  void updateFlatColorMeshGeometryOnly();
+
+  /// Extract a geometry-only flat ColorMesh with frustum culling.
+  void updateFlatColorMeshGeometryOnly(const Camera& camera,
+                                       const Transform& T_L_C, float max_depth);
 
   /// Updates the feature mesh blocks.
   /// @param update_full_layer Whether to update the full layer or only the
@@ -530,6 +583,22 @@ class Mapper : public MapperBase {
     return feature_mesh_integrator_;
   }
   /// Getter
+  ///@return const ColorFlatMeshIntegrator& Flat color mesh integrator
+  const ColorFlatMeshIntegrator& color_flat_mesh_integrator() const {
+    return color_flat_mesh_integrator_;
+  }
+  /// Getter
+  ///@return const FeatureFlatMeshIntegrator& Flat feature mesh integrator
+  const FeatureFlatMeshIntegrator& feature_flat_mesh_integrator() const {
+    return feature_flat_mesh_integrator_;
+  }
+  /// Getter
+  ///@return const ColorMesh& Flat color mesh output
+  const ColorMesh& flat_color_mesh() const { return flat_color_mesh_; }
+  /// Getter
+  ///@return const FeatureMesh& Flat feature mesh output
+  const FeatureMesh& flat_feature_mesh() const { return flat_feature_mesh_; }
+  /// Getter
   ///@return const EsdfIntegrator& ESDF integrator
   const EsdfIntegrator& esdf_integrator() const { return esdf_integrator_; }
 
@@ -618,6 +687,16 @@ class Mapper : public MapperBase {
   ///@return MeshIntegrator& Mesh integrator
   FeatureMeshIntegrator& feature_mesh_integrator() {
     return feature_mesh_integrator_;
+  }
+  /// Getter
+  ///@return ColorFlatMeshIntegrator& Flat color mesh integrator
+  ColorFlatMeshIntegrator& color_flat_mesh_integrator() {
+    return color_flat_mesh_integrator_;
+  }
+  /// Getter
+  ///@return FeatureFlatMeshIntegrator& Flat feature mesh integrator
+  FeatureFlatMeshIntegrator& feature_flat_mesh_integrator() {
+    return feature_flat_mesh_integrator_;
   }
   /// Getter
   ///@return EsdfIntegrator& ESDF integrator
@@ -763,6 +842,15 @@ class Mapper : public MapperBase {
   void clearBlocksInLayers(const std::vector<Index3D>& blocks_to_clear);
 
  private:
+  /// Dispatch flat mesh integration to the right integrator/layer/mesh.
+  template <typename AppearanceVoxelType>
+  void updateFlatMeshImpl(const std::vector<Index3D>& block_indices);
+
+  /// Return TSDF block indices whose AABB intersects the camera frustum.
+  std::vector<Index3D> getFrustumFilteredIndices(const Camera& camera,
+                                                 const Transform& T_L_C,
+                                                 float max_depth);
+
   /// @brief Get all block indices from the appropriate projective layer.
   /// @return All block indices from TsdfLayer or OccupancyLayer based on type.
   std::vector<Index3D> getAllProjectiveLayerBlockIndices() const;
@@ -803,6 +891,8 @@ class Mapper : public MapperBase {
   ProjectiveFeatureIntegrator feature_integrator_;
   ColorMeshIntegrator color_mesh_integrator_;
   FeatureMeshIntegrator feature_mesh_integrator_;
+  ColorFlatMeshIntegrator color_flat_mesh_integrator_;
+  FeatureFlatMeshIntegrator feature_flat_mesh_integrator_;
   EsdfIntegrator esdf_integrator_;
 
   // Layer Streamers
@@ -823,6 +913,10 @@ class Mapper : public MapperBase {
   /// calls to updateColorMesh(), updateFeatureMesh(), updateFreespace() upd
   /// updateEsdf() respectively.
   BlocksToUpdateTracker blocks_to_update_tracker_;
+
+  /// Flat mesh outputs (updated by updateFlatMesh<ColorVoxel/FeatureVoxel>).
+  ColorMesh flat_color_mesh_;
+  FeatureMesh flat_feature_mesh_;
 
   /// Keeping track of the mesh blocks that got deleted in the mesh layer.
   Index3DSet cleared_blocks_;

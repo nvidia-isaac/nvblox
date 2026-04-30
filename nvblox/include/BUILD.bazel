@@ -1,0 +1,17 @@
+# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto. Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Side-steps cuda_library's lack of `strip_include_prefix` support.
+# See: https://github.com/bazel-contrib/rules_cuda/issues/142
+cc_library(
+    name = "nvblox_headers",
+    hdrs = glob(["nvblox/**/*"]),
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)

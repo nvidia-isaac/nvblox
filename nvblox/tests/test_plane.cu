@@ -15,6 +15,7 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 #include <memory>
+#include <vector>
 
 #include "nvblox/core/types.h"
 #include "nvblox/core/unified_ptr.h"

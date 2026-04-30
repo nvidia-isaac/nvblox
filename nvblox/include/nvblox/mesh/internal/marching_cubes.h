@@ -25,6 +25,7 @@
 #include <cuda_runtime.h>
 
 #include "nvblox/core/types.h"
+#include "nvblox/mesh/internal/impl/marching_cubes_constants.h"
 #include "nvblox/mesh/mesh_block.h"
 
 namespace nvblox {
@@ -34,9 +35,9 @@ namespace marching_cubes {
 struct PerVoxelMarchingCubesResults {
   /// The 3D positions of the corners of a 2x2x2 cube of voxels formed by the
   /// surrounding voxel neighbours in the positive direction of each coordinate.
-  Vector3f vertex_coords[8];
+  Vector3f vertex_coords[kNumCorners];
   /// The value of the TSDF at each of the neighbouring voxels described above.
-  float vertex_sdf[8];
+  float vertex_sdf[kNumCorners];
   /// Does this voxel contain a mesh? (Does it straddle a zero level set?)
   bool contains_mesh = false;
   /// The index into the marching cubes triangle table (found in
@@ -57,16 +58,17 @@ struct PerVoxelMarchingCubesResults {
 // https://github.com/personalrobotics/OpenChisel
 
 // Calculate the vertex configuration of a given set of neighbor distances.
-__host__ __device__ int calculateVertexConfiguration(const float vertex_sdf[8]);
+__host__ __device__ int calculateVertexConfiguration(
+    const float vertex_sdf[kNumCorners]);
 
 // This is for blocks access in the kernel.
 __host__ __device__ int neighborIndexFromDirection(const Index3D& direction);
 __host__ __device__ Index3D directionFromNeighborIndex(const int index);
 
-// Output (edge coords) is 12 long. Should be preallocated.
+// Output (edge coords) is 12 long (kNumEdges). Should be preallocated.
 __host__ __device__ void interpolateEdgeVertices(
     const PerVoxelMarchingCubesResults& marching_cubes_results,
-    Eigen::Matrix<float, 3, 12>* edge_coords);
+    Eigen::Matrix<float, 3, kNumEdges>* edge_coords);
 
 /// Performs linear interpolation on two cube corners to find the approximate
 /// zero crossing (surface) value.

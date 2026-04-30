@@ -4,6 +4,14 @@ All releases of the nvblox library will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v.0.0.10] - Date: 2026-04-16
+
+ - NvbloxRenderer module for low-latency visualization.
+ - Partial support for building with Bazel.
+ - Moved nvblox/executables dir to /executables.
+ - FlatMeshIntegrator for faster mesh updates.
+ - Deprecated support for CUDA11 and Jetpack5. Will be removed in upcoming release.
+
 ## [v.0.0.9] - Date: 2026-01-27
 
 - Support for LiDAR pointcloud as native input to integrateDepth.

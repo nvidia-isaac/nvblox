@@ -18,7 +18,7 @@ limitations under the License.
 #include <memory>
 
 #include "cuda_runtime.h"
-#include "nvblox/core/parameter_tree.h"
+#include "nvblox/core/types.h"
 
 namespace nvblox {
 

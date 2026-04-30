@@ -258,10 +258,4 @@ bool MaskedImageView<ElementType>::isMasked(const int row_idx,
       (mode_ == MaskMode::kInverted) && !mask_(row_idx, col_idx);
 }
 
-template <typename ElementType>
-void MaskedImageView<ElementType>::setMasked(const int row_idx,
-                                             const int col_idx) {
-  mask_(row_idx, col_idx) = image::kMaskedValue;
-}
-
 }  // namespace nvblox

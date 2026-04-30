@@ -16,6 +16,7 @@ import open3d as o3d
 import matplotlib
 
 from nvblox_torch.examples.utils.scenes import get_single_sphere_scene_mapper
+from nvblox_torch.examples.utils.interrupt_handling import run_with_graceful_interrupt
 from nvblox_torch.indexing import get_voxel_center_grids
 from nvblox_torch.visualization import get_voxel_mesh
 from nvblox_torch.layer import TsdfLayer, convert_layer_to_dense_tensor
@@ -122,4 +123,4 @@ def main(visualize: bool) -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main(visualize=True))
+    sys.exit(run_with_graceful_interrupt(main, visualize=True))

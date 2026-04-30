@@ -63,10 +63,11 @@ void __global__ SerializeVectorsKernel(const int32_t num_vectors,
 }
 
 template <typename LayerType, typename T>
+template <template <typename> class OutputVector>
 void LayerSerializerGpuInternal<LayerType, T>::serializeAsync(
     const LayerType& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
-    host_vector<T>& serialized_output, host_vector<int32_t>& offsets_output,
+    OutputVector<T>& serialized_output, host_vector<int32_t>& offsets_output,
     std::function<
         std::pair<const T*, int>(const typename LayerType::BlockType* block)>
         get_data_and_size,
@@ -120,7 +121,8 @@ void LayerSerializerGpuInternal<LayerType, T>::serializeAsync(
 }
 
 // Instantiation of serialize function for TSDF layer
-template void LayerSerializerGpuInternal<TsdfLayer, TsdfVoxel>::serializeAsync(
+template void
+LayerSerializerGpuInternal<TsdfLayer, TsdfVoxel>::serializeAsync<host_vector>(
     const TsdfLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<TsdfVoxel>& serialized_output,
@@ -131,7 +133,7 @@ template void LayerSerializerGpuInternal<TsdfLayer, TsdfVoxel>::serializeAsync(
 
 // Instantiation of serialize function for Color layer
 template void
-LayerSerializerGpuInternal<ColorLayer, ColorVoxel>::serializeAsync(
+LayerSerializerGpuInternal<ColorLayer, ColorVoxel>::serializeAsync<host_vector>(
     const ColorLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<ColorVoxel>& serialized_output,
@@ -142,42 +144,43 @@ LayerSerializerGpuInternal<ColorLayer, ColorVoxel>::serializeAsync(
 
 // Instantiation of serialize function for Feature layer
 template void
-LayerSerializerGpuInternal<FeatureLayer, FeatureVoxel>::serializeAsync(
-    const FeatureLayer& layer,
-    const std::vector<Index3D>& block_indices_to_serialize,
-    host_vector<FeatureVoxel>& serialized_output,
-    host_vector<int32_t>& offsets_output,
-    std::function<
-        std::pair<const FeatureVoxel*, int>(const FeatureBlock* block)>
-        get_data_and_size,
-    const CudaStream& cuda_stream);
+LayerSerializerGpuInternal<FeatureLayer, FeatureVoxel>::serializeAsync<
+    host_vector>(const FeatureLayer& layer,
+                 const std::vector<Index3D>& block_indices_to_serialize,
+                 host_vector<FeatureVoxel>& serialized_output,
+                 host_vector<int32_t>& offsets_output,
+                 std::function<std::pair<const FeatureVoxel*, int>(
+                     const FeatureBlock* block)>
+                     get_data_and_size,
+                 const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Occupancy layer
 template void
-LayerSerializerGpuInternal<OccupancyLayer, OccupancyVoxel>::serializeAsync(
-    const OccupancyLayer& layer,
-    const std::vector<Index3D>& block_indices_to_serialize,
-    host_vector<OccupancyVoxel>& serialized_output,
-    host_vector<int32_t>& offsets_output,
-    std::function<
-        std::pair<const OccupancyVoxel*, int>(const OccupancyBlock* block)>
-        get_data_and_size,
-    const CudaStream& cuda_stream);
+LayerSerializerGpuInternal<OccupancyLayer, OccupancyVoxel>::serializeAsync<
+    host_vector>(const OccupancyLayer& layer,
+                 const std::vector<Index3D>& block_indices_to_serialize,
+                 host_vector<OccupancyVoxel>& serialized_output,
+                 host_vector<int32_t>& offsets_output,
+                 std::function<std::pair<const OccupancyVoxel*, int>(
+                     const OccupancyBlock* block)>
+                     get_data_and_size,
+                 const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Freespace layer
 template void
-LayerSerializerGpuInternal<FreespaceLayer, FreespaceVoxel>::serializeAsync(
-    const FreespaceLayer& layer,
-    const std::vector<Index3D>& block_indices_to_serialize,
-    host_vector<FreespaceVoxel>& serialized_output,
-    host_vector<int32_t>& offsets_output,
-    std::function<
-        std::pair<const FreespaceVoxel*, int>(const FreespaceBlock* block)>
-        get_data_and_size,
-    const CudaStream& cuda_stream);
+LayerSerializerGpuInternal<FreespaceLayer, FreespaceVoxel>::serializeAsync<
+    host_vector>(const FreespaceLayer& layer,
+                 const std::vector<Index3D>& block_indices_to_serialize,
+                 host_vector<FreespaceVoxel>& serialized_output,
+                 host_vector<int32_t>& offsets_output,
+                 std::function<std::pair<const FreespaceVoxel*, int>(
+                     const FreespaceBlock* block)>
+                     get_data_and_size,
+                 const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Esdf layer
-template void LayerSerializerGpuInternal<EsdfLayer, EsdfVoxel>::serializeAsync(
+template void
+LayerSerializerGpuInternal<EsdfLayer, EsdfVoxel>::serializeAsync<host_vector>(
     const EsdfLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<EsdfVoxel>& serialized_output,
@@ -188,7 +191,8 @@ template void LayerSerializerGpuInternal<EsdfLayer, EsdfVoxel>::serializeAsync(
 
 // Instantiation of serialize function for Mesh layer::Vector3f
 template void
-LayerSerializerGpuInternal<ColorMeshLayer, Vector3f>::serializeAsync(
+LayerSerializerGpuInternal<ColorMeshLayer, Vector3f>::serializeAsync<
+    host_vector>(
     const ColorMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<Vector3f>& serialized_output,
@@ -197,8 +201,20 @@ LayerSerializerGpuInternal<ColorMeshLayer, Vector3f>::serializeAsync(
         get_data_and_size,
     const CudaStream& cuda_stream);
 
+template void
+LayerSerializerGpuInternal<ColorMeshLayer, Vector3f>::serializeAsync<
+    device_vector>(
+    const ColorMeshLayer& layer,
+    const std::vector<Index3D>& block_indices_to_serialize,
+    device_vector<Vector3f>& serialized_output,
+    host_vector<int32_t>& offsets_output,
+    std::function<std::pair<const Vector3f*, int>(const ColorMeshBlock* block)>
+        get_data_and_size,
+    const CudaStream& cuda_stream);
+
 // Instantiation of serialize function for Mesh layer::Color
-template void LayerSerializerGpuInternal<ColorMeshLayer, Color>::serializeAsync(
+template void
+LayerSerializerGpuInternal<ColorMeshLayer, Color>::serializeAsync<host_vector>(
     const ColorMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<Color>& serialized_output, host_vector<int32_t>& offsets_output,
@@ -206,8 +222,19 @@ template void LayerSerializerGpuInternal<ColorMeshLayer, Color>::serializeAsync(
         get_data_and_size,
     const CudaStream& cuda_stream);
 
+template void LayerSerializerGpuInternal<ColorMeshLayer, Color>::serializeAsync<
+    device_vector>(
+    const ColorMeshLayer& layer,
+    const std::vector<Index3D>& block_indices_to_serialize,
+    device_vector<Color>& serialized_output,
+    host_vector<int32_t>& offsets_output,
+    std::function<std::pair<const Color*, int>(const ColorMeshBlock* block)>
+        get_data_and_size,
+    const CudaStream& cuda_stream);
+
 // Instantiation of serialize function for Mesh layer::float
-template void LayerSerializerGpuInternal<ColorMeshLayer, float>::serializeAsync(
+template void
+LayerSerializerGpuInternal<ColorMeshLayer, float>::serializeAsync<host_vector>(
     const ColorMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<float>& serialized_output, host_vector<int32_t>& offsets_output,
@@ -216,7 +243,8 @@ template void LayerSerializerGpuInternal<ColorMeshLayer, float>::serializeAsync(
     const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Mesh layer::int
-template void LayerSerializerGpuInternal<ColorMeshLayer, int>::serializeAsync(
+template void
+LayerSerializerGpuInternal<ColorMeshLayer, int>::serializeAsync<host_vector>(
     const ColorMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<int>& serialized_output, host_vector<int32_t>& offsets_output,
@@ -224,33 +252,65 @@ template void LayerSerializerGpuInternal<ColorMeshLayer, int>::serializeAsync(
         get_data_and_size,
     const CudaStream& cuda_stream);
 
-// Instantiation of serialize function for Mesh layer::Vector3f
 template void
-LayerSerializerGpuInternal<FeatureMeshLayer, Vector3f>::serializeAsync(
-    const FeatureMeshLayer& layer,
+LayerSerializerGpuInternal<ColorMeshLayer, int>::serializeAsync<device_vector>(
+    const ColorMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
-    host_vector<Vector3f>& serialized_output,
-    host_vector<int32_t>& offsets_output,
-    std::function<
-        std::pair<const Vector3f*, int>(const FeatureMeshBlock* block)>
+    device_vector<int>& serialized_output, host_vector<int32_t>& offsets_output,
+    std::function<std::pair<const int*, int>(const ColorMeshBlock* block)>
         get_data_and_size,
     const CudaStream& cuda_stream);
+
+// Instantiation of serialize function for Mesh layer::Vector3f
+template void
+LayerSerializerGpuInternal<FeatureMeshLayer, Vector3f>::serializeAsync<
+    host_vector>(const FeatureMeshLayer& layer,
+                 const std::vector<Index3D>& block_indices_to_serialize,
+                 host_vector<Vector3f>& serialized_output,
+                 host_vector<int32_t>& offsets_output,
+                 std::function<std::pair<const Vector3f*, int>(
+                     const FeatureMeshBlock* block)>
+                     get_data_and_size,
+                 const CudaStream& cuda_stream);
+
+template void
+LayerSerializerGpuInternal<FeatureMeshLayer, Vector3f>::serializeAsync<
+    device_vector>(const FeatureMeshLayer& layer,
+                   const std::vector<Index3D>& block_indices_to_serialize,
+                   device_vector<Vector3f>& serialized_output,
+                   host_vector<int32_t>& offsets_output,
+                   std::function<std::pair<const Vector3f*, int>(
+                       const FeatureMeshBlock* block)>
+                       get_data_and_size,
+                   const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Mesh layer::FeatureArray
 template void
-LayerSerializerGpuInternal<FeatureMeshLayer, FeatureArray>::serializeAsync(
-    const FeatureMeshLayer& layer,
-    const std::vector<Index3D>& block_indices_to_serialize,
-    host_vector<FeatureArray>& serialized_output,
-    host_vector<int32_t>& offsets_output,
-    std::function<
-        std::pair<const FeatureArray*, int>(const FeatureMeshBlock* block)>
-        get_data_and_size,
-    const CudaStream& cuda_stream);
+LayerSerializerGpuInternal<FeatureMeshLayer, FeatureArray>::serializeAsync<
+    host_vector>(const FeatureMeshLayer& layer,
+                 const std::vector<Index3D>& block_indices_to_serialize,
+                 host_vector<FeatureArray>& serialized_output,
+                 host_vector<int32_t>& offsets_output,
+                 std::function<std::pair<const FeatureArray*, int>(
+                     const FeatureMeshBlock* block)>
+                     get_data_and_size,
+                 const CudaStream& cuda_stream);
+
+template void
+LayerSerializerGpuInternal<FeatureMeshLayer, FeatureArray>::serializeAsync<
+    device_vector>(const FeatureMeshLayer& layer,
+                   const std::vector<Index3D>& block_indices_to_serialize,
+                   device_vector<FeatureArray>& serialized_output,
+                   host_vector<int32_t>& offsets_output,
+                   std::function<std::pair<const FeatureArray*, int>(
+                       const FeatureMeshBlock* block)>
+                       get_data_and_size,
+                   const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Mesh layer::float
 template void
-LayerSerializerGpuInternal<FeatureMeshLayer, float>::serializeAsync(
+LayerSerializerGpuInternal<FeatureMeshLayer, float>::serializeAsync<
+    host_vector>(
     const FeatureMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<float>& serialized_output, host_vector<int32_t>& offsets_output,
@@ -259,10 +319,20 @@ LayerSerializerGpuInternal<FeatureMeshLayer, float>::serializeAsync(
     const CudaStream& cuda_stream);
 
 // Instantiation of serialize function for Mesh layer::int
-template void LayerSerializerGpuInternal<FeatureMeshLayer, int>::serializeAsync(
+template void
+LayerSerializerGpuInternal<FeatureMeshLayer, int>::serializeAsync<host_vector>(
     const FeatureMeshLayer& layer,
     const std::vector<Index3D>& block_indices_to_serialize,
     host_vector<int>& serialized_output, host_vector<int32_t>& offsets_output,
+    std::function<std::pair<const int*, int>(const FeatureMeshBlock* block)>
+        get_data_and_size,
+    const CudaStream& cuda_stream);
+
+template void LayerSerializerGpuInternal<FeatureMeshLayer, int>::serializeAsync<
+    device_vector>(
+    const FeatureMeshLayer& layer,
+    const std::vector<Index3D>& block_indices_to_serialize,
+    device_vector<int>& serialized_output, host_vector<int32_t>& offsets_output,
     std::function<std::pair<const int*, int>(const FeatureMeshBlock* block)>
         get_data_and_size,
     const CudaStream& cuda_stream);

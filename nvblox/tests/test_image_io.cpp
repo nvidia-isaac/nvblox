@@ -23,6 +23,8 @@ limitations under the License.
 #include "nvblox/io/image_io.h"
 #include "nvblox/sensors/image.h"
 
+#include "nvblox/tests/utils.h"
+
 using namespace nvblox;
 
 TEST(ImageIO, SaveToPng) {
@@ -51,7 +53,7 @@ TEST(ImageIO, SaveToPng) {
 }
 
 TEST(ImageIO, 3DMatchDepthToMonoAndSave) {
-  const std::string base_path = "./data/3dmatch";
+  const std::string base_path = test_utils::getTestDataPath("data/3dmatch");
   constexpr int seq_id = 1;
   constexpr int frame_id = 0;
   DepthImage depth_image(MemoryType::kUnified);
@@ -75,7 +77,7 @@ TEST(ImageIO, 3DMatchDepthToMonoAndSave) {
 }
 
 TEST(ImageIO, 3DMatchColorImageLoadAndSave) {
-  const std::string base_path = "./data/3dmatch";
+  const std::string base_path = test_utils::getTestDataPath("data/3dmatch");
   constexpr int seq_id = 1;
   ColorImage color_image(MemoryType::kDevice);
   EXPECT_TRUE(datasets::load8BitColorImage(

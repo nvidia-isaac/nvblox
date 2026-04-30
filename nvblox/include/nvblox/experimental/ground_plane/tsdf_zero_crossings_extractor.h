@@ -18,6 +18,7 @@ limitations under the License.
 #include <vector>
 
 #include "nvblox/core/indexing.h"
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/types.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/utils/timing.h"
@@ -48,6 +49,12 @@ class TsdfZeroCrossingsExtractor {
   /// @brief Get the maximum number that can be stored internally.
   int max_crossings() const { return max_crossings_; }
 
+  /// @brief Set the buffer expansion factor for auto resize.
+  /// Default: 2.0 (doubles the buffer size when resizing).
+  void set_buffer_expansion_factor(float factor) {
+    buffer_expansion_factor_ = factor;
+  }
+
   /// Return the parameter tree.
   /// @return the parameter tree
   virtual parameters::ParameterTreeNode getParameterTree(
@@ -70,10 +77,13 @@ class TsdfZeroCrossingsExtractor {
   device_vector<const TsdfBlock*> block_ptrs_above_device_;
   device_vector<Index3D> block_indices_device_;
 
-  // Maximum number of crossings to store. The internal buffer holding the zero
-  // crossings is initialized to this size. If the maximum is reached, no more
-  // crossings will be added.
+  // Initial maximum number of crossings to store. The internal buffer holding
+  // the zero crossings is initialized to this size. If the limit is reached
+  // during computation, the buffer will automatically resize using
+  // buffer_expansion_factor.
   int max_crossings_ = 360000;
+  // Expansion factor for buffer resizing.
+  float buffer_expansion_factor_ = 2.0f;
 
   // The minimum tsdf weight for a voxel to be considered a candidate.
   float min_tsdf_weight_ = 0.1;

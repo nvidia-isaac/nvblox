@@ -1,0 +1,78 @@
+# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto. Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+# NVBLOX core library source
+cuda_library(
+    name = "nvblox_lib",
+    srcs = glob(
+        [
+            "**/*.cpp",
+            "**/*.cc",
+            "**/*.cu",
+        ],
+        exclude = [
+            # This file masks the GPU layer view template class implementation.
+            "gpu_hash/gpu_layer_view.cu",
+            "benchmarks/**/*",
+            # Dataset loaders are in //nvblox/datasets, not in nvblox_lib.
+            "datasets/**/*",
+        ],
+    ),
+    copts = [
+        # Allow sharing constexpr between host and device code
+        "--expt-relaxed-constexpr",
+        # Allow __host__, __device__ annotations in lambda declarations
+        "--extended-lambda",
+        # Warning flags are configured globally in .bazelrc
+        "--compiler-options=-fPIC",
+    ],
+    defines = [
+        "STBI_NO_FAILURE_STRINGS",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//nvblox/include:nvblox_headers",
+        "@cuda//:curand",
+        "@cuda//:npp",
+        "@cuda//:nppc",
+        "@cuda//:nppial",
+        "@cuda//:nppidei",
+        "@cuda//:nppim",
+        "@cuda//:nppitc",
+        "@cuda//:nvtx",
+        "@cuda//:thrust",
+        "@eigen",
+        "@gflags",
+        "@glog",
+        "@rules_cuda//cuda:runtime",
+        "@sqlite3",
+        "@stdgpu",
+    ],
+)
+
+cc_library(
+    name = "benchmarks",
+    srcs = glob([
+        "benchmarks/**/*.cpp",
+        "benchmarks/**/*.cc",
+        "benchmarks/**/*.cu",
+    ]),
+    copts = [
+        "-Wno-sign-compare",  # Warning triggered inside glog
+        "-Wno-pessimizing-move",
+    ],
+    defines = ["STBI_NO_FAILURE_STRINGS"],
+    includes = ["benchmarks"],
+    strip_include_prefix = "benchmarks",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":nvblox_lib",
+        "//nvblox/datasets:datasets",
+    ],
+)

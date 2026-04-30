@@ -638,33 +638,6 @@ TEST(CameraTest, testDerivative_dR_dr2) {
   }
 }
 
-TEST(CameraTest, RenderSampleImages) {
-  // create a scene with a cube
-  primitives::Scene scene;
-  constexpr float kDepth = 3.f;
-
-  constexpr float kSide = 0.75f;
-  for (int x = -10; x < 10; ++x) {
-    for (int y = -10; y < 10; ++y) {
-      scene.addPrimitive(std::make_unique<primitives::Cube>(
-          Vector3f(x, y, kDepth), Vector3f(kSide, kSide, kSide)));
-    }
-  }
-
-  // create a camera without distortion
-  constexpr int kWidth = 640;
-  constexpr int kHeight = 480;
-  Camera camera(kWidth / 2, kHeight / 2, kWidth / 2, kHeight / 2, kWidth,
-                kHeight);
-  renderAndWriteDepthImage(camera, scene, "depth_image_linear.png");
-
-  // camera with distortion
-  Camera camera_with_distortion = test_utils::getOrbecCamera();
-
-  renderAndWriteDepthImage(camera_with_distortion, scene,
-                           "depth_image_distorted.png");
-}
-
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

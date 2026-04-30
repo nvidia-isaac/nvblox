@@ -1,5 +1,11 @@
 # Release Notes
 
+## [v.0.0.10] - Date: 2026-04-16
+
+This release introduces a native, low-latency visualizer module to nvblox.
+
+**nvblox_renderer** is a Vulkan-based visualization library for nvblox data. It renders depth images, color images, point clouds, and triangle meshes using shared CUDA-Vulkan memory, avoiding unnecessary copies between the GPU compute and graphics pipelines.
+
 ## [v.0.0.9] - Date: 2026-01-27
 
 This release brings a major overhaul of sensor handling to **nvblox**.

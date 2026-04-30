@@ -28,6 +28,7 @@ limitations under the License.
 #include "nvblox/map/voxels.h"
 #include "nvblox/mesh/mesh_block.h"
 #include "nvblox/mesh/mesh_integrator.h"
+#include "nvblox/mesh/mesh_transform.h"
 #include "nvblox/primitives/scene.h"
 #include "nvblox/tests/mesh_utils.h"
 #include "nvblox/tests/utils.h"
@@ -347,7 +348,7 @@ TEST_F(MeshTest, IncrementalMesh) {
 }
 
 TEST_F(MeshTest, RepeatabilityTest) {
-  const std::string base_path = "../tests/data/3dmatch";
+  const std::string base_path = test_utils::getTestDataPath("data/3dmatch");
   constexpr int seq_id = 1;
   DepthImage depth_image(MemoryType::kDevice);
   ColorImage color_image(MemoryType::kDevice);
@@ -642,6 +643,98 @@ TEST_F(MeshTest, WeldingPartsTest) {
   }
 
   std::cout << timing::Timing::Print();
+}
+
+TEST_F(MeshTest, TransformMeshOnGPU) {
+  auto cuda_stream = std::make_shared<CudaStreamOwning>();
+
+  // Create test vertices and normals
+  constexpr int kNumVertices = 1000;
+  std::vector<Vector3f> vertices_host;
+  std::vector<Vector3f> normals_host;
+
+  // Generate random vertices and normals
+  for (int i = 0; i < kNumVertices; i++) {
+    vertices_host.push_back(
+        test_utils::getRandomVector3fInRange(-10.0f, 10.0f));
+    normals_host.push_back(test_utils::getRandomUnitVector3f());
+  }
+
+  // Copy to device
+  unified_vector<Vector3f> vertices_gpu(MemoryType::kDevice);
+  unified_vector<Vector3f> normals_gpu(MemoryType::kDevice);
+  vertices_gpu.copyFromAsync(vertices_host, *cuda_stream);
+  normals_gpu.copyFromAsync(normals_host, *cuda_stream);
+  cuda_stream->synchronize();
+
+  // Create a test transform: rotation around z-axis by 45 degrees + translation
+  Transform T_test = Transform::Identity();
+  T_test.linear() = Eigen::AngleAxisf(M_PI / 4.0f, Vector3f::UnitZ()).matrix();
+  T_test.translation() = Vector3f(1.0f, 2.0f, 3.0f);
+
+  // Transform on GPU
+  transformMeshOnGPU(T_test, &vertices_gpu, &normals_gpu, cuda_stream.get());
+  cuda_stream->synchronize();
+
+  // Copy results back to host
+  std::vector<Vector3f> vertices_transformed_host =
+      vertices_gpu.toVectorAsync(*cuda_stream);
+  std::vector<Vector3f> normals_transformed_host =
+      normals_gpu.toVectorAsync(*cuda_stream);
+  cuda_stream->synchronize();
+
+  // Verify results by comparing with CPU transformation
+  EXPECT_EQ(vertices_transformed_host.size(), kNumVertices);
+  EXPECT_EQ(normals_transformed_host.size(), kNumVertices);
+
+  for (int i = 0; i < kNumVertices; i++) {
+    // Transform on CPU for comparison
+    Vector3f vertex_cpu = T_test * vertices_host[i];
+    Vector3f normal_cpu = T_test.linear() * normals_host[i];
+
+    // Compare GPU vs CPU results
+    EXPECT_NEAR((vertices_transformed_host[i] - vertex_cpu).norm(), 0.0f,
+                kFloatEpsilon)
+        << "Vertex mismatch at index " << i;
+    EXPECT_NEAR((normals_transformed_host[i] - normal_cpu).norm(), 0.0f,
+                kFloatEpsilon)
+        << "Normal mismatch at index " << i;
+  }
+}
+
+TEST_F(MeshTest, TransformMeshOnGPUEmptyNormals) {
+  auto cuda_stream = std::make_shared<CudaStreamOwning>();
+
+  // Test with empty normals (should still work)
+  constexpr int kNumVertices = 50;
+  std::vector<Vector3f> vertices_host;
+
+  for (int i = 0; i < kNumVertices; i++) {
+    vertices_host.push_back(
+        test_utils::getRandomVector3fInRange(-10.0f, 10.0f));
+  }
+
+  unified_vector<Vector3f> vertices_gpu(MemoryType::kDevice);
+  unified_vector<Vector3f> normals_gpu(MemoryType::kDevice);
+  vertices_gpu.copyFromAsync(vertices_host, *cuda_stream);
+  cuda_stream->synchronize();
+
+  // Transform with translation only
+  Transform T_test = Transform::Identity();
+  T_test.translation() = Vector3f(5.0f, 10.0f, 15.0f);
+
+  transformMeshOnGPU(T_test, &vertices_gpu, &normals_gpu, cuda_stream.get());
+  cuda_stream->synchronize();
+
+  // Verify vertices are transformed correctly
+  std::vector<Vector3f> vertices_result =
+      vertices_gpu.toVectorAsync(*cuda_stream);
+  cuda_stream->synchronize();
+
+  for (int i = 0; i < kNumVertices; i++) {
+    Vector3f expected = T_test * vertices_host[i];
+    EXPECT_NEAR((vertices_result[i] - expected).norm(), 0.0f, kFloatEpsilon);
+  }
 }
 
 int main(int argc, char** argv) {

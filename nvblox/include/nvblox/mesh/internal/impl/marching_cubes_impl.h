@@ -42,9 +42,9 @@ inline Vector3f interpolateVertex(const Vector3f& vertex1,
 
 inline void interpolateEdgeVertices(
     const PerVoxelMarchingCubesResults& marching_cubes_results,
-    Eigen::Matrix<float, 3, 12>* edge_coords) {
+    Eigen::Matrix<float, 3, kNumEdges>* edge_coords) {
   NVBLOX_CHECK(edge_coords != NULL, "");
-  for (size_t i = 0; i < 12; ++i) {
+  for (size_t i = 0; i < kNumEdges; ++i) {
     const uint8_t* pairs = kEdgeIndexPairs[i];
     const int edge0 = pairs[0];
     const int edge1 = pairs[1];
@@ -68,11 +68,11 @@ inline void meshCube(const PerVoxelMarchingCubesResults& marching_cubes_results,
   const int table_index = marching_cubes_results.marching_cubes_table_index;
 
   // No edges in this cube.
-  if (table_index == 0 || table_index == 255) {
+  if (table_index == 0 || table_index == kAllInsideConfig) {
     return;
   }
 
-  Eigen::Matrix<float, 3, 12> edge_vertex_coordinates;
+  Eigen::Matrix<float, 3, kNumEdges> edge_vertex_coordinates;
   interpolateEdgeVertices(marching_cubes_results, &edge_vertex_coordinates);
 
   const int8_t* table_row = kTriangleTable[table_index];
@@ -102,8 +102,8 @@ inline void meshCube(const PerVoxelMarchingCubesResults& marching_cubes_results,
     mesh->vertex_normals.push_back(n);
     mesh->vertex_normals.push_back(n);
     mesh->vertex_normals.push_back(n);
-    next_index += 3;
-    table_col += 3;
+    next_index += kVerticesPerTriangle;
+    table_col += kVerticesPerTriangle;
   }
 }
 

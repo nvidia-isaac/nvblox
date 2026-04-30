@@ -33,6 +33,10 @@ inputs:
     description: 'Run Realsense example tests'
     required: false
     default: 'true'
+  run-bazel-tests:
+    description: 'Run Bazel tests'
+    required: false
+    default: 'false'
 runs:
   using: 'composite'
   steps:
@@ -86,4 +90,11 @@ runs:
       run: |
         echo "::group::RUN REALSENSE EXAMPLE TEST"
         time python3 ci/nvblox_ci.py $COMMON_NVBLOX_CI_ARGS --build-and-test realsense
+        echo "::endgroup::"
+    - name: Run Bazel tests
+      if: inputs.run-bazel-tests == 'true'
+      shell: bash
+      run: |
+        echo "::group::RUN BAZEL TESTS"
+        time python3 ci/nvblox_ci.py $COMMON_NVBLOX_CI_ARGS --build-and-test bazel
         echo "::endgroup::"

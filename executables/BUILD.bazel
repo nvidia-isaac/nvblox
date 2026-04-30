@@ -1,0 +1,89 @@
+# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto. Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+# Fuser library shared across dataset executables
+# The renderer is not available in the Bazel build, so the stub is always used.
+cc_library(
+    name = "fuser_lib",
+    srcs = [
+        "src/fuser/fuser.cpp",
+        "src/fuser/fuser_visualizer_stub.cpp",
+    ],
+    hdrs = glob(["include/nvblox/**/*"]),
+    copts = [
+        "-Wno-sign-compare",
+        "-Wno-pessimizing-move",
+    ],
+    defines = ["STBI_NO_FAILURE_STRINGS"],
+    includes = ["include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//nvblox/datasets:datasets",
+        "//nvblox/src:nvblox_lib",
+        "@gflags",
+        "@glog",
+    ],
+)
+
+[
+    cc_binary(
+        name = name,
+        srcs = ["src/fuser/{}.cpp".format(name)],
+        visibility = ["//visibility:public"],
+        deps = [
+            ":fuser_lib",
+            "//nvblox/src:nvblox_lib",
+        ],
+    )
+    for name in [
+        "fuse_3dmatch",
+        "fuse_cusfm",
+        "fuse_lidarply",
+        "fuse_redwood",
+        "fuse_replica",
+    ]
+]
+
+# Alias for backward compatibility with tests that reference :fuser
+alias(
+    name = "fuser",
+    actual = ":fuse_3dmatch",
+    visibility = ["//visibility:public"],
+)
+
+[
+    cc_binary(
+        name = name,
+        srcs = ["benchmark/{}.cpp".format(name)],
+        copts = [
+            "-Wno-sign-compare",
+            "-Wno-pessimizing-move",
+        ],
+        defines = [
+            "STBI_NO_FAILURE_STRINGS",
+            "USE_BAZEL_RUNFILES",
+        ],
+        visibility = ["//visibility:public"],
+        deps = [
+            ":fuser_lib",
+            "//nvblox/src:nvblox_lib",
+            "//nvblox/tests:test_lib",
+            "@bazel_tools//tools/cpp/runfiles",
+            "@google_benchmark//:benchmark",
+            "@google_benchmark//:benchmark_main",
+            "@googletest//:gtest",
+            "@googletest//:gtest_main",
+        ],
+    )
+    for name in [
+        "benchmark",
+        "benchmark_camera",
+    ]
+]

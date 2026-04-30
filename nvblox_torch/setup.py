@@ -6,7 +6,7 @@ import subprocess
 #   Use .devX on the developer's branch
 #   Use rcY  on release branch.
 # IMPORTANT: The (.) should be present for .dev, but not for rc (PEP 440).
-NVBLOX_VERSION_NUMBER = '0.0.9'
+NVBLOX_VERSION_NUMBER = '0.0.10'
 NVBLOX_VERSION_PATCH = '.dev1'
 NVBLOX_VERSION = f'{NVBLOX_VERSION_NUMBER}{NVBLOX_VERSION_PATCH}'
 

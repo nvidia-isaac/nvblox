@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <string>
 
+#include "nvblox/geometry/plane.h"
 #include "nvblox/map/common_names.h"
 #include "nvblox/map/layer.h"
 #include "nvblox/mesh/mesh_block.h"
@@ -29,6 +30,18 @@ bool outputColorMeshLayerToPly(const ColorMeshLayer& layer,
 
 bool outputColorMeshLayerToPly(const ColorMeshLayer& layer,
                                const char* filename);
+
+/// @brief Output a color mesh layer to PLY file with ground plane alignment.
+///        The mesh will be transformed so that the ground plane is aligned to
+///        z=0.
+/// @param layer The color mesh layer to output.
+/// @param filename The output PLY filename.
+/// @param ground_plane Ground plane. The mesh will be transformed to align
+///                     the plane to z=0.
+/// @return True if successful, false otherwise.
+bool outputColorMeshLayerToPly(const ColorMeshLayer& layer,
+                               const std::string& filename,
+                               const Plane& ground_plane);
 
 }  // namespace io
 }  // namespace nvblox

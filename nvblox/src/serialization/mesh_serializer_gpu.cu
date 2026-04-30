@@ -25,14 +25,15 @@ limitations under the License.
 namespace nvblox {
 
 template <typename AppearanceType>
-std::shared_ptr<SerializedMeshLayer<AppearanceType>>
-MeshSerializerGpu<AppearanceType>::serialize(
+template <template <typename> class VecType>
+void MeshSerializerGpu<AppearanceType>::serializeInto(
+    SerializedMeshLayer<AppearanceType, VecType>* output,
     const MeshLayerType& mesh_layer,
     const std::vector<Index3D>& block_indices_to_serialize,
-    const CudaStream& cuda_stream) {
+    const CudaStream& cuda_stream, const bool synchronize_stream) {
   vertex_serializer_.serializeAsync(
-      mesh_layer, block_indices_to_serialize, serialized_mesh_->vertices,
-      serialized_mesh_->vertex_block_offsets,
+      mesh_layer, block_indices_to_serialize, output->vertices,
+      output->vertex_block_offsets,
       [](const MeshBlockType* mesh_block)
           -> const std::pair<const Vector3f*, int> {
         return std::make_pair(mesh_block->vertices.data(),
@@ -41,9 +42,8 @@ MeshSerializerGpu<AppearanceType>::serialize(
       cuda_stream);
 
   appearance_serializer_.serializeAsync(
-      mesh_layer, block_indices_to_serialize,
-      serialized_mesh_->vertex_appearances,
-      serialized_mesh_->vertex_block_offsets,
+      mesh_layer, block_indices_to_serialize, output->vertex_appearances,
+      output->vertex_block_offsets,
       [](const MeshBlockType* mesh_block)
           -> const std::pair<const AppearanceType*, int> {
         return std::make_pair(mesh_block->vertex_appearances.data(),
@@ -52,26 +52,48 @@ MeshSerializerGpu<AppearanceType>::serialize(
       cuda_stream);
 
   triangle_index_serializer_.serializeAsync(
-      mesh_layer, block_indices_to_serialize,
-      serialized_mesh_->triangle_indices,
-      serialized_mesh_->triangle_index_block_offsets,
+      mesh_layer, block_indices_to_serialize, output->triangle_indices,
+      output->triangle_index_block_offsets,
       [](const MeshBlockType* mesh_block) -> const std::pair<const int*, int> {
         return std::make_pair(mesh_block->triangles.data(),
                               mesh_block->triangles.size());
       },
       cuda_stream);
 
-  // Create an unique identifier for each block.
-  serialized_mesh_->block_indices = block_indices_to_serialize;
+  output->block_indices = block_indices_to_serialize;
 
-  cuda_stream.synchronize();
+  if (synchronize_stream) {
+    cuda_stream.synchronize();
+  }
+}
 
-  return serialized_mesh_;
+template <typename AppearanceType>
+std::shared_ptr<SerializedMeshLayer<AppearanceType>>
+MeshSerializerGpu<AppearanceType>::serialize(
+    const MeshLayerType& mesh_layer,
+    const std::vector<Index3D>& block_indices_to_serialize,
+    const CudaStream& cuda_stream) {
+  serializeInto(serialized_mesh_host_.get(), mesh_layer,
+                block_indices_to_serialize, cuda_stream, true);
+  return serialized_mesh_host_;
+}
+
+template <typename AppearanceType>
+std::shared_ptr<
+    typename MeshSerializerGpu<AppearanceType>::SerializedLayerTypeDevice>
+MeshSerializerGpu<AppearanceType>::serializeToDevice(
+    const MeshLayerType& mesh_layer,
+    const std::vector<Index3D>& block_indices_to_serialize,
+    const CudaStream& cuda_stream, const bool synchronize_stream) {
+  serializeInto(serialized_mesh_device_.get(), mesh_layer,
+                block_indices_to_serialize, cuda_stream, synchronize_stream);
+  return serialized_mesh_device_;
 }
 
 template <typename AppearanceType>
 MeshSerializerGpu<AppearanceType>::MeshSerializerGpu()
-    : serialized_mesh_(std::make_shared<SerializedLayerType>()) {}
+    : serialized_mesh_host_(std::make_shared<SerializedLayerType>()),
+      serialized_mesh_device_(std::make_shared<SerializedLayerTypeDevice>()) {}
 
 // Explicit instantiations.
 template class MeshSerializerGpu<Color>;

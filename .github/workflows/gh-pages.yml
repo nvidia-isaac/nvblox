@@ -22,6 +22,8 @@ jobs:
           clean: true
           fetch-depth: 0
           fetch-tags: true
+      - name: Install doxygen
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends doxygen
       - name: Build docs
         run: |
           cd docs

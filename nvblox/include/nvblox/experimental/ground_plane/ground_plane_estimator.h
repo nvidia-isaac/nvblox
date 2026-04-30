@@ -18,6 +18,7 @@ limitations under the License.
 #include <random>
 
 #include "nvblox/core/cuda_stream.h"
+#include "nvblox/core/parameter_tree.h"
 #include "nvblox/core/types.h"
 #include "nvblox/experimental/ground_plane/ground_plane_estimator_params.h"
 #include "nvblox/experimental/ground_plane/ransac_plane_fitter.h"

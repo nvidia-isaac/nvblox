@@ -31,7 +31,17 @@ struct Mesh {
       : vertices(memory_type),
         vertex_normals(memory_type),
         triangles(memory_type),
-        vertex_appearances(memory_type) {}
+        vertex_appearances(memory_type),
+        vertex_uvs(memory_type) {}
+
+  /// Resize all buffers to @p num_vertices without zero-initializing.
+  void resizeAsync(size_t num_vertices, const CudaStream& stream) {
+    vertices.resizeAsync(num_vertices, stream);
+    vertex_normals.resizeAsync(num_vertices, stream);
+    triangles.resizeAsync(num_vertices, stream);
+    vertex_appearances.resizeAsync(num_vertices, stream);
+    vertex_uvs.resizeAsync(num_vertices, stream);
+  }
 
   /// Clear without deallocating
   void clearNoDeallocate() {
@@ -39,6 +49,7 @@ struct Mesh {
     vertex_normals.clearNoDeallocate();
     triangles.clearNoDeallocate();
     vertex_appearances.clearNoDeallocate();
+    vertex_uvs.clearNoDeallocate();
   }
 
   // Data
@@ -46,6 +57,7 @@ struct Mesh {
   unified_vector<Vector3f> vertex_normals;
   unified_vector<int> triangles;
   unified_vector<AppearanceType> vertex_appearances;
+  unified_vector<Vector2f> vertex_uvs;
 };
 
 using ColorMesh = Mesh<Color>;

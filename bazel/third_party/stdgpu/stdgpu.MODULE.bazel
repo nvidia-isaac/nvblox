@@ -1,0 +1,40 @@
+"""
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+NVIDIA CORPORATION and its licensors retain all intellectual property
+and proprietary rights in and to this software, related documentation
+and any modifications thereto. Any use, reproduction, disclosure or
+distribution of this software and related documentation without an express
+license agreement from NVIDIA CORPORATION is strictly prohibited.
+"""
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+STDGPU_COMMIT = "71a5aef26626eda47d15e5f577ca3b1538ff996a"
+
+http_archive(
+    name = "stdgpu",
+    build_file = "@nvblox//build/third_party/stdgpu:stdgpu.BUILD",
+    integrity = "sha256-ARCjIdQbSEHV2qbg3T/+wvONZZHe1e4TmX3dAZMo4XQ=",
+    patch_cmds = [
+        #   # We need to do this so that the mangled THRUST namespaces are not used, but also don't require us to change the codebase manually.
+        #   # See: https://github.com/NVIDIA/cccl/issues/2737
+        #   # See: workspace/shared/cuda/cuda_deps.bzl for the definition of WRAPPED_THRUST_NAMESPACE
+        #   "find . -type f -exec sed -i \"s/thrust::/::nvidia_thrust::thrust::/g\" {} \\;",
+        #   # This library also has a bad habit of forcing itself into the thrust namespace and populating it with new symbols.
+        #   # This keeps those from getting left behind in the de-mangling.
+        #   "find . -type f -exec sed -i \"s/namespace thrust/namespace nvidia_thrust::thrust/g\" {} \\;",
+        # Due to a quirk with nested namespaces, we need to do this to avoid the compiler complaining about the detail:: missing symbols.
+        "sed -i 's/detail::/::detail::/g' src/stdgpu/cuda/impl/device.cpp",
+    ],
+    patches = [
+        # These patches are required to build nvblox down-the-line.
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_expose_occupied.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_handle_collisions.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_fix_cuda12_6.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_fix_cuda13_0.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_thrust_version_regex.patch",
+    ],
+    strip_prefix = "stdgpu-{}".format(STDGPU_COMMIT),
+    # Last verified commit as of 8/22/2025 (pushed 2/10/2025)
+    url = "https://github.com/stotko/stdgpu/archive/{}.tar.gz".format(STDGPU_COMMIT),
+)

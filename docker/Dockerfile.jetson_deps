@@ -1,6 +1,10 @@
 ARG BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r36.3.0
 FROM ${BASE_IMAGE}
 
+# Expose compute, graphics (Vulkan/OpenGL for nvblox_renderer), and utility (nvidia-smi etc.)
+# to the NVIDIA Container Toolkit.
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
+
 # TZData goes first.
 RUN apt-get update
 ENV TZ=Europe/Berlin
@@ -22,7 +26,10 @@ RUN apt update && apt-get --no-install-recommends install -y \
     # NOTE(alexmillane): Taken from: http://www.open3d.org/docs/release/docker.html \
     libegl1 libgl1 libgomp1 \
     # Requirements for pytorch \
-    libopenblas-dev libopenmpi-dev
+    libopenblas-dev libopenmpi-dev \
+    # Vulkan build dependencies for nvblox_renderer \
+    libvulkan-dev glslang-tools libglfw3-dev \
+    && rm -rf /var/lib/apt/lists/* && apt-get clean
 
 # Create a virtual environment for python.
 RUN python3 -m venv /opt/venv
@@ -32,14 +39,17 @@ COPY docker/torch_install_helper.py /
 RUN python3 /torch_install_helper.py --install-pytorch-if-supported
 
 # Install python deps.
+# NOTE: nvtx>=0.2.11 uses a pyproject.toml license format incompatible with
+# the setuptools version available on Python 3.8 (JP5 / CUDA 11).
 RUN . /opt/venv/bin/activate && \
+    NVTX_PKG=$(python3 -c "import sys; print('nvtx<0.2.11' if sys.version_info < (3, 9) else 'nvtx')") && \
     python3 -m pip install --upgrade \
     # Deployment tools \
     wheel requests setuptools \
     # Testing \
     pytest pytest-rerunfailures \
     # Profiling \
-    nvtx
+    "$NVTX_PKG"
 
 # Install cmake.
 COPY docker/install_cmake.sh /

@@ -1,0 +1,102 @@
+"""
+Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
+NVIDIA CORPORATION and its licensors retain all intellectual property
+and proprietary rights in and to this software, related documentation
+and any modifications thereto. Any use, reproduction, disclosure or
+distribution of this software and related documentation without an express
+license agreement from NVIDIA CORPORATION is strictly prohibited.
+"""
+
+module(
+    name = "nvblox",
+    repo_name = "nvblox",
+)
+
+#################################################
+# Toolchains
+#################################################
+
+register_toolchains("@nvblox//bazel/toolchains:cc_toolchain_for_k8_gcc_13")
+
+register_toolchains("@nvblox//bazel/toolchains:cc_toolchain_for_k8_gcc_11")
+
+register_toolchains("@nvblox//bazel/toolchains:cc_toolchain_for_aarch64_gcc_13")
+
+register_toolchains("@nvblox//bazel/toolchains:cc_toolchain_for_aarch64_gcc_11")
+
+#################################################
+# Basic Bazel Dependencies through Bzlmod
+#################################################
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
+bazel_dep(name = "gflags", version = "2.2.2")
+bazel_dep(name = "glog", version = "0.7.1")
+bazel_dep(name = "google_benchmark", version = "1.9.4")
+bazel_dep(name = "googletest", version = "1.16.0.bcr.1")
+bazel_dep(name = "sqlite3", version = "3.50.4")
+
+#################################################
+# External, non-bzlmod dependencies
+#################################################
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+STDGPU_COMMIT = "71a5aef26626eda47d15e5f577ca3b1538ff996a"
+
+http_archive(
+    name = "stdgpu",
+    build_file = "@nvblox//bazel/third_party/stdgpu:stdgpu.BUILD",
+    integrity = "sha256-ARCjIdQbSEHV2qbg3T/+wvONZZHe1e4TmX3dAZMo4XQ=",
+    patch_cmds = [
+        # Due to a quirk with nested namespaces, we need to do this to avoid the compiler complaining about the detail:: missing symbols.
+        "sed -i 's/detail::/::detail::/g' src/stdgpu/cuda/impl/device.cpp",
+    ],
+    patch_strip = 1,
+    patches = [
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_expose_occupied.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_handle_collisions.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_fix_cuda12_6.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_fix_cuda13_0.patch",
+        "@nvblox//nvblox/thirdparty:stdgpu/stdgpu_thrust_version_regex.patch",
+    ],
+    strip_prefix = "stdgpu-{}".format(STDGPU_COMMIT),
+    # Last verified commit as of 8/22/2025 (pushed 2/10/2025)
+    url = "https://github.com/stotko/stdgpu/archive/{}.tar.gz".format(STDGPU_COMMIT),
+)
+
+#################################################
+# CUDA Dependencies
+#################################################
+
+bazel_dep(name = "rules_cuda", version = "0.2.5")
+
+# TODO: Remove this override when this PR is merged and released
+# https://github.com/bazel-contrib/rules_cuda/pull/422
+git_override(
+    module_name = "rules_cuda",
+    branch = "csaint/multi-arch",
+    remote = "https://github.com/charleysaintNV/rules_cuda.git",
+)
+
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+cuda.redist_json(
+    name = "cuda_13_0_2",
+    platforms = [
+        "linux-x86_64",
+        "linux-sbsa",
+    ],
+    version = "13.0.2",
+)
+cuda.redist_json(
+    name = "cuda_13_0_0",
+    platforms = [
+        "linux-x86_64",
+        "linux-sbsa",
+    ],
+    version = "13.0.0",
+)
+cuda.toolkit(name = "cuda")
+use_repo(cuda, "cuda")

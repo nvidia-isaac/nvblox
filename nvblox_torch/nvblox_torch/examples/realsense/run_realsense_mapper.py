@@ -19,6 +19,7 @@ from nvblox_torch.examples.realsense.realsense_utils import rs_intrinsics_to_mat
 from nvblox_torch.examples.realsense.realsense_dataloader import RealsenseDataloader
 from nvblox_torch.examples.realsense.vslam_utils import get_vslam_stereo_rig, to_homogeneous
 from nvblox_torch.examples.realsense.visualizer import RerunVisualizer
+from nvblox_torch.examples.utils.interrupt_handling import run_with_graceful_interrupt
 from nvblox_torch.projective_integrator_types import ProjectiveIntegratorType
 from nvblox_torch.mapper import Mapper
 from nvblox_torch.mapper_params import MapperParams, ProjectiveIntegratorParams
@@ -176,4 +177,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(run_with_graceful_interrupt(main))

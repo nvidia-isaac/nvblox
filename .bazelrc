@@ -1,0 +1,54 @@
+common --registry=https://bcr.bazel.build
+common --incompatible_disallow_empty_glob=False
+
+build --@rules_cuda//cuda:exec_platform="linux-x86_64"
+build --@rules_cuda//cuda:target_platform="linux-x86_64"
+build --@rules_cuda//cuda:version="13.0.0"
+build --cxxopt='-std=c++17'
+
+# CUDA device compiler warning configuration (matching CMake)
+build --@rules_cuda//cuda:copts=-Xcudafe=--display_error_number  # Display warning numbers for easier debugging
+build --@rules_cuda//cuda:copts=--diag-suppress=20054  # Dynamic initialization of function-scope static __shared__ variable
+build --@rules_cuda//cuda:copts=--diag-suppress=20091  # __constant__ variable cannot be directly read in host function
+build --@rules_cuda//cuda:copts=--diag-suppress=737     # Using-declaration ignored (from glog header)
+# Host compiler warnings when invoked by nvcc (matching CMake -Wall -Wextra -Wshadow)
+build --@rules_cuda//cuda:copts=--compiler-options=-Wall,-Wextra,-Wshadow
+
+build --cpu=k8
+build --define=os=ubuntu_24_04
+build --action_env=os="ubuntu_24_04"
+build --compiler=gcc_13
+
+# To use it: bazel build --config arm64
+build:arm64 --cpu=aarch64
+build:arm64 --features=-gold_linker # Disable gold as the aarch64 toolchain has its own linker.
+build:arm64 --@rules_cuda//cuda:exec_platform="linux-sbsa"
+build:arm64 --@rules_cuda//cuda:target_platform="linux-sbsa"
+
+# To use it: bazel build --config asan
+build:asan --strip=never
+build:asan --copt -fsanitize=address
+build:asan --copt -DADDRESS_SANITIZER
+build:asan --copt -O1
+build:asan --copt -g
+build:asan --copt -fno-omit-frame-pointer
+build:asan --linkopt -fsanitize=address
+
+# Thread sanitizer
+# bazel build --config tsan
+build:tsan --strip=never
+build:tsan --copt -fsanitize=thread
+build:tsan --copt -DTHREAD_SANITIZER
+build:tsan --copt -DDYNAMIC_ANNOTATIONS_ENABLED=1
+build:tsan --copt -DDYNAMIC_ANNOTATIONS_EXTERNAL_IMPL=1
+build:tsan --copt -O1
+build:tsan --copt -fno-omit-frame-pointer
+build:tsan --linkopt -fsanitize=thread
+
+# --config ubsan: Undefined Behavior Sanitizer
+build:ubsan --strip=never
+build:ubsan --copt -fsanitize=undefined
+build:ubsan --copt -O1
+build:ubsan --copt -fno-omit-frame-pointer
+build:ubsan --linkopt -fsanitize=undefined
+build:ubsan --linkopt -lubsan

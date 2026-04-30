@@ -120,6 +120,31 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
   /// @param invalid_depth_decay_factor The decay factor for invalid depth
   void invalid_depth_decay_factor(float invalid_depth_decay_factor);
 
+  /// A parameter getter.
+  /// The discrepancy threshold in meters for dynamic freespace carving.
+  /// When a voxel's stored TSDF distance differs from the
+  /// current depth observation by more than this threshold, the voxel is
+  /// invalidated (weight and distance set to zero). A negative value
+  /// (the default) disables this check entirely.
+  /// @returns the discrepancy threshold in meters
+  float dynamic_discrepancy_threshold_m() const;
+
+  /// A parameter setter.
+  /// See dynamic_discrepancy_threshold_m().
+  /// @param dynamic_discrepancy_threshold_m the discrepancy threshold in meters
+  void dynamic_discrepancy_threshold_m(float dynamic_discrepancy_threshold_m);
+
+  /// A parameter getter.
+  /// Minimum voxel weight required before the dynamic discrepancy check is
+  /// applied. Voxels below this weight are fused normally without comparison.
+  /// @returns the minimum weight for the discrepancy check
+  float dynamic_discrepancy_min_weight() const;
+
+  /// A parameter setter.
+  /// See dynamic_discrepancy_min_weight().
+  /// @param dynamic_discrepancy_min_weight the minimum weight
+  void dynamic_discrepancy_min_weight(float dynamic_discrepancy_min_weight);
+
   /// Return the parameter tree.
   /// @return the parameter tree
   virtual parameters::ParameterTreeNode getParameterTree(
@@ -153,6 +178,13 @@ class ProjectiveTsdfIntegrator : public ProjectiveIntegrator<TsdfVoxel> {
   /// Decay factor for invalid depth.
   float invalid_depth_decay_factor_ =
       kProjectiveTsdfIntegratorInvalidDepthDecayFactor.default_value;
+
+  float dynamic_discrepancy_threshold_m_ =
+      kProjectiveDynamicTsdfIntegratorDiscrepancyThresholdMParamDesc
+          .default_value;
+  float dynamic_discrepancy_min_weight_ =
+      kProjectiveDynamicTsdfIntegratorDynamicDiscrepancyMinWeightParamDesc
+          .default_value;
 };
 
 }  // namespace nvblox

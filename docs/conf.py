@@ -14,6 +14,8 @@
 #
 
 import datetime
+import shutil
+import subprocess
 from typing import List
 import os
 import sys
@@ -32,7 +34,7 @@ from helpers import TemporaryLinkcheckIgnore, to_datetime, is_expired
 project = 'nvblox_torch'
 copyright = '2025, NVIDIA'
 author = 'NVIDIA'
-released = True    # Indicates if this is a public or internal version of the repo.
+released = False    # Indicates if this is a public or internal version of the repo.
 
 # -- General configuration ---------------------------------------------------
 
@@ -51,6 +53,7 @@ extensions = [
     'sphinx_tabs.tabs',
     'sphinx_copybutton',
     'sphinx_multiversion',
+    'breathe',
     # TODO(alexmillane, 2025-04-24): Try re-enabling this once we have pydocs generating.
     #    'autodocsumm'
     'nvblox_torch_doc_tools'
@@ -79,6 +82,27 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # Be picky about missing references
 nitpicky = True    # warns on broken references
 nitpick_ignore: List[str] = []    # can exclude known bad refs
+nitpick_ignore_regex = [
+    # External C/C++ types not in our Doxygen XML.
+    (r'cpp:.*', r'(u?int\d+_t|size_t|float|double|bool|void)'),
+    (r'cpp:.*', r'Vk\w+'),    # Vulkan types
+    (r'cpp:.*', r'Eigen(::\w+)*'),    # Eigen types
+    (r'cpp:.*', r'CudaStream'),
+    (r'cpp:.*', r'(Depth|Color)Image'),
+    (r'cpp:.*', r'ColorMesh'),
+    (r'cpp:.*', r'Camera'),
+    (r'cpp:.*', r'VkWindow(::\w+)*'),
+    (r'cpp:.*', r'BufferedVisualizer\b.*'),
+    (r'cpp:.*', r'TexturedVisualizer\b.*'),
+    (r'cpp:.*', r'nvblox(::\w+)*'),
+    (r'cpp:.*', r'SharedTexture(::\w+)*'),
+    (r'cpp:.*', r'SharedBuffer'),
+    (r'cpp:.*', r'BaseVisualizer'),
+    (r'cpp:.*', r'ViewCamera'),
+    (r'cpp:.*', r'PipelineBuilder'),
+    (r'ref\..*', r'.*_8h_source'),    # Doxygen file-source labels
+    (r'ref', r'.*_8h_source'),    # Same, without sub-role
+]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -113,9 +137,10 @@ html_static_path = ['_static']
 html_css_files = ['custom.css']
 
 # Versioning (sphinx-multiversion)
+# Regexp for public and release branches: vX.Y.WZ
 smv_remote_whitelist = r'^.*$'
-smv_branch_whitelist = r'^(public|v0.0.8|v0.0.9)$'
-smv_tag_whitelist = r'^(v0.0.8|v0.0.9)$'
+smv_branch_whitelist = r'^(public|v\d+\.\d+\.\d+)$'
+smv_tag_whitelist = r'^(v\d+\.\d+\.\d+)$'
 html_sidebars = {'**': ['versioning.html', 'sidebar-nav-bs']}
 
 # Todos
@@ -127,6 +152,7 @@ todo_include_todos = True
 # links to the example pages via html.
 linkcheck_ignore = [
     r'pages/torch_examples_.*\.html',    # Ignore all pages/torch_examples_*.html links
+    r'pages/core_library_.*\.html',    # Ignore all pages/core_library_*.html links
 ]
 
 temporary_linkcheck_ignore = [
@@ -156,6 +182,23 @@ nvblox_torch_docs_config = {
     'released': released,
     'internal_git_url': 'ssh://git@gitlab-master.nvidia.com:12051/nvblox/nvblox.git',
     'external_git_url': 'git@github.com:nvidia-isaac/nvblox.git',
-    'internal_code_link_base_url': 'https://gitlab-master.nvidia.com/nvblox/nvblox/-/tree/main',
-    'external_code_link_base_url': 'https://github.com/nvidia-isaac/nvblox/tree/public'
+    'internal_code_link_base_url': 'https://gitlab-master.nvidia.com/nvblox/nvblox/-/blob/main',
+    'external_code_link_base_url': 'https://github.com/nvidia-isaac/nvblox/blob/public'
 }
+
+#####################################
+#  Doxygen / Breathe (C++ API docs)
+#####################################
+
+_docs_dir = os.path.abspath(os.path.dirname(__file__))
+_doxygen_xml = os.path.join(_docs_dir, '_build', 'doxygen', 'xml')
+
+if shutil.which('doxygen'):
+    os.makedirs(_doxygen_xml, exist_ok=True)
+    subprocess.run(['doxygen', 'Doxyfile'], cwd=_docs_dir, check=False)
+else:
+    print('WARNING: doxygen not found — C++ API docs will be incomplete.')
+
+breathe_projects = {'nvblox_renderer': _doxygen_xml}
+breathe_default_project = 'nvblox_renderer'
+breathe_default_members = ('members', )

@@ -424,7 +424,6 @@ class MaskedImageView : public ImageView<_ElementType> {
   /// Probe whether a pixel is masked or not. Will always return true if no mask
   /// image was provided during construction.
   __device__ __host__ bool isMasked(const int row_idx, const int col_idx) const;
-  __device__ __host__ void setMasked(const int row_idx, const int col_idx);
 
   /// Get the mask view
   ImageView<const uint8_t> mask() const { return mask_; }

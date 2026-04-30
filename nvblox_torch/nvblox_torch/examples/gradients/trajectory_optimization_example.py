@@ -18,6 +18,7 @@ import open3d as o3d
 from nvblox_torch.mapper import QueryType
 from nvblox_torch.visualization import get_sphere_mesh
 from nvblox_torch.examples.utils.scenes import get_single_sphere_scene_mapper
+from nvblox_torch.examples.utils.interrupt_handling import run_with_graceful_interrupt
 
 # Scene parameters
 SCENE_SIZE = 8.0
@@ -207,4 +208,4 @@ def main(visualize: bool = True) -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main(visualize=True))
+    sys.exit(run_with_graceful_interrupt(main, visualize=True))

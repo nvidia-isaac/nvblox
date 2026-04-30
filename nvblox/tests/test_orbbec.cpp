@@ -19,6 +19,8 @@ limitations under the License.
 
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
+#include "nvblox/io/image_io.h"
+#include "nvblox/mapper/mapper.h"
 #include "nvblox/sensors/image.h"
 
 namespace nvblox {

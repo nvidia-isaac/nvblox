@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "nvblox/core/types.h"
+#include "nvblox/geometry/plane.h"
 
 namespace nvblox {
 
@@ -29,5 +30,11 @@ namespace nvblox {
 bool arePosesClose(const Transform& T_A_B1, const Transform& T_A_B2,
                    const float translation_tolerance_m,
                    const float angular_tolerance_deg);
+
+/// Computes a 3D transform (rotation and translation) that transforms
+/// the given ground plane to the horizontal z=0 plane.
+/// @param ground_plane The ground plane to align.
+/// @return Transform from the original frame to the z=0 aligned frame.
+Transform computeTransformToAlignPlaneToZ0(const Plane& ground_plane);
 
 }  // namespace nvblox

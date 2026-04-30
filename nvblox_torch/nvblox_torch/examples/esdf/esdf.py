@@ -21,6 +21,7 @@ import open3d as o3d
 import torch
 
 from nvblox_torch.examples.utils.scenes import get_sun3d_scene_mapper
+from nvblox_torch.examples.utils.interrupt_handling import run_with_graceful_interrupt
 from nvblox_torch.layer import Layer
 from nvblox_torch.constants import constants
 from nvblox_torch.visualization import to_open3d_voxel_grid
@@ -182,4 +183,4 @@ def main(visualize: bool) -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main(visualize=True))
+    sys.exit(run_with_graceful_interrupt(main, visualize=True))
