@@ -77,7 +77,18 @@ class BuildImage(DockerImage):
         # Setup args to cmake
         cmake_args = f'-DCMAKE_CUDA_ARCHITECTURES={cuda_arch} -DWARNING_AS_ERROR=1'
         if self.args.gcc_sanitizer == 1:
-            cmake_args += ' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
+            # libtorch's CUDA caching allocator is incompatible with gcc
+            # AddressSanitizer (the nvblox_torch cpp tests fail with ASan
+            # errors). Match the legacy Jenkins sanitizer build and skip the
+            # pytorch wrapper entirely under sanitizer.
+            cmake_args += (' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
+                           ' -DBUILD_PYTORCH_WRAPPER=0')
+
+        # nvblox_torch is deprecated on CUDA 11. Skip building the pytorch
+        # wrapper there; the core C++ library is still built and tested.
+        # nvblox_renderer also requires CUDA >= 12.
+        if self.args.cuda_version == CudaVersion.CUDA_11:
+            cmake_args += ' -DBUILD_PYTORCH_WRAPPER=0 -DBUILD_RENDERER=0'
 
         # Setup args to docker build
         args = [f'CMAKE_ARGS={cmake_args}']

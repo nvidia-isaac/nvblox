@@ -151,7 +151,15 @@ add_nvblox_shared_library(
 # ##############################################################################
 
 if(BUILD_TESTING)
-  add_subdirectory(tests)
+  if(USE_SANITIZER)
+    message(
+      STATUS
+        "[nvblox_renderer] Skipping tests because USE_SANITIZER is enabled "
+        "(Vulkan/CUDA interop tests tend to timeout with gcc address sanitizer)"
+    )
+  else()
+    add_subdirectory(tests)
+  endif()
 endif()
 
 # ##############################################################################
