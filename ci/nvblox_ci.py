@@ -81,8 +81,12 @@ class BuildImage(DockerImage):
             # AddressSanitizer (the nvblox_torch cpp tests fail with ASan
             # errors). Match the legacy Jenkins sanitizer build and skip the
             # pytorch wrapper entirely under sanitizer.
+            #
+            # The renderer is also disabled: gtest_discover_tests runs each
+            # renderer test binary at build time to enumerate cases, and the
+            # ASan-instrumented Vulkan/CUDA init exceeds the discovery timeout.
             cmake_args += (' -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=yes'
-                           ' -DBUILD_PYTORCH_WRAPPER=0')
+                           ' -DBUILD_PYTORCH_WRAPPER=0 -DBUILD_RENDERER=0')
 
         # nvblox_torch is deprecated on CUDA 11. Skip building the pytorch
         # wrapper there; the core C++ library is still built and tested.
@@ -137,13 +141,14 @@ class CppUnitTests(TestBase):
 
     def get_command(self) -> str:
         num_jobs = self.args.max_num_jobs
-        base_cmd = f'ctest -j{num_jobs} -T test ' f'--no-compress-output'
+        base_cmd = f'ctest -j{num_jobs} -T test --no-compress-output'
 
         # When running tests with gcc sanitizers, we need to disable address space
         # randomization due to bug in libgcc that appears on certain platforms.
         # https://stackoverflow.com/questions/77894856/possible-bug-in-gcc-sanitizers
+        # Vulkan/CUDA interop tests tend to timeout under ASan, so exclude them.
         if self.args.gcc_sanitizer == 1:
-            return f'setarch $(uname -m) --addr-no-randomize {base_cmd}'
+            return f'setarch $(uname -m) --addr-no-randomize {base_cmd} -LE vulkan_capable'
         return base_cmd
 
     def image(self) -> DockerImage:
