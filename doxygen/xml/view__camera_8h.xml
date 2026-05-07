@@ -1,0 +1,186 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="view__camera_8h" kind="file" language="C++">
+    <compoundname>view_camera.h</compoundname>
+    <includes local="no">Eigen/Core</includes>
+    <includes local="no">Eigen/Geometry</includes>
+    <includes refid="renderer__constants_8h" local="yes">nvblox/renderer/utils/renderer_constants.h</includes>
+    <includedby refid="renderer_8h" local="yes">/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h</includedby>
+    <incdepgraph>
+      <node id="4">
+        <label>nvblox/renderer/utils/renderer_constants.h</label>
+        <link refid="renderer__constants_8h_source"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h</label>
+        <link refid="view__camera_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>Eigen/Core</label>
+      </node>
+      <node id="3">
+        <label>Eigen/Geometry</label>
+      </node>
+      <node id="5">
+        <label>array</label>
+      </node>
+      <node id="6">
+        <label>cmath</label>
+      </node>
+      <node id="7">
+        <label>cstddef</label>
+      </node>
+      <node id="8">
+        <label>cstdint</label>
+      </node>
+      <node id="10">
+        <label>glog/logging.h</label>
+      </node>
+      <node id="9">
+        <label>limits</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="2">
+        <label>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h</label>
+        <link refid="renderer_8h_source"/>
+      </node>
+      <node id="1">
+        <label>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h</label>
+        <link refid="view__camera_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classnvblox_1_1renderer_1_1ViewCamera" prot="public">nvblox::renderer::ViewCamera</innerclass>
+    <innernamespace refid="namespacenvblox">nvblox</innernamespace>
+    <innernamespace refid="namespacenvblox_1_1renderer">nvblox::renderer</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/*</highlight></codeline>
+<codeline lineno="2"><highlight class="comment">Copyright<sp/>2026<sp/>NVIDIA<sp/>CORPORATION</highlight></codeline>
+<codeline lineno="3"><highlight class="comment"></highlight></codeline>
+<codeline lineno="4"><highlight class="comment">Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;License&quot;);</highlight></codeline>
+<codeline lineno="5"><highlight class="comment">you<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.</highlight></codeline>
+<codeline lineno="6"><highlight class="comment">You<sp/>may<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at</highlight></codeline>
+<codeline lineno="7"><highlight class="comment"></highlight></codeline>
+<codeline lineno="8"><highlight class="comment"><sp/><sp/><sp/><sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight></codeline>
+<codeline lineno="9"><highlight class="comment"></highlight></codeline>
+<codeline lineno="10"><highlight class="comment">Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight></codeline>
+<codeline lineno="11"><highlight class="comment">distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight></codeline>
+<codeline lineno="12"><highlight class="comment">WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or<sp/>implied.</highlight></codeline>
+<codeline lineno="13"><highlight class="comment">See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing<sp/>permissions<sp/>and</highlight></codeline>
+<codeline lineno="14"><highlight class="comment">limitations<sp/>under<sp/>the<sp/>License.</highlight></codeline>
+<codeline lineno="15"><highlight class="comment">*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;Eigen/Core&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;Eigen/Geometry&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;nvblox/renderer/utils/renderer_constants.h&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">nvblox<sp/>{</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">renderer<sp/>{</highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="classnvblox_1_1renderer_1_1ViewCamera" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref><sp/>{</highlight></codeline>
+<codeline lineno="29"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref>();</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="33" refid="classnvblox_1_1renderer_1_1ViewCamera_1a86d3c81922a2999bc8d42dbc32db8518" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a86d3c81922a2999bc8d42dbc32db8518" kindref="member">setTarget</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>x,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>y,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>z);</highlight></codeline>
+<codeline lineno="35" refid="classnvblox_1_1renderer_1_1ViewCamera_1acf0e42f1d476952197095addb8645580" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1acf0e42f1d476952197095addb8645580" kindref="member">setTarget</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a369f38dd962d82d3a160760c60a81a90" kindref="member">target</ref>);</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38" refid="classnvblox_1_1renderer_1_1ViewCamera_1a48f0e01f421a72ce93e5b1bd4a51059a" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a48f0e01f421a72ce93e5b1bd4a51059a" kindref="member">setDistance</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1ac83b1fa14e6fe2fa1d370aba6937250c" kindref="member">distance</ref>);</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classnvblox_1_1renderer_1_1ViewCamera_1af641484c806263fcb5e8422b64b84ef3" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1af641484c806263fcb5e8422b64b84ef3" kindref="member">setOrbitAngles</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>azimuth,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>elevation);</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight></codeline>
+<codeline lineno="48" refid="classnvblox_1_1renderer_1_1ViewCamera_1abadb747a25a9906bd5e6c4f9e0d62454" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1abadb747a25a9906bd5e6c4f9e0d62454" kindref="member">rotate</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta_x,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta_y);</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"></highlight></codeline>
+<codeline lineno="51" refid="classnvblox_1_1renderer_1_1ViewCamera_1aada36ca30369725c969c3a09011d3cc3" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1aada36ca30369725c969c3a09011d3cc3" kindref="member">orbit</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta_azimuth,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta_elevation);</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54" refid="classnvblox_1_1renderer_1_1ViewCamera_1a02acfcca511e41413ea67faa7dc6c1e9" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a02acfcca511e41413ea67faa7dc6c1e9" kindref="member">zoom</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta);</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57" refid="classnvblox_1_1renderer_1_1ViewCamera_1a03a3cabe272bab00ed886ae104b6e386" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a03a3cabe272bab00ed886ae104b6e386" kindref="member">pan</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta_x,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>delta_y);</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60" refid="classnvblox_1_1renderer_1_1ViewCamera_1a2dcecaab07428f8754d2d5a699ccec2f" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a2dcecaab07428f8754d2d5a699ccec2f" kindref="member">setRotation</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Quaternionf&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a41773131c0be30d6e14a4bbd0fe7d9e8" kindref="member">rotation</ref>);</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight></codeline>
+<codeline lineno="63" refid="classnvblox_1_1renderer_1_1ViewCamera_1a68a6bd8d04c5f4c7cecd680b23b56897" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a68a6bd8d04c5f4c7cecd680b23b56897" kindref="member">reset</ref>();</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight></codeline>
+<codeline lineno="70" refid="classnvblox_1_1renderer_1_1ViewCamera_1ab0a51d8cbec561df722aaee493de82e7" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1ab0a51d8cbec561df722aaee493de82e7" kindref="member">setPerspective</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>fov_y,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>aspect,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>near,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>far);</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"></highlight></codeline>
+<codeline lineno="74" refid="classnvblox_1_1renderer_1_1ViewCamera_1a49bba05cd27d1620fbd7fc4722e11e06" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a49bba05cd27d1620fbd7fc4722e11e06" kindref="member">setAspect</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>aspect);</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"></highlight></codeline>
+<codeline lineno="77" refid="classnvblox_1_1renderer_1_1ViewCamera_1a0901334f3925634f72c61541c48b8cd5" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Matrix4f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a0901334f3925634f72c61541c48b8cd5" kindref="member">viewMatrix</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>view_matrix_;<sp/>}</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="classnvblox_1_1renderer_1_1ViewCamera_1a0dbb4ff7e1d9e050d83a341bce05f5f8" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Matrix4f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a0dbb4ff7e1d9e050d83a341bce05f5f8" kindref="member">projMatrix</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>proj_matrix_;<sp/>}</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"></highlight></codeline>
+<codeline lineno="83" refid="classnvblox_1_1renderer_1_1ViewCamera_1a9b7d49cd3948d1ca6eff9fdfb08fe13d" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Matrix4f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a9b7d49cd3948d1ca6eff9fdfb08fe13d" kindref="member">viewProjMatrix</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>view_proj_matrix_;<sp/>}</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="87" refid="classnvblox_1_1renderer_1_1ViewCamera_1ac22cec574a7e3d57537e5ec5f5082086" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal">*<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1ac22cec574a7e3d57537e5ec5f5082086" kindref="member">viewProjMatrixPtr</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>view_proj_matrix_.data();<sp/>}</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"></highlight></codeline>
+<codeline lineno="90" refid="classnvblox_1_1renderer_1_1ViewCamera_1a21803245749f0635c3a1240640ea1339" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a21803245749f0635c3a1240640ea1339" kindref="member">position</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>position_;<sp/>}</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"></highlight></codeline>
+<codeline lineno="93" refid="classnvblox_1_1renderer_1_1ViewCamera_1ac83b1fa14e6fe2fa1d370aba6937250c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1ac83b1fa14e6fe2fa1d370aba6937250c" kindref="member">distance</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>distance_;<sp/>}</highlight></codeline>
+<codeline lineno="95" refid="classnvblox_1_1renderer_1_1ViewCamera_1a369f38dd962d82d3a160760c60a81a90" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a369f38dd962d82d3a160760c60a81a90" kindref="member">target</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>target_;<sp/>}</highlight></codeline>
+<codeline lineno="97" refid="classnvblox_1_1renderer_1_1ViewCamera_1a41773131c0be30d6e14a4bbd0fe7d9e8" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Quaternionf&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a41773131c0be30d6e14a4bbd0fe7d9e8" kindref="member">rotation</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>rotation_;<sp/>}</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>updateMatrices();</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>Eigen::Matrix4f<sp/>lookAt(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/>eye,</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/>center,</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/>up);</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"></highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>Eigen::Matrix4f<sp/>perspectiveVk(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>fov_y,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>aspect,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>near,</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>far);</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/>Eigen::Quaternionf<sp/>rotation_<sp/>=<sp/>Eigen::Quaternionf::Identity();</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"></highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>distance_<sp/>=<sp/>kDefaultCameraDistanceM;</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/>Eigen::Vector3f<sp/>target_<sp/>=<sp/>Eigen::Vector3f::Zero();</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"></highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/>Eigen::Vector3f<sp/>position_<sp/>=</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>Eigen::Vector3f(0.0f,<sp/>0.0f,<sp/>kDefaultCameraDistanceM);</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"></highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Projection<sp/>parameters</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>fov_y_<sp/>=<sp/>60.0f<sp/>*<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="keywordtype">float</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(M_PI)<sp/>/<sp/>180.0f;<sp/><sp/></highlight><highlight class="comment">//<sp/>60<sp/>degrees</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>aspect_<sp/>=<sp/>16.0f<sp/>/<sp/>9.0f;</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>near_<sp/>=<sp/>0.01f;</highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>far_<sp/>=<sp/>100.0f;</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"></highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/>Eigen::Matrix4f<sp/>view_matrix_<sp/>=<sp/>Eigen::Matrix4f::Identity();</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/>Eigen::Matrix4f<sp/>proj_matrix_<sp/>=<sp/>Eigen::Matrix4f::Identity();</highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/>Eigen::Matrix4f<sp/>view_proj_matrix_<sp/>=<sp/>Eigen::Matrix4f::Identity();</highlight></codeline>
+<codeline lineno="130"><highlight class="normal"></highlight></codeline>
+<codeline lineno="131"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Constants</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>kMinDistance<sp/>=<sp/>0.1f;</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>kZoomSensitivity<sp/>=<sp/>0.1f;</highlight></codeline>
+<codeline lineno="134"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"></highlight></codeline>
+<codeline lineno="136"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>renderer</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="137"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>nvblox</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h"/>
+  </compounddef>
+</doxygen>

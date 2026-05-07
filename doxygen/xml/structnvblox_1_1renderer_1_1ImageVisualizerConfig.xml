@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structnvblox_1_1renderer_1_1ImageVisualizerConfig" kind="struct" language="C++" prot="public">
+    <compoundname>nvblox::renderer::ImageVisualizerConfig</compoundname>
+    <includes refid="image__visualizer_8h" local="no">image_visualizer.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1aa64c7c590d0151e0a7cd83311b9ce64a" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizerConfig::depth_width</definition>
+        <argsstring></argsstring>
+        <name>depth_width</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::depth_width</qualifiedname>
+        <initializer>=
+      1</initializer>
+        <briefdescription>
+<para>Width of depth images (default: 1 for lazy init). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="35" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="35" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a837c15caa6fd6180bc78fcfebb1fa76c" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizerConfig::depth_height</definition>
+        <argsstring></argsstring>
+        <name>depth_height</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::depth_height</qualifiedname>
+        <initializer>=
+      1</initializer>
+        <briefdescription>
+<para>Height of depth images (default: 1 for lazy init). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="37" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a5ed49a052ec0a59d9c8bd5e43bbe60b0" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizerConfig::color_width</definition>
+        <argsstring></argsstring>
+        <name>color_width</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::color_width</qualifiedname>
+        <initializer>=
+      1</initializer>
+        <briefdescription>
+<para>Width of color images (default: 1 for lazy init). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="39" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a7d565fe5f4663ef858b8a7977e399072" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizerConfig::color_height</definition>
+        <argsstring></argsstring>
+        <name>color_height</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::color_height</qualifiedname>
+        <initializer>=
+      1</initializer>
+        <briefdescription>
+<para>Height of color images (default: 1 for lazy init). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="41" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="41" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a441edb24f75148fa4764b72c1961bb20" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizerConfig::ImageVisualizerConfig</definition>
+        <argsstring>()=default</argsstring>
+        <name>ImageVisualizerConfig</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::ImageVisualizerConfig</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="44" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1ae6e2793aa5c8985830fb1e08a771fa9d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizerConfig::ImageVisualizerConfig</definition>
+        <argsstring>(uint32_t width, uint32_t height)</argsstring>
+        <name>ImageVisualizerConfig</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::ImageVisualizerConfig</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a config with same dimensions for both depth and color. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Width for both depth and color images. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Height for both depth and color images. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="49" column="3" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="49" bodyend="53"/>
+      </memberdef>
+      <memberdef kind="function" id="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a0cf9caaa5517509d8182b1b0696a8de5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizerConfig::ImageVisualizerConfig</definition>
+        <argsstring>(uint32_t depth_w, uint32_t depth_h, uint32_t color_w, uint32_t color_h)</argsstring>
+        <name>ImageVisualizerConfig</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizerConfig::ImageVisualizerConfig</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>depth_w</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>depth_h</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>color_w</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>color_h</declname>
+        </param>
+        <briefdescription>
+<para>Create a config with independent depth and color dimensions. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="56" column="3" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="56" bodyend="61"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Configuration for <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> initialization. Provides a unified way to specify image dimensions with sensible defaults. </para>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="34" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="34" bodyend="62"/>
+    <listofallmembers>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a7d565fe5f4663ef858b8a7977e399072" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>color_height</name></member>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a5ed49a052ec0a59d9c8bd5e43bbe60b0" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>color_width</name></member>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a837c15caa6fd6180bc78fcfebb1fa76c" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>depth_height</name></member>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1aa64c7c590d0151e0a7cd83311b9ce64a" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>depth_width</name></member>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a441edb24f75148fa4764b72c1961bb20" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>ImageVisualizerConfig</name></member>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1ae6e2793aa5c8985830fb1e08a771fa9d" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>ImageVisualizerConfig</name></member>
+      <member refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a0cf9caaa5517509d8182b1b0696a8de5" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizerConfig</scope><name>ImageVisualizerConfig</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

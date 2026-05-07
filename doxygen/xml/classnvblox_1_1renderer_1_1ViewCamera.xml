@@ -1,0 +1,800 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classnvblox_1_1renderer_1_1ViewCamera" kind="class" language="C++" prot="public">
+    <compoundname>nvblox::renderer::ViewCamera</compoundname>
+    <includes refid="view__camera_8h" local="no">view_camera.h</includes>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1ae5bea556597ba8d5593dbfa0ef8c73b4" prot="private" static="no" mutable="no">
+        <type>Eigen::Quaternionf</type>
+        <definition>Eigen::Quaternionf nvblox::renderer::ViewCamera::rotation_</definition>
+        <argsstring></argsstring>
+        <name>rotation_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::rotation_</qualifiedname>
+        <initializer>= Eigen::Quaternionf::Identity()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="112" column="22" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1abec627f3e9214fdbb39f487e5b22d4aa" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::distance_</definition>
+        <argsstring></argsstring>
+        <name>distance_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::distance_</qualifiedname>
+        <initializer>= kDefaultCameraDistanceM</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="114" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a5c4795e16d56448959d49f9dbf1fa311" prot="private" static="no" mutable="no">
+        <type>Eigen::Vector3f</type>
+        <definition>Eigen::Vector3f nvblox::renderer::ViewCamera::target_</definition>
+        <argsstring></argsstring>
+        <name>target_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::target_</qualifiedname>
+        <initializer>= Eigen::Vector3f::Zero()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="116" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="116" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1aa4df6c8b92d932e188231c96d16de057" prot="private" static="no" mutable="no">
+        <type>Eigen::Vector3f</type>
+        <definition>Eigen::Vector3f nvblox::renderer::ViewCamera::position_</definition>
+        <argsstring></argsstring>
+        <name>position_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::position_</qualifiedname>
+        <initializer>=
+      Eigen::Vector3f(0.0f, 0.0f, kDefaultCameraDistanceM)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="118" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="118" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a0baef4e714a5a99d2d762bbfe1787c47" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::fov_y_</definition>
+        <argsstring></argsstring>
+        <name>fov_y_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::fov_y_</qualifiedname>
+        <initializer>= 60.0f * static_cast&lt;float&gt;(M_PI) / 180.0f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="122" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="122" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a3a29f17cb8f962f8e79522fdb73142b3" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::aspect_</definition>
+        <argsstring></argsstring>
+        <name>aspect_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::aspect_</qualifiedname>
+        <initializer>= 16.0f / 9.0f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="123" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="123" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a3f617c50fc1c0658c0d44b9810880d62" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::near_</definition>
+        <argsstring></argsstring>
+        <name>near_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::near_</qualifiedname>
+        <initializer>= 0.01f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="124" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="124" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a5c0b567f7b31bb75895ec6dd2227f24f" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::far_</definition>
+        <argsstring></argsstring>
+        <name>far_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::far_</qualifiedname>
+        <initializer>= 100.0f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="125" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="125" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1ade110d49dc5c29c58fa1fb9b7adf0fc5" prot="private" static="no" mutable="no">
+        <type>Eigen::Matrix4f</type>
+        <definition>Eigen::Matrix4f nvblox::renderer::ViewCamera::view_matrix_</definition>
+        <argsstring></argsstring>
+        <name>view_matrix_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::view_matrix_</qualifiedname>
+        <initializer>= Eigen::Matrix4f::Identity()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="127" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="127" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a5ffbf7d9c436ebbd23b928e8f3a4ee5a" prot="private" static="no" mutable="no">
+        <type>Eigen::Matrix4f</type>
+        <definition>Eigen::Matrix4f nvblox::renderer::ViewCamera::proj_matrix_</definition>
+        <argsstring></argsstring>
+        <name>proj_matrix_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::proj_matrix_</qualifiedname>
+        <initializer>= Eigen::Matrix4f::Identity()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="128" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="128" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1a0f7c5a466ced22f6f986a9ed02796bda" prot="private" static="no" mutable="no">
+        <type>Eigen::Matrix4f</type>
+        <definition>Eigen::Matrix4f nvblox::renderer::ViewCamera::view_proj_matrix_</definition>
+        <argsstring></argsstring>
+        <name>view_proj_matrix_</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::view_proj_matrix_</qualifiedname>
+        <initializer>= Eigen::Matrix4f::Identity()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="129" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="129" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-static-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1aba1b1a5811dc4ecee24d47e51ba4e43a" prot="private" static="yes" constexpr="yes" mutable="no">
+        <type>constexpr float</type>
+        <definition>constexpr float nvblox::renderer::ViewCamera::kMinDistance</definition>
+        <argsstring></argsstring>
+        <name>kMinDistance</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::kMinDistance</qualifiedname>
+        <initializer>= 0.1f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="132" column="26" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="132" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1af4f5b37fd367272937361d60f9b9d04f" prot="private" static="yes" constexpr="yes" mutable="no">
+        <type>constexpr float</type>
+        <definition>constexpr float nvblox::renderer::ViewCamera::kZoomSensitivity</definition>
+        <argsstring></argsstring>
+        <name>kZoomSensitivity</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::kZoomSensitivity</qualifiedname>
+        <initializer>= 0.1f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="133" column="26" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="133" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a9044404dfccfbea8cbf527c072e0f26a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ViewCamera::ViewCamera</definition>
+        <argsstring>()</argsstring>
+        <name>ViewCamera</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::ViewCamera</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="30" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a86d3c81922a2999bc8d42dbc32db8518" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setTarget</definition>
+        <argsstring>(float x, float y, float z)</argsstring>
+        <name>setTarget</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setTarget</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>y</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>z</declname>
+        </param>
+        <briefdescription>
+<para>Set camera target (look-at point). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="33" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1acf0e42f1d476952197095addb8645580" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setTarget</definition>
+        <argsstring>(const Eigen::Vector3f &amp;target)</argsstring>
+        <name>setTarget</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setTarget</qualifiedname>
+        <param>
+          <type>const Eigen::Vector3f &amp;</type>
+          <declname>target</declname>
+        </param>
+        <briefdescription>
+<para>Set camera target (look-at point).   </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="35" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a48f0e01f421a72ce93e5b1bd4a51059a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setDistance</definition>
+        <argsstring>(float distance)</argsstring>
+        <name>setDistance</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setDistance</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>distance</declname>
+        </param>
+        <briefdescription>
+<para>Set camera distance from target. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="38" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1af641484c806263fcb5e8422b64b84ef3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setOrbitAngles</definition>
+        <argsstring>(float azimuth, float elevation)</argsstring>
+        <name>setOrbitAngles</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setOrbitAngles</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>azimuth</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>elevation</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set camera orbit angles (for initial setup, converts to quaternion). <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>azimuth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Horizontal angle in radians. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elevation</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vertical angle in radians. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="43" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1abadb747a25a9906bd5e6c4f9e0d62454" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::rotate</definition>
+        <argsstring>(float delta_x, float delta_y)</argsstring>
+        <name>rotate</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::rotate</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>delta_x</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>delta_y</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Rotate camera using arcball rotation (quaternion-based, no gimbal lock). <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>delta_x</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Horizontal rotation delta (in radians). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>delta_y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vertical rotation delta (in radians). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="48" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1aada36ca30369725c969c3a09011d3cc3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::orbit</definition>
+        <argsstring>(float delta_azimuth, float delta_elevation)</argsstring>
+        <name>orbit</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::orbit</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>delta_azimuth</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>delta_elevation</declname>
+        </param>
+        <briefdescription>
+<para>Legacy orbit function (maps to rotate). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="51" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a02acfcca511e41413ea67faa7dc6c1e9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::zoom</definition>
+        <argsstring>(float delta)</argsstring>
+        <name>zoom</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::zoom</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>delta</declname>
+        </param>
+        <briefdescription>
+<para>Zoom camera (change distance). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="54" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a03a3cabe272bab00ed886ae104b6e386" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::pan</definition>
+        <argsstring>(float delta_x, float delta_y)</argsstring>
+        <name>pan</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::pan</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>delta_x</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>delta_y</declname>
+        </param>
+        <briefdescription>
+<para>Pan camera (move target in screen space). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="57" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a2dcecaab07428f8754d2d5a699ccec2f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setRotation</definition>
+        <argsstring>(const Eigen::Quaternionf &amp;rotation)</argsstring>
+        <name>setRotation</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setRotation</qualifiedname>
+        <param>
+          <type>const Eigen::Quaternionf &amp;</type>
+          <declname>rotation</declname>
+        </param>
+        <briefdescription>
+<para>Set rotation directly (quaternion-based, no gimbal lock). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="60" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a68a6bd8d04c5f4c7cecd680b23b56897" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::reset</definition>
+        <argsstring>()</argsstring>
+        <name>reset</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::reset</qualifiedname>
+        <briefdescription>
+<para>Reset camera to default orientation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="63" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1ab0a51d8cbec561df722aaee493de82e7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setPerspective</definition>
+        <argsstring>(float fov_y, float aspect, float near, float far)</argsstring>
+        <name>setPerspective</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setPerspective</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>fov_y</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>aspect</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>near</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>far</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set perspective projection parameters. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fov_y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Field of view in radians (must be positive). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>aspect</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Aspect ratio (must be positive). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>near</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Near clip plane distance (must be positive). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>far</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Far clip plane distance (must be &gt; near). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="70" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a49bba05cd27d1620fbd7fc4722e11e06" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::setAspect</definition>
+        <argsstring>(float aspect)</argsstring>
+        <name>setAspect</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::setAspect</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>aspect</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set aspect ratio. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>aspect</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Aspect ratio (must be positive). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="74" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a0901334f3925634f72c61541c48b8cd5" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const Eigen::Matrix4f &amp;</type>
+        <definition>const Eigen::Matrix4f &amp; nvblox::renderer::ViewCamera::viewMatrix</definition>
+        <argsstring>() const</argsstring>
+        <name>viewMatrix</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::viewMatrix</qualifiedname>
+        <briefdescription>
+<para>Get view matrix. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="77" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="77" bodyend="77"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a0dbb4ff7e1d9e050d83a341bce05f5f8" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const Eigen::Matrix4f &amp;</type>
+        <definition>const Eigen::Matrix4f &amp; nvblox::renderer::ViewCamera::projMatrix</definition>
+        <argsstring>() const</argsstring>
+        <name>projMatrix</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::projMatrix</qualifiedname>
+        <briefdescription>
+<para>Get projection matrix. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="80" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="80" bodyend="80"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a9b7d49cd3948d1ca6eff9fdfb08fe13d" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const Eigen::Matrix4f &amp;</type>
+        <definition>const Eigen::Matrix4f &amp; nvblox::renderer::ViewCamera::viewProjMatrix</definition>
+        <argsstring>() const</argsstring>
+        <name>viewProjMatrix</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::viewProjMatrix</qualifiedname>
+        <briefdescription>
+<para>Get view-projection matrix. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="83" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="83" bodyend="83"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1ac22cec574a7e3d57537e5ec5f5082086" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const float *</type>
+        <definition>const float * nvblox::renderer::ViewCamera::viewProjMatrixPtr</definition>
+        <argsstring>() const</argsstring>
+        <name>viewProjMatrixPtr</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::viewProjMatrixPtr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get view-projection matrix as float pointer (for Vulkan push constants). Eigen stores matrices in column-major order, matching Vulkan/OpenGL. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="87" column="15" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="87" bodyend="87"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a21803245749f0635c3a1240640ea1339" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const Eigen::Vector3f &amp;</type>
+        <definition>const Eigen::Vector3f &amp; nvblox::renderer::ViewCamera::position</definition>
+        <argsstring>() const</argsstring>
+        <name>position</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::position</qualifiedname>
+        <briefdescription>
+<para>Get camera position. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="90" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="90" bodyend="90"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1ac83b1fa14e6fe2fa1d370aba6937250c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::distance</definition>
+        <argsstring>() const</argsstring>
+        <name>distance</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::distance</qualifiedname>
+        <briefdescription>
+<para>Get distance from target. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="93" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="93" bodyend="93"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a369f38dd962d82d3a160760c60a81a90" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const Eigen::Vector3f &amp;</type>
+        <definition>const Eigen::Vector3f &amp; nvblox::renderer::ViewCamera::target</definition>
+        <argsstring>() const</argsstring>
+        <name>target</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::target</qualifiedname>
+        <briefdescription>
+<para>Get the look-at point. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="95" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="95" bodyend="95"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1a41773131c0be30d6e14a4bbd0fe7d9e8" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const Eigen::Quaternionf &amp;</type>
+        <definition>const Eigen::Quaternionf &amp; nvblox::renderer::ViewCamera::rotation</definition>
+        <argsstring>() const</argsstring>
+        <name>rotation</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::rotation</qualifiedname>
+        <briefdescription>
+<para>Get the orientation quaternion. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="97" column="28" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="97" bodyend="97"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1ac80bea77bd20242826bfb35af5d5ce35" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ViewCamera::updateMatrices</definition>
+        <argsstring>()</argsstring>
+        <name>updateMatrices</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::updateMatrices</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="100" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-static-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1ad0d4aae276ad8b4c33609e54b5fe8ff1" prot="private" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>Eigen::Matrix4f</type>
+        <definition>static Eigen::Matrix4f nvblox::renderer::ViewCamera::lookAt</definition>
+        <argsstring>(const Eigen::Vector3f &amp;eye, const Eigen::Vector3f &amp;center, const Eigen::Vector3f &amp;up)</argsstring>
+        <name>lookAt</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::lookAt</qualifiedname>
+        <param>
+          <type>const Eigen::Vector3f &amp;</type>
+          <declname>eye</declname>
+        </param>
+        <param>
+          <type>const Eigen::Vector3f &amp;</type>
+          <declname>center</declname>
+        </param>
+        <param>
+          <type>const Eigen::Vector3f &amp;</type>
+          <declname>up</declname>
+        </param>
+        <briefdescription>
+<para>Build a right-handed look-at view matrix (OpenGL convention). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="103" column="26"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ViewCamera_1ac0593db25692df962ec323d168955a4e" prot="private" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>Eigen::Matrix4f</type>
+        <definition>static Eigen::Matrix4f nvblox::renderer::ViewCamera::perspectiveVk</definition>
+        <argsstring>(float fov_y, float aspect, float near, float far)</argsstring>
+        <name>perspectiveVk</name>
+        <qualifiedname>nvblox::renderer::ViewCamera::perspectiveVk</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>fov_y</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>aspect</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>near</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>far</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Build a perspective projection matrix with depth mapped to [0, 1] (Vulkan convention). </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="109" column="26"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>3D view camera with arcball rotation (quaternion-based, no gimbal lock). Provides view and projection matrices for rendering 3D content. </para>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="28" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="28" bodyend="134"/>
+    <listofallmembers>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a3a29f17cb8f962f8e79522fdb73142b3" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>aspect_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ac83b1fa14e6fe2fa1d370aba6937250c" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>distance</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1abec627f3e9214fdbb39f487e5b22d4aa" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>distance_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a5c0b567f7b31bb75895ec6dd2227f24f" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>far_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a0baef4e714a5a99d2d762bbfe1787c47" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>fov_y_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1aba1b1a5811dc4ecee24d47e51ba4e43a" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>kMinDistance</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1af4f5b37fd367272937361d60f9b9d04f" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>kZoomSensitivity</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ad0d4aae276ad8b4c33609e54b5fe8ff1" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>lookAt</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a3f617c50fc1c0658c0d44b9810880d62" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>near_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1aada36ca30369725c969c3a09011d3cc3" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>orbit</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a03a3cabe272bab00ed886ae104b6e386" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>pan</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ac0593db25692df962ec323d168955a4e" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>perspectiveVk</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a21803245749f0635c3a1240640ea1339" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>position</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1aa4df6c8b92d932e188231c96d16de057" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>position_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a5ffbf7d9c436ebbd23b928e8f3a4ee5a" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>proj_matrix_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a0dbb4ff7e1d9e050d83a341bce05f5f8" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>projMatrix</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a68a6bd8d04c5f4c7cecd680b23b56897" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>reset</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1abadb747a25a9906bd5e6c4f9e0d62454" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>rotate</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a41773131c0be30d6e14a4bbd0fe7d9e8" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>rotation</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ae5bea556597ba8d5593dbfa0ef8c73b4" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>rotation_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a49bba05cd27d1620fbd7fc4722e11e06" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setAspect</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a48f0e01f421a72ce93e5b1bd4a51059a" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setDistance</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1af641484c806263fcb5e8422b64b84ef3" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setOrbitAngles</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ab0a51d8cbec561df722aaee493de82e7" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setPerspective</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a2dcecaab07428f8754d2d5a699ccec2f" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setRotation</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a86d3c81922a2999bc8d42dbc32db8518" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setTarget</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1acf0e42f1d476952197095addb8645580" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>setTarget</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a369f38dd962d82d3a160760c60a81a90" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>target</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a5c4795e16d56448959d49f9dbf1fa311" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>target_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ac80bea77bd20242826bfb35af5d5ce35" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>updateMatrices</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ade110d49dc5c29c58fa1fb9b7adf0fc5" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>view_matrix_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a0f7c5a466ced22f6f986a9ed02796bda" prot="private" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>view_proj_matrix_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a9044404dfccfbea8cbf527c072e0f26a" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>ViewCamera</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a0901334f3925634f72c61541c48b8cd5" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>viewMatrix</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a9b7d49cd3948d1ca6eff9fdfb08fe13d" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>viewProjMatrix</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1ac22cec574a7e3d57537e5ec5f5082086" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>viewProjMatrixPtr</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ViewCamera_1a02acfcca511e41413ea67faa7dc6c1e9" prot="public" virt="non-virtual"><scope>nvblox::renderer::ViewCamera</scope><name>zoom</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

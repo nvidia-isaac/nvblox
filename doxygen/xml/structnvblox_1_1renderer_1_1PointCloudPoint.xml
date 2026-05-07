@@ -1,0 +1,122 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structnvblox_1_1renderer_1_1PointCloudPoint" kind="struct" language="C++" prot="public">
+    <compoundname>nvblox::renderer::PointCloudPoint</compoundname>
+    <includes refid="point__cloud__visualizer_8h" local="no">point_cloud_visualizer.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1a76908fe6dfc540d1a6851cd293ae9f18" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::PointCloudPoint::x</definition>
+        <argsstring></argsstring>
+        <name>x</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::x</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="34" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1abf291f6b270e3bf40b113e1aaee4f2c9" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::PointCloudPoint::y</definition>
+        <argsstring></argsstring>
+        <name>y</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::y</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="34" column="11" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1a236fbd0e9acde5987c32363b4b097a00" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::PointCloudPoint::z</definition>
+        <argsstring></argsstring>
+        <name>z</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::z</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="34" column="13" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1ade98c2b61a5e84364b4198a106383fd4" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::PointCloudPoint::r</definition>
+        <argsstring></argsstring>
+        <name>r</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::r</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="35" column="11" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="35" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1a5adad4687860e795587c6fd0fa7d7bcf" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::PointCloudPoint::g</definition>
+        <argsstring></argsstring>
+        <name>g</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::g</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="35" column="13" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="35" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1a6bcad2c0d7d0386fe0418a0df8cba0b9" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::PointCloudPoint::b</definition>
+        <argsstring></argsstring>
+        <name>b</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::b</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="35" column="15" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="35" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1PointCloudPoint_1a3990fd6b1bd09c9a147cc1dc086dec87" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::PointCloudPoint::a</definition>
+        <argsstring></argsstring>
+        <name>a</name>
+        <qualifiedname>nvblox::renderer::PointCloudPoint::a</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="35" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="35" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Point data structure (matches nvblox Pointcloud format). </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="33" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="33" bodyend="36"/>
+    <listofallmembers>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1a3990fd6b1bd09c9a147cc1dc086dec87" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>a</name></member>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1a6bcad2c0d7d0386fe0418a0df8cba0b9" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>b</name></member>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1a5adad4687860e795587c6fd0fa7d7bcf" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>g</name></member>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1ade98c2b61a5e84364b4198a106383fd4" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>r</name></member>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1a76908fe6dfc540d1a6851cd293ae9f18" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>x</name></member>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1abf291f6b270e3bf40b113e1aaee4f2c9" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>y</name></member>
+      <member refid="structnvblox_1_1renderer_1_1PointCloudPoint_1a236fbd0e9acde5987c32363b4b097a00" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudPoint</scope><name>z</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,252 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="image__visualizer_8h" kind="file" language="C++">
+    <compoundname>image_visualizer.h</compoundname>
+    <includes local="no">utility</includes>
+    <includes local="no">vulkan/vulkan.h</includes>
+    <includes local="yes">nvblox/core/cuda_stream.h</includes>
+    <includes local="yes">nvblox/renderer/core/shared_texture.h</includes>
+    <includes local="yes">nvblox/renderer/visualizers/textured_visualizer.h</includes>
+    <includedby refid="renderer_8h" local="yes">/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h</label>
+        <link refid="image__visualizer_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>nvblox/core/cuda_stream.h</label>
+      </node>
+      <node id="5">
+        <label>nvblox/renderer/core/shared_texture.h</label>
+      </node>
+      <node id="6">
+        <label>nvblox/renderer/visualizers/textured_visualizer.h</label>
+      </node>
+      <node id="2">
+        <label>utility</label>
+      </node>
+      <node id="3">
+        <label>vulkan/vulkan.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="2">
+        <label>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h</label>
+        <link refid="renderer_8h_source"/>
+      </node>
+      <node id="1">
+        <label>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h</label>
+        <link refid="image__visualizer_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" prot="public">nvblox::renderer::ImageVisualizerConfig</innerclass>
+    <innerclass refid="classnvblox_1_1renderer_1_1ImageVisualizer" prot="public">nvblox::renderer::ImageVisualizer</innerclass>
+    <innernamespace refid="namespacenvblox">nvblox</innernamespace>
+    <innernamespace refid="namespacenvblox_1_1renderer">nvblox::renderer</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/*</highlight></codeline>
+<codeline lineno="2"><highlight class="comment">Copyright<sp/>2026<sp/>NVIDIA<sp/>CORPORATION</highlight></codeline>
+<codeline lineno="3"><highlight class="comment"></highlight></codeline>
+<codeline lineno="4"><highlight class="comment">Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;License&quot;);</highlight></codeline>
+<codeline lineno="5"><highlight class="comment">you<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.</highlight></codeline>
+<codeline lineno="6"><highlight class="comment">You<sp/>may<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at</highlight></codeline>
+<codeline lineno="7"><highlight class="comment"></highlight></codeline>
+<codeline lineno="8"><highlight class="comment"><sp/><sp/><sp/><sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight></codeline>
+<codeline lineno="9"><highlight class="comment"></highlight></codeline>
+<codeline lineno="10"><highlight class="comment">Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight></codeline>
+<codeline lineno="11"><highlight class="comment">distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight></codeline>
+<codeline lineno="12"><highlight class="comment">WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or<sp/>implied.</highlight></codeline>
+<codeline lineno="13"><highlight class="comment">See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing<sp/>permissions<sp/>and</highlight></codeline>
+<codeline lineno="14"><highlight class="comment">limitations<sp/>under<sp/>the<sp/>License.</highlight></codeline>
+<codeline lineno="15"><highlight class="comment">*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;utility&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;vulkan/vulkan.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;nvblox/core/cuda_stream.h&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;nvblox/renderer/core/shared_texture.h&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;nvblox/renderer/visualizers/textured_visualizer.h&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">nvblox<sp/>{</highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">renderer<sp/>{</highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal">VkContext;</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal">PipelineBuilder;</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" kindref="compound">ImageVisualizerConfig</ref><sp/>{</highlight></codeline>
+<codeline lineno="35" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1aa64c7c590d0151e0a7cd83311b9ce64a" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1aa64c7c590d0151e0a7cd83311b9ce64a" kindref="member">depth_width</ref><sp/>=</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>1;<sp/><sp/></highlight></codeline>
+<codeline lineno="37" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a837c15caa6fd6180bc78fcfebb1fa76c" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a837c15caa6fd6180bc78fcfebb1fa76c" kindref="member">depth_height</ref><sp/>=</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>1;<sp/><sp/></highlight></codeline>
+<codeline lineno="39" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a5ed49a052ec0a59d9c8bd5e43bbe60b0" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a5ed49a052ec0a59d9c8bd5e43bbe60b0" kindref="member">color_width</ref><sp/>=</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>1;<sp/><sp/></highlight></codeline>
+<codeline lineno="41" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a7d565fe5f4663ef858b8a7977e399072" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a7d565fe5f4663ef858b8a7977e399072" kindref="member">color_height</ref><sp/>=</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>1;<sp/><sp/></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"></highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" kindref="compound">ImageVisualizerConfig</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="49" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1ae6e2793aa5c8985830fb1e08a771fa9d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1ae6e2793aa5c8985830fb1e08a771fa9d" kindref="member">ImageVisualizerConfig</ref>(uint32_t<sp/>width,<sp/>uint32_t<sp/>height)</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>:<sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1aa64c7c590d0151e0a7cd83311b9ce64a" kindref="member">depth_width</ref>(width),</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a837c15caa6fd6180bc78fcfebb1fa76c" kindref="member">depth_height</ref>(height),</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a5ed49a052ec0a59d9c8bd5e43bbe60b0" kindref="member">color_width</ref>(width),</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a7d565fe5f4663ef858b8a7977e399072" kindref="member">color_height</ref>(height)<sp/>{}</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight></codeline>
+<codeline lineno="56" refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a0cf9caaa5517509d8182b1b0696a8de5" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a0cf9caaa5517509d8182b1b0696a8de5" kindref="member">ImageVisualizerConfig</ref>(uint32_t<sp/>depth_w,<sp/>uint32_t<sp/>depth_h,<sp/>uint32_t<sp/>color_w,</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>uint32_t<sp/>color_h)</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>:<sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1aa64c7c590d0151e0a7cd83311b9ce64a" kindref="member">depth_width</ref>(depth_w),</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a837c15caa6fd6180bc78fcfebb1fa76c" kindref="member">depth_height</ref>(depth_h),</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a5ed49a052ec0a59d9c8bd5e43bbe60b0" kindref="member">color_width</ref>(color_w),</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig_1a7d565fe5f4663ef858b8a7977e399072" kindref="member">color_height</ref>(color_h)<sp/>{}</highlight></codeline>
+<codeline lineno="62"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68" refid="classnvblox_1_1renderer_1_1ImageVisualizer" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/>TexturedVisualizer&lt;ImageVisualizer,<sp/>2&gt;<sp/>{</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="71" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="73" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" kindref="member">kColorTexture</ref><sp/>=<sp/>1;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"></highlight></codeline>
+<codeline lineno="76" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">enum<sp/>class</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" kindref="member">DepthColormap</ref><sp/>{</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><sp/><sp/>kGrayscale,<sp/><sp/></highlight><highlight class="comment">//<sp/>Black<sp/>to<sp/>white</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/>kJet,<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Blue<sp/>to<sp/>red<sp/>(classic)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/>kTurbo,<sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Improved<sp/>perceptual<sp/>colormap</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/>};</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"></highlight></codeline>
+<codeline lineno="83" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">enum<sp/>class</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" kindref="member">Layout</ref><sp/>{</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/><sp/><sp/>kSideBySide,<sp/><sp/></highlight><highlight class="comment">//<sp/>Depth<sp/>on<sp/>left,<sp/>color<sp/>on<sp/>right</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/><sp/><sp/>kColorOnly,<sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Only<sp/>color<sp/>image</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/><sp/><sp/>kDepthOnly,<sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Only<sp/>depth<sp/>image</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/><sp/><sp/>kOverlay,<sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Depth<sp/>overlaid<sp/>on<sp/>color</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/>};</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"></highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">~ImageVisualizer</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Non-copyable,<sp/>non-movable<sp/>(prevent<sp/>accidental<sp/>moves<sp/>of<sp/>Vulkan<sp/>resources)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>&amp;<sp/>operator=(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>&amp;&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>&amp;<sp/>operator=(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref>&amp;&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>VisualizerInterface<sp/>methods</highlight></codeline>
+<codeline lineno="103" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a97f8df288a9418d72e92fa77a0a9a736" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a97f8df288a9418d72e92fa77a0a9a736" kindref="member">init</ref>(VkContext*<sp/>ctx)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>destroy()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>render(VkCommandBuffer<sp/>cmd,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref>*<sp/>camera,</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>uint32_t<sp/>viewport_width,<sp/>uint32_t<sp/>viewport_height)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"></highlight></codeline>
+<codeline lineno="109" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a2d192e77595fb63cfe3339ae3c32902b" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a2d192e77595fb63cfe3339ae3c32902b" kindref="member">render</ref>(VkCommandBuffer<sp/>cmd,<sp/>uint32_t<sp/>x,<sp/>uint32_t<sp/>y,<sp/>uint32_t<sp/>width,</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>uint32_t<sp/>height);</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>hasData()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>texture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref>)<sp/>||<sp/>texture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" kindref="member">kColorTexture</ref>);</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="120" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a21d6fe3a3fe83f256c1d9bf292551dc1" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a21d6fe3a3fe83f256c1d9bf292551dc1" kindref="member">init</ref>(VkContext*<sp/>ctx,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" kindref="compound">ImageVisualizerConfig</ref>&amp;<sp/>config);</highlight></codeline>
+<codeline lineno="121"><highlight class="normal"></highlight></codeline>
+<codeline lineno="125" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a8404f0edd3b928d855727f9f76b9392d" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a8404f0edd3b928d855727f9f76b9392d" kindref="member">updateDepth</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal">*<sp/>depth_ptr,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>CudaStream&amp;<sp/>stream)<sp/>{</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/>copyToTexture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref>,<sp/>depth_ptr,<sp/>stream);</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"></highlight></codeline>
+<codeline lineno="132" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a82839770126921d59bbcddc32b8f5364" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a82839770126921d59bbcddc32b8f5364" kindref="member">updateColor</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal">*<sp/>color_ptr,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>CudaStream&amp;<sp/>stream)<sp/>{</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/><sp/><sp/>copyToTexture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" kindref="member">kColorTexture</ref>,<sp/>color_ptr,<sp/>stream);</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"></highlight></codeline>
+<codeline lineno="137" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a8e8b62cded74d892dfae209200ca1db6" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a8e8b62cded74d892dfae209200ca1db6" kindref="member">setDepthColormap</ref>(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" kindref="member">DepthColormap</ref><sp/>colormap)<sp/>{<sp/>colormap_<sp/>=<sp/>colormap;<sp/>}</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"></highlight></codeline>
+<codeline lineno="140" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a289b5f1d4ed3dad500e2317f336fafbe" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a289b5f1d4ed3dad500e2317f336fafbe" kindref="member">setLayout</ref>(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" kindref="member">Layout</ref><sp/>layout)<sp/>{<sp/>layout_<sp/>=<sp/>layout;<sp/>}</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"></highlight></codeline>
+<codeline lineno="143" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1146bc6454cf2e7de1dc6c47e0f60cac" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1146bc6454cf2e7de1dc6c47e0f60cac" kindref="member">setDepthRange</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>min_depth,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>max_depth)<sp/>{</highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/><sp/><sp/>min_depth_<sp/>=<sp/>min_depth;</highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/><sp/><sp/>max_depth_<sp/>=<sp/>max_depth;</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="147"><highlight class="normal"></highlight></codeline>
+<codeline lineno="152" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab54e8390a412ff4f88ea6f62d647521f" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab54e8390a412ff4f88ea6f62d647521f" kindref="member">resizeDepthTexture</ref>(uint32_t<sp/>width,<sp/>uint32_t<sp/>height)<sp/>{</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>resizeTexture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref>,<sp/>width,<sp/>height);</highlight></codeline>
+<codeline lineno="154"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"></highlight></codeline>
+<codeline lineno="160" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ae0110e52a47a1e033b9e7dec169ad472" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ae0110e52a47a1e033b9e7dec169ad472" kindref="member">resizeColorTexture</ref>(uint32_t<sp/>width,<sp/>uint32_t<sp/>height)<sp/>{</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>resizeTexture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" kindref="member">kColorTexture</ref>,<sp/>width,<sp/>height);</highlight></codeline>
+<codeline lineno="162"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"></highlight></codeline>
+<codeline lineno="165" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1a91eeeb23ec9f71dcb16f371d0793de" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1a91eeeb23ec9f71dcb16f371d0793de" kindref="member">depthWidth</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">*<sp/>tex<sp/>=<sp/>texture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref>);</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>tex<sp/>?<sp/>tex-&gt;width()<sp/>:<sp/>0;</highlight></codeline>
+<codeline lineno="168"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="170" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a5bf9a11b1e7c1bada30d71c63ae63066" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a5bf9a11b1e7c1bada30d71c63ae63066" kindref="member">depthHeight</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">*<sp/>tex<sp/>=<sp/>texture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref>);</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>tex<sp/>?<sp/>tex-&gt;height()<sp/>:<sp/>0;</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"></highlight></codeline>
+<codeline lineno="176" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ae46ac7c24a2eca1329ccd5ff4ae646b5" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ae46ac7c24a2eca1329ccd5ff4ae646b5" kindref="member">colorWidth</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">*<sp/>tex<sp/>=<sp/>texture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" kindref="member">kColorTexture</ref>);</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>tex<sp/>?<sp/>tex-&gt;width()<sp/>:<sp/>0;</highlight></codeline>
+<codeline lineno="179"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="181" refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab6d76a850afaec93357bf76ca62a034b" refkind="member"><highlight class="normal"><sp/><sp/>uint32_t<sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab6d76a850afaec93357bf76ca62a034b" kindref="member">colorHeight</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="182"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">*<sp/>tex<sp/>=<sp/>texture(<ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" kindref="member">kColorTexture</ref>);</highlight></codeline>
+<codeline lineno="183"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>tex<sp/>?<sp/>tex-&gt;height()<sp/>:<sp/>0;</highlight></codeline>
+<codeline lineno="184"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"></highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>=========================================================================</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="188"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>TexturedVisualizer<sp/>template<sp/>requirements</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="189"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>=========================================================================</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="190"><highlight class="normal"></highlight></codeline>
+<codeline lineno="192"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>SharedTexture::Format<sp/>textureFormat(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>index)<sp/>{</highlight></codeline>
+<codeline lineno="193"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>index<sp/>==<sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" kindref="member">kDepthTexture</ref><sp/>?<sp/>SharedTexture::Format::kR32F</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>:<sp/>SharedTexture::Format::kRGB8;</highlight></codeline>
+<codeline lineno="195"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="196"><highlight class="normal"></highlight></codeline>
+<codeline lineno="198"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>TextureBinding<sp/>textureBinding(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>index)<sp/>{</highlight></codeline>
+<codeline lineno="199"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>{</highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">uint32_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(index),<sp/>VK_SHADER_STAGE_FRAGMENT_BIT};</highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="201"><highlight class="normal"></highlight></codeline>
+<codeline lineno="203"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>std::pair&lt;uint32_t,<sp/>uint32_t&gt;<sp/>defaultTextureDimensions(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="204"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>{1,<sp/>1};<sp/><sp/></highlight><highlight class="comment">//<sp/>Placeholder,<sp/>resized<sp/>on<sp/>first<sp/>update</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="205"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="206"><highlight class="normal"></highlight></codeline>
+<codeline lineno="208"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal">*<sp/>shaderName()<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;image_quad&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="209"><highlight class="normal"></highlight></codeline>
+<codeline lineno="211"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>configurePipeline(PipelineBuilder&amp;<sp/>builder)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="212"><highlight class="normal"></highlight></codeline>
+<codeline lineno="214"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/>uint32_t<sp/>pushConstantSize();</highlight></codeline>
+<codeline lineno="215"><highlight class="normal"></highlight></codeline>
+<codeline lineno="217"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/>VkShaderStageFlags<sp/>pushConstantStages()<sp/>{</highlight></codeline>
+<codeline lineno="218"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>VK_SHADER_STAGE_FRAGMENT_BIT;</highlight></codeline>
+<codeline lineno="219"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="220"><highlight class="normal"></highlight></codeline>
+<codeline lineno="222"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal">*<sp/>visualizerName()<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;ImageVisualizer&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="224"><highlight class="normal"></highlight></codeline>
+<codeline lineno="225"><highlight class="normal"><sp/></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>createPipeline();</highlight></codeline>
+<codeline lineno="227"><highlight class="normal"></highlight></codeline>
+<codeline lineno="228"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Pipeline</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="229"><highlight class="normal"><sp/><sp/>VkPipeline<sp/>pipeline_<sp/>=<sp/>VK_NULL_HANDLE;</highlight></codeline>
+<codeline lineno="230"><highlight class="normal"></highlight></codeline>
+<codeline lineno="231"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Settings</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="232"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" kindref="member">DepthColormap</ref><sp/>colormap_<sp/>=<sp/>DepthColormap::kTurbo;</highlight></codeline>
+<codeline lineno="233"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" kindref="member">Layout</ref><sp/>layout_<sp/>=<sp/>Layout::kSideBySide;</highlight></codeline>
+<codeline lineno="234"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>min_depth_<sp/>=<sp/>0.1f;</highlight></codeline>
+<codeline lineno="235"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>max_depth_<sp/>=<sp/>5.0f;</highlight></codeline>
+<codeline lineno="236"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="237"><highlight class="normal"></highlight></codeline>
+<codeline lineno="238"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>renderer</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="239"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>nvblox</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h"/>
+  </compounddef>
+</doxygen>

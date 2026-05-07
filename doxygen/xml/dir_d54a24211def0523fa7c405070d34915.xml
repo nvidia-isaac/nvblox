@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_d54a24211def0523fa7c405070d34915" kind="dir">
+    <compoundname>/home/runner/work/nvblox/nvblox/nvblox_renderer</compoundname>
+    <innerdir refid="dir_41a084ae7378353742d3c3cad59f9843">/home/runner/work/nvblox/nvblox/nvblox_renderer/include</innerdir>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/"/>
+  </compounddef>
+</doxygen>

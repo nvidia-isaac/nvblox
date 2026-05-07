@@ -1,6 +1,9 @@
 More Examples
 =============
 
+.. note::
+    This example assumes that ``nvblox`` has been built from source — see :ref:`nvblox_torch_source_installation`.
+
 If you would like to run nvblox on public datasets, we include some executables for
 fusing `3DMatch <https://3dmatch.cs.princeton.edu/>`_,
 `Replica <https://github.com/facebookresearch/Replica-Dataset>`_,
@@ -9,55 +12,35 @@ and `Redwood <http://redwood-data.org/indoor_lidar_rgbd/index.html>`_ datasets.
 The executables are run by pointing the respective binary to a folder
 containing the dataset. We give details for each dataset below.
 
-3DMatch
--------
-
-Instructions to run 3DMatch are given in :doc:`core_library_run_an_example`.
 
 Replica
 -------
 
-We use `Replica <https://github.com/facebookresearch/Replica-Dataset>`_ sequences
-from the `NICE-SLAM <https://github.com/cvg/nice-slam>`_.
+Instructions to run Replica are given in :doc:`core_library_run_an_example`.
 
-First download the dataset (here we assume datasets are stored in ``~/datasets``):
+3DMatch
+-------
 
-.. code-block:: bash
+In this example we fuse data from the `3DMatch dataset <https://3dmatch.cs.princeton.edu/>`_.
 
-    cd ~/datasets
-    wget https://cvg-data.inf.ethz.ch/nice-slam/data/Replica.zip
-    unzip Replica.zip
+:download_sun3d_test_dataset:
 
-Now run nvblox and output a mesh.
+From the nvblox base folder run
 
 .. code-block:: bash
 
-    cd nvblox/build/executables
-    ./fuse_replica ~/datasets/Replica/office0 \
-      --voxel_size=0.02 \
-      --color_frame_subsampling=20
-      mesh.ply
+    build/executables/fuse_3dmatch sun3d-mit_76_studyroom-76-1studyroom2
 
-Note that here we specify via command line flags to run the reconstruction with 2cm voxels,
-and only to integrate 1 in 20 color frames.
+A visualizer window will open and you should see the mesh being incrementally reconstructed in real time. See :doc:`core_library_run_an_example` for more details.
+When reconstruction is complete, the mesh will look similar to the image below:
 
-View the reconstruction in Open3D
-
-.. code-block:: bash
-
-    open3d draw mesh.ply
-
-You should see a mesh of a room:
-
-.. image:: ../images/replica_office0.png
-   :align: center
-   :width: 600px
+.. image:: ../images/reconstruction_in_docker_trim.png
 
 
 Redwood
 -------
 
-The replica RGB-D datasets are available `here <http://redwood-data.org/indoor_lidar_rgbd/download.html>`_.
+The Redwood RGB-D datasets are available `here <http://redwood-data.org/indoor_lidar_rgbd/download.html>`_.
 
 Download the "RGB-D sequence" and "Our camera poses" at the link above.
 
@@ -70,25 +53,16 @@ the resultant folder structure looks like (here we assume datasets are stored in
     ~/datasets/redwood/apartment/pose_apartment/...
     ~/datasets/redwood/apartment/rgbd_apartment/...
 
-Now we run the reconstruction
+From the nvblox base folder run:
 
 .. code-block:: bash
 
-    cd nvblox/build/executables
-    ./fuse_redwood ~/datasets/redwood/apartment \
-      --voxel_size=0.02 \
-      --color_frame_subsampling=20 \
-      mesh.ply
+    build/executables/fuse_redwood ~/datasets/redwood/apartment --voxel_size=0.03
 
 Note this dataset is large (~30000 images) so the reconstruction can take a couple of minutes.
 
-View the reconstruction in Open3D
-
-.. code-block:: bash
-
-    open3d draw mesh.ply
-
-You should see a mesh of a room:
+A visualizer window will open and you should see the mesh being incrementally reconstructed in real time. See :doc:`core_library_run_an_example` for more details.
+When reconstruction is complete, the mesh will look similar to the image below:
 
 .. image:: ../images/redwood_apartment.png
    :align: center

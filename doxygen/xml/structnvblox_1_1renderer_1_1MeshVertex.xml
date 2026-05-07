@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structnvblox_1_1renderer_1_1MeshVertex" kind="struct" language="C++" prot="public">
+    <compoundname>nvblox::renderer::MeshVertex</compoundname>
+    <includes refid="mesh__to__vertex_8h" local="no">mesh_to_vertex.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1aaa068a40b4fe39570b589a75c22ed193" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::MeshVertex::x</definition>
+        <argsstring></argsstring>
+        <name>x</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::x</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="27" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="27" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1a72582ff32b41946b139f7cbc3f4dc801" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::MeshVertex::y</definition>
+        <argsstring></argsstring>
+        <name>y</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::y</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="27" column="11" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="27" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1a75d82025d8385a62b82561d1ec14346b" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::MeshVertex::z</definition>
+        <argsstring></argsstring>
+        <name>z</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::z</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="27" column="13" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="27" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1aca5de44664bbebefe46dd474a254cb20" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::MeshVertex::r</definition>
+        <argsstring></argsstring>
+        <name>r</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::r</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="28" column="11" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1a98ecad9dc3156c1b9938cd5e3174089b" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::MeshVertex::g</definition>
+        <argsstring></argsstring>
+        <name>g</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::g</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="28" column="13" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1aeb283062f7f150cedf06eb6d9fb6f953" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::MeshVertex::b</definition>
+        <argsstring></argsstring>
+        <name>b</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::b</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="28" column="15" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1af7c0d04b60e307afcad37b6f62b33b9a" prot="public" static="no" mutable="no">
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::MeshVertex::a</definition>
+        <argsstring></argsstring>
+        <name>a</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::a</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="28" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1aed70e106e7b6164e7445a01f3acf097c" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::MeshVertex::u</definition>
+        <argsstring></argsstring>
+        <name>u</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::u</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="29" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1MeshVertex_1adfd76c21d2ebf7ea8c8a94e0b7883652" prot="public" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::MeshVertex::v</definition>
+        <argsstring></argsstring>
+        <name>v</name>
+        <qualifiedname>nvblox::renderer::MeshVertex::v</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="29" column="11" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Mesh vertex structure for rendering (position + color + UV). </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" line="26" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels/mesh_to_vertex.h" bodystart="26" bodyend="30"/>
+    <listofallmembers>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1af7c0d04b60e307afcad37b6f62b33b9a" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>a</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1aeb283062f7f150cedf06eb6d9fb6f953" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>b</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1a98ecad9dc3156c1b9938cd5e3174089b" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>g</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1aca5de44664bbebefe46dd474a254cb20" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>r</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1aed70e106e7b6164e7445a01f3acf097c" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>u</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1adfd76c21d2ebf7ea8c8a94e0b7883652" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>v</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1aaa068a40b4fe39570b589a75c22ed193" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>x</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1a72582ff32b41946b139f7cbc3f4dc801" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>y</name></member>
+      <member refid="structnvblox_1_1renderer_1_1MeshVertex_1a75d82025d8385a62b82561d1ec14346b" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVertex</scope><name>z</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

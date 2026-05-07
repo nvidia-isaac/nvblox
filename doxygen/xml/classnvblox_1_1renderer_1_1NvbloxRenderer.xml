@@ -1,0 +1,1548 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classnvblox_1_1renderer_1_1NvbloxRenderer" kind="class" language="C++" prot="public">
+    <compoundname>nvblox::renderer::NvbloxRenderer</compoundname>
+    <includes refid="renderer_8h" local="no">renderer.h</includes>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a985706043bcd2187e2021efed3d45dfa" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::initialized_</definition>
+        <argsstring></argsstring>
+        <name>initialized_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::initialized_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="281" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="281" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9ef76851736f60fb38c2dbf5f6f4f4e4" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::headless_</definition>
+        <argsstring></argsstring>
+        <name>headless_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::headless_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="282" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="282" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9c9cb9befa06dca18f193987a4539e8f" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::framebuffer_resized_</definition>
+        <argsstring></argsstring>
+        <name>framebuffer_resized_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::framebuffer_resized_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="283" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="283" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1add5210d73608f4c6fd533e0154fdd030" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; VkWindow &gt;</type>
+        <definition>std::unique_ptr&lt;VkWindow&gt; nvblox::renderer::NvbloxRenderer::window_</definition>
+        <argsstring></argsstring>
+        <name>window_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::window_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="285" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="285" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a66116cb460b6ba3bf9e0d9f1cf5b7a0e" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; VkContext &gt;</type>
+        <definition>std::unique_ptr&lt;VkContext&gt; nvblox::renderer::NvbloxRenderer::ctx_</definition>
+        <argsstring></argsstring>
+        <name>ctx_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::ctx_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="286" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="286" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aaed4ce7a29ae280e3913396e36814a0f" prot="private" static="no" mutable="no">
+        <type>VkSurfaceKHR</type>
+        <definition>VkSurfaceKHR nvblox::renderer::NvbloxRenderer::surface_</definition>
+        <argsstring></argsstring>
+        <name>surface_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::surface_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="287" column="16" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="287" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae402b8f18c88ce1f20b0d01a47b3e529" prot="private" static="no" mutable="no">
+        <type>std::vector&lt; VkCommandBuffer &gt;</type>
+        <definition>std::vector&lt;VkCommandBuffer&gt; nvblox::renderer::NvbloxRenderer::command_buffers_</definition>
+        <argsstring></argsstring>
+        <name>command_buffers_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::command_buffers_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="290" column="15" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="290" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4007f0cde38c2f42fc47ae3d72b8ebe3" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &gt;</type>
+        <definition>std::unique_ptr&lt;ImageVisualizer&gt; nvblox::renderer::NvbloxRenderer::image_visualizer_</definition>
+        <argsstring></argsstring>
+        <name>image_visualizer_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::image_visualizer_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="293" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="293" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a57483d15415e726a4a2f52dcd8f7f5d0" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; <ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &gt;</type>
+        <definition>std::unique_ptr&lt;PointCloudVisualizer&gt; nvblox::renderer::NvbloxRenderer::point_cloud_visualizer_</definition>
+        <argsstring></argsstring>
+        <name>point_cloud_visualizer_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::point_cloud_visualizer_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="294" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="294" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a8aea3ee3f4c5394c3e0b06c99d5d29f3" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; <ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &gt;</type>
+        <definition>std::unique_ptr&lt;MeshVisualizer&gt; nvblox::renderer::NvbloxRenderer::mesh_visualizer_</definition>
+        <argsstring></argsstring>
+        <name>mesh_visualizer_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::mesh_visualizer_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="295" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="295" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ad286edcf43b4144f019e705d6c1cbe50" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; <ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> &gt;</type>
+        <definition>std::unique_ptr&lt;ViewCamera&gt; nvblox::renderer::NvbloxRenderer::view_camera_</definition>
+        <argsstring></argsstring>
+        <name>view_camera_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::view_camera_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="298" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="298" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1afdab4cd8411dd9ae538d462a8f14f584" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::camera_controls_enabled_</definition>
+        <argsstring></argsstring>
+        <name>camera_controls_enabled_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::camera_controls_enabled_</qualifiedname>
+        <initializer>= true</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="301" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="301" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1afbadf91c6a3dbddfaf54dbfb17b0f579" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::left_mouse_pressed_</definition>
+        <argsstring></argsstring>
+        <name>left_mouse_pressed_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::left_mouse_pressed_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="302" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="302" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aedc8289a03b27676ca33cd3c70cabac6" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::right_mouse_pressed_</definition>
+        <argsstring></argsstring>
+        <name>right_mouse_pressed_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::right_mouse_pressed_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="303" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="303" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aae3ac52b34a7d67b0fd7dd155562c26a" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double nvblox::renderer::NvbloxRenderer::last_mouse_x_</definition>
+        <argsstring></argsstring>
+        <name>last_mouse_x_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::last_mouse_x_</qualifiedname>
+        <initializer>= 0.0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="304" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="304" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a490d6358dd3666553d5672a2c5fe7f56" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double nvblox::renderer::NvbloxRenderer::last_mouse_y_</definition>
+        <argsstring></argsstring>
+        <name>last_mouse_y_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::last_mouse_y_</qualifiedname>
+        <initializer>= 0.0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="305" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="305" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1adbaf35a06749c66d04c30e51d5f6d8d5" prot="private" static="no" mutable="no">
+        <type>RenderMode</type>
+        <definition>RenderMode nvblox::renderer::NvbloxRenderer::render_mode_</definition>
+        <argsstring></argsstring>
+        <name>render_mode_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::render_mode_</qualifiedname>
+        <initializer>= RenderMode::kImage</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="308" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="308" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a0dfa78fe604db8364885421e1e0bdb8b" prot="private" static="no" mutable="no">
+        <type>std::array&lt; float, 4 &gt;</type>
+        <definition>std::array&lt;float, 4&gt; nvblox::renderer::NvbloxRenderer::clear_color_</definition>
+        <argsstring></argsstring>
+        <name>clear_color_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::clear_color_</qualifiedname>
+        <initializer>= kDefaultClearColor</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="311" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="311" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ab483f81adc280c82020fd3c30285ad01" prot="private" static="no" mutable="no">
+        <type>device_vector&lt; <ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a70e4c8c87856de844035c89e11abc7eb" kindref="member">PointCloudVisualizer::Point</ref> &gt;</type>
+        <definition>device_vector&lt;PointCloudVisualizer::Point&gt; nvblox::renderer::NvbloxRenderer::pointcloud_buffer_</definition>
+        <argsstring></argsstring>
+        <name>pointcloud_buffer_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::pointcloud_buffer_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="314" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="314" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1abcc1954334d23a6bd48916dc12d3aeff" prot="private" static="no" mutable="no">
+        <type>device_vector&lt; int &gt;</type>
+        <definition>device_vector&lt;int&gt; nvblox::renderer::NvbloxRenderer::num_points_device_</definition>
+        <argsstring></argsstring>
+        <name>num_points_device_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::num_points_device_</qualifiedname>
+        <initializer>{1}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="315" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="315" bodyend="315"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a8a6b7a30152af34e5ab4b543620a82c2" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::NvbloxRenderer::min_depth_</definition>
+        <argsstring></argsstring>
+        <name>min_depth_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::min_depth_</qualifiedname>
+        <initializer>= 0.1f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="316" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="316" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a079e5f2620920e7b81d91a302549e562" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::NvbloxRenderer::max_depth_</definition>
+        <argsstring></argsstring>
+        <name>max_depth_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::max_depth_</qualifiedname>
+        <initializer>= 10.0f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="317" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="317" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ab84a656f240ddbde76544c36bde8786e" prot="private" static="no" mutable="no">
+        <type>VkWindow::KeyCallback</type>
+        <definition>VkWindow::KeyCallback nvblox::renderer::NvbloxRenderer::user_key_callback_</definition>
+        <argsstring></argsstring>
+        <name>user_key_callback_</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::user_key_callback_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="320" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="320" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9bcb96849bada85e208d9844d6269e66" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::NvbloxRenderer::NvbloxRenderer</definition>
+        <argsstring>()=default</argsstring>
+        <name>NvbloxRenderer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::NvbloxRenderer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="79" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a36506c4dc41575b15a3e8050766172c8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::NvbloxRenderer::~NvbloxRenderer</definition>
+        <argsstring>()</argsstring>
+        <name>~NvbloxRenderer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::~NvbloxRenderer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="80" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a2ec810101a6c730d0429805b4cb1193a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::NvbloxRenderer::NvbloxRenderer</definition>
+        <argsstring>(const NvbloxRenderer &amp;)=delete</argsstring>
+        <name>NvbloxRenderer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::NvbloxRenderer</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer" kindref="compound">NvbloxRenderer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="83" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aebf2dfbb2360a267d4398b318b964dfc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer" kindref="compound">NvbloxRenderer</ref> &amp;</type>
+        <definition>NvbloxRenderer &amp; nvblox::renderer::NvbloxRenderer::operator=</definition>
+        <argsstring>(const NvbloxRenderer &amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer" kindref="compound">NvbloxRenderer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="84" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae633ea2819950ddba6bc1526abf9a794" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::init</definition>
+        <argsstring>(const RendererConfig &amp;config)</argsstring>
+        <name>init</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::init</qualifiedname>
+        <param>
+          <type>const <ref refid="structnvblox_1_1renderer_1_1RendererConfig" kindref="compound">RendererConfig</ref> &amp;</type>
+          <declname>config</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize the renderer with a configuration. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>config</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Renderer configuration (window or headless mode). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if initialization succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="89" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac96695680ec032acdd808b549aa996de" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::initWithWindow</definition>
+        <argsstring>(uint32_t width, uint32_t height, const std::string &amp;title)</argsstring>
+        <name>initWithWindow</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::initWithWindow</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>title</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize the renderer with a window. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Window width. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Window height. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>title</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Window title. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if initialization succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="96" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aa9dbdd47b82b3b6d2053233a4e53563d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::initHeadless</definition>
+        <argsstring>(uint32_t width, uint32_t height)</argsstring>
+        <name>initHeadless</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::initHeadless</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize headless renderer (no window). Useful for offscreen rendering, testing, or server-side use. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Render target width. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Render target height. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if initialization succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="104" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4ea67c725da78e6166a58487dd5a7eec" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::destroy</definition>
+        <argsstring>()</argsstring>
+        <name>destroy</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::destroy</qualifiedname>
+        <briefdescription>
+<para>Destroy renderer resources. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="107" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac66c82b3d039e38f86100259f7726669" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::initVisualizer</definition>
+        <argsstring>(RenderMode mode)</argsstring>
+        <name>initVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::initVisualizer</qualifiedname>
+        <param>
+          <type>RenderMode</type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize a visualizer for the given render mode. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Which visualizer to initialize. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if initialization succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="112" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a25aad8efc6e3b672a166fd872cfdb44c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::updateDepth</definition>
+        <argsstring>(const DepthImage &amp;depth_image, const CudaStream &amp;stream)</argsstring>
+        <name>updateDepth</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::updateDepth</qualifiedname>
+        <param>
+          <type>const DepthImage &amp;</type>
+          <declname>depth_image</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update depth image for RGBD visualization. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>depth_image</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Device-resident depth image. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if update was initiated, false if visualizer not initialized. </para>
+</simplesect>
+<simplesect kind="note"><para>Data is copied asynchronously. Call stream.synchronize() before <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref> to ensure data transfer is complete. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="126" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a28e938e18f8d6cbc27327ceba7c262b4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::updateColor</definition>
+        <argsstring>(const ColorImage &amp;color_image, const CudaStream &amp;stream)</argsstring>
+        <name>updateColor</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::updateColor</qualifiedname>
+        <param>
+          <type>const ColorImage &amp;</type>
+          <declname>color_image</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update color image for RGBD visualization. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>color_image</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Device-resident color image. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if update was initiated, false if visualizer not initialized. </para>
+</simplesect>
+<simplesect kind="note"><para>Data is copied asynchronously. Call stream.synchronize() before <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref> to ensure data transfer is complete. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="134" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac01d7ebd6bde18815463c099b7d11202" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::updatePointCloud</definition>
+        <argsstring>(const DepthImage &amp;depth_image, const ColorImage &amp;color_image, const Camera &amp;depth_cam, const Camera &amp;color_cam, const CudaStream &amp;stream)</argsstring>
+        <name>updatePointCloud</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::updatePointCloud</qualifiedname>
+        <param>
+          <type>const DepthImage &amp;</type>
+          <declname>depth_image</declname>
+        </param>
+        <param>
+          <type>const ColorImage &amp;</type>
+          <declname>color_image</declname>
+        </param>
+        <param>
+          <type>const Camera &amp;</type>
+          <declname>depth_cam</declname>
+        </param>
+        <param>
+          <type>const Camera &amp;</type>
+          <declname>color_cam</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update point cloud from RGBD images. Converts depth + color images into a colored point cloud on the GPU using the depthToColoredPointCloud kernel. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>depth_image</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Device-resident depth image. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>color_image</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Device-resident color image. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>depth_cam</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Camera intrinsics for depth sensor. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>color_cam</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Camera intrinsics for color sensor. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if update was initiated, false if visualizer not initialized. </para>
+</simplesect>
+<simplesect kind="note"><para>Internally synchronizes the stream to read back the point count. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="146" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac960f970ef8f980be352e0faef1665da" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::updateMesh</definition>
+        <argsstring>(const ColorMesh &amp;mesh, const CudaStream &amp;stream)</argsstring>
+        <name>updateMesh</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::updateMesh</qualifiedname>
+        <param>
+          <type>const ColorMesh &amp;</type>
+          <declname>mesh</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update mesh from nvblox ColorMesh. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>mesh</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Device-resident colored mesh with vertices, colors, and triangles. The triangles vector contains flat vertex indices where every 3 consecutive indices form one triangle. Triangle count is mesh.triangles.size() / 3. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if update was initiated, false if visualizer not initialized. </para>
+</simplesect>
+<simplesect kind="note"><para>Data is copied asynchronously. Call stream.synchronize() before <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref> to ensure data transfer is complete. </para>
+</simplesect>
+<simplesect kind="note"><para>If mesh.triangles.size() is not divisible by 3, a warning is logged and the remaining indices are ignored. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="161" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a03f4c7b7feafbf90f34cb8af13ba3a6a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::updateMeshTexture</definition>
+        <argsstring>(const ColorImage &amp;atlas_image, const CudaStream &amp;stream)</argsstring>
+        <name>updateMeshTexture</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::updateMeshTexture</qualifiedname>
+        <param>
+          <type>const ColorImage &amp;</type>
+          <declname>atlas_image</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update the texture atlas for textured mesh rendering. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>atlas_image</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Color image containing the texture atlas (device memory). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if upload succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="168" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a8218fa1bdc33d7ec7ffe8cb7c12f6955" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::setDepthRange</definition>
+        <argsstring>(float min_depth, float max_depth)</argsstring>
+        <name>setDepthRange</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::setDepthRange</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>min_depth</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>max_depth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set depth range for point cloud conversion. Points outside this range are discarded by <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac01d7ebd6bde18815463c099b7d11202" kindref="member">updatePointCloud()</ref>. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>min_depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Minimum valid depth in meters (default: 0.1). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max_depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Maximum valid depth in meters (default: 10.0). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="175" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="175" bodyend="178"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::render</definition>
+        <argsstring>()</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::render</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Render a frame. <simplesect kind="note"><para>Caller must ensure all CUDA operations that update visualizer data have completed (via cudaStreamSynchronize) before calling this method. </para>
+</simplesect>
+<simplesect kind="return"><para>True if rendering succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="185" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac3a59f2a3215953a59be9da6471c9ada" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::pollEvents</definition>
+        <argsstring>()</argsstring>
+        <name>pollEvents</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::pollEvents</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Poll window events. <simplesect kind="note"><para>In headless mode, this is a no-op since there is no window. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="189" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4c44ed028d67117f64a9031b750519e8" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::shouldClose</definition>
+        <argsstring>() const</argsstring>
+        <name>shouldClose</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::shouldClose</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Check if window should close. <simplesect kind="note"><para>In headless mode, this always returns false since there is no window close event. For headless rendering loops, use your own termination condition. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="195" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ad39f7320fed91a58b7a419958c30d3d4" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::isInitialized</definition>
+        <argsstring>() const</argsstring>
+        <name>isInitialized</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::isInitialized</qualifiedname>
+        <briefdescription>
+<para>Check if renderer is initialized. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="198" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="198" bodyend="198"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6d3964c5e11279d706c03a6a3309075f" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::isHeadless</definition>
+        <argsstring>() const</argsstring>
+        <name>isHeadless</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::isHeadless</qualifiedname>
+        <briefdescription>
+<para>Check if renderer is in headless mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="201" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="201" bodyend="201"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a3472e33e8570b2800c4b41d932edf4ce" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>VkContext *</type>
+        <definition>VkContext * nvblox::renderer::NvbloxRenderer::context</definition>
+        <argsstring>()</argsstring>
+        <name>context</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::context</qualifiedname>
+        <briefdescription>
+<para>Get the Vulkan context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="204" column="13" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="204" bodyend="204"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a715876094aaaadd69bc7f9fbecc4a059" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const VkContext *</type>
+        <definition>const VkContext * nvblox::renderer::NvbloxRenderer::context</definition>
+        <argsstring>() const</argsstring>
+        <name>context</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::context</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="205" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="205" bodyend="205"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a7db12c66cdafeef42bca0a995af14205" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> *</type>
+        <definition>ImageVisualizer * nvblox::renderer::NvbloxRenderer::imageVisualizer</definition>
+        <argsstring>()</argsstring>
+        <name>imageVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::imageVisualizer</qualifiedname>
+        <briefdescription>
+<para>Get the image visualizer. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="208" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="208" bodyend="208"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ad0e6ab7bfd607227af12305ff2980430" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> *</type>
+        <definition>const ImageVisualizer * nvblox::renderer::NvbloxRenderer::imageVisualizer</definition>
+        <argsstring>() const</argsstring>
+        <name>imageVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::imageVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="209" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="209" bodyend="211"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ab2b58ed7a704e4691026f29434dd6103" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> *</type>
+        <definition>PointCloudVisualizer * nvblox::renderer::NvbloxRenderer::pointCloudVisualizer</definition>
+        <argsstring>()</argsstring>
+        <name>pointCloudVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::pointCloudVisualizer</qualifiedname>
+        <briefdescription>
+<para>Get the point cloud visualizer. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="214" column="24" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="214" bodyend="216"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a2ca060ee4d281f9fa6e97988d47d6534" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const <ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> *</type>
+        <definition>const PointCloudVisualizer * nvblox::renderer::NvbloxRenderer::pointCloudVisualizer</definition>
+        <argsstring>() const</argsstring>
+        <name>pointCloudVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::pointCloudVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="217" column="30" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="217" bodyend="219"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aeb1f5e9af82c4286e222733bbb7949a7" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> *</type>
+        <definition>MeshVisualizer * nvblox::renderer::NvbloxRenderer::meshVisualizer</definition>
+        <argsstring>()</argsstring>
+        <name>meshVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::meshVisualizer</qualifiedname>
+        <briefdescription>
+<para>Get the mesh visualizer. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="222" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="222" bodyend="222"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a0a9869d78f4980017861e18d51b408ae" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const <ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> *</type>
+        <definition>const MeshVisualizer * nvblox::renderer::NvbloxRenderer::meshVisualizer</definition>
+        <argsstring>() const</argsstring>
+        <name>meshVisualizer</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::meshVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="223" column="24" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="223" bodyend="225"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a309104f7396da37678f375e58ebdce2f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> *</type>
+        <definition>ViewCamera * nvblox::renderer::NvbloxRenderer::viewCamera</definition>
+        <argsstring>()</argsstring>
+        <name>viewCamera</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::viewCamera</qualifiedname>
+        <briefdescription>
+<para>Get the view camera. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="228" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="228" bodyend="228"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a51f1b30673ed6c2a5f2730d70a21f7bf" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const <ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> *</type>
+        <definition>const ViewCamera * nvblox::renderer::NvbloxRenderer::viewCamera</definition>
+        <argsstring>() const</argsstring>
+        <name>viewCamera</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::viewCamera</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="229" column="20" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="229" bodyend="229"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1adeaffc802b1ec5e1c3379bd60c72250f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::setCameraControlsEnabled</definition>
+        <argsstring>(bool enabled)</argsstring>
+        <name>setCameraControlsEnabled</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::setCameraControlsEnabled</qualifiedname>
+        <param>
+          <type>bool</type>
+          <declname>enabled</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Enable/disable camera controls. <simplesect kind="note"><para>In headless mode, camera controls have no effect since there is no input. Use <ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> methods directly to control the camera. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="234" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="234" bodyend="236"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6fd3dd334631d3ff01752000bc67fae1" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::cameraControlsEnabled</definition>
+        <argsstring>() const</argsstring>
+        <name>cameraControlsEnabled</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::cameraControlsEnabled</qualifiedname>
+        <briefdescription>
+<para>Check if camera controls are enabled. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="239" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="239" bodyend="239"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1adaf7af51e105b939cf6888ab604f5bac" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::setRenderMode</definition>
+        <argsstring>(RenderMode mode)</argsstring>
+        <name>setRenderMode</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::setRenderMode</qualifiedname>
+        <param>
+          <type>RenderMode</type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+<para>Set the active render mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="242" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="242" bodyend="242"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6899494513a46ff5df019c4baaeb9412" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>RenderMode</type>
+        <definition>RenderMode nvblox::renderer::NvbloxRenderer::renderMode</definition>
+        <argsstring>() const</argsstring>
+        <name>renderMode</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::renderMode</qualifiedname>
+        <briefdescription>
+<para>Get the active render mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="245" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="245" bodyend="245"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a86d101091be2ddf39a0b473d89e31927" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::setClearColor</definition>
+        <argsstring>(float r, float g, float b, float a=1.0f)</argsstring>
+        <name>setClearColor</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::setClearColor</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>r</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>g</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>b</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>a</declname>
+          <defval>1.0f</defval>
+        </param>
+        <briefdescription>
+<para>Set the background clear color (RGBA, linear, range [0, 1]). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="248" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="248" bodyend="250"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aad997a03c45b5aefbc7a3239fbf02427" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::resizeWindow</definition>
+        <argsstring>(uint32_t width, uint32_t height)</argsstring>
+        <name>resizeWindow</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::resizeWindow</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Resize the window (or render target in headless mode). <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>New width. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>New height. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="255" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aae195726c306abaf25c78a4d35960c5f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::setKeyCallback</definition>
+        <argsstring>(VkWindow::KeyCallback callback)</argsstring>
+        <name>setKeyCallback</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::setKeyCallback</qualifiedname>
+        <param>
+          <type>VkWindow::KeyCallback</type>
+          <declname>callback</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set callback for key events (for app-specific handling). <simplesect kind="note"><para>In headless mode, this has no effect since there is no window to receive key events. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="260" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a01109305fe6d4dd975bf1c19b36fc56e" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::onResize</definition>
+        <argsstring>(int width, int height)</argsstring>
+        <name>onResize</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::onResize</qualifiedname>
+        <param>
+          <type>int</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="263" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aa284c2cb1fa97fe879b3e26f68dee2f5" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::onMouseButton</definition>
+        <argsstring>(int button, int action, int mods)</argsstring>
+        <name>onMouseButton</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::onMouseButton</qualifiedname>
+        <param>
+          <type>int</type>
+          <declname>button</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>action</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mods</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="264" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac727dd2641bf13044ce95acb31385b38" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::onMouseMove</definition>
+        <argsstring>(double x, double y)</argsstring>
+        <name>onMouseMove</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::onMouseMove</qualifiedname>
+        <param>
+          <type>double</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>y</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="265" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a0b00d464e4c1e32d46a2334c84090011" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::onScroll</definition>
+        <argsstring>(double x_offset, double y_offset)</argsstring>
+        <name>onScroll</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::onScroll</qualifiedname>
+        <param>
+          <type>double</type>
+          <declname>x_offset</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>y_offset</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="266" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a11b2b76b70e04517b5e2643465689256" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::onKey</definition>
+        <argsstring>(int key, int action, int mods)</argsstring>
+        <name>onKey</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::onKey</qualifiedname>
+        <param>
+          <type>int</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>action</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mods</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="267" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a1a94f06e9c01e2d46f90f989cce08e4c" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::setupInputCallbacks</definition>
+        <argsstring>()</argsstring>
+        <name>setupInputCallbacks</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::setupInputCallbacks</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="268" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6264afa9772a511d58d57c29bab8ec93" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::handleRenderTargetResize</definition>
+        <argsstring>()</argsstring>
+        <name>handleRenderTargetResize</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::handleRenderTargetResize</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Handle render target resize after resize or acquire/present failure. <simplesect kind="return"><para>True if resize succeeded (or was skipped due to minimized window). </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="272" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1abdd5260727cf042c5b1c9420b7b1de69" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::NvbloxRenderer::initCommon</definition>
+        <argsstring>()</argsstring>
+        <name>initCommon</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::initCommon</qualifiedname>
+        <briefdescription>
+<para>Common initialization after render target is set up. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="275" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9097d9ea906879e3e9797fb842aa3688" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::NvbloxRenderer::ensureViewCameraInitialized</definition>
+        <argsstring>()</argsstring>
+        <name>ensureViewCameraInitialized</name>
+        <qualifiedname>nvblox::renderer::NvbloxRenderer::ensureViewCameraInitialized</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Ensure view camera is initialized with default settings. Called by 3D visualizer init methods (point cloud, mesh). </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="279" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Main Vulkan renderer class for visualizing nvblox data.</para>
+<para>Manages Vulkan context, render targets, and visualizers. Supports both windowed and headless rendering modes.</para>
+<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md0">
+<title>Lifecycle</title>
+<para><orderedlist>
+<listitem><para>Construct, then call <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae633ea2819950ddba6bc1526abf9a794" kindref="member">init()</ref> / <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac96695680ec032acdd808b549aa996de" kindref="member">initWithWindow()</ref> / <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aa9dbdd47b82b3b6d2053233a4e53563d" kindref="member">initHeadless()</ref></para>
+</listitem><listitem><para>Call <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac66c82b3d039e38f86100259f7726669" kindref="member">initVisualizer(RenderMode)</ref> for each visualizer needed</para>
+</listitem><listitem><para>Render loop: update* -&gt; <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref> -&gt; <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac3a59f2a3215953a59be9da6471c9ada" kindref="member">pollEvents()</ref></para>
+</listitem><listitem><para><ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4ea67c725da78e6166a58487dd5a7eec" kindref="member">destroy()</ref> or let destructor clean up</para>
+</listitem></orderedlist>
+</para>
+</sect2>
+<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md1">
+<title>Error Handling</title>
+<para>Init and render methods return false on failure and log via glog.</para>
+</sect2>
+<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md2">
+<title>Thread Safety</title>
+<para>Not thread-safe. All calls must be from the same thread.</para>
+</sect2>
+<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md3">
+<title>Synchronization</title>
+<para>Caller must call stream.synchronize() after CUDA updates and before <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref>. CPU sync is used for simplicity and portability; GPU-GPU sync via timeline semaphores is possible by modifying VkContext::endFrame(). </para>
+</sect2>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="77" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="77" bodyend="321"/>
+    <listofallmembers>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1afdab4cd8411dd9ae538d462a8f14f584" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>camera_controls_enabled_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6fd3dd334631d3ff01752000bc67fae1" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>cameraControlsEnabled</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a0dfa78fe604db8364885421e1e0bdb8b" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>clear_color_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae402b8f18c88ce1f20b0d01a47b3e529" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>command_buffers_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a3472e33e8570b2800c4b41d932edf4ce" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>context</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a715876094aaaadd69bc7f9fbecc4a059" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>context</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a66116cb460b6ba3bf9e0d9f1cf5b7a0e" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>ctx_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4ea67c725da78e6166a58487dd5a7eec" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>destroy</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9097d9ea906879e3e9797fb842aa3688" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>ensureViewCameraInitialized</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9c9cb9befa06dca18f193987a4539e8f" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>framebuffer_resized_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6264afa9772a511d58d57c29bab8ec93" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>handleRenderTargetResize</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9ef76851736f60fb38c2dbf5f6f4f4e4" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>headless_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4007f0cde38c2f42fc47ae3d72b8ebe3" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>image_visualizer_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a7db12c66cdafeef42bca0a995af14205" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>imageVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ad0e6ab7bfd607227af12305ff2980430" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>imageVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae633ea2819950ddba6bc1526abf9a794" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>init</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1abdd5260727cf042c5b1c9420b7b1de69" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>initCommon</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aa9dbdd47b82b3b6d2053233a4e53563d" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>initHeadless</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a985706043bcd2187e2021efed3d45dfa" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>initialized_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac66c82b3d039e38f86100259f7726669" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>initVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac96695680ec032acdd808b549aa996de" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>initWithWindow</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6d3964c5e11279d706c03a6a3309075f" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>isHeadless</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ad39f7320fed91a58b7a419958c30d3d4" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>isInitialized</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aae3ac52b34a7d67b0fd7dd155562c26a" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>last_mouse_x_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a490d6358dd3666553d5672a2c5fe7f56" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>last_mouse_y_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1afbadf91c6a3dbddfaf54dbfb17b0f579" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>left_mouse_pressed_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a079e5f2620920e7b81d91a302549e562" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>max_depth_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a8aea3ee3f4c5394c3e0b06c99d5d29f3" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>mesh_visualizer_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aeb1f5e9af82c4286e222733bbb7949a7" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>meshVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a0a9869d78f4980017861e18d51b408ae" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>meshVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a8a6b7a30152af34e5ab4b543620a82c2" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>min_depth_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1abcc1954334d23a6bd48916dc12d3aeff" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>num_points_device_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a9bcb96849bada85e208d9844d6269e66" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>NvbloxRenderer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a2ec810101a6c730d0429805b4cb1193a" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>NvbloxRenderer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a11b2b76b70e04517b5e2643465689256" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>onKey</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aa284c2cb1fa97fe879b3e26f68dee2f5" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>onMouseButton</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac727dd2641bf13044ce95acb31385b38" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>onMouseMove</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a01109305fe6d4dd975bf1c19b36fc56e" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>onResize</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a0b00d464e4c1e32d46a2334c84090011" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>onScroll</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aebf2dfbb2360a267d4398b318b964dfc" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a57483d15415e726a4a2f52dcd8f7f5d0" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>point_cloud_visualizer_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ab483f81adc280c82020fd3c30285ad01" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>pointcloud_buffer_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ab2b58ed7a704e4691026f29434dd6103" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>pointCloudVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a2ca060ee4d281f9fa6e97988d47d6534" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>pointCloudVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac3a59f2a3215953a59be9da6471c9ada" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>pollEvents</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1adbaf35a06749c66d04c30e51d5f6d8d5" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>render_mode_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a6899494513a46ff5df019c4baaeb9412" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>renderMode</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aad997a03c45b5aefbc7a3239fbf02427" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>resizeWindow</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aedc8289a03b27676ca33cd3c70cabac6" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>right_mouse_pressed_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1adeaffc802b1ec5e1c3379bd60c72250f" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>setCameraControlsEnabled</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a86d101091be2ddf39a0b473d89e31927" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>setClearColor</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a8218fa1bdc33d7ec7ffe8cb7c12f6955" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>setDepthRange</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aae195726c306abaf25c78a4d35960c5f" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>setKeyCallback</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1adaf7af51e105b939cf6888ab604f5bac" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>setRenderMode</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a1a94f06e9c01e2d46f90f989cce08e4c" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>setupInputCallbacks</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4c44ed028d67117f64a9031b750519e8" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>shouldClose</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aaed4ce7a29ae280e3913396e36814a0f" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>surface_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a28e938e18f8d6cbc27327ceba7c262b4" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>updateColor</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a25aad8efc6e3b672a166fd872cfdb44c" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>updateDepth</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac960f970ef8f980be352e0faef1665da" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>updateMesh</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a03f4c7b7feafbf90f34cb8af13ba3a6a" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>updateMeshTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac01d7ebd6bde18815463c099b7d11202" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>updatePointCloud</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ab84a656f240ddbde76544c36bde8786e" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>user_key_callback_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ad286edcf43b4144f019e705d6c1cbe50" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>view_camera_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a309104f7396da37678f375e58ebdce2f" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>viewCamera</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a51f1b30673ed6c2a5f2730d70a21f7bf" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>viewCamera</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1add5210d73608f4c6fd533e0154fdd030" prot="private" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>window_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a36506c4dc41575b15a3e8050766172c8" prot="public" virt="non-virtual"><scope>nvblox::renderer::NvbloxRenderer</scope><name>~NvbloxRenderer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

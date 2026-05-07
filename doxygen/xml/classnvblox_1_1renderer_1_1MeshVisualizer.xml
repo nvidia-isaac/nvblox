@@ -1,0 +1,784 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classnvblox_1_1renderer_1_1MeshVisualizer" kind="class" language="C++" prot="public">
+    <compoundname>nvblox::renderer::MeshVisualizer</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">BufferedVisualizer&lt; MeshVisualizer, MeshVertex &gt;</basecompoundref>
+    <includes refid="mesh__visualizer_8h" local="no">mesh_visualizer.h</includes>
+    <sectiondef kind="public-type">
+      <memberdef kind="typedef" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a049df13fe633595280499c6c22387f4b" prot="public" static="no">
+        <type><ref refid="structnvblox_1_1renderer_1_1MeshVertex" kindref="compound">MeshVertex</ref></type>
+        <definition>using nvblox::renderer::MeshVisualizer::Vertex =  MeshVertex</definition>
+        <argsstring></argsstring>
+        <name>Vertex</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::Vertex</qualifiedname>
+        <briefdescription>
+<para>Vertex type alias (uses <ref refid="structnvblox_1_1renderer_1_1MeshVertex" kindref="compound">MeshVertex</ref> from <ref refid="mesh__to__vertex_8h_source" kindref="compound">mesh_to_vertex.h</ref>). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="45" column="3" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="45" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a04abcd3b5c7a3fda3eb574a79562a905" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; SharedBuffer &gt;</type>
+        <definition>std::unique_ptr&lt;SharedBuffer&gt; nvblox::renderer::MeshVisualizer::index_buffer_</definition>
+        <argsstring></argsstring>
+        <name>index_buffer_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::index_buffer_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="170" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="170" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1aa77861f7bf38f5b0ede4865c74ebc7be" prot="private" static="no" mutable="no">
+        <type>VkPipeline</type>
+        <definition>VkPipeline nvblox::renderer::MeshVisualizer::pipeline_fill_</definition>
+        <argsstring></argsstring>
+        <name>pipeline_fill_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::pipeline_fill_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="173" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="173" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ab4741cac54c8c3331f23629b281d6378" prot="private" static="no" mutable="no">
+        <type>VkPipeline</type>
+        <definition>VkPipeline nvblox::renderer::MeshVisualizer::pipeline_wireframe_</definition>
+        <argsstring></argsstring>
+        <name>pipeline_wireframe_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::pipeline_wireframe_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="174" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="174" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a21014e9d8a2214dc22ec2c180c792067" prot="private" static="no" mutable="no">
+        <type>std::unique_ptr&lt; SharedTexture &gt;</type>
+        <definition>std::unique_ptr&lt;SharedTexture&gt; nvblox::renderer::MeshVisualizer::mesh_texture_</definition>
+        <argsstring></argsstring>
+        <name>mesh_texture_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::mesh_texture_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="177" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="177" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a7c37f5553d2b9c2aed2e516b807a1346" prot="private" static="no" mutable="no">
+        <type>VkDescriptorSetLayout</type>
+        <definition>VkDescriptorSetLayout nvblox::renderer::MeshVisualizer::texture_desc_layout_</definition>
+        <argsstring></argsstring>
+        <name>texture_desc_layout_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::texture_desc_layout_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="178" column="25" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="178" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a5004678e4433c2a72f97a01e83149bce" prot="private" static="no" mutable="no">
+        <type>VkDescriptorPool</type>
+        <definition>VkDescriptorPool nvblox::renderer::MeshVisualizer::texture_desc_pool_</definition>
+        <argsstring></argsstring>
+        <name>texture_desc_pool_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::texture_desc_pool_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="179" column="20" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="179" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a711e6014488f55ac08cfe9834eb9a3fa" prot="private" static="no" mutable="no">
+        <type>VkDescriptorSet</type>
+        <definition>VkDescriptorSet nvblox::renderer::MeshVisualizer::texture_desc_set_</definition>
+        <argsstring></argsstring>
+        <name>texture_desc_set_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::texture_desc_set_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="180" column="19" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="180" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a02ce8be1411e578b314039a5b121a89b" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::has_texture_</definition>
+        <argsstring></argsstring>
+        <name>has_texture_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::has_texture_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="181" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="181" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ac7318dc0f209f1b0fd66d0d8d81ecbc6" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::wireframe_</definition>
+        <argsstring></argsstring>
+        <name>wireframe_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::wireframe_</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="184" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="184" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a7bf491640dd930dcdaa478e0f0635ea0" prot="private" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::MeshVisualizer::num_vertices_</definition>
+        <argsstring></argsstring>
+        <name>num_vertices_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::num_vertices_</qualifiedname>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="187" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="187" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a7989ac400fd692bbf8e156ab2a505794" prot="private" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::MeshVisualizer::num_indices_</definition>
+        <argsstring></argsstring>
+        <name>num_indices_</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::num_indices_</qualifiedname>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="188" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="188" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a54c48e1e1f9bd7a87fa034a2f5cbc42f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::MeshVisualizer::MeshVisualizer</definition>
+        <argsstring>()=default</argsstring>
+        <name>MeshVisualizer</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::MeshVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="47" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1aa7dc36b9be7f74174fbf346db5ae0568" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::MeshVisualizer::~MeshVisualizer</definition>
+        <argsstring>() override</argsstring>
+        <name>~MeshVisualizer</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::~MeshVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="48" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ac026711d742872e1d2294282cb00698d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::MeshVisualizer::MeshVisualizer</definition>
+        <argsstring>(const MeshVisualizer &amp;)=delete</argsstring>
+        <name>MeshVisualizer</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::MeshVisualizer</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="51" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a991ed624352e364ade37a07b6add111d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+        <definition>MeshVisualizer &amp; nvblox::renderer::MeshVisualizer::operator=</definition>
+        <argsstring>(const MeshVisualizer &amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="52" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a9eae6a6723d891a868437703421429cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::MeshVisualizer::MeshVisualizer</definition>
+        <argsstring>(MeshVisualizer &amp;&amp;)=delete</argsstring>
+        <name>MeshVisualizer</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::MeshVisualizer</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="53" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a102aab118ba108793a3ecd8ef38ba304" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+        <definition>MeshVisualizer &amp; nvblox::renderer::MeshVisualizer::operator=</definition>
+        <argsstring>(MeshVisualizer &amp;&amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="54" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a97eee54030d33e9271d4be4ac8cb2f70" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::init</definition>
+        <argsstring>(VkContext *ctx) override</argsstring>
+        <name>init</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::init</qualifiedname>
+        <param>
+          <type>VkContext *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="57" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a03b3093d515551effe5c095bc9177fa9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::destroy</definition>
+        <argsstring>() override</argsstring>
+        <name>destroy</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::destroy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="58" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a219d0e7a7d0ae06319decff1a8ee5f91" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::render</definition>
+        <argsstring>(VkCommandBuffer cmd, const ViewCamera *camera, uint32_t viewport_width, uint32_t viewport_height) override</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::render</qualifiedname>
+        <param>
+          <type>VkCommandBuffer</type>
+          <declname>cmd</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> *</type>
+          <declname>camera</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>viewport_width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>viewport_height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="59" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1aeca203fd973c349cd5b2d8b9022c5409" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::render</definition>
+        <argsstring>(VkCommandBuffer cmd, const float *view_proj, uint32_t x, uint32_t y, uint32_t width, uint32_t height)</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::render</qualifiedname>
+        <param>
+          <type>VkCommandBuffer</type>
+          <declname>cmd</declname>
+        </param>
+        <param>
+          <type>const float *</type>
+          <declname>view_proj</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>y</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Render with an explicit view-projection matrix and viewport rect. Used by renderViews() for XR multi-view rendering. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="64" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a0f3428d92b0cef6c91afe2229a2231c3" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::hasData</definition>
+        <argsstring>() const override</argsstring>
+        <name>hasData</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::hasData</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="67" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="67" bodyend="69"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ada6e9c8e74463e57f5e1a197a3b0b22c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::updateMesh</definition>
+        <argsstring>(const float *positions, const uint8_t *colors, const int *triangles, size_t num_vertices, size_t num_triangles, const CudaStream &amp;stream, const float *uvs=nullptr)</argsstring>
+        <name>updateMesh</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::updateMesh</qualifiedname>
+        <param>
+          <type>const float *</type>
+          <declname>positions</declname>
+        </param>
+        <param>
+          <type>const uint8_t *</type>
+          <declname>colors</declname>
+        </param>
+        <param>
+          <type>const int *</type>
+          <declname>triangles</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>num_vertices</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>num_triangles</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <param>
+          <type>const float *</type>
+          <declname>uvs</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update mesh from separate vertex position, color, UV, and triangle arrays. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>positions</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to float3 positions (x, y, z per vertex). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>colors</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to uint8 colors (r, g, b per vertex - 3 bytes). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>uvs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to float2 UVs (u, v per vertex), or nullptr if no UVs (all vertices use vertex color). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>triangles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to int triangle indices (3 ints per triangle). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>num_vertices</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of vertices. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>num_triangles</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of triangles. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="note"><para>Triangle indices are assumed to be valid (in range [0, num_vertices)). Passing out-of-bounds indices results in undefined rendering behavior. Index validation is not performed at runtime for performance reasons (indices reside on GPU memory). The caller is responsible for ensuring index validity. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="90" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ad95ce95ddee753925214f94917ed1826" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::updateTexture</definition>
+        <argsstring>(const void *src, uint32_t width, uint32_t height, const CudaStream &amp;stream)</argsstring>
+        <name>updateTexture</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::updateTexture</qualifiedname>
+        <param>
+          <type>const void *</type>
+          <declname>src</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update the texture atlas for projective texture mapping. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>src</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to texture data. Accepts both RGB8 (3 bytes per pixel) and RGBA8 (4 bytes per pixel) — internally stored as RGBA via SharedTexture format conversion. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Texture width in pixels. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Texture height in pixels. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if upload succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="103" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a315b8bcab4351f8d031ccbbe7ec32221" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::hasTexture</definition>
+        <argsstring>() const</argsstring>
+        <name>hasTexture</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::hasTexture</qualifiedname>
+        <briefdescription>
+<para>Check if a texture atlas is currently bound. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="107" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="107" bodyend="107"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a06fc43ddb17e226526c7a7a4c66a73fb" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::MeshVisualizer::numVertices</definition>
+        <argsstring>() const</argsstring>
+        <name>numVertices</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::numVertices</qualifiedname>
+        <briefdescription>
+<para>Get number of vertices. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="110" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="110" bodyend="110"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a388e5d21d770af2e10088ddcc41e8297" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::MeshVisualizer::numTriangles</definition>
+        <argsstring>() const</argsstring>
+        <name>numTriangles</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::numTriangles</qualifiedname>
+        <briefdescription>
+<para>Get number of triangles. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="113" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="113" bodyend="113"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a8b8a3e601c602c1dfff2299d2d930e04" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::setWireframe</definition>
+        <argsstring>(bool enabled)</argsstring>
+        <name>setWireframe</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::setWireframe</qualifiedname>
+        <param>
+          <type>bool</type>
+          <declname>enabled</declname>
+        </param>
+        <briefdescription>
+<para>Set wireframe mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="116" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="116" bodyend="116"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a98b583213621e6c77f7d73161c6238e8" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::wireframe</definition>
+        <argsstring>() const</argsstring>
+        <name>wireframe</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::wireframe</qualifiedname>
+        <briefdescription>
+<para>Get wireframe mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="119" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="119" bodyend="119"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ad58aaf683b3f573f7c453040308f0833" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::toggleWireframe</definition>
+        <argsstring>()</argsstring>
+        <name>toggleWireframe</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::toggleWireframe</qualifiedname>
+        <briefdescription>
+<para>Toggle wireframe mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="122" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="122" bodyend="122"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a196daa2597dda83c33f7e99d26b5f57f" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::createPipeline</definition>
+        <argsstring>(VkPolygonMode polygon_mode, const ShaderPair &amp;shaders, VkPipeline *pipeline)</argsstring>
+        <name>createPipeline</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::createPipeline</qualifiedname>
+        <param>
+          <type>VkPolygonMode</type>
+          <declname>polygon_mode</declname>
+        </param>
+        <param>
+          <type>const ShaderPair &amp;</type>
+          <declname>shaders</declname>
+        </param>
+        <param>
+          <type>VkPipeline *</type>
+          <declname>pipeline</declname>
+        </param>
+        <briefdescription>
+<para>Create a single pipeline with a specific polygon mode. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="159" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1ad6a74691b64b3629dc0d34a3d67c2d76" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::createPipelines</definition>
+        <argsstring>()</argsstring>
+        <name>createPipelines</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::createPipelines</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="161" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1abac579f01cc3adca1a046b5f4627f5da" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::MeshVisualizer::createTextureDescriptorSet</definition>
+        <argsstring>()</argsstring>
+        <name>createTextureDescriptorSet</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::createTextureDescriptorSet</qualifiedname>
+        <briefdescription>
+<para>Create descriptor set layout, pool, and set for texture binding. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="164" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a3124184b850c5ed13821f4419c268c54" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::MeshVisualizer::updateTextureDescriptorSet</definition>
+        <argsstring>()</argsstring>
+        <name>updateTextureDescriptorSet</name>
+        <qualifiedname>nvblox::renderer::MeshVisualizer::updateTextureDescriptorSet</qualifiedname>
+        <briefdescription>
+<para>Update descriptor set to point to current texture. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="167" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Visualizer for colored triangle meshes. Renders indexed triangles with per-vertex position and color. <simplesect kind="note"><para>NOT thread-safe. See VisualizerInterface for thread safety requirements. </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="42" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" bodystart="42" bodyend="189"/>
+    <listofallmembers>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a196daa2597dda83c33f7e99d26b5f57f" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>createPipeline</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ad6a74691b64b3629dc0d34a3d67c2d76" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>createPipelines</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1abac579f01cc3adca1a046b5f4627f5da" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>createTextureDescriptorSet</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a03b3093d515551effe5c095bc9177fa9" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>destroy</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a02ce8be1411e578b314039a5b121a89b" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>has_texture_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a0f3428d92b0cef6c91afe2229a2231c3" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>hasData</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a315b8bcab4351f8d031ccbbe7ec32221" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>hasTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a04abcd3b5c7a3fda3eb574a79562a905" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>index_buffer_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a97eee54030d33e9271d4be4ac8cb2f70" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>init</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a21014e9d8a2214dc22ec2c180c792067" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>mesh_texture_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a54c48e1e1f9bd7a87fa034a2f5cbc42f" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>MeshVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ac026711d742872e1d2294282cb00698d" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>MeshVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a9eae6a6723d891a868437703421429cc" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>MeshVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a7989ac400fd692bbf8e156ab2a505794" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>num_indices_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a7bf491640dd930dcdaa478e0f0635ea0" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>num_vertices_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a388e5d21d770af2e10088ddcc41e8297" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>numTriangles</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a06fc43ddb17e226526c7a7a4c66a73fb" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>numVertices</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a991ed624352e364ade37a07b6add111d" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a102aab118ba108793a3ecd8ef38ba304" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1aa77861f7bf38f5b0ede4865c74ebc7be" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>pipeline_fill_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ab4741cac54c8c3331f23629b281d6378" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>pipeline_wireframe_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a219d0e7a7d0ae06319decff1a8ee5f91" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1aeca203fd973c349cd5b2d8b9022c5409" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a8b8a3e601c602c1dfff2299d2d930e04" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>setWireframe</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a7c37f5553d2b9c2aed2e516b807a1346" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>texture_desc_layout_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a5004678e4433c2a72f97a01e83149bce" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>texture_desc_pool_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a711e6014488f55ac08cfe9834eb9a3fa" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>texture_desc_set_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ad58aaf683b3f573f7c453040308f0833" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>toggleWireframe</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ada6e9c8e74463e57f5e1a197a3b0b22c" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>updateMesh</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ad95ce95ddee753925214f94917ed1826" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>updateTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a3124184b850c5ed13821f4419c268c54" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>updateTextureDescriptorSet</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a049df13fe633595280499c6c22387f4b" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>Vertex</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a98b583213621e6c77f7d73161c6238e8" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>wireframe</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1ac7318dc0f209f1b0fd66d0d8d81ecbc6" prot="private" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>wireframe_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1MeshVisualizer_1aa7dc36b9be7f74174fbf346db5ae0568" prot="public" virt="non-virtual"><scope>nvblox::renderer::MeshVisualizer</scope><name>~MeshVisualizer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

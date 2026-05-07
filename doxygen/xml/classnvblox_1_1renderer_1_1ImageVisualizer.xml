@@ -1,0 +1,792 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classnvblox_1_1renderer_1_1ImageVisualizer" kind="class" language="C++" prot="public">
+    <compoundname>nvblox::renderer::ImageVisualizer</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">TexturedVisualizer&lt; ImageVisualizer, 2 &gt;</basecompoundref>
+    <includes refid="image__visualizer_8h" local="no">image_visualizer.h</includes>
+    <sectiondef kind="public-type">
+      <memberdef kind="enum" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>DepthColormap</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::DepthColormap</qualifiedname>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214da363e1aa7b71ceb2e43433534bd9c1677" prot="public">
+          <name>kGrayscale</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214da367763f0ab3b324d26b43e02b98d685c" prot="public">
+          <name>kJet</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214da117435278c5427dc547c927aa8e8a292" prot="public">
+          <name>kTurbo</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Depth colormap options. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="76" column="3" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="76" bodyend="80"/>
+      </memberdef>
+      <memberdef kind="enum" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>Layout</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::Layout</qualifiedname>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3dbac79f76cd60a5bd449d966e2c802e73f7" prot="public">
+          <name>kSideBySide</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3dba21d373f69d7f02ab294e752074ca5a3a" prot="public">
+          <name>kColorOnly</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3dbacebb274ef47393f5efff79bf8bdc5766" prot="public">
+          <name>kDepthOnly</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3dbad3bd280d6c9730fd100d07034aaa4f4a" prot="public">
+          <name>kOverlay</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Display layout options. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="83" column="3" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="83" bodyend="88"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-static-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" prot="public" static="yes" constexpr="yes" mutable="no">
+        <type>constexpr size_t</type>
+        <definition>constexpr size_t nvblox::renderer::ImageVisualizer::kDepthTexture</definition>
+        <argsstring></argsstring>
+        <name>kDepthTexture</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::kDepthTexture</qualifiedname>
+        <initializer>= 0</initializer>
+        <briefdescription>
+<para>Texture index for the depth image. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="71" column="27" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="71" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" prot="public" static="yes" constexpr="yes" mutable="no">
+        <type>constexpr size_t</type>
+        <definition>constexpr size_t nvblox::renderer::ImageVisualizer::kColorTexture</definition>
+        <argsstring></argsstring>
+        <name>kColorTexture</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::kColorTexture</qualifiedname>
+        <initializer>= 1</initializer>
+        <briefdescription>
+<para>Texture index for the color image. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="73" column="27" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="73" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1adfaa592b8b2224a5c70e040cb9f7c713" prot="private" static="no" mutable="no">
+        <type>VkPipeline</type>
+        <definition>VkPipeline nvblox::renderer::ImageVisualizer::pipeline_</definition>
+        <argsstring></argsstring>
+        <name>pipeline_</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::pipeline_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="229" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="229" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a86d01e5c0ffd47b6aec115cb21d53319" prot="private" static="no" mutable="no">
+        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" kindref="member">DepthColormap</ref></type>
+        <definition>DepthColormap nvblox::renderer::ImageVisualizer::colormap_</definition>
+        <argsstring></argsstring>
+        <name>colormap_</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::colormap_</qualifiedname>
+        <initializer>= DepthColormap::kTurbo</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="232" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="232" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a814e27d7dd2b72419f2a6950970c2e5a" prot="private" static="no" mutable="no">
+        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" kindref="member">Layout</ref></type>
+        <definition>Layout nvblox::renderer::ImageVisualizer::layout_</definition>
+        <argsstring></argsstring>
+        <name>layout_</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::layout_</qualifiedname>
+        <initializer>= Layout::kSideBySide</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="233" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="233" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a1765603387c3b6fa314b558368b1344d" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ImageVisualizer::min_depth_</definition>
+        <argsstring></argsstring>
+        <name>min_depth_</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::min_depth_</qualifiedname>
+        <initializer>= 0.1f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="234" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="234" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a949cc33f495d0ab19c612b9fc4cf54f4" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::ImageVisualizer::max_depth_</definition>
+        <argsstring></argsstring>
+        <name>max_depth_</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::max_depth_</qualifiedname>
+        <initializer>= 5.0f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="235" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="235" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a1e365f5ccdbd4ff1ea2c0ea58040a2c8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizer::ImageVisualizer</definition>
+        <argsstring>()=default</argsstring>
+        <name>ImageVisualizer</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::ImageVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="90" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a3b08384f40cd290a17745f2e509a9637" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizer::~ImageVisualizer</definition>
+        <argsstring>() override</argsstring>
+        <name>~ImageVisualizer</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::~ImageVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="91" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1afa5459adba43f0350c42e21a721ac3e2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizer::ImageVisualizer</definition>
+        <argsstring>(const ImageVisualizer &amp;)=delete</argsstring>
+        <name>ImageVisualizer</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::ImageVisualizer</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="94" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ade198cf5fe5bd1ecae55e4ee7b62837b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+        <definition>ImageVisualizer &amp; nvblox::renderer::ImageVisualizer::operator=</definition>
+        <argsstring>(const ImageVisualizer &amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="95" column="19"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1aed47e94749fcd07e47af36c522e231c3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::ImageVisualizer::ImageVisualizer</definition>
+        <argsstring>(ImageVisualizer &amp;&amp;)=delete</argsstring>
+        <name>ImageVisualizer</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::ImageVisualizer</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="96" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a5c13e0cef1fb3bec84cca77aea9b1e06" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+        <definition>ImageVisualizer &amp; nvblox::renderer::ImageVisualizer::operator=</definition>
+        <argsstring>(ImageVisualizer &amp;&amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="97" column="19"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a97f8df288a9418d72e92fa77a0a9a736" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::ImageVisualizer::init</definition>
+        <argsstring>(VkContext *ctx) override</argsstring>
+        <name>init</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::init</qualifiedname>
+        <param>
+          <type>VkContext *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize with placeholder 1x1 textures. Call updateDepthImage/updateColorImage to set actual dimensions and data. Use init(ctx, config) if dimensions are known upfront. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="103" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a7314790bf9b45caeac7510e6548686cb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::destroy</definition>
+        <argsstring>() override</argsstring>
+        <name>destroy</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::destroy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="104" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a3fd93ce697e519a0634a1108b1a1881d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::render</definition>
+        <argsstring>(VkCommandBuffer cmd, const ViewCamera *camera, uint32_t viewport_width, uint32_t viewport_height) override</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::render</qualifiedname>
+        <param>
+          <type>VkCommandBuffer</type>
+          <declname>cmd</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> *</type>
+          <declname>camera</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>viewport_width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>viewport_height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="105" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a2d192e77595fb63cfe3339ae3c32902b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::render</definition>
+        <argsstring>(VkCommandBuffer cmd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::render</qualifiedname>
+        <param>
+          <type>VkCommandBuffer</type>
+          <declname>cmd</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>y</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+<para>Render into an explicit viewport rect (no camera needed for 2D quads). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="109" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a75fe271e1696fcf0499220eb8a20f822" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::ImageVisualizer::hasData</definition>
+        <argsstring>() const override</argsstring>
+        <name>hasData</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::hasData</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="112" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="112" bodyend="114"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a21d6fe3a3fe83f256c1d9bf292551dc1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::ImageVisualizer::init</definition>
+        <argsstring>(VkContext *ctx, const ImageVisualizerConfig &amp;config)</argsstring>
+        <name>init</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::init</qualifiedname>
+        <param>
+          <type>VkContext *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" kindref="compound">ImageVisualizerConfig</ref> &amp;</type>
+          <declname>config</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize the visualizer with a configuration struct. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vulkan context. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>config</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Configuration specifying image dimensions. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if initialization succeeded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="120" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a8404f0edd3b928d855727f9f76b9392d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::updateDepth</definition>
+        <argsstring>(const float *depth_ptr, const CudaStream &amp;stream)</argsstring>
+        <name>updateDepth</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::updateDepth</qualifiedname>
+        <param>
+          <type>const float *</type>
+          <declname>depth_ptr</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update depth image from CUDA memory. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>depth_ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to float depth data (contiguous). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="125" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="125" bodyend="127"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a82839770126921d59bbcddc32b8f5364" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::updateColor</definition>
+        <argsstring>(const void *color_ptr, const CudaStream &amp;stream)</argsstring>
+        <name>updateColor</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::updateColor</qualifiedname>
+        <param>
+          <type>const void *</type>
+          <declname>color_ptr</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update color image from CUDA memory. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>color_ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to RGBA8 color data (contiguous). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="132" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="132" bodyend="134"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a8e8b62cded74d892dfae209200ca1db6" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::setDepthColormap</definition>
+        <argsstring>(DepthColormap colormap)</argsstring>
+        <name>setDepthColormap</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::setDepthColormap</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" kindref="member">DepthColormap</ref></type>
+          <declname>colormap</declname>
+        </param>
+        <briefdescription>
+<para>Set depth colormap. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="137" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="137" bodyend="137"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a289b5f1d4ed3dad500e2317f336fafbe" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::setLayout</definition>
+        <argsstring>(Layout layout)</argsstring>
+        <name>setLayout</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::setLayout</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" kindref="member">Layout</ref></type>
+          <declname>layout</declname>
+        </param>
+        <briefdescription>
+<para>Set display layout. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="140" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="140" bodyend="140"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a1146bc6454cf2e7de1dc6c47e0f60cac" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::ImageVisualizer::setDepthRange</definition>
+        <argsstring>(float min_depth, float max_depth)</argsstring>
+        <name>setDepthRange</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::setDepthRange</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>min_depth</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>max_depth</declname>
+        </param>
+        <briefdescription>
+<para>Set depth range for colormap normalization. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="143" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="143" bodyend="146"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ab54e8390a412ff4f88ea6f62d647521f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::ImageVisualizer::resizeDepthTexture</definition>
+        <argsstring>(uint32_t width, uint32_t height)</argsstring>
+        <name>resizeDepthTexture</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::resizeDepthTexture</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Resize depth texture if dimensions differ. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>New width. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>New height. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if resize succeeded or not needed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="152" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="152" bodyend="154"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ae0110e52a47a1e033b9e7dec169ad472" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::ImageVisualizer::resizeColorTexture</definition>
+        <argsstring>(uint32_t width, uint32_t height)</argsstring>
+        <name>resizeColorTexture</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::resizeColorTexture</qualifiedname>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Resize color texture if dimensions differ. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>width</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>New width. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>height</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>New height. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if resize succeeded or not needed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="160" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="160" bodyend="162"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a1a91eeeb23ec9f71dcb16f371d0793de" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizer::depthWidth</definition>
+        <argsstring>() const</argsstring>
+        <name>depthWidth</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::depthWidth</qualifiedname>
+        <briefdescription>
+<para>Get depth texture width. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="165" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="165" bodyend="168"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a5bf9a11b1e7c1bada30d71c63ae63066" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizer::depthHeight</definition>
+        <argsstring>() const</argsstring>
+        <name>depthHeight</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::depthHeight</qualifiedname>
+        <briefdescription>
+<para>Get depth texture height. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="170" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="170" bodyend="173"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ae46ac7c24a2eca1329ccd5ff4ae646b5" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizer::colorWidth</definition>
+        <argsstring>() const</argsstring>
+        <name>colorWidth</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::colorWidth</qualifiedname>
+        <briefdescription>
+<para>Get color texture width. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="176" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="176" bodyend="179"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ab6d76a850afaec93357bf76ca62a034b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::ImageVisualizer::colorHeight</definition>
+        <argsstring>() const</argsstring>
+        <name>colorHeight</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::colorHeight</qualifiedname>
+        <briefdescription>
+<para>Get color texture height. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="181" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="181" bodyend="184"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a0a46775957bab66ae047dad95f9192c3" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::ImageVisualizer::createPipeline</definition>
+        <argsstring>()</argsstring>
+        <name>createPipeline</name>
+        <qualifiedname>nvblox::renderer::ImageVisualizer::createPipeline</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="226" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Visualizer for depth and color images. Renders images as textured quads with optional depth colormapping. <simplesect kind="note"><para>NOT thread-safe. See VisualizerInterface for thread safety requirements. </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="68" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="68" bodyend="236"/>
+    <listofallmembers>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab6d76a850afaec93357bf76ca62a034b" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>colorHeight</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a86d01e5c0ffd47b6aec115cb21d53319" prot="private" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>colormap_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ae46ac7c24a2eca1329ccd5ff4ae646b5" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>colorWidth</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0a46775957bab66ae047dad95f9192c3" prot="private" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>createPipeline</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a605859e2bbc2325bc89d4f397563214d" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>DepthColormap</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a5bf9a11b1e7c1bada30d71c63ae63066" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>depthHeight</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1a91eeeb23ec9f71dcb16f371d0793de" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>depthWidth</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7314790bf9b45caeac7510e6548686cb" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>destroy</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a75fe271e1696fcf0499220eb8a20f822" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>hasData</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1e365f5ccdbd4ff1ea2c0ea58040a2c8" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>ImageVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1afa5459adba43f0350c42e21a721ac3e2" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>ImageVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1aed47e94749fcd07e47af36c522e231c3" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>ImageVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a97f8df288a9418d72e92fa77a0a9a736" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>init</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a21d6fe3a3fe83f256c1d9bf292551dc1" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>init</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>kColorTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>kDepthTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a7f35900edb409bf7af13ab8dfbe3b3db" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>Layout</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a814e27d7dd2b72419f2a6950970c2e5a" prot="private" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>layout_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a949cc33f495d0ab19c612b9fc4cf54f4" prot="private" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>max_depth_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1765603387c3b6fa314b558368b1344d" prot="private" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>min_depth_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ade198cf5fe5bd1ecae55e4ee7b62837b" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a5c13e0cef1fb3bec84cca77aea9b1e06" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1adfaa592b8b2224a5c70e040cb9f7c713" prot="private" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>pipeline_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a3fd93ce697e519a0634a1108b1a1881d" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a2d192e77595fb63cfe3339ae3c32902b" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ae0110e52a47a1e033b9e7dec169ad472" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>resizeColorTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1ab54e8390a412ff4f88ea6f62d647521f" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>resizeDepthTexture</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a8e8b62cded74d892dfae209200ca1db6" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>setDepthColormap</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a1146bc6454cf2e7de1dc6c47e0f60cac" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>setDepthRange</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a289b5f1d4ed3dad500e2317f336fafbe" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>setLayout</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a82839770126921d59bbcddc32b8f5364" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>updateColor</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a8404f0edd3b928d855727f9f76b9392d" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>updateDepth</name></member>
+      <member refid="classnvblox_1_1renderer_1_1ImageVisualizer_1a3b08384f40cd290a17745f2e509a9637" prot="public" virt="non-virtual"><scope>nvblox::renderer::ImageVisualizer</scope><name>~ImageVisualizer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

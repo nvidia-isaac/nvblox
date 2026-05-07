@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_0b66f23f640dec0ff702460caeba7509" kind="dir">
+    <compoundname>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils</compoundname>
+    <innerfile refid="renderer__constants_8h">renderer_constants.h</innerfile>
+    <innerfile refid="view__camera_8h">view_camera.h</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/"/>
+  </compounddef>
+</doxygen>

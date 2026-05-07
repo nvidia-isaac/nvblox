@@ -4,7 +4,7 @@
 This example demonstrates using ``nvblox_torch`` to reconstruct a scene from the `SUN3D
 dataset <https://sun3d.cs.princeton.edu/>`_.
 
-:download_test_dataset:
+:download_sun3d_test_dataset:
 
 Launch the example by running:
 

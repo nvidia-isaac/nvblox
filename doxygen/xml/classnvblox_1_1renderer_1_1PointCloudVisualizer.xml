@@ -1,0 +1,436 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classnvblox_1_1renderer_1_1PointCloudVisualizer" kind="class" language="C++" prot="public">
+    <compoundname>nvblox::renderer::PointCloudVisualizer</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">BufferedVisualizer&lt; PointCloudVisualizer, PointCloudPoint &gt;</basecompoundref>
+    <includes refid="point__cloud__visualizer_8h" local="no">point_cloud_visualizer.h</includes>
+    <sectiondef kind="public-type">
+      <memberdef kind="typedef" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a70e4c8c87856de844035c89e11abc7eb" prot="public" static="no">
+        <type><ref refid="structnvblox_1_1renderer_1_1PointCloudPoint" kindref="compound">PointCloudPoint</ref></type>
+        <definition>using nvblox::renderer::PointCloudVisualizer::Point =  PointCloudPoint</definition>
+        <argsstring></argsstring>
+        <name>Point</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::Point</qualifiedname>
+        <briefdescription>
+<para>Point type alias for backward compatibility. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="46" column="3" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="46" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a4c46fcc70fbb3432e8812f385facc902" prot="private" static="no" mutable="no">
+        <type>VkPipeline</type>
+        <definition>VkPipeline nvblox::renderer::PointCloudVisualizer::pipeline_</definition>
+        <argsstring></argsstring>
+        <name>pipeline_</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::pipeline_</qualifiedname>
+        <initializer>= VK_NULL_HANDLE</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="124" column="14" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="124" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a518d7e1faed2aa3a0392dbb8a8c6d1e4" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float nvblox::renderer::PointCloudVisualizer::point_size_</definition>
+        <argsstring></argsstring>
+        <name>point_size_</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::point_size_</qualifiedname>
+        <initializer>= 2.0f</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="127" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="127" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a3e9c3d86ae8712a0d39c116242c85763" prot="private" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::PointCloudVisualizer::num_points_</definition>
+        <argsstring></argsstring>
+        <name>num_points_</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::num_points_</qualifiedname>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="128" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="128" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1aa48c13e740da26bbdfcaa1d15633e223" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::PointCloudVisualizer::PointCloudVisualizer</definition>
+        <argsstring>()=default</argsstring>
+        <name>PointCloudVisualizer</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::PointCloudVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="48" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a53387ef941c7660fbcab8fcd2426ade3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::PointCloudVisualizer::~PointCloudVisualizer</definition>
+        <argsstring>() override</argsstring>
+        <name>~PointCloudVisualizer</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::~PointCloudVisualizer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="49" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1aa4ae5202a97bda8cbdbc3b7d5a94abf5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::PointCloudVisualizer::PointCloudVisualizer</definition>
+        <argsstring>(const PointCloudVisualizer &amp;)=delete</argsstring>
+        <name>PointCloudVisualizer</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::PointCloudVisualizer</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="52" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1abc6002a4332c1c0665f551a29d8c9c89" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &amp;</type>
+        <definition>PointCloudVisualizer &amp; nvblox::renderer::PointCloudVisualizer::operator=</definition>
+        <argsstring>(const PointCloudVisualizer &amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="53" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a06fd1532e917de100a658a3f2359e593" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>nvblox::renderer::PointCloudVisualizer::PointCloudVisualizer</definition>
+        <argsstring>(PointCloudVisualizer &amp;&amp;)=delete</argsstring>
+        <name>PointCloudVisualizer</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::PointCloudVisualizer</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="54" column="3"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a88d2261cb00662f257f3b1cb9a79f009" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &amp;</type>
+        <definition>PointCloudVisualizer &amp; nvblox::renderer::PointCloudVisualizer::operator=</definition>
+        <argsstring>(PointCloudVisualizer &amp;&amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" kindref="compound">PointCloudVisualizer</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="55" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1ad6b34e9d98ecd1a7761b1091a313ca1b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::PointCloudVisualizer::init</definition>
+        <argsstring>(VkContext *ctx) override</argsstring>
+        <name>init</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::init</qualifiedname>
+        <param>
+          <type>VkContext *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="58" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a726ad0182ebe8b11c1b6e10e3875bcc9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::PointCloudVisualizer::destroy</definition>
+        <argsstring>() override</argsstring>
+        <name>destroy</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::destroy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="59" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a82efc956294a80e780b493b5b8183a46" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::PointCloudVisualizer::render</definition>
+        <argsstring>(VkCommandBuffer cmd, const ViewCamera *camera, uint32_t viewport_width, uint32_t viewport_height) override</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::render</qualifiedname>
+        <param>
+          <type>VkCommandBuffer</type>
+          <declname>cmd</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref> *</type>
+          <declname>camera</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>viewport_width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>viewport_height</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="60" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a2ed7408043a8b18abbbd1d6c19e62e91" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::PointCloudVisualizer::render</definition>
+        <argsstring>(VkCommandBuffer cmd, const float *view_proj, float point_size, uint32_t x, uint32_t y, uint32_t width, uint32_t height)</argsstring>
+        <name>render</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::render</qualifiedname>
+        <param>
+          <type>VkCommandBuffer</type>
+          <declname>cmd</declname>
+        </param>
+        <param>
+          <type>const float *</type>
+          <declname>view_proj</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>point_size</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>y</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>width</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>height</declname>
+        </param>
+        <briefdescription>
+<para>Render with an explicit view-projection matrix and viewport rect. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="64" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a620c536cf590c9ab37503f536f5f36dc" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::PointCloudVisualizer::hasData</definition>
+        <argsstring>() const override</argsstring>
+        <name>hasData</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::hasData</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="67" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="67" bodyend="67"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a932934ba4b11681e9da95348902bb915" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::PointCloudVisualizer::updatePoints</definition>
+        <argsstring>(const Point *points_ptr, size_t num_points, const CudaStream &amp;stream)</argsstring>
+        <name>updatePoints</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::updatePoints</qualifiedname>
+        <param>
+          <type>const <ref refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a70e4c8c87856de844035c89e11abc7eb" kindref="member">Point</ref> *</type>
+          <declname>points_ptr</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>num_points</declname>
+        </param>
+        <param>
+          <type>const CudaStream &amp;</type>
+          <declname>stream</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update point cloud from CUDA memory. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>points_ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA device pointer to Point array. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>num_points</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of points. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>CUDA stream. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="73" column="8"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a5e78560eaebb6fcc0b3e751763c27712" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void nvblox::renderer::PointCloudVisualizer::setPointSize</definition>
+        <argsstring>(float size)</argsstring>
+        <name>setPointSize</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::setPointSize</qualifiedname>
+        <param>
+          <type>float</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Set point size. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="77" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="77" bodyend="77"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a4fa32096de9e06354568e6059cb5035d" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>float</type>
+        <definition>float nvblox::renderer::PointCloudVisualizer::pointSize</definition>
+        <argsstring>() const</argsstring>
+        <name>pointSize</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::pointSize</qualifiedname>
+        <briefdescription>
+<para>Get point size. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="80" column="9" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="80" bodyend="80"/>
+      </memberdef>
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a4f9ba9849e924a33ffe2b50ccf340284" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::PointCloudVisualizer::numPoints</definition>
+        <argsstring>() const</argsstring>
+        <name>numPoints</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::numPoints</qualifiedname>
+        <briefdescription>
+<para>Get number of points. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="83" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="83" bodyend="83"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a38e1b76410858c3751af072b9a8ca559" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::PointCloudVisualizer::createPipeline</definition>
+        <argsstring>()</argsstring>
+        <name>createPipeline</name>
+        <qualifiedname>nvblox::renderer::PointCloudVisualizer::createPipeline</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="121" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Visualizer for colored point clouds. Renders points with per-vertex position and color. <simplesect kind="note"><para>NOT thread-safe. See VisualizerInterface for thread safety requirements. </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" line="42" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/point_cloud_visualizer.h" bodystart="43" bodyend="129"/>
+    <listofallmembers>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a38e1b76410858c3751af072b9a8ca559" prot="private" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>createPipeline</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a726ad0182ebe8b11c1b6e10e3875bcc9" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>destroy</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a620c536cf590c9ab37503f536f5f36dc" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>hasData</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1ad6b34e9d98ecd1a7761b1091a313ca1b" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>init</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a3e9c3d86ae8712a0d39c116242c85763" prot="private" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>num_points_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a4f9ba9849e924a33ffe2b50ccf340284" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>numPoints</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1abc6002a4332c1c0665f551a29d8c9c89" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a88d2261cb00662f257f3b1cb9a79f009" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>operator=</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a4c46fcc70fbb3432e8812f385facc902" prot="private" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>pipeline_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a70e4c8c87856de844035c89e11abc7eb" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>Point</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a518d7e1faed2aa3a0392dbb8a8c6d1e4" prot="private" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>point_size_</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1aa48c13e740da26bbdfcaa1d15633e223" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>PointCloudVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1aa4ae5202a97bda8cbdbc3b7d5a94abf5" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>PointCloudVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a06fd1532e917de100a658a3f2359e593" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>PointCloudVisualizer</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a4fa32096de9e06354568e6059cb5035d" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>pointSize</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a82efc956294a80e780b493b5b8183a46" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a2ed7408043a8b18abbbd1d6c19e62e91" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>render</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a5e78560eaebb6fcc0b3e751763c27712" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>setPointSize</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a932934ba4b11681e9da95348902bb915" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>updatePoints</name></member>
+      <member refid="classnvblox_1_1renderer_1_1PointCloudVisualizer_1a53387ef941c7660fbcab8fcd2426ade3" prot="public" virt="non-virtual"><scope>nvblox::renderer::PointCloudVisualizer</scope><name>~PointCloudVisualizer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -19,22 +19,22 @@ Supported Platforms
 
 The following platforms are supported:
 
-+------------------------+-------------+----------------+----------------+-------------+
-|                        | x86 + dGPU  | JetPack 7.0.X  | JetPack 6.X    | JetPack 5.X |
-+========================+=============+================+================+=============+
-| ``nvblox_torch (pip)`` | ✅          | ❌             | ❌             | ❌          |
-+------------------------+-------------+----------------+----------------+-------------+
-| ``nvblox_torch (src)`` | ✅          | ❌             | ✅             | ❌          |
-+------------------------+-------------+----------------+----------------+-------------+
-| ``nvblox C++ (src)``   | ✅          | ✅             | ✅             | ✅          |
-+------------------------+-------------+----------------+----------------+-------------+
++------------------------+-------------+----------------+----------------+-----------------+
+|                        | x86 + dGPU  | JetPack 7.0.X  | JetPack 6.X    | JetPack 5.X (*) |
++========================+=============+================+================+=================+
+| ``nvblox_torch (pip)`` | ✅          | ❌             | ❌             | ❌              |
++------------------------+-------------+----------------+----------------+-----------------+
+| ``nvblox_torch (src)`` | ✅          | ❌             | ✅             | ❌              |
++------------------------+-------------+----------------+----------------+-----------------+
+| ``nvblox C++ (src)``   | ✅          | ✅             | ✅             | ✅              |
++------------------------+-------------+----------------+----------------+-----------------+
 
 We support the systems with the following configurations:
 
 - **x86 + discrete GPU**
 
   - Ubuntu 20.04, 22.04, 24.04
-  - CUDA 11.4 - 13.0
+  - CUDA 11.4 (*) - 13.2
   - GPU with compute capability 7.5 or higher. See `here <https://developer.nvidia.com/cuda/gpus>`__ for a list of GPUs and their compute capabilities.
 
 - **Jetson (ARM64)**
@@ -45,6 +45,9 @@ A minimum NVIDIA driver version is imposed by the version of CUDA you have insta
 See the support table `here <https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html>`__
 to find the minimum driver version for your platform.
 
+.. note::
+
+    (*): CUDA 11 and Jetpack5 are deprecated and will be removed in an upcoming release.
 
 .. _nvblox_torch_pip_installation:
 
@@ -76,8 +79,6 @@ We provide a docker image for building and developing inside.
 Build the C++ library
 ^^^^^^^^^^^^^^^^^^^^^
 
-First clone the repository:
-
 :nvblox_torch_git_clone_code_block:
 
 Then build and run the docker container:
@@ -97,7 +98,7 @@ To build the library run
             mkdir -p /workspaces/nvblox/build
             cd /workspaces/nvblox/build
             cmake ..
-            make -j${nproc}
+            make -j6
 
     .. tab:: JetPack 7, JetPack 5
 
@@ -106,13 +107,7 @@ To build the library run
             mkdir -p /workspaces/nvblox/build
             cd /workspaces/nvblox/build
             cmake .. -DBUILD_PYTORCH_WRAPPER=0
-            make -j${nproc}
-
-(Optional) You can verify the installation by running our tests:
-
-.. code-block:: bash
-
-    ctest --test-dir /workspaces/nvblox/build/nvblox
+            make -j6
 
 .. note::
 
@@ -122,6 +117,17 @@ To build the library run
     .. code-block:: bash
 
         rm -rf ~/.ccache
+
+(Optional) You can verify the installation by running our tests:
+
+.. code-block:: bash
+
+    ctest --test-dir /workspaces/nvblox/build
+
+.. note::
+
+    Failing tests due to missing or invalid files usually mean the clone was done without git-lfs. Make sure to install git-lfs before cloning the repository.
+
 
 Install ``nvblox_torch`` python package
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -150,35 +156,44 @@ You're all set! Feel free to proceed with one of the following examples:
 Install ``nvblox`` from Source (Outside Docker)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These instructions describe how to install the ``nvblox`` core library from source, outside
-of our development container.
+These instructions describe how to build the ``nvblox`` core C++ library from source,
+outside of our development container. They have been tested on Ubuntu 24.04.
+All commands below are relative to the repository root.
 
 .. note::
 
-    We recommend using the :ref:`nvblox_torch_source_installation` as it will handle all the
-    dependencies for you.
-    The docker image sets up a controlled environment in which we know things work.
-    While we've tested the following instructions on many systems
-    (see :ref:`supported_platforms_table`), results may vary.
+    This recipe disables the ``pytorch`` wrapper and the ``nvblox_renderer``.
+    As a result, the Python ``nvblox_torch`` bindings and the GPU renderer
+    (used by some examples for visualization) are not available.
+    To build with these features enabled, see the system dependencies in
+    ``docker/Dockerfile.deps``, or use the :ref:`nvblox_torch_source_installation`
+    for a controlled environment.
 
-To start, install our dependencies
+:nvblox_torch_git_clone_code_block:
+
+Install the build dependencies. A working CUDA Toolkit installation
+(see :ref:`supported_platforms_table` for supported versions) is also required.
 
 .. code-block:: bash
 
-    sudo apt-get update && sudo apt-get install cmake git jq gnupg apt-utils software-properties-common build-essential sudo python3-pip wget sudo git python3-dev git-lfs
+    sudo apt-get update && sudo apt-get install -y \
+        cmake git git-lfs build-essential python3-dev
 
-Note that for Ubuntu 20.04, we need to install a more recent version of ``cmake``
-than is available in the default repositories.
-We provide a script to add the relevant repositories and install a more recent
-version in: ``docker/install_cmake.sh``.
-Note that running this script will replace any previously installed version of ``cmake``.
+From the repository root, configure and build the core library:
 
-Now follow the instructions in :ref:`nvblox_torch_source_installation`
-to build the code and run the tests.
+.. code-block:: bash
 
-If you are using a Jetson and want to use the ``pytorch`` wrapper, you will need to install the CUDA-enabled versions of ``torch`` and ``torchvision``. See `this page <https://docs.nvidia.com/deeplearning/frameworks/install-pytorch-jetson-platform/index.html>`_ for more details.
+    mkdir build && cd build
+    cmake .. -DBUILD_PYTORCH_WRAPPER=0 -DBUILD_RENDERER=0
+    make -j6
 
-You're now ready to  :doc:`core_library_run_an_example`.
+(Optional) Verify the installation by running the tests:
+
+.. code-block:: bash
+
+    ctest --test-dir .
+
+You're now ready to :doc:`core_library_run_an_example`.
 
 
 Advanced Build Options
@@ -250,3 +265,40 @@ For example, to build for Compute Capability (CC) 7.2 and 7.5, you would run:
 .. code-block:: bash
 
     cmake .. -DCMAKE_CUDA_ARCHITECTURES=75;72
+
+Building with Bazel
+~~~~~~~~~~~~~~~~~~~
+
+As an alternative to CMake, ``nvblox`` can be built using `Bazel <https://bazel.build/>`_.
+
+.. note::
+
+    Bazel support has the following limitations:
+
+    - **Core C++ library only**: The PyTorch wrapper (``nvblox_torch``) is not supported with Bazel.
+    - **Limited platform support**: Tested on Ubuntu 24.04 with GCC 13 x86_64.
+    - **Experimental**: Bazel support is newer and less tested than the CMake build system.
+
+To build with Bazel:
+
+.. code-block:: bash
+
+    # Install Bazel (if not already installed)
+    # See https://bazel.build/install for installation instructions
+
+    # Build the core library
+    bazel build //:nvblox
+
+    # Run tests
+    bazel test //nvblox/tests/...
+
+    # Build for aarch64 (experimental)
+    bazel build --config arm64 //:nvblox
+
+Build configuration options are defined in ``.bazelrc``. Additional configurations include:
+
+- ``--config asan``: Build with Address Sanitizer
+- ``--config tsan``: Build with Thread Sanitizer
+- ``--config ubsan``: Build with Undefined Behavior Sanitizer
+
+For more details on the Bazel build system configuration, see the ``.bazelrc`` and ``MODULE.bazel`` files in the repository root.

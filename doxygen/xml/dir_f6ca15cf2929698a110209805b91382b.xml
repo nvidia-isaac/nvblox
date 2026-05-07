@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_f6ca15cf2929698a110209805b91382b" kind="dir">
+    <compoundname>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers</compoundname>
+    <innerfile refid="image__visualizer_8h">image_visualizer.h</innerfile>
+    <innerfile refid="mesh__visualizer_8h">mesh_visualizer.h</innerfile>
+    <innerfile refid="point__cloud__visualizer_8h">point_cloud_visualizer.h</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/"/>
+  </compounddef>
+</doxygen>

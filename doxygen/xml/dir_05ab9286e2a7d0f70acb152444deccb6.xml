@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_05ab9286e2a7d0f70acb152444deccb6" kind="dir">
+    <compoundname>/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer</compoundname>
+    <innerdir refid="dir_e695e0d50035c5d72386289ddaa73e2c">/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/kernels</innerdir>
+    <innerdir refid="dir_0b66f23f640dec0ff702460caeba7509">/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils</innerdir>
+    <innerdir refid="dir_f6ca15cf2929698a110209805b91382b">/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers</innerdir>
+    <innerfile refid="renderer_8h">renderer.h</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/"/>
+  </compounddef>
+</doxygen>

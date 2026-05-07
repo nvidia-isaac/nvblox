@@ -4,7 +4,7 @@ Deep Feature-based Reconstruction
 This example demonstrates how to integrate foundation-model features into an nvblox
 reconstruction.
 
-:download_test_dataset:
+:download_sun3d_test_dataset:
 
 Launch the example by running:
 
@@ -17,11 +17,13 @@ Launch the example by running:
 The code for this example can be found at
 :nvblox_code_link:`<nvblox_torch/nvblox_torch/examples/reconstruction/sun3d.py>`
 
-The results look like:
+The result looks like below (the colors you see might be different due to the random nature of the PCA algorithm).
 
 .. image:: ../images/deep_features_sun3d.gif
    :width: 800px
    :alt: AM-RADIO on SUN3D
+
+
 
 The same technique applied to a cluttered desk scene demonstrates how different
 objects receive distinct feature colorings:

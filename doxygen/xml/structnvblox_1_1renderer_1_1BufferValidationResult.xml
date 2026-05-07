@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structnvblox_1_1renderer_1_1BufferValidationResult" kind="struct" language="C++" prot="public">
+    <compoundname>nvblox::renderer::BufferValidationResult</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1BufferValidationResult_1a52216da3aad37e5662bb5578ea78e038" prot="public" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::BufferValidationResult::valid</definition>
+        <argsstring></argsstring>
+        <name>valid</name>
+        <qualifiedname>nvblox::renderer::BufferValidationResult::valid</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="80" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="80" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1BufferValidationResult_1a05d986a3596d7acb0c8c22ad4b753bed" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::BufferValidationResult::required_size</definition>
+        <argsstring></argsstring>
+        <name>required_size</name>
+        <qualifiedname>nvblox::renderer::BufferValidationResult::required_size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="81" column="10" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="81" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="79" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="79" bodyend="82"/>
+    <listofallmembers>
+      <member refid="structnvblox_1_1renderer_1_1BufferValidationResult_1a05d986a3596d7acb0c8c22ad4b753bed" prot="public" virt="non-virtual"><scope>nvblox::renderer::BufferValidationResult</scope><name>required_size</name></member>
+      <member refid="structnvblox_1_1renderer_1_1BufferValidationResult_1a52216da3aad37e5662bb5578ea78e038" prot="public" virt="non-virtual"><scope>nvblox::renderer::BufferValidationResult</scope><name>valid</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

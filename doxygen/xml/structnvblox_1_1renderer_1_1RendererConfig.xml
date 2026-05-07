@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structnvblox_1_1renderer_1_1RendererConfig" kind="struct" language="C++" prot="public">
+    <compoundname>nvblox::renderer::RendererConfig</compoundname>
+    <includes refid="renderer_8h" local="no">renderer.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1RendererConfig_1af9f46e1216918c5d1cd880bf173946ab" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::RendererConfig::width</definition>
+        <argsstring></argsstring>
+        <name>width</name>
+        <qualifiedname>nvblox::renderer::RendererConfig::width</qualifiedname>
+        <initializer>= 1920</initializer>
+        <briefdescription>
+<para>Render target width in pixels. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="48" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1RendererConfig_1a3b24452c27373dbcca94c6b77f9c7905" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::RendererConfig::height</definition>
+        <argsstring></argsstring>
+        <name>height</name>
+        <qualifiedname>nvblox::renderer::RendererConfig::height</qualifiedname>
+        <initializer>= 1080</initializer>
+        <briefdescription>
+<para>Render target height in pixels. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="49" column="12" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1RendererConfig_1a4d41eaf5971469cc61d0d98ba9f79a0a" prot="public" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string nvblox::renderer::RendererConfig::title</definition>
+        <argsstring></argsstring>
+        <name>title</name>
+        <qualifiedname>nvblox::renderer::RendererConfig::title</qualifiedname>
+        <initializer>=
+      &quot;nvblox renderer&quot;</initializer>
+        <briefdescription>
+<para>Window title (ignored in headless mode). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="50" column="15" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structnvblox_1_1renderer_1_1RendererConfig_1a06d4ed1f30763b4116044bcad48a5ce0" prot="public" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool nvblox::renderer::RendererConfig::headless</definition>
+        <argsstring></argsstring>
+        <name>headless</name>
+        <qualifiedname>nvblox::renderer::RendererConfig::headless</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+<para>If true, create headless renderer (no window). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="52" column="8" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="52" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Configuration for renderer initialization. Pass to <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae633ea2819950ddba6bc1526abf9a794" kindref="member">NvbloxRenderer::init()</ref> to configure the renderer. </para>
+    </detaileddescription>
+    <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="47" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="47" bodyend="53"/>
+    <listofallmembers>
+      <member refid="structnvblox_1_1renderer_1_1RendererConfig_1a06d4ed1f30763b4116044bcad48a5ce0" prot="public" virt="non-virtual"><scope>nvblox::renderer::RendererConfig</scope><name>headless</name></member>
+      <member refid="structnvblox_1_1renderer_1_1RendererConfig_1a3b24452c27373dbcca94c6b77f9c7905" prot="public" virt="non-virtual"><scope>nvblox::renderer::RendererConfig</scope><name>height</name></member>
+      <member refid="structnvblox_1_1renderer_1_1RendererConfig_1a4d41eaf5971469cc61d0d98ba9f79a0a" prot="public" virt="non-virtual"><scope>nvblox::renderer::RendererConfig</scope><name>title</name></member>
+      <member refid="structnvblox_1_1renderer_1_1RendererConfig_1af9f46e1216918c5d1cd880bf173946ab" prot="public" virt="non-virtual"><scope>nvblox::renderer::RendererConfig</scope><name>width</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

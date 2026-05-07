@@ -1,0 +1,20 @@
+/* Force white background for gallery table cells */
+table.gallery td {
+    background-color: inherit !important;
+    border: none !important;  /* optional: removes table cell borders */
+}
+
+/* Make images look clean inside the gallery */
+table.gallery img {
+    background-color: inherit !important;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+/* Remove border and box-shadow from gallery table */
+table.gallery,
+table.gallery td,
+table.gallery th {
+    border: none !important;
+    box-shadow: none !important;
+}
