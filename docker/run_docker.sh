@@ -55,6 +55,7 @@ then
 
     # Re-add the user
     userdel "$DOCKER_RUN_USER_NAME" || true
+    groupadd --force --gid "$DOCKER_RUN_GROUP_ID" "$DOCKER_RUN_GROUP_NAME"
     if id $DOCKER_RUN_USER_ID; then
         echo "User $DOCKER_RUN_USER_NAME with $DOCKER_RUN_USER_ID already exists."
         EXISTING_USER_NAME=$(id -nu $DOCKER_RUN_USER_ID)
