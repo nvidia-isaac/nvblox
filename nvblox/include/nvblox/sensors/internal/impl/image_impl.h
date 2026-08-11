@@ -124,6 +124,27 @@ void Image<ElementType>::copyFromAsync(const size_t rows, const size_t cols,
 }
 
 template <typename ElementType>
+void Image<ElementType>::copyFromAsync2D(const size_t rows, const size_t cols,
+                                       const size_t stride_num_elements,
+                                       const size_t buffer_stride_num_elements,
+                                       const size_t num_elements_per_pixel,
+                                       const ElementType* const buffer,
+                                       const CudaStream& cuda_stream) {
+  this->rows_ = rows;
+  this->cols_ = cols;
+  this->stride_num_elements_ = stride_num_elements;
+  this->num_elements_per_pixel_ = num_elements_per_pixel;
+
+  owned_data_.copyFromAsync2D(
+      buffer, 
+      buffer_stride_num_elements * num_elements_per_pixel, 
+      stride_num_elements * num_elements_per_pixel, 
+      rows, cols,
+      cuda_stream);
+  ImageBase<ElementType>::data_ = owned_data_.data();
+}
+
+template <typename ElementType>
 void Image<ElementType>::copyToAsync(ElementType* buffer,
                                      const CudaStream& cuda_stream) const {
   CHECK_NOTNULL(buffer);
