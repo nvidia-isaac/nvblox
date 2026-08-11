@@ -293,6 +293,12 @@ class Image : public ImageBase<_ElementType> {
                      const size_t num_elements_per_pixel,
                      const ElementType* const buffer,
                      const CudaStream& cuda_stream);
+  void copyFromAsync2D(const size_t rows, const size_t cols,
+                      const size_t stride_num_elements,
+                      const size_t buffer_stride_num_elements,
+                      const size_t num_elements_per_pixel,
+                      const ElementType* const buffer,
+                      const CudaStream& cuda_stream);
   void copyFrom(const size_t rows, const size_t cols,
                 const size_t stride_num_elements,
                 const size_t num_elements_per_pixel,
