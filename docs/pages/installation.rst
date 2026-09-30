@@ -88,6 +88,45 @@ Then build and run the docker container:
     cd nvblox
     ./docker/run_docker.sh
 
+For the x86 PyTorch 2.14.1 / CUDA 13.2 source profile, use this alternative
+instead of the default container command above:
+
+.. code-block:: bash
+
+    docker build -t nvblox_deps_cuda132 -f docker/Dockerfile.deps \
+        --build-arg BASE_IMAGE=nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu24.04 .
+    ./docker/run_docker.sh -i nvblox_deps_cuda132
+
+This profile selects PyTorch ``2.14.1+cu132`` and torchvision
+``0.29.1+cu132``. Inside the container, verify the selected environment:
+
+.. code-block:: bash
+
+    nvcc --version
+    python3 -c 'import torch, torchvision; print(torch.__version__, torchvision.__version__, torch.version.cuda)'
+
+Then rebuild the library and install the Python package using the steps below.
+CMake builds the core, renderer, tests and Python wrapper as C++20 with CUDA
+12 or later; the wrapper also honors any higher requirement exported by Torch.
+These builds require CMake **3.25.2 or newer** so that CMake recognizes nvcc's
+C++20 support. The Docker bootstrap upgrades Ubuntu 22.04's older system CMake
+in an isolated environment; Ubuntu 24.04 already provides a suitable version.
+The existing CUDA 11 / JetPack 5 compatibility path keeps CMake 3.22.1 and
+remains C++17 because nvcc 11 does not support C++20. Bazel's CUDA 13.2
+configuration uses C++20 for both host and device compilation.
+
+Wheel metadata pins the Torch release used to link the native wrapper rather
+than imposing a newer Torch dependency on older CUDA/Jetson builds. Rebuild
+``py_nvblox`` before packaging: its build-version record is shipped beside the
+native library and is read without importing Torch during isolated wheel builds.
+
+.. important::
+
+    A prebuilt wrapper must match the PyTorch it was compiled against. Do not
+    reuse a PyTorch 2.9.1 ``libpy_nvblox.so`` with PyTorch 2.14.1. The published
+    v0.0.10 wheel instructions above remain separate from this newer source
+    profile; this change does not publish replacement release wheels.
+
 To build the library run
 
 .. tabs::
@@ -179,6 +218,10 @@ Install the build dependencies. A working CUDA Toolkit installation
     sudo apt-get update && sudo apt-get install -y \
         cmake git git-lfs build-essential python3-dev
 
+For CUDA 12 or later, check that ``cmake --version`` reports at least **3.25.2**.
+Ubuntu 22.04's default CMake 3.22 is too old for CUDA C++20; install a newer
+CMake or use the Docker bootstrap above. CUDA 11 retains the 3.22.1 minimum.
+
 From the repository root, configure and build the core library:
 
 .. code-block:: bash
@@ -218,8 +261,11 @@ feature mapping.
 Building for Post-CXX11 ABI
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The library is built with the pre-cxx11 ABI by default in order to maintain compatibility with manylinux201X wheels.
-To build with the post cxx11 ABI, call cmake with the following flag:
+With the PyTorch wrapper enabled, CMake detects the ABI of the installed
+``python3`` Torch package unless explicitly overridden. Use the same Python
+installation for that check and for ``CMAKE_PREFIX_PATH`` / ``Torch_DIR``.
+Disabling the wrapper defaults to the post-CXX11 ABI.
+To explicitly request the post-CXX11 ABI, call cmake with the following flag:
 
 .. code-block:: bash
 
@@ -238,11 +284,15 @@ you can disable it by calling cmake with the following flag:
 Other ``docker`` containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We build and test in the following ``docker`` images, so if you would like to install
-in a ``docker``, and don't want to use our development ``docker``, these are guaranteed to work.
+The x86 CI profiles select these CUDA base images. A base image still needs
+nvblox's dependencies and a compatible host GPU/driver; use
+``docker/Dockerfile.deps`` rather than treating the base image as a complete
+installation.
 
+- ``nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu24.04``
+- ``nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu22.04``
 - ``nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu24.04``
-- ``nvcr.io/nvidia/cuda:12.6.1-devel-ubuntu22.04``
+- ``nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu22.04``
 - ``nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04``
 
 Build a Redistributable Library

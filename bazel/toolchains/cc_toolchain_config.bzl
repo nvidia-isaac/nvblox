@@ -54,13 +54,13 @@ def _impl(ctx):
         ),
     ]
 
-    cpp17_feature = feature(
-        name = "c++17",
+    cpp20_feature = feature(
+        name = "c++20",
         enabled = True,
         flag_sets = [
             flag_set(
                 actions = [ACTION_NAMES.cpp_compile],
-                flag_groups = [flag_group(flags = ["-std=c++17"])],
+                flag_groups = [flag_group(flags = ["-std=c++20"])],
             ),
         ],
     )
@@ -187,7 +187,7 @@ def _impl(ctx):
     )
 
     features = [
-        cpp17_feature,
+        cpp20_feature,
         cxx_compile_opts_feature,
         opt_feature,
         dbg_feature,

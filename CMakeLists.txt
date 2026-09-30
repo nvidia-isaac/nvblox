@@ -1,3 +1,5 @@
+# Keep the CUDA 11 / JetPack 5 minimum. nvblox_targets.cmake requires 3.25.2 for
+# CUDA 12+ because older CMake releases do not support nvcc's C++20 mode.
 cmake_minimum_required(VERSION 3.22.1)
 
 # Set default build type if not provided by user
@@ -42,9 +44,10 @@ if(BUILD_TESTING)
   enable_testing()
 endif()
 
-# Include file that defines functions for adding nvblox binary targets
-include(cmake/cuda/setup_compute_capability.cmake)
+# Check the compiler/CMake language policy before probing the GPU or
+# dependencies.
 include(cmake/nvblox_targets.cmake)
+include(cmake/cuda/setup_compute_capability.cmake)
 include(cmake/setup_pytorch_cpp11_abi.cmake)
 
 if(BUILD_PYTORCH_WRAPPER)

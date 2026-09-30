@@ -85,7 +85,6 @@ cuda_library(
     ],
     includes = [
         "src",
-        "src/stdgpu",
     ],
     deps = [
         "@cuda//:thrust",

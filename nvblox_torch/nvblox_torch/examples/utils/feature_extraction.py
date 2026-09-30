@@ -70,7 +70,9 @@ class RadioFeatureExtractor:
             version='e-radio_v2',    # embedding dim = 1536
             progress=True,
             pretrained=True,
-            skip_validation=True)
+            skip_validation=True,
+        # Trust only this fixed NVIDIA repository; avoid interactive Hub prompts.
+            trust_repo=True)
         self.model.cuda().eval()
 
         if self.radio_embedding_dim > constants.feature_array_num_elements():

@@ -24,7 +24,7 @@ RUN apt update && apt-get --no-install-recommends install -y \
     python3-pip python3-venv \
     # Open3D system dependencies \
     # NOTE(alexmillane): Taken from: http://www.open3d.org/docs/release/docker.html \
-    libegl1 libgl1 libgomp1 \
+    libegl1 libgl1 libgomp1 libusb-1.0-0 \
     # Tools used in tests \
     nsight-systems-2025.3.2 parallel \
     # Vulkan build dependencies for nvblox_renderer \

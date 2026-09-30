@@ -1,6 +1,8 @@
 from setuptools import setup
 import os
+from pathlib import Path
 import subprocess
+from typing import List
 
 # Note on version postfix:
 #   Use .devX on the developer's branch
@@ -80,8 +82,20 @@ __git_sha__ = '{git_sha}'
                                         git_sha=get_git_sha()))
 
 
+def get_install_requires() -> List[str]:
+    """Pin the wheel to the Torch release used to build its native library."""
+    root = Path(__file__).resolve().parent
+    version_file = root / 'nvblox_torch/lib/nvblox_torch/cpp/torch_version.txt'
+    torch_version = version_file.read_text(encoding='utf-8').strip()
+    if not torch_version:
+        raise RuntimeError('Missing Torch build version; rebuild the py_nvblox target first')
+    requirements = (root / 'requirements.txt').read_text(encoding='utf-8').splitlines()
+    return [line for line in requirements if line and not line.startswith('#')
+            ] + [f'torch=={torch_version}']
+
+
 if __name__ == '__main__':
     # Generate a version file
     create_version_file()
     # Proceed with setup
-    setup(version=get_version_with_platform_tag())
+    setup(version=get_version_with_platform_tag(), install_requires=get_install_requires())

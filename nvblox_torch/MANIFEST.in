@@ -1,3 +1,5 @@
+include requirements.txt
+include nvblox_torch/lib/nvblox_torch/cpp/torch_version.txt
 include nvblox_torch/lib/nvblox_torch/cpp/libpy_nvblox.so
 include nvblox_torch/lib/nvblox/libnvblox_lib.so
 include nvblox_torch/tests/data/3dmatch/*

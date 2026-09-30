@@ -256,7 +256,12 @@ class DockerImage(ABC):
         self._validate()
 
     def _validate(self) -> None:
-        """Validate that the correct cuda/ubuntu version was built"""
+        """Validate the OS/toolkit and pinned torch version in built CUDA images."""
+
+        # The standalone docs image has its own Python base, not the OS/deps/build chain.
+        # External OS images are not built here and do not contain our Python dependencies.
+        if self.parent_image() is None:
+            return
 
         # Check ubuntu version
         lsb_release_result = subprocess.run(
@@ -279,10 +284,34 @@ class DockerImage(ABC):
             capture_output=True,
             text=True,
         )
-        expected_cuda = f'cuda_{self.args.cuda_version.value}'
-        assert expected_cuda in cuda_version_result.stdout, (
-            f'Failed to find the correct cuda version. '
+        cuda132_profile = (self.args.platform == Platform.X86_64
+                           and self.args.cuda_version == CudaVersion.CUDA_13)
+        expected_cuda = '13.2' if cuda132_profile else self.args.cuda_version.value
+        match = re.search(r'release (\d+\.\d+)', cuda_version_result.stdout)
+        actual_cuda = match.group(1) if match else ''
+        if not cuda132_profile:
+            actual_cuda = actual_cuda.split('.')[0]
+        assert actual_cuda == expected_cuda, (
+            f'Failed to find the correct cuda version (expected {expected_cuda}). '
             f'Stdout: {cuda_version_result.stdout}')
+
+        if cuda132_profile:
+            # Both deps and build images must retain the pin. Importing torch and checking
+            # its build metadata does not require a GPU; GPU runtime tests run separately.
+            torch_check = ('import torch; '
+                           'assert torch.__version__.split("+")[0] == "2.14.1", '
+                           'f"Expected torch 2.14.1, got {torch.__version__}"; '
+                           'assert torch.version.cuda == "13.2", '
+                           'f"Expected torch CUDA 13.2, got {torch.version.cuda}"')
+            subprocess.run(
+                [
+                    'docker', 'run', '--rm',
+                    self.image_name(), '/opt/venv/bin/python', '-c', torch_check
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
 
         print(f'Successfully validated image: {self.image_name()}')
 
@@ -333,8 +362,8 @@ class OsImage(DockerImage):
                 UbuntuVersion.UBUNTU_24: 'nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu24.04',
             },
             CudaVersion.CUDA_13: {
-                UbuntuVersion.UBUNTU_22: 'nvcr.io/nvidia/cuda:13.0.0-devel-ubuntu22.04',
-                UbuntuVersion.UBUNTU_24: 'nvcr.io/nvidia/cuda:13.0.0-devel-ubuntu24.04',
+                UbuntuVersion.UBUNTU_22: 'nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu22.04',
+                UbuntuVersion.UBUNTU_24: 'nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu24.04',
             },
         },
         Platform.JETPACK_5: 'nvcr.io/nvidia/l4t-jetpack:r35.4.1',

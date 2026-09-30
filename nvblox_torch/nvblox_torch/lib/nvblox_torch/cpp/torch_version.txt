@@ -1,0 +1,1 @@
+../../../../../build/nvblox_torch/cpp/torch_version.txt

@@ -1,0 +1,17 @@
+--- a/src/stdgpu/impl/memory_detail.h
++++ b/src/stdgpu/impl/memory_detail.h
+@@ -67,3 +67,3 @@
+     {
+-        construct_at(stdgpu::to_address(_begin + i), _value);
++        stdgpu::construct_at(stdgpu::to_address(_begin + i), _value);
+     }
+@@ -90,3 +90,3 @@
+         // This adds support for transform_iterator, etc. which neither have operator->() nor get().
+-        construct_at(stdgpu::to_address(_output_begin + i), _begin[i]);
++        stdgpu::construct_at(stdgpu::to_address(_output_begin + i), _begin[i]);
+     }
+@@ -640,3 +640,3 @@
+ {
+-    construct_at(p, stdgpu::forward<Args>(args)...);
++    stdgpu::construct_at(p, stdgpu::forward<Args>(args)...);
+ }

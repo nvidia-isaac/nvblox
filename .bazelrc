@@ -1,7 +1,8 @@
 common --registry=https://bcr.bazel.build
 common --incompatible_disallow_empty_glob=False
 
-build --cxxopt='-std=c++17'
+build --cxxopt='-std=c++20'
+build --@rules_cuda//cuda:copts=-std=c++20
 
 # CUDA device compiler warning configuration (matching CMake)
 build --@rules_cuda//cuda:copts=-Xcudafe=--display_error_number  # Display warning numbers for easier debugging
