@@ -319,6 +319,7 @@ TORCH_LIBRARY(pynvblox, m) {
       .def_static("from_camera", &PySensor::fromCamera)
       .def_static("from_camera_distorted", &PySensor::fromCameraDistorted)
       .def_static("from_lidar", &PySensor::fromLidar)
+      .def_static("from_lidar_asymmetric", &PySensor::fromLidarAsymmetric)
       .def("get_sensor_modality", &PySensor::getSensorModality)
       .def("width", &PySensor::width)
       .def("height", &PySensor::height);
