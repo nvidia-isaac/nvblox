@@ -57,8 +57,11 @@ c10::intrusive_ptr<PySensor> PySensor::fromLidar(
     double vertical_fov_rad, double min_valid_range_m) {
   auto sensor = c10::make_intrusive<PySensor>();
 
+  // NOTE: nvblox::Lidar's 4-argument constructor takes (min_valid_range_m,
+  // vertical_fov_rad) in this order. Passing them the other way around silently
+  // swaps the sensor's vertical FOV and minimum valid range.
   nvblox::Lidar lidar(num_azimuth_divisions, num_elevation_divisions,
-                      vertical_fov_rad, min_valid_range_m);
+                      min_valid_range_m, vertical_fov_rad);
   sensor->sensor_store_.set(std::move(lidar));
   sensor->modality_ = nvblox::SensorModality::kLidar;
   sensor->width_ = num_azimuth_divisions;
