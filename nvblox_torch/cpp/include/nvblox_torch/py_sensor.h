@@ -44,6 +44,13 @@ struct PySensor : torch::CustomClassHolder {
                                                 double vertical_fov_rad,
                                                 double min_valid_range_m);
 
+  /// Create sensor from Lidar with an asymmetric elevation envelope, for beams
+  /// not distributed evenly around zero (see the second nvblox::Lidar ctor).
+  static c10::intrusive_ptr<PySensor> fromLidarAsymmetric(
+      int64_t num_azimuth_divisions, int64_t num_elevation_divisions,
+      double min_angle_below_zero_elevation_rad,
+      double max_angle_above_zero_elevation_rad, double min_valid_range_m);
+
   /// Get the sensor modality
   std::string getSensorModality() const;
 
