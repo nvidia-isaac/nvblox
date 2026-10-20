@@ -105,15 +105,22 @@ This profile selects PyTorch ``2.14.1+cu132`` and torchvision
     nvcc --version
     python3 -c 'import torch, torchvision; print(torch.__version__, torchvision.__version__, torch.version.cuda)'
 
-Then rebuild the library and install the Python package using the steps below.
-CMake builds the core, renderer, tests and Python wrapper as C++20 with CUDA
-12 or later; the wrapper also honors any higher requirement exported by Torch.
-These builds require CMake **3.25.2 or newer** so that CMake recognizes nvcc's
-C++20 support. The Docker bootstrap upgrades Ubuntu 22.04's older system CMake
-in an isolated environment; Ubuntu 24.04 already provides a suitable version.
-The existing CUDA 11 / JetPack 5 compatibility path keeps CMake 3.22.1 and
-remains C++17 because nvcc 11 does not support C++20. Bazel's CUDA 13.2
-configuration uses C++20 for both host and device compilation.
+C++17 remains the default for CMake and Bazel, including builds embedded in
+Isaac ROS. The PyTorch 2.14.1 headers require C++20, so explicitly select it
+when configuring this source profile:
+
+.. code-block:: bash
+
+    cmake -S . -B build -DNVBLOX_CXX_STANDARD=20
+    cmake --build build --parallel 6
+
+Then install the Python package using the steps below. The C++20 option applies
+to the core, renderer, tests and Python wrapper for both host and device code.
+It requires CUDA **12 or newer** and CMake **3.25.2 or newer**. C++17 builds
+retain the CMake 3.22.1 minimum, including CUDA 11 / JetPack 5. The Docker
+bootstrap provides a C++20-capable CMake on Ubuntu 22.04 and 24.04.
+If Torch requires a newer dialect than selected, configuration fails with
+instructions to opt in or disable the wrapper.
 
 Wheel metadata pins the Torch release used to link the native wrapper rather
 than imposing a newer Torch dependency on older CUDA/Jetson builds. Rebuild
@@ -127,7 +134,8 @@ native library and is read without importing Torch during isolated wheel builds.
     v0.0.10 wheel instructions above remain separate from this newer source
     profile; this change does not publish replacement release wheels.
 
-To build the library run
+For the default C++17 build, run the following commands (use
+``-DNVBLOX_CXX_STANDARD=20`` for the PyTorch 2.14.1 profile above):
 
 .. tabs::
     .. tab:: x86, JetPack 6
@@ -218,9 +226,9 @@ Install the build dependencies. A working CUDA Toolkit installation
     sudo apt-get update && sudo apt-get install -y \
         cmake git git-lfs build-essential python3-dev
 
-For CUDA 12 or later, check that ``cmake --version`` reports at least **3.25.2**.
-Ubuntu 22.04's default CMake 3.22 is too old for CUDA C++20; install a newer
-CMake or use the Docker bootstrap above. CUDA 11 retains the 3.22.1 minimum.
+The default C++17 build requires CMake **3.22.1 or newer**. If opting into
+C++20 with ``-DNVBLOX_CXX_STANDARD=20``, use CUDA **12 or newer** and CMake
+**3.25.2 or newer**; Ubuntu 22.04's default CMake is too old for that option.
 
 From the repository root, configure and build the core library:
 
@@ -336,17 +344,22 @@ To build with Bazel:
     # Install Bazel (if not already installed)
     # See https://bazel.build/install for installation instructions
 
-    # Build the core library
+    # Build the core library with the default C++17 dialect
     bazel build //:nvblox
 
     # Run tests
     bazel test //nvblox/tests/...
+
+    # Opt in to C++20 for both host and CUDA compilation (CUDA 12+)
+    bazel build --config=cxx20 //:nvblox
+    bazel test --config=cxx20 //nvblox/tests/...
 
     # Build for aarch64 (experimental)
     bazel build --config arm64 //:nvblox
 
 Build configuration options are defined in ``.bazelrc``. Additional configurations include:
 
+- ``--config=cxx20``: Opt in to C++20 for host and device code
 - ``--config asan``: Build with Address Sanitizer
 - ``--config tsan``: Build with Thread Sanitizer
 - ``--config ubsan``: Build with Undefined Behavior Sanitizer

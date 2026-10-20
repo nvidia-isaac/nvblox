@@ -1,5 +1,5 @@
-# Keep the CUDA 11 / JetPack 5 minimum. nvblox_targets.cmake requires 3.25.2 for
-# CUDA 12+ because older CMake releases do not support nvcc's C++20 mode.
+# Keep the C++17 minimum for downstream toolchains, including Isaac ROS. Opting
+# in to C++20 requires CMake 3.25.2+ and CUDA 12+.
 cmake_minimum_required(VERSION 3.22.1)
 
 # Set default build type if not provided by user

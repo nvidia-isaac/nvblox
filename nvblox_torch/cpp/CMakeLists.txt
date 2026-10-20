@@ -14,11 +14,32 @@ set(CMAKE_CUDA_ARCHITECTURES_OLD ${CMAKE_CUDA_ARCHITECTURES})
 find_package(Torch REQUIRED)
 set(CMAKE_CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES_OLD})
 
-# Torch exports its required dialect as a target property, not an interface
-# feature. Newer releases require C++20; older/Jetson releases still use C++17.
+# Torch releases export their required dialect either as a target property or as
+# interface features. Newer releases require C++20; older releases use C++17.
 get_target_property(NVBLOX_TORCH_CXX_STANDARD torch CXX_STANDARD)
 if(NOT NVBLOX_TORCH_CXX_STANDARD)
   set(NVBLOX_TORCH_CXX_STANDARD 17)
+endif()
+get_target_property(NVBLOX_TORCH_COMPILE_FEATURES torch
+                    INTERFACE_COMPILE_FEATURES)
+foreach(feature IN LISTS NVBLOX_TORCH_COMPILE_FEATURES)
+  if(feature MATCHES "^cxx_std_([0-9]+)$")
+    if(CMAKE_MATCH_1 GREATER NVBLOX_TORCH_CXX_STANDARD)
+      set(NVBLOX_TORCH_CXX_STANDARD "${CMAKE_MATCH_1}")
+    endif()
+  endif()
+endforeach()
+
+# Keep the project's default intact: building against newer Torch is an explicit
+# choice to raise the dialect for both host and device code.
+if(NVBLOX_TORCH_CXX_STANDARD GREATER NVBLOX_CXX_STANDARD)
+  message(
+    FATAL_ERROR
+      "Torch requires C++${NVBLOX_TORCH_CXX_STANDARD}, but nvblox is configured "
+      "with NVBLOX_CXX_STANDARD=${NVBLOX_CXX_STANDARD}. "
+      "Configure with -DNVBLOX_CXX_STANDARD=${NVBLOX_TORCH_CXX_STANDARD} "
+      "using a supported toolchain, select a Torch release compatible with "
+      "C++${NVBLOX_CXX_STANDARD}, or set -DBUILD_PYTORCH_WRAPPER=OFF.")
 endif()
 
 # On Jetson, we need to link explicitly against cudnn
@@ -64,15 +85,6 @@ add_nvblox_shared_library(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
   $<INSTALL_INTERFACE:include>
   ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-
-# Propagate the header requirement to C++ consumers and use the same dialect for
-# for the CUDA translation units. The project's language minimum also applies.
-foreach(target_name py_nvblox py_nvblox_test)
-  target_compile_features(
-    ${target_name}
-    PUBLIC cxx_std_${NVBLOX_TORCH_CXX_STANDARD}
-    PRIVATE cuda_std_${NVBLOX_TORCH_CXX_STANDARD})
-endforeach()
 
 # Record the public Torch package version for wheel metadata. Preserve JetPack
 # prerelease versions when Python and the selected Torch CMake package agree;

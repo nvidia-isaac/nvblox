@@ -75,7 +75,8 @@ class BuildImage(DockerImage):
         cuda_arch = self.get_cuda_sm_architecture()
 
         # Setup args to cmake
-        cmake_args = f'-DCMAKE_CUDA_ARCHITECTURES={cuda_arch} -DWARNING_AS_ERROR=1'
+        cmake_args = (f'-DCMAKE_CUDA_ARCHITECTURES={cuda_arch} -DWARNING_AS_ERROR=1'
+                      f' -DNVBLOX_CXX_STANDARD={self.args.cxx_standard}')
         if self.args.gcc_sanitizer == 1:
             # libtorch's CUDA caching allocator is incompatible with gcc
             # AddressSanitizer (the nvblox_torch cpp tests fail with ASan
@@ -217,7 +218,11 @@ class BazelTests(TestBase):
     """Run the Bazel tests"""
 
     def get_command(self) -> str:
-        return 'bash ci/install_bazel.sh && bazel test -c opt //nvblox/tests/...'
+        # Always cover the default dialect, including on the modern Torch job.
+        command = 'bash ci/install_bazel.sh && bazel test -c opt //nvblox/tests/...'
+        if self.args.cxx_standard == 20:
+            command += ' && bazel test --config=cxx20 -c opt //nvblox/tests/...'
+        return command
 
     def image(self) -> DockerImage:
         return BuildImage(self.args)
@@ -262,6 +267,13 @@ def parse_args() -> argparse.Namespace:
         required=False,
         help=
         'Test to run. Will also build the necessary image (no-op if the image is already built).',
+    )
+    parser.add_argument(
+        '--cxx-standard',
+        type=int,
+        choices=(17, 20),
+        default=17,
+        help='C++ dialect for host and CUDA compilation (20 is opt-in).',
     )
     parser.add_argument(
         '--cuda-version',

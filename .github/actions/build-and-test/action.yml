@@ -10,6 +10,10 @@ inputs:
   ubuntu-version:
     description: 'Ubuntu version'
     required: true
+  cxx-standard:
+    description: 'C++ dialect for host and CUDA compilation'
+    required: false
+    default: '17'
   gcc-sanitizer:
     description: 'Build in debug mode with gcc sanitizers enabled'
     required: false
@@ -48,7 +52,7 @@ runs:
       shell: bash
       run: |
         # Store arguments used for all jobs in an environment variable.
-        echo "COMMON_NVBLOX_CI_ARGS=--platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --gcc-sanitizer ${{ inputs.gcc-sanitizer }}" >> $GITHUB_ENV
+        echo "COMMON_NVBLOX_CI_ARGS=--platform ${{ inputs.platform }} --cuda-version ${{ inputs.cuda-version }} --ubuntu-version ${{ inputs.ubuntu-version }} --gcc-sanitizer ${{ inputs.gcc-sanitizer }} --cxx-standard ${{ inputs.cxx-standard }}" >> $GITHUB_ENV
     # Note that the two build-image steps could be omitted since the build-and-test steps also build necessary images.
     # However, we separate the steps to get cleaner logs and better timing granularity.
     - name: Build dependency image

@@ -1,15 +1,26 @@
 # -------------------------------------------------------------------
-# C++20 is the project default for supported modern CUDA toolchains. nvcc 11.x
-# only supports C++17; retain the existing CUDA11/JetPack5 CI path.
-set(NVBLOX_CXX_STANDARD 20)
-if(DEFINED CMAKE_CUDA_COMPILER_VERSION AND CMAKE_CUDA_COMPILER_VERSION
-                                           VERSION_LESS "12.0")
-  set(NVBLOX_CXX_STANDARD 17)
-elseif(CMAKE_VERSION VERSION_LESS "3.25.2")
+# Keep C++17 as the default for downstream users, including Isaac ROS. Newer
+# PyTorch releases require C++20; enable it with -DNVBLOX_CXX_STANDARD=20.
+set(NVBLOX_CXX_STANDARD
+    17
+    CACHE STRING "C++ standard for nvblox host and CUDA code (17 or 20)")
+set_property(CACHE NVBLOX_CXX_STANDARD PROPERTY STRINGS 17 20)
+if(NOT NVBLOX_CXX_STANDARD MATCHES "^(17|20)$")
+  message(FATAL_ERROR "NVBLOX_CXX_STANDARD must be 17 or 20.")
+endif()
+
+if(NVBLOX_CXX_STANDARD EQUAL 20)
+  if(DEFINED CMAKE_CUDA_COMPILER_VERSION AND CMAKE_CUDA_COMPILER_VERSION
+                                             VERSION_LESS "12.0")
+    message(FATAL_ERROR "NVBLOX_CXX_STANDARD=20 requires CUDA 12 or newer. "
+                        "Use -DNVBLOX_CXX_STANDARD=17 with CUDA 11.")
+  endif()
   # NVIDIA CUDA C++20 support was added in CMake 3.25.2, not 3.25.0.
-  message(
-    FATAL_ERROR "nvblox requires CMake 3.25.2 or newer for CUDA 12+ (C++20). "
-                "CUDA 11 builds (C++17) can still use CMake 3.22.1.")
+  if(CMAKE_VERSION VERSION_LESS "3.25.2")
+    message(
+      FATAL_ERROR "NVBLOX_CXX_STANDARD=20 requires CMake 3.25.2 or newer "
+                  "for CUDA C++20 support. C++17 builds can use CMake 3.22.1.")
+  endif()
 endif()
 
 # Function for adding a device compiler option.

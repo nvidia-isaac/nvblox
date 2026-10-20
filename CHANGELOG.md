@@ -8,30 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Add the x86 PyTorch 2.14.1 / torchvision 0.29.1 CUDA 13.2 source-build profile
-  and use CUDA 13.2 for the CUDA-13 CI images, retaining the older CUDA/Jetson
-  dependency selections.
-- Build the core, renderer, tests and Python wrapper as C++20 on CUDA 12+,
-  retaining the legacy CUDA 11 C++17 path. Align Bazel host/device compilation
-  with C++20 and CUDA 13.2.
-- Pin each wheel's Torch dependency to the release used to link its native
-  library, preserving older CUDA/Jetson builds instead of widening a global cap.
-  Skip wrapper packaging when CMake explicitly disables it, including GCC
-  sanitizer builds, rather than requiring a nonexistent native-build record.
-
-### Fixed
-
-- Preserve Blackwell architectures when translating CMake targets to Torch
-  compiler flags instead of substituting Hopper 9.0.
-- Require CMake 3.25.2 for modern CUDA C++20 builds and upgrade the Ubuntu 22.04
-  Docker bootstrap, retaining CMake 3.22.1 for CUDA 11.
-- Qualify stdgpu construction calls to avoid C++20 argument-dependent lookup
-  ambiguity with CUDA standard-library types. Keep its Bazel headers namespaced
-  to prevent shadowing system `limits.h`.
-- Use the working official Bazel release signing-key URL in the installer.
-- Explicitly trust the fixed NVIDIA RADIO Torch Hub repository so newer Torch
-  versions do not prompt during unattended deep-feature mapping.
-- Install the Open3D USB runtime dependency in the development image.
+- Add opt-in C++20 and PyTorch 2.14.1 / CUDA 13.2 source-build support, retaining C++17 by default.
 
 ## [v.0.0.10] - Date: 2026-04-16
 

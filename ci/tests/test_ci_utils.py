@@ -36,6 +36,7 @@ def image_args(cuda: ci_utils.CudaVersion = ci_utils.CudaVersion.CUDA_13,
                               ubuntu_version=ubuntu,
                               platform=platform,
                               gcc_sanitizer=0,
+                              cxx_standard=17,
                               cuda_arch=ci_utils.CudaSmArchitectures.SM_X86_CI_SUPPORTED,
                               max_num_jobs=2,
                               user_build_args=None)
@@ -81,6 +82,52 @@ class OsImageSelectionTest(unittest.TestCase):
         self.assertIsNotNone(os_image)
         assert os_image is not None
         self.assertEqual(os_image.image_name(), 'nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu24.04')
+
+
+class CxxStandardCiTest(unittest.TestCase):
+    """Keep the chosen dialect consistent across CI commands and image tags."""
+
+    def parse_args(self, *extra: str) -> argparse.Namespace:
+        with patch.object(sys, 'argv', ['nvblox_ci.py', '--build-image', 'build', *extra]):
+            return nvblox_ci.parse_args()
+
+    def test_cli_defaults_to_cxx17_and_accepts_explicit_cxx20(self) -> None:
+        self.assertEqual(self.parse_args().cxx_standard, 17)
+        self.assertEqual(self.parse_args('--cxx-standard', '20').cxx_standard, 20)
+
+    def test_unsupported_dialect_is_rejected(self) -> None:
+        with patch('sys.stderr', new=io.StringIO()), self.assertRaises(SystemExit):
+            self.parse_args('--cxx-standard', '23')
+
+    def test_cmake_build_receives_selected_dialect(self) -> None:
+        for standard in (17, 20):
+            with self.subTest(standard=standard):
+                args = image_args(cuda=ci_utils.CudaVersion.CUDA_12)
+                args.cxx_standard = standard
+                build_args = nvblox_ci.BuildImage(args).build_args()
+                self.assertIn(f'-DNVBLOX_CXX_STANDARD={standard}', build_args[0].split())
+
+    def test_matrix_jobs_have_distinct_image_tags(self) -> None:
+        default = image_args()
+        modern = image_args()
+        modern.cxx_standard = 20
+        for image_type in (nvblox_ci.BuildImage, nvblox_ci.RealsenseImage):
+            with self.subTest(image=image_type):
+                self.assertEqual(
+                    image_type(modern).image_name(),
+                    image_type(default).image_name() + '_cxx20')
+
+    def test_modern_bazel_job_tests_both_default_and_opt_in(self) -> None:
+        args = image_args()
+        default_command = nvblox_ci.BazelTests(args).get_command()
+        args.cxx_standard = 20
+        modern_command = nvblox_ci.BazelTests(args).get_command()
+        self.assertEqual(default_command.split(' && ')[1], 'bazel test -c opt //nvblox/tests/...')
+        self.assertEqual(modern_command.split(' && '), [
+            'bash ci/install_bazel.sh',
+            'bazel test -c opt //nvblox/tests/...',
+            'bazel test --config=cxx20 -c opt //nvblox/tests/...',
+        ])
 
 
 class ImageValidationTest(unittest.TestCase):

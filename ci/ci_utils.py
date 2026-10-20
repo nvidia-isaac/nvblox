@@ -190,6 +190,8 @@ class DockerImage(ABC):
                   f'_u{self.args.ubuntu_version.value}')
         if self.args.gcc_sanitizer == 1:
             suffix += '_gsan'
+        if self.args.cxx_standard != 17:
+            suffix += f'_cxx{self.args.cxx_standard}'
         return suffix
 
     def image_name(self) -> str:
