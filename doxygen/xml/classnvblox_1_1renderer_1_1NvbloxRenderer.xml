@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
   <compounddef id="classnvblox_1_1renderer_1_1NvbloxRenderer" kind="class" language="C++" prot="public">
     <compoundname>nvblox::renderer::NvbloxRenderer</compoundname>
     <includes refid="renderer_8h" local="no">renderer.h</includes>
@@ -377,7 +377,7 @@
         <name>NvbloxRenderer</name>
         <qualifiedname>nvblox::renderer::NvbloxRenderer::NvbloxRenderer</qualifiedname>
         <param>
-          <type>const <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer" kindref="compound">NvbloxRenderer</ref> &amp;</type>
+          <type>const NvbloxRenderer &amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -388,13 +388,13 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="83" column="3"/>
       </memberdef>
       <memberdef kind="function" id="classnvblox_1_1renderer_1_1NvbloxRenderer_1aebf2dfbb2360a267d4398b318b964dfc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
-        <type><ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer" kindref="compound">NvbloxRenderer</ref> &amp;</type>
+        <type>NvbloxRenderer &amp;</type>
         <definition>NvbloxRenderer &amp; nvblox::renderer::NvbloxRenderer::operator=</definition>
         <argsstring>(const NvbloxRenderer &amp;)=delete</argsstring>
         <name>operator=</name>
         <qualifiedname>nvblox::renderer::NvbloxRenderer::operator=</qualifiedname>
         <param>
-          <type>const <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer" kindref="compound">NvbloxRenderer</ref> &amp;</type>
+          <type>const NvbloxRenderer &amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -1449,28 +1449,24 @@
     <detaileddescription>
 <para>Main Vulkan renderer class for visualizing nvblox data.</para>
 <para>Manages Vulkan context, render targets, and visualizers. Supports both windowed and headless rendering modes.</para>
-<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md0">
-<title>Lifecycle</title>
-<para><orderedlist>
+<sect1 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md0_1s1"><sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md0">
+<title>Lifecycle</title><para><orderedlist>
 <listitem><para>Construct, then call <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ae633ea2819950ddba6bc1526abf9a794" kindref="member">init()</ref> / <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac96695680ec032acdd808b549aa996de" kindref="member">initWithWindow()</ref> / <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1aa9dbdd47b82b3b6d2053233a4e53563d" kindref="member">initHeadless()</ref></para>
 </listitem><listitem><para>Call <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac66c82b3d039e38f86100259f7726669" kindref="member">initVisualizer(RenderMode)</ref> for each visualizer needed</para>
 </listitem><listitem><para>Render loop: update* -&gt; <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref> -&gt; <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1ac3a59f2a3215953a59be9da6471c9ada" kindref="member">pollEvents()</ref></para>
 </listitem><listitem><para><ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1a4ea67c725da78e6166a58487dd5a7eec" kindref="member">destroy()</ref> or let destructor clean up</para>
 </listitem></orderedlist>
 </para>
-</sect2>
-<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md1">
-<title>Error Handling</title>
-<para>Init and render methods return false on failure and log via glog.</para>
-</sect2>
-<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md2">
-<title>Thread Safety</title>
-<para>Not thread-safe. All calls must be from the same thread.</para>
-</sect2>
-<sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md3">
-<title>Synchronization</title>
-<para>Caller must call stream.synchronize() after CUDA updates and before <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref>. CPU sync is used for simplicity and portability; GPU-GPU sync via timeline semaphores is possible by modifying VkContext::endFrame(). </para>
-</sect2>
+</sect2></sect1>
+<sect1 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md1_1s1"><sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md1">
+<title>Error Handling</title><para>Init and render methods return false on failure and log via glog.</para>
+</sect2></sect1>
+<sect1 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md2_1s1"><sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md2">
+<title>Thread Safety</title><para>Not thread-safe. All calls must be from the same thread.</para>
+</sect2></sect1>
+<sect1 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md3_1s1"><sect2 id="classnvblox_1_1renderer_1_1NvbloxRenderer_1autotoc_md3">
+<title>Synchronization</title><para>Caller must call stream.synchronize() after CUDA updates and before <ref refid="classnvblox_1_1renderer_1_1NvbloxRenderer_1af17a5a12d78c1793bfa24d38cb8a4a7f" kindref="member">render()</ref>. CPU sync is used for simplicity and portability; GPU-GPU sync via timeline semaphores is possible by modifying VkContext::endFrame(). </para>
+</sect2></sect1>
     </detaileddescription>
     <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" line="77" column="1" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/renderer.h" bodystart="77" bodyend="321"/>
     <listofallmembers>

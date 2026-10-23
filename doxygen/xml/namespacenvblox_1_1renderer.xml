@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
   <compounddef id="namespacenvblox_1_1renderer" kind="namespace" language="C++">
     <compoundname>nvblox::renderer</compoundname>
-    <innerclass refid="structnvblox_1_1renderer_1_1BufferValidationResult" prot="public">nvblox::renderer::BufferValidationResult</innerclass>
-    <innerclass refid="classnvblox_1_1renderer_1_1ImageVisualizer" prot="public">nvblox::renderer::ImageVisualizer</innerclass>
-    <innerclass refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" prot="public">nvblox::renderer::ImageVisualizerConfig</innerclass>
-    <innerclass refid="structnvblox_1_1renderer_1_1MeshVertex" prot="public">nvblox::renderer::MeshVertex</innerclass>
-    <innerclass refid="classnvblox_1_1renderer_1_1MeshVisualizer" prot="public">nvblox::renderer::MeshVisualizer</innerclass>
+    <innerclass refid="structnvblox_1_1renderer_1_1RendererConfig" prot="public">nvblox::renderer::RendererConfig</innerclass>
     <innerclass refid="classnvblox_1_1renderer_1_1NvbloxRenderer" prot="public">nvblox::renderer::NvbloxRenderer</innerclass>
+    <innerclass refid="structnvblox_1_1renderer_1_1ImageVisualizerConfig" prot="public">nvblox::renderer::ImageVisualizerConfig</innerclass>
+    <innerclass refid="classnvblox_1_1renderer_1_1ImageVisualizer" prot="public">nvblox::renderer::ImageVisualizer</innerclass>
     <innerclass refid="structnvblox_1_1renderer_1_1PointCloudPoint" prot="public">nvblox::renderer::PointCloudPoint</innerclass>
     <innerclass refid="classnvblox_1_1renderer_1_1PointCloudVisualizer" prot="public">nvblox::renderer::PointCloudVisualizer</innerclass>
-    <innerclass refid="structnvblox_1_1renderer_1_1RendererConfig" prot="public">nvblox::renderer::RendererConfig</innerclass>
+    <innerclass refid="classnvblox_1_1renderer_1_1MeshVisualizer" prot="public">nvblox::renderer::MeshVisualizer</innerclass>
     <innerclass refid="classnvblox_1_1renderer_1_1ViewCamera" prot="public">nvblox::renderer::ViewCamera</innerclass>
+    <innerclass refid="structnvblox_1_1renderer_1_1BufferValidationResult" prot="public">nvblox::renderer::BufferValidationResult</innerclass>
+    <innerclass refid="structnvblox_1_1renderer_1_1MeshVertex" prot="public">nvblox::renderer::MeshVertex</innerclass>
     <sectiondef kind="enum">
       <memberdef kind="enum" id="renderer_8h_1a96af2409618ddc7730a74eaa807d3e35" prot="public" static="no" strong="yes">
         <type></type>
@@ -53,8 +53,8 @@
     </sectiondef>
     <sectiondef kind="var">
       <memberdef kind="variable" id="renderer__constants_8h_1a12da18792db345232c1e96a278d90877" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr std::array&lt; float, 4 &gt;</type>
-        <definition>constexpr std::array&lt;float, 4&gt; nvblox::renderer::kDefaultClearColor</definition>
+        <type>std::array&lt; float, 4 &gt;</type>
+        <definition>std::array&lt;float, 4&gt; nvblox::renderer::kDefaultClearColor</definition>
         <argsstring></argsstring>
         <name>kDefaultClearColor</name>
         <qualifiedname>nvblox::renderer::kDefaultClearColor</qualifiedname>
@@ -69,8 +69,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="34" column="22" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="34" bodyend="34"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a3ca0f4467bf9fa2bbd50b074d8c5bc0b" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kDefaultDepthClear</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kDefaultDepthClear</definition>
         <argsstring></argsstring>
         <name>kDefaultDepthClear</name>
         <qualifiedname>nvblox::renderer::kDefaultDepthClear</qualifiedname>
@@ -85,8 +85,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="36" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="36" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1aeb763098cfc5f4f8c6b22ec597db7435" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kDefaultPointBufferSize</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kDefaultPointBufferSize</definition>
         <argsstring></argsstring>
         <name>kDefaultPointBufferSize</name>
         <qualifiedname>nvblox::renderer::kDefaultPointBufferSize</qualifiedname>
@@ -101,8 +101,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="47" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="47" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ac497c39142941c3d65eb78c99dee8102" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kDefaultVertexBufferSize</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kDefaultVertexBufferSize</definition>
         <argsstring></argsstring>
         <name>kDefaultVertexBufferSize</name>
         <qualifiedname>nvblox::renderer::kDefaultVertexBufferSize</qualifiedname>
@@ -117,8 +117,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="50" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="50" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ae9654718c38c3a947b56db0fb692f2d8" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kDefaultIndexBufferSize</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kDefaultIndexBufferSize</definition>
         <argsstring></argsstring>
         <name>kDefaultIndexBufferSize</name>
         <qualifiedname>nvblox::renderer::kDefaultIndexBufferSize</qualifiedname>
@@ -133,8 +133,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="53" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="53" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a3ec97841ee7449cb5d2248d6ca6c21ed" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kBufferGrowthFactor</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kBufferGrowthFactor</definition>
         <argsstring></argsstring>
         <name>kBufferGrowthFactor</name>
         <qualifiedname>nvblox::renderer::kBufferGrowthFactor</qualifiedname>
@@ -149,8 +149,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="56" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="56" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1aabba6b8c668b66be3c9ba09155b82f67" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kMaxBufferSizeBytes</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kMaxBufferSizeBytes</definition>
         <argsstring></argsstring>
         <name>kMaxBufferSizeBytes</name>
         <qualifiedname>nvblox::renderer::kMaxBufferSizeBytes</qualifiedname>
@@ -165,8 +165,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="59" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="59" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a791e05d1e279e7c98f37cd131a445d2c" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kMaxVertexCount</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kMaxVertexCount</definition>
         <argsstring></argsstring>
         <name>kMaxVertexCount</name>
         <qualifiedname>nvblox::renderer::kMaxVertexCount</qualifiedname>
@@ -180,8 +180,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="61" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="61" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a5f9d9dc64e156a40e982eca63b52dbdf" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kMaxTriangleCount</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kMaxTriangleCount</definition>
         <argsstring></argsstring>
         <name>kMaxTriangleCount</name>
         <qualifiedname>nvblox::renderer::kMaxTriangleCount</qualifiedname>
@@ -195,8 +195,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="62" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="62" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a076d6ce300ed31a4a9518caf3750ac62" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::kMaxPointCount</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::kMaxPointCount</definition>
         <argsstring></argsstring>
         <name>kMaxPointCount</name>
         <qualifiedname>nvblox::renderer::kMaxPointCount</qualifiedname>
@@ -210,8 +210,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="63" column="18" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="63" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ac96f8d424a3612dc77ff45f4698e2af1" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kDefaultCameraDistanceM</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kDefaultCameraDistanceM</definition>
         <argsstring></argsstring>
         <name>kDefaultCameraDistanceM</name>
         <qualifiedname>nvblox::renderer::kDefaultCameraDistanceM</qualifiedname>
@@ -225,8 +225,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="111" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="111" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a86f9208d35cbe92da15fd89b807b99c1" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kCameraOrbitSpeedRadPerPx</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kCameraOrbitSpeedRadPerPx</definition>
         <argsstring></argsstring>
         <name>kCameraOrbitSpeedRadPerPx</name>
         <qualifiedname>nvblox::renderer::kCameraOrbitSpeedRadPerPx</qualifiedname>
@@ -240,8 +240,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="112" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="112" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a8a747ade3ff98a4d4fe43e70c00a2658" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kCameraPanSpeedMPerPx</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kCameraPanSpeedMPerPx</definition>
         <argsstring></argsstring>
         <name>kCameraPanSpeedMPerPx</name>
         <qualifiedname>nvblox::renderer::kCameraPanSpeedMPerPx</qualifiedname>
@@ -256,8 +256,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="113" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="113" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ae627da99d04fdc6dd49aaf805a289047" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kCameraResetTargetZM</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kCameraResetTargetZM</definition>
         <argsstring></argsstring>
         <name>kCameraResetTargetZM</name>
         <qualifiedname>nvblox::renderer::kCameraResetTargetZM</qualifiedname>
@@ -271,8 +271,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="114" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="114" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a5936d700184bc1cec34b9bd34f565f1c" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kCameraResetYawRad</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kCameraResetYawRad</definition>
         <argsstring></argsstring>
         <name>kCameraResetYawRad</name>
         <qualifiedname>nvblox::renderer::kCameraResetYawRad</qualifiedname>
@@ -288,8 +288,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="115" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="115" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a13364db431a918e4cdd96af4dbca4938" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::kCameraResetPitchRad</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::kCameraResetPitchRad</definition>
         <argsstring></argsstring>
         <name>kCameraResetPitchRad</name>
         <qualifiedname>nvblox::renderer::kCameraResetPitchRad</qualifiedname>
@@ -303,8 +303,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="117" column="17" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="117" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ac289fcd6885caafa36a28da51f601830" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr uint64_t</type>
-        <definition>constexpr uint64_t nvblox::renderer::kAcquireImageTimeoutNs</definition>
+        <type>uint64_t</type>
+        <definition>uint64_t nvblox::renderer::kAcquireImageTimeoutNs</definition>
         <argsstring></argsstring>
         <name>kAcquireImageTimeoutNs</name>
         <qualifiedname>nvblox::renderer::kAcquireImageTimeoutNs</qualifiedname>
@@ -319,8 +319,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="124" column="20" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="124" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1a2ff67bba2acd388203507872a410d2b7" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr uint32_t</type>
-        <definition>constexpr uint32_t nvblox::renderer::kMaxTextureDimension</definition>
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::kMaxTextureDimension</definition>
         <argsstring></argsstring>
         <name>kMaxTextureDimension</name>
         <qualifiedname>nvblox::renderer::kMaxTextureDimension</qualifiedname>
@@ -334,8 +334,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="130" column="20" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="130" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ab3d0cc5e4e11bb7a10f2cd4b71849c3d" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr uint32_t</type>
-        <definition>constexpr uint32_t nvblox::renderer::kMinTextureDimension</definition>
+        <type>uint32_t</type>
+        <definition>uint32_t nvblox::renderer::kMinTextureDimension</definition>
         <argsstring></argsstring>
         <name>kMinTextureDimension</name>
         <qualifiedname>nvblox::renderer::kMinTextureDimension</qualifiedname>
@@ -349,8 +349,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" line="131" column="20" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/renderer_constants.h" bodystart="131" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="renderer__constants_8h_1ae1455ba02b4e4d0517a9039553e3791c" prot="public" static="no" constexpr="yes" mutable="no">
-        <type>constexpr uint8_t</type>
-        <definition>constexpr uint8_t nvblox::renderer::kOpaqueAlpha</definition>
+        <type>uint8_t</type>
+        <definition>uint8_t nvblox::renderer::kOpaqueAlpha</definition>
         <argsstring></argsstring>
         <name>kOpaqueAlpha</name>
         <qualifiedname>nvblox::renderer::kOpaqueAlpha</qualifiedname>
@@ -366,8 +366,8 @@
     </sectiondef>
     <sectiondef kind="func">
       <memberdef kind="function" id="renderer__constants_8h_1a2775e6e08963c2234e1f4517eeec31f0" prot="public" static="no" constexpr="yes" const="no" explicit="no" inline="no" virt="non-virtual">
-        <type>constexpr bool</type>
-        <definition>constexpr bool nvblox::renderer::wouldOverflow</definition>
+        <type>bool</type>
+        <definition>bool nvblox::renderer::wouldOverflow</definition>
         <argsstring>(size_t a, size_t b)</argsstring>
         <name>wouldOverflow</name>
         <qualifiedname>nvblox::renderer::wouldOverflow</qualifiedname>

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
   <compounddef id="classnvblox_1_1renderer_1_1ImageVisualizer" kind="class" language="C++" prot="public">
     <compoundname>nvblox::renderer::ImageVisualizer</compoundname>
     <basecompoundref prot="public" virt="non-virtual">TexturedVisualizer&lt; ImageVisualizer, 2 &gt;</basecompoundref>
@@ -83,8 +83,8 @@
     </sectiondef>
     <sectiondef kind="public-static-attrib">
       <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ab07a223f6bf160d8e72a5befa1238e1e" prot="public" static="yes" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::ImageVisualizer::kDepthTexture</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::ImageVisualizer::kDepthTexture</definition>
         <argsstring></argsstring>
         <name>kDepthTexture</name>
         <qualifiedname>nvblox::renderer::ImageVisualizer::kDepthTexture</qualifiedname>
@@ -99,8 +99,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="71" column="27" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" bodystart="71" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a0c62e33399ba9858353e6c840f521a0e" prot="public" static="yes" constexpr="yes" mutable="no">
-        <type>constexpr size_t</type>
-        <definition>constexpr size_t nvblox::renderer::ImageVisualizer::kColorTexture</definition>
+        <type>size_t</type>
+        <definition>size_t nvblox::renderer::ImageVisualizer::kColorTexture</definition>
         <argsstring></argsstring>
         <name>kColorTexture</name>
         <qualifiedname>nvblox::renderer::ImageVisualizer::kColorTexture</qualifiedname>
@@ -228,7 +228,7 @@
         <name>ImageVisualizer</name>
         <qualifiedname>nvblox::renderer::ImageVisualizer::ImageVisualizer</qualifiedname>
         <param>
-          <type>const <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+          <type>const ImageVisualizer &amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -239,13 +239,13 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="94" column="3"/>
       </memberdef>
       <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1ade198cf5fe5bd1ecae55e4ee7b62837b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
-        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+        <type>ImageVisualizer &amp;</type>
         <definition>ImageVisualizer &amp; nvblox::renderer::ImageVisualizer::operator=</definition>
         <argsstring>(const ImageVisualizer &amp;)=delete</argsstring>
         <name>operator=</name>
         <qualifiedname>nvblox::renderer::ImageVisualizer::operator=</qualifiedname>
         <param>
-          <type>const <ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+          <type>const ImageVisualizer &amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -262,7 +262,7 @@
         <name>ImageVisualizer</name>
         <qualifiedname>nvblox::renderer::ImageVisualizer::ImageVisualizer</qualifiedname>
         <param>
-          <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;&amp;</type>
+          <type>ImageVisualizer &amp;&amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -273,13 +273,13 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/image_visualizer.h" line="96" column="3"/>
       </memberdef>
       <memberdef kind="function" id="classnvblox_1_1renderer_1_1ImageVisualizer_1a5c13e0cef1fb3bec84cca77aea9b1e06" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
-        <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;</type>
+        <type>ImageVisualizer &amp;</type>
         <definition>ImageVisualizer &amp; nvblox::renderer::ImageVisualizer::operator=</definition>
         <argsstring>(ImageVisualizer &amp;&amp;)=delete</argsstring>
         <name>operator=</name>
         <qualifiedname>nvblox::renderer::ImageVisualizer::operator=</qualifiedname>
         <param>
-          <type><ref refid="classnvblox_1_1renderer_1_1ImageVisualizer" kindref="compound">ImageVisualizer</ref> &amp;&amp;</type>
+          <type>ImageVisualizer &amp;&amp;</type>
         </param>
         <briefdescription>
         </briefdescription>

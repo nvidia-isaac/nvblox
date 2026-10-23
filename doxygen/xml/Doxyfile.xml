@@ -1,10 +1,11 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxyfile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="doxyfile.xsd" version="1.9.8" xml:lang="en-US">
+<doxyfile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="doxyfile.xsd" version="1.15.0" xml:lang="en-US">
   <option  id='DOXYFILE_ENCODING' default='yes' type='string'><value><![CDATA[UTF-8]]></value></option>
   <option  id='PROJECT_NAME' default='no' type='string'><value><![CDATA[nvblox_renderer]]></value></option>
   <option  id='PROJECT_NUMBER' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='PROJECT_BRIEF' default='no' type='string'><value><![CDATA["Vulkan-based visualization library for nvblox"]]></value></option>
   <option  id='PROJECT_LOGO' default='yes' type='string'><value><![CDATA[]]></value></option>
+  <option  id='PROJECT_ICON' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='OUTPUT_DIRECTORY' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='CREATE_SUBDIRS' default='yes' type='bool'><value>NO</value></option>
   <option  id='CREATE_SUBDIRS_LEVEL' default='yes' type='int'><value>8</value></option>
@@ -51,9 +52,12 @@
   <option  id='EXTENSION_MAPPING' default='yes' type='stringlist'>
   </option>
   <option  id='MARKDOWN_SUPPORT' default='yes' type='bool'><value>YES</value></option>
-  <option  id='TOC_INCLUDE_HEADINGS' default='yes' type='int'><value>5</value></option>
+  <option  id='MARKDOWN_STRICT' default='yes' type='bool'><value>YES</value></option>
+  <option  id='TOC_INCLUDE_HEADINGS' default='yes' type='int'><value>6</value></option>
   <option  id='MARKDOWN_ID_STYLE' default='yes' type='string'><value>DOXYGEN</value></option>
   <option  id='AUTOLINK_SUPPORT' default='yes' type='bool'><value>YES</value></option>
+  <option  id='AUTOLINK_IGNORE_WORDS' default='yes' type='stringlist'>
+  </option>
   <option  id='BUILTIN_STL_SUPPORT' default='yes' type='bool'><value>NO</value></option>
   <option  id='CPP_CLI_SUPPORT' default='yes' type='bool'><value>NO</value></option>
   <option  id='SIP_SUPPORT' default='yes' type='bool'><value>NO</value></option>
@@ -78,6 +82,7 @@
   <option  id='RESOLVE_UNNAMED_PARAMS' default='yes' type='bool'><value>YES</value></option>
   <option  id='HIDE_UNDOC_MEMBERS' default='no' type='bool'><value>YES</value></option>
   <option  id='HIDE_UNDOC_CLASSES' default='no' type='bool'><value>YES</value></option>
+  <option  id='HIDE_UNDOC_NAMESPACES' default='yes' type='bool'><value>YES</value></option>
   <option  id='HIDE_FRIEND_COMPOUNDS' default='yes' type='bool'><value>NO</value></option>
   <option  id='HIDE_IN_BODY_DOCS' default='yes' type='bool'><value>NO</value></option>
   <option  id='INTERNAL_DOCS' default='yes' type='bool'><value>NO</value></option>
@@ -109,6 +114,8 @@
   <option  id='LAYOUT_FILE' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='CITE_BIB_FILES' default='yes' type='stringlist'>
   </option>
+  <option  id='EXTERNAL_TOOL_PATH' default='yes' type='stringlist'>
+  </option>
   <option  id='QUIET' default='no' type='bool'><value>YES</value></option>
   <option  id='WARNINGS' default='yes' type='bool'><value>YES</value></option>
   <option  id='WARN_IF_UNDOCUMENTED' default='no' type='bool'><value>NO</value></option>
@@ -116,6 +123,7 @@
   <option  id='WARN_IF_INCOMPLETE_DOC' default='yes' type='bool'><value>YES</value></option>
   <option  id='WARN_NO_PARAMDOC' default='yes' type='bool'><value>NO</value></option>
   <option  id='WARN_IF_UNDOC_ENUM_VAL' default='yes' type='bool'><value>NO</value></option>
+  <option  id='WARN_LAYOUT_FILE' default='yes' type='bool'><value>YES</value></option>
   <option  id='WARN_AS_ERROR' default='yes' type='string'><value>NO</value></option>
   <option  id='WARN_FORMAT' default='yes' type='string'><value><![CDATA["$file:$line: $text"]]></value></option>
   <option  id='WARN_LINE_FORMAT' default='yes' type='string'><value><![CDATA["at line $line of file $file"]]></value></option>
@@ -158,6 +166,7 @@
   <option  id='FILTER_SOURCE_PATTERNS' default='yes' type='stringlist'>
   </option>
   <option  id='USE_MDFILE_AS_MAINPAGE' default='yes' type='string'><value><![CDATA[]]></value></option>
+  <option  id='IMPLICIT_DIR_DOCS' default='yes' type='bool'><value>YES</value></option>
   <option  id='FORTRAN_COMMENT_AFTER' default='yes' type='int'><value>72</value></option>
   <option  id='SOURCE_BROWSER' default='yes' type='bool'><value>NO</value></option>
   <option  id='INLINE_SOURCES' default='yes' type='bool'><value>NO</value></option>
@@ -193,6 +202,8 @@
   <option  id='HTML_DYNAMIC_MENUS' default='yes' type='bool'><value>YES</value></option>
   <option  id='HTML_DYNAMIC_SECTIONS' default='yes' type='bool'><value>NO</value></option>
   <option  id='HTML_CODE_FOLDING' default='yes' type='bool'><value>YES</value></option>
+  <option  id='HTML_COPY_CLIPBOARD' default='yes' type='bool'><value>YES</value></option>
+  <option  id='HTML_PROJECT_COOKIE' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='HTML_INDEX_NUM_ENTRIES' default='yes' type='int'><value>100</value></option>
   <option  id='GENERATE_DOCSET' default='yes' type='bool'><value>NO</value></option>
   <option  id='DOCSET_FEEDNAME' default='yes' type='string'><value><![CDATA["Doxygen generated docs"]]></value></option>
@@ -219,9 +230,11 @@
   <option  id='GENERATE_ECLIPSEHELP' default='yes' type='bool'><value>NO</value></option>
   <option  id='ECLIPSE_DOC_ID' default='yes' type='string'><value><![CDATA[org.doxygen.Project]]></value></option>
   <option  id='DISABLE_INDEX' default='yes' type='bool'><value>NO</value></option>
-  <option  id='GENERATE_TREEVIEW' default='yes' type='bool'><value>NO</value></option>
+  <option  id='GENERATE_TREEVIEW' default='yes' type='bool'><value>YES</value></option>
+  <option  id='PAGE_OUTLINE_PANEL' default='yes' type='bool'><value>YES</value></option>
   <option  id='FULL_SIDEBAR' default='yes' type='bool'><value>NO</value></option>
   <option  id='ENUM_VALUES_PER_LINE' default='yes' type='int'><value>4</value></option>
+  <option  id='SHOW_ENUM_VALUES' default='yes' type='bool'><value>NO</value></option>
   <option  id='TREEVIEW_WIDTH' default='yes' type='int'><value>250</value></option>
   <option  id='EXT_LINKS_IN_WINDOW' default='yes' type='bool'><value>NO</value></option>
   <option  id='OBFUSCATE_EMAILS' default='yes' type='bool'><value>YES</value></option>
@@ -262,7 +275,7 @@
   <option  id='USE_PDFLATEX' default='yes' type='bool'><value>YES</value></option>
   <option  id='LATEX_BATCHMODE' default='yes' type='string'><value>NO</value></option>
   <option  id='LATEX_HIDE_INDICES' default='yes' type='bool'><value>NO</value></option>
-  <option  id='LATEX_BIB_STYLE' default='yes' type='string'><value><![CDATA[plain]]></value></option>
+  <option  id='LATEX_BIB_STYLE' default='yes' type='string'><value><![CDATA[plainnat]]></value></option>
   <option  id='LATEX_EMOJI_DIRECTORY' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='GENERATE_RTF' default='yes' type='bool'><value>NO</value></option>
   <option  id='RTF_OUTPUT' default='yes' type='string'><value><![CDATA[rtf]]></value></option>
@@ -270,6 +283,8 @@
   <option  id='RTF_HYPERLINKS' default='yes' type='bool'><value>NO</value></option>
   <option  id='RTF_STYLESHEET_FILE' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='RTF_EXTENSIONS_FILE' default='yes' type='string'><value><![CDATA[]]></value></option>
+  <option  id='RTF_EXTRA_FILES' default='yes' type='stringlist'>
+  </option>
   <option  id='GENERATE_MAN' default='yes' type='bool'><value>NO</value></option>
   <option  id='MAN_OUTPUT' default='yes' type='string'><value><![CDATA[man]]></value></option>
   <option  id='MAN_EXTENSION' default='yes' type='string'><value><![CDATA[.3]]></value></option>
@@ -320,6 +335,7 @@
   <option  id='GROUP_GRAPHS' default='yes' type='bool'><value>YES</value></option>
   <option  id='UML_LOOK' default='yes' type='bool'><value>NO</value></option>
   <option  id='UML_LIMIT_NUM_FIELDS' default='yes' type='int'><value>10</value></option>
+  <option  id='UML_MAX_EDGE_LABELS' default='yes' type='int'><value>10</value></option>
   <option  id='DOT_UML_DETAILS' default='yes' type='string'><value>NO</value></option>
   <option  id='DOT_WRAP_THRESHOLD' default='yes' type='int'><value>17</value></option>
   <option  id='TEMPLATE_RELATIONS' default='yes' type='bool'><value>NO</value></option>
@@ -341,6 +357,8 @@
   <option  id='PLANTUML_JAR_PATH' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='PLANTUML_CFG_FILE' default='yes' type='string'><value><![CDATA[]]></value></option>
   <option  id='PLANTUML_INCLUDE_PATH' default='yes' type='stringlist'>
+  </option>
+  <option  id='PLANTUMLFILE_DIRS' default='yes' type='stringlist'>
   </option>
   <option  id='DOT_GRAPH_MAX_NODES' default='yes' type='int'><value>50</value></option>
   <option  id='MAX_DOT_GRAPH_DEPTH' default='yes' type='int'><value>0</value></option>

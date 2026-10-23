@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
   <compounddef id="view__camera_8h" kind="file" language="C++">
     <compoundname>view_camera.h</compoundname>
     <includes local="no">Eigen/Core</includes>
@@ -103,9 +103,9 @@
 <codeline lineno="23"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">nvblox<sp/>{</highlight></codeline>
 <codeline lineno="24"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">renderer<sp/>{</highlight></codeline>
 <codeline lineno="25"><highlight class="normal"></highlight></codeline>
-<codeline lineno="28" refid="classnvblox_1_1renderer_1_1ViewCamera" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref><sp/>{</highlight></codeline>
+<codeline lineno="28" refid="classnvblox_1_1renderer_1_1ViewCamera" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal">ViewCamera<sp/>{</highlight></codeline>
 <codeline lineno="29"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
-<codeline lineno="30"><highlight class="normal"><sp/><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera" kindref="compound">ViewCamera</ref>();</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"><sp/><sp/>ViewCamera();</highlight></codeline>
 <codeline lineno="31"><highlight class="normal"></highlight></codeline>
 <codeline lineno="33" refid="classnvblox_1_1renderer_1_1ViewCamera_1a86d3c81922a2999bc8d42dbc32db8518" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a86d3c81922a2999bc8d42dbc32db8518" kindref="member">setTarget</ref>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>x,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>y,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>z);</highlight></codeline>
 <codeline lineno="35" refid="classnvblox_1_1renderer_1_1ViewCamera_1acf0e42f1d476952197095addb8645580" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1acf0e42f1d476952197095addb8645580" kindref="member">setTarget</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Eigen::Vector3f&amp;<sp/><ref refid="classnvblox_1_1renderer_1_1ViewCamera_1a369f38dd962d82d3a160760c60a81a90" kindref="member">target</ref>);</highlight></codeline>

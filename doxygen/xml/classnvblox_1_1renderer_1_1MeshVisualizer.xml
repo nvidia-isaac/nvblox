@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
   <compounddef id="classnvblox_1_1renderer_1_1MeshVisualizer" kind="class" language="C++" prot="public">
     <compoundname>nvblox::renderer::MeshVisualizer</compoundname>
     <basecompoundref prot="public" virt="non-virtual">BufferedVisualizer&lt; MeshVisualizer, MeshVertex &gt;</basecompoundref>
@@ -12,7 +12,7 @@
         <name>Vertex</name>
         <qualifiedname>nvblox::renderer::MeshVisualizer::Vertex</qualifiedname>
         <briefdescription>
-<para>Vertex type alias (uses <ref refid="structnvblox_1_1renderer_1_1MeshVertex" kindref="compound">MeshVertex</ref> from <ref refid="mesh__to__vertex_8h_source" kindref="compound">mesh_to_vertex.h</ref>). </para>
+<para><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer_1a049df13fe633595280499c6c22387f4b" kindref="member">Vertex</ref> type alias (uses <ref refid="structnvblox_1_1renderer_1_1MeshVertex" kindref="compound">MeshVertex</ref> from <ref refid="mesh__to__vertex_8h_source" kindref="compound">mesh_to_vertex.h</ref>). </para>
         </briefdescription>
         <detaileddescription>
         </detaileddescription>
@@ -222,7 +222,7 @@
         <name>MeshVisualizer</name>
         <qualifiedname>nvblox::renderer::MeshVisualizer::MeshVisualizer</qualifiedname>
         <param>
-          <type>const <ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+          <type>const MeshVisualizer &amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -233,13 +233,13 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="51" column="3"/>
       </memberdef>
       <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a991ed624352e364ade37a07b6add111d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
-        <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+        <type>MeshVisualizer &amp;</type>
         <definition>MeshVisualizer &amp; nvblox::renderer::MeshVisualizer::operator=</definition>
         <argsstring>(const MeshVisualizer &amp;)=delete</argsstring>
         <name>operator=</name>
         <qualifiedname>nvblox::renderer::MeshVisualizer::operator=</qualifiedname>
         <param>
-          <type>const <ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+          <type>const MeshVisualizer &amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -256,7 +256,7 @@
         <name>MeshVisualizer</name>
         <qualifiedname>nvblox::renderer::MeshVisualizer::MeshVisualizer</qualifiedname>
         <param>
-          <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;&amp;</type>
+          <type>MeshVisualizer &amp;&amp;</type>
         </param>
         <briefdescription>
         </briefdescription>
@@ -267,13 +267,13 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/visualizers/mesh_visualizer.h" line="53" column="3"/>
       </memberdef>
       <memberdef kind="function" id="classnvblox_1_1renderer_1_1MeshVisualizer_1a102aab118ba108793a3ecd8ef38ba304" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
-        <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;</type>
+        <type>MeshVisualizer &amp;</type>
         <definition>MeshVisualizer &amp; nvblox::renderer::MeshVisualizer::operator=</definition>
         <argsstring>(MeshVisualizer &amp;&amp;)=delete</argsstring>
         <name>operator=</name>
         <qualifiedname>nvblox::renderer::MeshVisualizer::operator=</qualifiedname>
         <param>
-          <type><ref refid="classnvblox_1_1renderer_1_1MeshVisualizer" kindref="compound">MeshVisualizer</ref> &amp;&amp;</type>
+          <type>MeshVisualizer &amp;&amp;</type>
         </param>
         <briefdescription>
         </briefdescription>

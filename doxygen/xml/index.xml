@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.9.8" xml:lang="en-US">
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.15.0" xml:lang="en-US">
   <compound refid="structnvblox_1_1renderer_1_1BufferValidationResult" kind="struct"><name>nvblox::renderer::BufferValidationResult</name>
     <member refid="structnvblox_1_1renderer_1_1BufferValidationResult_1a52216da3aad37e5662bb5578ea78e038" kind="variable"><name>valid</name></member>
     <member refid="structnvblox_1_1renderer_1_1BufferValidationResult_1a05d986a3596d7acb0c8c22ad4b753bed" kind="variable"><name>required_size</name></member>

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
   <compounddef id="classnvblox_1_1renderer_1_1ViewCamera" kind="class" language="C++" prot="public">
     <compoundname>nvblox::renderer::ViewCamera</compoundname>
     <includes refid="view__camera_8h" local="no">view_camera.h</includes>
@@ -173,8 +173,8 @@
     </sectiondef>
     <sectiondef kind="private-static-attrib">
       <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1aba1b1a5811dc4ecee24d47e51ba4e43a" prot="private" static="yes" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::ViewCamera::kMinDistance</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::kMinDistance</definition>
         <argsstring></argsstring>
         <name>kMinDistance</name>
         <qualifiedname>nvblox::renderer::ViewCamera::kMinDistance</qualifiedname>
@@ -188,8 +188,8 @@
         <location file="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" line="132" column="26" bodyfile="/home/runner/work/nvblox/nvblox/nvblox_renderer/include/nvblox/renderer/utils/view_camera.h" bodystart="132" bodyend="-1"/>
       </memberdef>
       <memberdef kind="variable" id="classnvblox_1_1renderer_1_1ViewCamera_1af4f5b37fd367272937361d60f9b9d04f" prot="private" static="yes" constexpr="yes" mutable="no">
-        <type>constexpr float</type>
-        <definition>constexpr float nvblox::renderer::ViewCamera::kZoomSensitivity</definition>
+        <type>float</type>
+        <definition>float nvblox::renderer::ViewCamera::kZoomSensitivity</definition>
         <argsstring></argsstring>
         <name>kZoomSensitivity</name>
         <qualifiedname>nvblox::renderer::ViewCamera::kZoomSensitivity</qualifiedname>
@@ -256,7 +256,7 @@
           <declname>target</declname>
         </param>
         <briefdescription>
-<para>Set camera target (look-at point).   </para>
+<para>Set camera target (look-at point).    </para>
         </briefdescription>
         <detaileddescription>
         </detaileddescription>
