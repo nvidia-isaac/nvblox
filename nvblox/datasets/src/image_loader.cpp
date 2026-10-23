@@ -65,10 +65,8 @@ bool load8BitColorImage(const std::string& filename,
   if (image_data == nullptr) {
     return false;
   }
-  // Currently we only support loading 3 channel (rgb) or 4 channel (rgba)
-  // images.
-  CHECK_EQ(num_channels, kRgbNumElements)
-      << "Only 3 channel (rgb) images are supported.";
+  CHECK(num_channels == 1 || num_channels == 3 || num_channels == 4)
+      << "Only grayscale, RGB, and RGBA images are supported.";
 
   CHECK_EQ(sizeof(Color), kRgbNumElements * sizeof(uint8_t))
       << "Color struct was padded by the compiler so image loading wont work.";

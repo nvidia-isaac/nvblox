@@ -193,11 +193,12 @@ void Fuser<SensorType, SensorDataType>::integrateFrames() {
       std::cout << "." << std::flush;
 
       if constexpr (std::is_same_v<SensorDataType, DepthImage>) {
-        // Update and render the msh
-        multi_mapper_->background_mapper()->updateFlatColorMesh();
-        visualizer.updateMesh(
-            multi_mapper_->background_mapper()->flat_color_mesh(),
-            *color_camera_, T_L_C_->inverse(), *color_frame_, *sensor_data_);
+        if (FLAGS_visualization) {
+          multi_mapper_->background_mapper()->updateFlatColorMesh();
+          visualizer.updateMesh(
+              multi_mapper_->background_mapper()->flat_color_mesh(),
+              *color_camera_, T_L_C_->inverse(), *color_frame_, *sensor_data_);
+        }
       }
     }
     if (!visualizer.renderAndPoll()) {

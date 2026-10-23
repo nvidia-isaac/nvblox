@@ -15,6 +15,8 @@ limitations under the License.
 */
 #include <gtest/gtest.h>
 
+#include <filesystem>
+
 #include "nvblox/datasets/3dmatch.h"
 #include "nvblox/datasets/image_loader.h"
 #include "nvblox/interpolation/interpolation_2d.h"
@@ -94,6 +96,27 @@ TEST(ColorImageTest, NearbyImagesSimilar) {
   std::cout << "num_big_diff_pixels: " << num_big_diff_pixels << std::endl;
   std::cout << "big_diff_pixel_ratio: " << big_diff_pixel_ratio << std::endl;
   EXPECT_LT(big_diff_pixel_ratio, kAllowableBigDifferencePixelsRatio);
+}
+
+TEST(ColorImageTest, LoadsGrayscaleAsRgb) {
+  const std::string path = "./grayscale_image.png";
+  MonoImage grayscale(2, 2, MemoryType::kHost);
+  grayscale(0, 0) = 0;
+  grayscale(0, 1) = 64;
+  grayscale(1, 0) = 128;
+  grayscale(1, 1) = 255;
+  ASSERT_TRUE(io::writeToPng(path, grayscale));
+
+  ColorImage color(MemoryType::kHost);
+  ASSERT_TRUE(datasets::load8BitColorImage(path, &color));
+  ASSERT_EQ(color.rows(), grayscale.rows());
+  ASSERT_EQ(color.cols(), grayscale.cols());
+  for (int i = 0; i < color.numel(); ++i) {
+    EXPECT_EQ(color(i).r(), grayscale(i));
+    EXPECT_EQ(color(i).g(), grayscale(i));
+    EXPECT_EQ(color(i).b(), grayscale(i));
+  }
+  std::filesystem::remove(path);
 }
 
 TEST(ColorImageTest, InterpolationNearestNeighbour) {
