@@ -1,0 +1,14 @@
+# Torch is pinned separately to the version recorded by the native build.
+transforms3d>=0.4.2
+imageio>=2.35.0
+numpy
+open3d
+timm
+opencv-python
+einops
+nvtx
+scipy
+torchvision==0.*
+matplotlib>=3.7,<3.11
+# Torch 2.3 requires NumPy 1.x.
+numpy>=1.24,<1.27

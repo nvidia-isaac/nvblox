@@ -15,6 +15,7 @@ import re
 import platform
 import argparse
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 
@@ -58,6 +59,13 @@ TORCH_VERSIONS = [
         torchvision_version='0.24.1',
     ),
     TorchVersion(
+        platform='x86_64',
+        cuda_version='13.2',
+        index_url='https://download.pytorch.org/whl/cu132',
+        pytorch_version='2.14.1',
+        torchvision_version='0.29.1',
+    ),
+    TorchVersion(
         platform='aarch64',
         cuda_version='12',
         pytorch_version='2.3.0',
@@ -79,27 +87,27 @@ def get_cuda_version() -> str:
     match = re.search(r'release (\d+\.\d+)', result.stdout)
     if not match:
         raise ValueError(f'Failed to find cuda version in {result.stdout}')
-    return match.group(1).split('.')[0]
+    return match.group(1)
 
 
 def get_pytorch_version_for_this_machine() -> Optional[TorchVersion]:
     """Get the pytorch version for the current system or None if not supported."""
 
-    print(f'platform.machine(): {platform.machine()}')
-    print(f'get_cuda_version(): {get_cuda_version()}')
+    machine = platform.machine()
+    cuda_version = get_cuda_version()
+    print(f'platform.machine(): {machine}')
+    print(f'get_cuda_version(): {cuda_version}')
 
-    result = [
-        v for v in TORCH_VERSIONS
-        if v.platform == platform.machine() and v.cuda_version == get_cuda_version()
-    ]
+    # Prefer an exact minor match, retaining major-only mappings for older toolkits.
+    for version in (cuda_version, cuda_version.split('.')[0]):
+        result = [v for v in TORCH_VERSIONS if v.platform == machine and v.cuda_version == version]
+        if result:
+            print(f'pytorch version: {result}')
+            assert len(result) == 1, 'Expected 1 pytorch version'
+            return result[0]
 
-    if not result:
-        print(f'No pytorch version found for {platform.machine()} '
-              f'with cuda version: {get_cuda_version()}')
-        return None
-    print(f'pytorch version: {result}')
-    assert len(result) <= 1, 'Expected 1 pytorch version'
-    return result[0]
+    print(f'No pytorch version found for {machine} with cuda version: {cuda_version}')
+    return None
 
 
 def download_and_rename_wheel(url: Optional[str], filename: Optional[str]) -> Optional[str]:
@@ -148,11 +156,31 @@ def install_pytorch_if_supported_for_this_machine() -> None:
     subprocess.run(script, shell=True, check=True)
 
 
+def is_pytorch_wrapper_disabled(cache_path: Path) -> bool:
+    """Return whether the completed CMake configuration explicitly disabled the wrapper."""
+    try:
+        cache = cache_path.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        # Do not conceal an incomplete wrapper-enabled build: packaging must fail.
+        return False
+    match = re.search(r'^BUILD_PYTORCH_WRAPPER:BOOL=(.*)$', cache, flags=re.MULTILINE)
+    if match is None:
+        return False
+    value = match.group(1).strip().upper()
+    return value in ('', '0', 'OFF', 'NO', 'FALSE', 'N', 'IGNORE',
+                     'NOTFOUND') or value.endswith('-NOTFOUND')
+
+
 def install_nvblox_torch_if_supported_for_this_machine() -> None:
 
     pytorch_version = get_pytorch_version_for_this_machine()
     if pytorch_version is None:
         print('nvblox torch not supported on this system')
+        return
+
+    # GCC-sanitizer builds deliberately exclude libtorch and its Python wrapper.
+    if is_pytorch_wrapper_disabled(Path('/nvblox/build/CMakeCache.txt')):
+        print('Skipping nvblox_torch: BUILD_PYTORCH_WRAPPER is disabled in CMakeCache.txt')
         return
 
     script = f"""

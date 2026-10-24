@@ -17,6 +17,7 @@ limitations under the License.
 #include <cuda_runtime.h>
 
 #include "nvblox/core/hash.h"
+#include "nvblox/core/internal/error_check.h"
 #include "nvblox/gpu_hash/gpu_layer_view.h"
 #include "nvblox/gpu_hash/internal/cuda/gpu_hash_interface.cuh"
 #include "nvblox/map/common_names.h"
@@ -74,6 +75,9 @@ void checkGpuAndCpuHashesEqual(TsdfLayer& layer) {
       gpu_hash.getHash().impl_, block_indices_device.size(),
       block_indices_device.data(), block_ptrs_device.data(), num_inequal.get());
 
+  checkCudaErrors(cudaGetLastError());
+  // Complete the comparison before reading its result or freeing its inputs.
+  checkCudaErrors(cudaDeviceSynchronize());
   CHECK_EQ(*num_inequal, 0);
 }
 }  // namespace test_utils

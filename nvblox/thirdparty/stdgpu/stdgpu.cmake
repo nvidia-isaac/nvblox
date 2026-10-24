@@ -25,7 +25,9 @@ else()
       ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cuda13_0.patch
       # Patch that fixes is_proxy_reference incompatibility with thrust 3.1+
       # (CUDA 13.1+)
-      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cuda13_1.patch)
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cuda13_1.patch
+      # Qualify construction to avoid C++20 ADL collisions with cuda::std.
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stdgpu/stdgpu_fix_cpp20.patch)
 
   FetchContent_Declare(
     ext_stdgpu

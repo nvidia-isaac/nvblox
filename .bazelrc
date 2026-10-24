@@ -1,7 +1,14 @@
 common --registry=https://bcr.bazel.build
 common --incompatible_disallow_empty_glob=False
 
+# Keep C++17 as the default for downstream users, including Isaac ROS.
 build --cxxopt='-std=c++17'
+# nvcc follows the host compiler's default dialect (C++17 for GCC 11-13).
+# Supply a CUDA -std only in the opt-in config: rules_cuda copts accumulates,
+# so specifying both standards would pass conflicting -std options to nvcc.
+# To use it: bazel build --config=cxx20 //:nvblox
+build:cxx20 --cxxopt='-std=c++20'
+build:cxx20 --@rules_cuda//cuda:copts=-std=c++20
 
 # CUDA device compiler warning configuration (matching CMake)
 build --@rules_cuda//cuda:copts=-Xcudafe=--display_error_number  # Display warning numbers for easier debugging

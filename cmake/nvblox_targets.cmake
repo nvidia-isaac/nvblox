@@ -1,5 +1,29 @@
 # -------------------------------------------------------------------
-# Function for adding a device compiler optinon.
+# Keep C++17 as the default for downstream users, including Isaac ROS. Newer
+# PyTorch releases require C++20; enable it with -DNVBLOX_CXX_STANDARD=20.
+set(NVBLOX_CXX_STANDARD
+    17
+    CACHE STRING "C++ standard for nvblox host and CUDA code (17 or 20)")
+set_property(CACHE NVBLOX_CXX_STANDARD PROPERTY STRINGS 17 20)
+if(NOT NVBLOX_CXX_STANDARD MATCHES "^(17|20)$")
+  message(FATAL_ERROR "NVBLOX_CXX_STANDARD must be 17 or 20.")
+endif()
+
+if(NVBLOX_CXX_STANDARD EQUAL 20)
+  if(DEFINED CMAKE_CUDA_COMPILER_VERSION AND CMAKE_CUDA_COMPILER_VERSION
+                                             VERSION_LESS "12.0")
+    message(FATAL_ERROR "NVBLOX_CXX_STANDARD=20 requires CUDA 12 or newer. "
+                        "Use -DNVBLOX_CXX_STANDARD=17 with CUDA 11.")
+  endif()
+  # NVIDIA CUDA C++20 support was added in CMake 3.25.2, not 3.25.0.
+  if(CMAKE_VERSION VERSION_LESS "3.25.2")
+    message(
+      FATAL_ERROR "NVBLOX_CXX_STANDARD=20 requires CMake 3.25.2 or newer "
+                  "for CUDA C++20 support. C++17 builds can use CMake 3.22.1.")
+  endif()
+endif()
+
+# Function for adding a device compiler option.
 # -------------------------------------------------------------------
 function(add_device_compiler_option target_name option)
   target_compile_options(${target_name}
@@ -40,9 +64,7 @@ function(set_nvblox_compiler_options_internal target_name enable_warnings)
   # ############################################################################
   # GENERAL COMPILER FLAGS
   # ############################################################################
-  # Specify the C++ standard and general options
-  # target_compile_features(${target_name} PRIVATE cxx_std_17) Enable position
-  # independent code
+  # Enable position-independent code.
   set_property(TARGET ${target_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
   # Better output for profiling
   add_host_compiler_option(${target_name} "-fno-omit-frame-pointer")
@@ -54,8 +76,12 @@ function(set_nvblox_compiler_options_internal target_name enable_warnings)
   # they are distributed.
   set_target_properties(${target_name} PROPERTIES BUILD_RPATH_USE_ORIGIN on)
 
-  # c++17 compilation. We use c++17 features.
-  add_host_compiler_option(${target_name} "-std=gnu++17")
+  # Propagate the host language requirement to consumers, and select the same
+  # CUDA dialect without a conflicting hard-coded host -std flag.
+  target_compile_features(
+    ${target_name}
+    PUBLIC cxx_std_${NVBLOX_CXX_STANDARD}
+    PRIVATE cuda_std_${NVBLOX_CXX_STANDARD})
 
   # ############################################################################
   # PREPROCESSOR DIRECTIVES

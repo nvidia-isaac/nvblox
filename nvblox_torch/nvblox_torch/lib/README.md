@@ -1,2 +1,6 @@
-This directory contains symlinks to the .so files we are shipping with the pytorch wrapper.
-It mirrors the build directory layout in order to make dynamic runtime linking work
+This directory contains symlinks to the shared libraries shipped with the PyTorch wrapper.
+It mirrors the build directory layout so relative runtime linking works.
+
+`nvblox_torch/cpp/torch_version.txt` links to the build-version record written
+only after `py_nvblox` links successfully. Packaging uses this record to pin
+the Torch release without importing Torch inside the isolated build backend.

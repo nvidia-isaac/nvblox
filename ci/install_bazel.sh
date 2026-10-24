@@ -12,7 +12,7 @@ set -euo pipefail
 echo "Installing Bazel 8.2.1..."
 
 # Add Bazel repository key
-curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel-archive-keyring.gpg
+curl -fsSL https://releases.bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel-archive-keyring.gpg
 mv bazel-archive-keyring.gpg /usr/share/keyrings
 
 # Add Bazel repository

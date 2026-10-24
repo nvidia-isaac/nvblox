@@ -88,7 +88,54 @@ Then build and run the docker container:
     cd nvblox
     ./docker/run_docker.sh
 
-To build the library run
+For the x86 PyTorch 2.14.1 / CUDA 13.2 source profile, use this alternative
+instead of the default container command above:
+
+.. code-block:: bash
+
+    docker build -t nvblox_deps_cuda132 -f docker/Dockerfile.deps \
+        --build-arg BASE_IMAGE=nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu24.04 .
+    ./docker/run_docker.sh -i nvblox_deps_cuda132
+
+This profile selects PyTorch ``2.14.1+cu132`` and torchvision
+``0.29.1+cu132``. Inside the container, verify the selected environment:
+
+.. code-block:: bash
+
+    nvcc --version
+    python3 -c 'import torch, torchvision; print(torch.__version__, torchvision.__version__, torch.version.cuda)'
+
+C++17 remains the default for CMake and Bazel, including builds embedded in
+Isaac ROS. The PyTorch 2.14.1 headers require C++20, so explicitly select it
+when configuring this source profile:
+
+.. code-block:: bash
+
+    cmake -S . -B build -DNVBLOX_CXX_STANDARD=20
+    cmake --build build --parallel 6
+
+Then install the Python package using the steps below. The C++20 option applies
+to the core, renderer, tests and Python wrapper for both host and device code.
+It requires CUDA **12 or newer** and CMake **3.25.2 or newer**. C++17 builds
+retain the CMake 3.22.1 minimum, including CUDA 11 / JetPack 5. The Docker
+bootstrap provides a C++20-capable CMake on Ubuntu 22.04 and 24.04.
+If Torch requires a newer dialect than selected, configuration fails with
+instructions to opt in or disable the wrapper.
+
+Wheel metadata pins the Torch release used to link the native wrapper rather
+than imposing a newer Torch dependency on older CUDA/Jetson builds. Rebuild
+``py_nvblox`` before packaging: its build-version record is shipped beside the
+native library and is read without importing Torch during isolated wheel builds.
+
+.. important::
+
+    A prebuilt wrapper must match the PyTorch it was compiled against. Do not
+    reuse a PyTorch 2.9.1 ``libpy_nvblox.so`` with PyTorch 2.14.1. The published
+    v0.0.10 wheel instructions above remain separate from this newer source
+    profile; this change does not publish replacement release wheels.
+
+For the default C++17 build, run the following commands (use
+``-DNVBLOX_CXX_STANDARD=20`` for the PyTorch 2.14.1 profile above):
 
 .. tabs::
     .. tab:: x86, JetPack 6
@@ -179,6 +226,10 @@ Install the build dependencies. A working CUDA Toolkit installation
     sudo apt-get update && sudo apt-get install -y \
         cmake git git-lfs build-essential python3-dev
 
+The default C++17 build requires CMake **3.22.1 or newer**. If opting into
+C++20 with ``-DNVBLOX_CXX_STANDARD=20``, use CUDA **12 or newer** and CMake
+**3.25.2 or newer**; Ubuntu 22.04's default CMake is too old for that option.
+
 From the repository root, configure and build the core library:
 
 .. code-block:: bash
@@ -218,8 +269,11 @@ feature mapping.
 Building for Post-CXX11 ABI
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The library is built with the pre-cxx11 ABI by default in order to maintain compatibility with manylinux201X wheels.
-To build with the post cxx11 ABI, call cmake with the following flag:
+With the PyTorch wrapper enabled, CMake detects the ABI of the installed
+``python3`` Torch package unless explicitly overridden. Use the same Python
+installation for that check and for ``CMAKE_PREFIX_PATH`` / ``Torch_DIR``.
+Disabling the wrapper defaults to the post-CXX11 ABI.
+To explicitly request the post-CXX11 ABI, call cmake with the following flag:
 
 .. code-block:: bash
 
@@ -238,11 +292,15 @@ you can disable it by calling cmake with the following flag:
 Other ``docker`` containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We build and test in the following ``docker`` images, so if you would like to install
-in a ``docker``, and don't want to use our development ``docker``, these are guaranteed to work.
+The x86 CI profiles select these CUDA base images. A base image still needs
+nvblox's dependencies and a compatible host GPU/driver; use
+``docker/Dockerfile.deps`` rather than treating the base image as a complete
+installation.
 
+- ``nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu24.04``
+- ``nvcr.io/nvidia/cuda:13.2.0-devel-ubuntu22.04``
 - ``nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu24.04``
-- ``nvcr.io/nvidia/cuda:12.6.1-devel-ubuntu22.04``
+- ``nvcr.io/nvidia/cuda:12.8.0-devel-ubuntu22.04``
 - ``nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04``
 
 Build a Redistributable Library
@@ -286,17 +344,22 @@ To build with Bazel:
     # Install Bazel (if not already installed)
     # See https://bazel.build/install for installation instructions
 
-    # Build the core library
+    # Build the core library with the default C++17 dialect
     bazel build //:nvblox
 
     # Run tests
     bazel test //nvblox/tests/...
+
+    # Opt in to C++20 for both host and CUDA compilation (CUDA 12+)
+    bazel build --config=cxx20 //:nvblox
+    bazel test --config=cxx20 //nvblox/tests/...
 
     # Build for aarch64 (experimental)
     bazel build --config arm64 //:nvblox
 
 Build configuration options are defined in ``.bazelrc``. Additional configurations include:
 
+- ``--config=cxx20``: Opt in to C++20 for host and device code
 - ``--config asan``: Build with Address Sanitizer
 - ``--config tsan``: Build with Thread Sanitizer
 - ``--config ubsan``: Build with Undefined Behavior Sanitizer

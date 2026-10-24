@@ -4,6 +4,12 @@ All releases of the nvblox library will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Add opt-in C++20 and PyTorch 2.14.1 / CUDA 13.2 source-build support, retaining C++17 by default.
+
 ## [v.0.0.10] - Date: 2026-04-16
 
  - NvbloxRenderer module for low-latency visualization.

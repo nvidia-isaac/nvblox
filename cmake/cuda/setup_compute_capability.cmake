@@ -50,18 +50,14 @@ set(TORCH_CUDA_ARCH_LIST "")
 # Loop through each number in the list
 foreach(ARCH IN LISTS CMAKE_CUDA_ARCHITECTURES)
 
-  # The numbers can be 2-3 digits, e.g. 90 -> 9.0 or 120 -> 1.20
-  string(LENGTH "${ARCH}" num_digits)
-
-  string(SUBSTRING "${ARCH}" 0 1 FIRST_DIGIT)
-  string(SUBSTRING "${ARCH}" 1 1 SECOND_DIGIT)
-  if(num_digits EQUAL 2)
-    set(DOT_SEPARATED "${FIRST_DIGIT}.${SECOND_DIGIT}")
+  # The final digit is the minor version: 90 -> 9.0, 100 -> 10.0, 120 -> 12.0.
+  # Do not replace Blackwell targets with Hopper flags.
+  if(ARCH MATCHES "^([0-9]+)([0-9])$")
+    set(DOT_SEPARATED "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}")
   else()
-    # Currently, Caffe2 only support Cuda architectues up to 9.0
     message(
       WARNING
-        "Cuda architecture ${ARCH} not supported for nvblox_torch. Reverting to 9.0 and hoping for backward compatibility"
+        "Cannot translate CUDA architecture ${ARCH} to Torch notation. Reverting to 9.0."
     )
     set(DOT_SEPARATED "9.0")
   endif()

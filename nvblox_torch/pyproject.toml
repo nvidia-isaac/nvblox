@@ -2,27 +2,9 @@
 name = "nvblox_torch"
 description = "Pytorch interface for nvblox"
 
-# Version is dynamically determined in setup.py
-dynamic = ["version"]
-dependencies = [
-    "transforms3d>=0.4.2",
-    "imageio>=2.35.0",
-    "numpy",
-    "open3d",
-    "timm",
-    "opencv-python",
-    "einops",
-    "nvtx",
-    "scipy",
-    # Note that the default pypi versions is locked to CUDA 12.
-    # We therefore keep the version specifier open-ended in order to support externally installed versions.
-    # 2.9.1 is the highest version currently supported.
-    "torch<=2.9.1",
-    "torchvision==0.*",
-    "matplotlib>=3.7,<3.11",
-    # Torch 2.3 require numpy 1.X
-    "numpy>=1.24,<1.27"
-]
+# setup.py reads the Torch version recorded when the native wrapper was linked.
+# A global upper bound cannot describe both CUDA12/Torch2.9 and CUDA13.2/Torch2.14 wheels.
+dynamic = ["version", "dependencies"]
 
 [build-system]
 requires = [

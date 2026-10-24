@@ -54,17 +54,6 @@ def _impl(ctx):
         ),
     ]
 
-    cpp17_feature = feature(
-        name = "c++17",
-        enabled = True,
-        flag_sets = [
-            flag_set(
-                actions = [ACTION_NAMES.cpp_compile],
-                flag_groups = [flag_group(flags = ["-std=c++17"])],
-            ),
-        ],
-    )
-
     disable_cxx11_abi_feature = feature(
         name = "c++11_dual_abi",
         enabled = True,
@@ -187,7 +176,6 @@ def _impl(ctx):
     )
 
     features = [
-        cpp17_feature,
         cxx_compile_opts_feature,
         opt_feature,
         dbg_feature,
