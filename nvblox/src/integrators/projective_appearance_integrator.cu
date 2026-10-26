@@ -57,9 +57,7 @@ ProjectiveAppearanceIntegrator<LayerType>::ProjectiveAppearanceIntegrator(
       update_functor_host_ptr_(
           make_unified<UpdateAppearanceVoxelFunctor<VoxelType>>(
               MemoryType::kHost)),
-      sphere_tracer_(cuda_stream) {
-  sphere_tracer_.maximum_ray_length_m(this->max_integration_distance_m_);
-}
+      sphere_tracer_(cuda_stream) {}
 
 // NOTE(dtingdahl): We can't default this in the header file because to the
 // unified_ptr to a forward declared type. The type has to be defined where
@@ -212,6 +210,14 @@ template <class LayerType>
 float ProjectiveAppearanceIntegrator<LayerType>::get_truncation_distance_m(
     float voxel_size) const {
   return this->truncation_distance_vox_ * voxel_size;
+}
+
+template <class LayerType>
+void ProjectiveAppearanceIntegrator<LayerType>::max_integration_distance_m(
+    float max_integration_distance_m) {
+  ProjectiveIntegrator<VoxelType>::max_integration_distance_m(
+      max_integration_distance_m);
+  sphere_tracer_.maximum_ray_length_m(max_integration_distance_m);
 }
 
 template <class LayerType>
