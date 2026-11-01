@@ -126,6 +126,22 @@ void unified_vector<T>::copyFromAsync(const T_noextent* const raw_ptr,
 }
 
 template <typename T>
+void unified_vector<T>::copyFromAsync2D(const T_noextent* const raw_ptr,
+                                      const size_t s_stride_num_elements,
+                                      const size_t d_stride_num_elements,
+                                      const size_t row,
+                                      const size_t col,
+                                      const CudaStream& cuda_stream) {
+  resizeAsync(row * d_stride_num_elements, cuda_stream);
+  if (raw_ptr != nullptr) {
+    checkCudaErrors(cudaMemcpy2DAsync(buffer_, sizeof(T) * d_stride_num_elements, 
+                                      raw_ptr, sizeof(T) * s_stride_num_elements, 
+                                      sizeof(T) * col, row,
+                                      cudaMemcpyDefault, cuda_stream));
+  }
+}
+
+template <typename T>
 void unified_vector<T>::copyToAsync(T_noextent* raw_ptr,
                                     const CudaStream& cuda_stream) const {
   CHECK(raw_ptr != nullptr);

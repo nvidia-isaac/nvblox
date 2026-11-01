@@ -77,6 +77,12 @@ class unified_vector {
                      const CudaStream& cuda_stream);
   void copyFromAsync(const T_noextent* const raw_ptr, const size_t num_elements,
                      const CudaStream& cuda_stream);
+  void copyFromAsync2D(const T_noextent* const raw_ptr,
+                        const size_t s_stride_num_elements,
+                        const size_t d_stride_num_elements,
+                        const size_t row,
+                        const size_t col,
+                        const CudaStream& cuda_stream); 
 
   /// Copy to a raw pointer.
   void copyToAsync(T_noextent* raw_ptr, const CudaStream& cuda_stream) const;
