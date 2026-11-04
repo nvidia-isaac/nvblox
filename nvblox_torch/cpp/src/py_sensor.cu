@@ -67,6 +67,23 @@ c10::intrusive_ptr<PySensor> PySensor::fromLidar(
   return sensor;
 }
 
+c10::intrusive_ptr<PySensor> PySensor::fromLidarAsymmetric(
+    int64_t num_azimuth_divisions, int64_t num_elevation_divisions,
+    double min_angle_below_zero_elevation_rad,
+    double max_angle_above_zero_elevation_rad, double min_valid_range_m) {
+  auto sensor = c10::make_intrusive<PySensor>();
+
+  nvblox::Lidar lidar(num_azimuth_divisions, num_elevation_divisions,
+                      min_valid_range_m, min_angle_below_zero_elevation_rad,
+                      max_angle_above_zero_elevation_rad);
+  sensor->sensor_store_.set(std::move(lidar));
+  sensor->modality_ = nvblox::SensorModality::kLidar;
+  sensor->width_ = num_azimuth_divisions;
+  sensor->height_ = num_elevation_divisions;
+
+  return sensor;
+}
+
 std::string PySensor::getSensorModality() const {
   switch (modality_) {
     case nvblox::SensorModality::kCamera:

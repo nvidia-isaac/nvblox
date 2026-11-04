@@ -149,6 +149,31 @@ class Sensor:
                                                                vertical_fov_rad, min_valid_range_m)
         return cls(c_sensor)
 
+    @classmethod
+    def from_lidar_asymmetric(cls,
+                              num_azimuth_divisions: int,
+                              num_elevation_divisions: int,
+                              min_angle_below_zero_elevation_rad: float,
+                              max_angle_above_zero_elevation_rad: float,
+                              min_valid_range_m: float = 0.001) -> 'Sensor':
+        """Create a lidar sensor with an asymmetric elevation envelope.
+
+        Args:
+            num_azimuth_divisions: Number of azimuth divisions (horizontal resolution).
+            num_elevation_divisions: Number of elevation divisions (vertical channels).
+            min_angle_below_zero_elevation_rad: Angle below zero of the lowest beam (positive value).
+            max_angle_above_zero_elevation_rad: Angle above zero of the highest beam (positive value).
+            min_valid_range_m: Minimum valid range in meters.
+
+        Returns:
+            Sensor object wrapping a Lidar.
+        """
+        c_sensor = get_nvblox_torch_class('Sensor').from_lidar_asymmetric(
+            num_azimuth_divisions, num_elevation_divisions,
+            min_angle_below_zero_elevation_rad, max_angle_above_zero_elevation_rad,
+            min_valid_range_m)
+        return cls(c_sensor)
+
     @property
     def modality(self) -> str:
         """Get the sensor modality.
