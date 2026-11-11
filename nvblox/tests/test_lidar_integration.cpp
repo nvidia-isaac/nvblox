@@ -124,6 +124,50 @@ TEST_F(LidarIntegrationTest, LidarAabb) {
   EXPECT_NEAR(aabb.max().z(), top_beam_z + 1.0f, kFloatEpsilon);
 }
 
+TEST_F(LidarIntegrationTest, LidarAabbUnevenVerticalBeams) {
+  // A LiDAR with more of its vertical FoV above zero elevation than below.
+  const float min_angle_below_zero_elevation_rad = 5.0f * M_PI / 180.0;
+  const float max_angle_above_zero_elevation_rad = 45.0f * M_PI / 180.0;
+  const Lidar uneven_lidar(
+      num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
+      min_angle_below_zero_elevation_rad, max_angle_above_zero_elevation_rad);
+
+  const Transform T_L_C = Transform::Identity();
+  const float max_depth = 1.0f;
+  const AxisAlignedBoundingBox aabb =
+      uneven_lidar.getViewAABB(T_L_C, 0.0f, max_depth);
+
+  // The vertical extent is given by the lowest and the highest beam.
+  const float bottom_beam_z =
+      -max_depth * sin(min_angle_below_zero_elevation_rad);
+  const float top_beam_z = max_depth * sin(max_angle_above_zero_elevation_rad);
+
+  EXPECT_NEAR(aabb.min().x(), -1.0, kFloatEpsilon);
+  EXPECT_NEAR(aabb.min().y(), -1.0, kFloatEpsilon);
+  EXPECT_NEAR(aabb.min().z(), bottom_beam_z, kFloatEpsilon);
+  EXPECT_NEAR(aabb.max().x(), 1.0, kFloatEpsilon);
+  EXPECT_NEAR(aabb.max().y(), 1.0, kFloatEpsilon);
+  EXPECT_NEAR(aabb.max().z(), top_beam_z, kFloatEpsilon);
+
+  // Everything the LiDAR can measure (up to the max depth) has to be inside
+  // the view. Check the points measured by the highest and the lowest beam.
+  // NOTE: We stay slightly below the max depth to stay clear of the boundary.
+  const float depth = 0.99f * max_depth;
+  const int top_row = 0;
+  const int bottom_row = num_elevation_divisions - 1;
+  int num_points_outside_view = 0;
+  for (int col = 0; col < num_azimuth_divisions; col++) {
+    for (const int row : {top_row, bottom_row}) {
+      const Vector3f p_L = T_L_C * uneven_lidar.unprojectFromPixelIndices(
+                                       Index2D(col, row), depth);
+      if (!aabb.contains(p_L)) {
+        ++num_points_outside_view;
+      }
+    }
+  }
+  EXPECT_EQ(num_points_outside_view, 0);
+}
+
 TEST_F(LidarIntegrationTest, LidarBlocksInView) {
   // Params
   const float voxel_size = 0.1f;
@@ -244,6 +288,63 @@ TEST_F(LidarIntegrationTest, SurroundingSphere) {
     // Output
     const std::string filepath = "sphere_lidar_image.png";
     io::writeToPng(filepath, depth_image);
+  }
+}
+
+TEST_F(LidarIntegrationTest, SurroundingSphereUnevenVerticalBeams) {
+  // A LiDAR with more of its vertical FoV above zero elevation than below.
+  const float min_angle_below_zero_elevation_rad = 5.0f * M_PI / 180.0;
+  const float max_angle_above_zero_elevation_rad = 45.0f * M_PI / 180.0;
+  const Lidar uneven_lidar(
+      num_azimuth_divisions, num_elevation_divisions, min_valid_range_m,
+      min_angle_below_zero_elevation_rad, max_angle_above_zero_elevation_rad);
+
+  // The LiDAR sits at the center of a sphere, i.e. all beams return the same
+  // range.
+  const float sphere_radius = 15.0;
+  DepthImage depth_image(uneven_lidar.num_elevation_divisions(),
+                         uneven_lidar.num_azimuth_divisions(),
+                         MemoryType::kUnified);
+  for (int row = 0; row < depth_image.rows(); row++) {
+    for (int col = 0; col < depth_image.cols(); col++) {
+      depth_image(row, col) = sphere_radius;
+    }
+  }
+  const Transform T_L_C = Transform::Identity();
+
+  // Integrate into a layer
+  const float voxel_size = 0.1f;
+  TsdfLayer layer(voxel_size, MemoryType::kDevice);
+
+  ProjectiveTsdfIntegrator tsdf_integrator;
+  tsdf_integrator.max_integration_distance_m(sphere_radius + 5.0f);
+  tsdf_integrator.integrateFrame(
+      MaskedDepthImageConstView(depth_image, kMaskActiveEverywhere), T_L_C,
+      uneven_lidar, &layer);
+
+  // The surface has to be observed along the beams in the upper as well as in
+  // the lower part of the FoV. We check the voxels just in front of the
+  // surface on the highest and the lowest beam.
+  const float depth_in_front_of_surface = sphere_radius - voxel_size;
+  const int top_row = 0;
+  const int bottom_row = num_elevation_divisions - 1;
+  constexpr int kColStep = 16;
+  for (const int row : {top_row, bottom_row}) {
+    int num_checked = 0;
+    int num_observed = 0;
+    for (int col = kColStep; col < num_azimuth_divisions - kColStep;
+         col += kColStep) {
+      const Vector3f p_L =
+          T_L_C * uneven_lidar.unprojectFromPixelIndices(
+                      Index2D(col, row), depth_in_front_of_surface);
+      const auto [voxel, is_allocated] = layer.getVoxel(p_L);
+      if (is_allocated && voxel.weight > 0.0f) {
+        ++num_observed;
+      }
+      ++num_checked;
+    }
+    EXPECT_GT(num_checked, 0);
+    EXPECT_EQ(num_observed, num_checked) << "On image row " << row;
   }
 }
 
