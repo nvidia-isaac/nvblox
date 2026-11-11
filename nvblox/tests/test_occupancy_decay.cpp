@@ -213,6 +213,65 @@ TYPED_TEST(OccupancyDecayTestFixture, decayAllTo04) {
   testOccupancyDecayAll(0.4f);
 }
 
+TYPED_TEST(OccupancyDecayTestFixture, decayToFreeWithSmallDecaySteps) {
+  // Test that all voxels reach the decay-to value, also if a single decay step
+  // is smaller than the distance between the decay-to value and 0.5 occupancy
+  // probability.
+  constexpr float kMaxLogOdds = 2.f;
+  constexpr float kDecayStepSizeLogOdds = 0.02f;
+  OccupancyLayer layer(0.05f, MemoryType::kUnified);
+  layer.allocateBlockAtIndex(Index3D(0, 0, 0));
+
+  // Init the voxels with log odds spread over [-kMaxLogOdds, kMaxLogOdds].
+  constexpr int kVoxelsPerSide = OccupancyBlock::kVoxelsPerSide;
+  constexpr int kNumVoxels = kVoxelsPerSide * kVoxelsPerSide * kVoxelsPerSide;
+  auto init_voxels_lambda = [&](const Index3D&, const Index3D& voxel_index,
+                                OccupancyVoxel* voxel_ptr) {
+    const int linear_index =
+        voxel_index.x() +
+        kVoxelsPerSide * (voxel_index.y() + kVoxelsPerSide * voxel_index.z());
+    voxel_ptr->log_odds =
+        kMaxLogOdds * (2.f * linear_index / (kNumVoxels - 1) - 1.f);
+  };
+  callFunctionOnAllVoxels<OccupancyVoxel>(&layer, init_voxels_lambda);
+
+  // Set up a slow decay to free
+  OccupancyDecayIntegrator decay_integrator;
+  decay_integrator.free_region_decay_probability(
+      probabilityFromLogOdds(kDecayStepSizeLogOdds));
+  decay_integrator.occupied_region_decay_probability(
+      probabilityFromLogOdds(-kDecayStepSizeLogOdds));
+  decay_integrator.decay_to_free(true);
+  decay_integrator.deallocate_decayed_blocks(false);
+
+  // The value to decay to
+  const float fully_decayed_value_log_odds =
+      logOddsFromProbability(OccupancyDecayIntegrator::kDefaultProbabilityFree);
+  ASSERT_GT(std::abs(fully_decayed_value_log_odds), kDecayStepSizeLogOdds);
+
+  // Decay everything (with some margin on the number of steps required)
+  constexpr int num_decays_until_converged =
+      2 * kMaxLogOdds / kDecayStepSizeLogOdds;
+  for (int i = 0; i < num_decays_until_converged; i++) {
+    decay_integrator.decay<TypeParam>(&layer, std::nullopt, std::nullopt,
+                                      CudaStreamOwning());
+  }
+
+  // Check that all voxels are decayed
+  int num_checked_voxels = 0;
+  int num_decayed_voxels = 0;
+  auto check_decay_lambda = [&](const Index3D&, const Index3D&,
+                                const OccupancyVoxel* voxel_ptr) {
+    num_checked_voxels++;
+    if (voxel_ptr->log_odds == fully_decayed_value_log_odds) {
+      num_decayed_voxels++;
+    }
+  };
+  callFunctionOnAllVoxels<OccupancyVoxel>(&layer, check_decay_lambda);
+  EXPECT_EQ(num_checked_voxels, kNumVoxels);
+  EXPECT_EQ(num_decayed_voxels, kNumVoxels);
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);
