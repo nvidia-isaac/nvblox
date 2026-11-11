@@ -206,11 +206,15 @@ AxisAlignedBoundingBox Lidar::getViewAABB(const Transform& T_L_C, const float,
   // determined by the lidar FoV.
   // NOTE(alexmillane): The min depth is ignored in this function, it is a
   // parameter so it matches with camera's getViewAABB().
+  // NOTE: The beams are not necessarily distributed evenly around zero
+  // elevation, so the lower and upper extent are determined separately by the
+  // lowest and the highest beam. The angle of the lowest beam can be stored as
+  // a positive or a negative number (see the constructor).
   AxisAlignedBoundingBox box(
       Vector3f(-max_depth, -max_depth,
-               -max_depth * sin(vertical_fov_rad_ / 2.0f)),
+               -max_depth * sin(fabsf(min_angle_below_zero_elevation_rad_))),
       Vector3f(max_depth, max_depth,
-               max_depth * sin(vertical_fov_rad_ / 2.0f)));
+               max_depth * sin(max_angle_above_zero_elevation_rad_)));
   // Translate the box to the sensor's location (note that orientation doesn't
   // matter as the lidar sees in the circle)
   box.translate(T_L_C.translation());
