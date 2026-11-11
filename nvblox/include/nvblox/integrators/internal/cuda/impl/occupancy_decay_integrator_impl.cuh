@@ -55,8 +55,11 @@ struct OccupancyDecayFunctor {
       return;
     }
 
-    // Else decay
-    if (voxel_ptr->log_odds >= 0) {
+    // Else decay towards the decay-to value.
+    // NOTE: The direction of the step has to be consistent with
+    // isFullyDecayed(), i.e. it is determined by the side of the decay-to value
+    // the voxel is on (and not by the side of 0.5 occupancy probability).
+    if (voxel_ptr->log_odds >= decay_to_log_odds_) {
       voxel_ptr->log_odds += occupied_space_decay_log_odds_;
     } else {
       voxel_ptr->log_odds += free_space_decay_log_odds_;
