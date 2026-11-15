@@ -4,6 +4,11 @@ All releases of the nvblox library will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+- Fix dense voxel-grid extraction leaving boundary cells unwritten when
+  floating-point block bounds disagree with rounded output voxel bounds.
+
 ## [v.0.0.10] - Date: 2026-04-16
 
  - NvbloxRenderer module for low-latency visualization.
