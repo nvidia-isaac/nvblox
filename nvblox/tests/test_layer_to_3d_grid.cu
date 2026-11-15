@@ -252,6 +252,37 @@ TEST_F(LayerToUnifiedGridTest, CopyLayerWithConversion) {
       [](const float& value) -> float { return value; });
 }
 
+TEST_F(LayerToUnifiedGridTest, ReusedBufferWritesBoundaryCells) {
+  EsdfLayer empty_layer(0.2f, MemoryType::kUnified);
+  Unified3DGrid<float> grid(MemoryType::kUnified);
+  constexpr float kSentinelValue = 123.0f;
+  constexpr float kDefaultValue = -1.0f;
+
+  // Reuse an existing allocation so unwritten cells retain a known value.
+  grid.setAABBAsync(Index3D::Zero(), Index3D(2, 2, 20), *cuda_stream_);
+  cuda_stream_->synchronize();
+  for (float& value : grid.data()) {
+    value = kSentinelValue;
+  }
+
+  // The upper z bound is slightly below 3.2 m in floating point, but the
+  // output's robust rounding includes voxel 16, which belongs to block 2.
+  const Vector3f minimum(0.0f, 0.0f, -0.6f);
+  const Vector3f size(0.2f, 0.2f, 3.8f);
+  const AxisAlignedBoundingBox aabb(minimum, minimum + size);
+  voxelLayerToDenseVoxelGridInAABBAsync(empty_layer, aabb, kDefaultValue,
+                                        ExtractDistanceFunctor{}, &grid,
+                                        *cuda_stream_);
+  checkCudaErrors(cudaPeekAtLastError());
+  cuda_stream_->synchronize();
+
+  ASSERT_TRUE(grid.isInsideGrid(Index3D(0, 0, 16)));
+  // An empty layer must overwrite every output cell with the default.
+  for (size_t i = 0; i < grid.data().size(); ++i) {
+    EXPECT_FLOAT_EQ(grid.data()[i], kDefaultValue) << "cell " << i;
+  }
+}
+
 int main(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   google::InitGoogleLogging(argv[0]);

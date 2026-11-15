@@ -131,15 +131,24 @@ void voxelLayerToDenseVoxelGridInAABBAsync(
   CHECK((dims_in_vox.array() > 0).all());
   grid->setAABBAsync(min_in_vox, dims_in_vox, cuda_stream);
 
-  // Convert the floating point values to block and voxel indices
-  const Index3D min_block_idx =
-      getBlockIndexFromPositionInLayer(layer.block_size(), aabb.min());
-  const Index3D max_block_idx =
-      getBlockIndexFromPositionInLayer(layer.block_size(), aabb.max());
+  constexpr int kVoxelsPerSide = VoxelBlock<InputVoxelType>::kVoxelsPerSide;
+  // Use the same integer voxel bounds as the output grid. Recomputing block
+  // bounds from floats can omit an edge plane included by robustFloor().
+  const auto blockIndexFromVoxelIndex = [](const Index3D& voxel_index) {
+    Index3D block_index;
+    for (int axis = 0; axis < 3; ++axis) {
+      const int index = voxel_index[axis];
+      // C++ division truncates toward zero; negative indices need floor.
+      block_index[axis] =
+          index / kVoxelsPerSide - (index % kVoxelsPerSide < 0 ? 1 : 0);
+    }
+    return block_index;
+  };
+  const Index3D min_block_idx = blockIndexFromVoxelIndex(min_in_vox);
+  const Index3D max_block_idx = blockIndexFromVoxelIndex(max_in_vox);
   const Index3D dims_in_blox = max_block_idx - min_block_idx + Index3D::Ones();
 
   // Extract the values into a grid.
-  constexpr int kVoxelsPerSide = VoxelBlock<InputVoxelType>::kVoxelsPerSide;
   const dim3 thread_blocks = {static_cast<unsigned int>(dims_in_blox.x()),
                               static_cast<unsigned int>(dims_in_blox.y()),
                               static_cast<unsigned int>(dims_in_blox.z())};
